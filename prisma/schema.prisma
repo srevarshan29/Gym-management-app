@@ -1,0 +1,212 @@
+// Gym Management App - Prisma schema
+// Multi-tenant model: every gym-specific row is scoped to a Gym via gymId.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  OWNER
+  ADMIN
+  STAFF
+}
+
+enum DurationUnit {
+  MONTHS
+  DAYS
+}
+
+enum PaymentMethod {
+  CASH
+  UPI
+  CARD
+  BANK_TRANSFER
+  OTHER
+}
+
+// A tenant. Every gym-scoped row belongs to exactly one Gym. memberSeq and
+// receiptSeq are atomically incremented (via a single UPDATE ... RETURNING)
+// to hand out per-gym sequential numbers without collisions.
+model Gym {
+  id         String   @id @default(cuid())
+  name       String
+  slug       String?  @unique
+  memberSeq  Int      @default(0)
+  receiptSeq Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  users         User[]
+  members       Member[]
+  packages      Package[]
+  subscriptions Subscription[]
+  payments      Payment[]
+  receipts      Receipt[]
+  profile       GymProfile?
+}
+
+// Gym staff accounts. gymId is null only for SUPER_ADMIN (platform-level,
+// not tied to any tenant). The first per-tenant OWNER is created via the
+// super-admin gym provisioning flow (or the seed script for Gym #1).
+model User {
+  id           String   @id @default(cuid())
+  gymId        String?
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STAFF)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  gym                  Gym?           @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  createdSubscriptions Subscription[] @relation("SubscriptionCreatedBy")
+  recordedPayments     Payment[]      @relation("PaymentRecordedBy")
+
+  @@index([gymId])
+}
+
+// Membership packages (name, price, duration).
+model Package {
+  id            String       @id @default(cuid())
+  gymId         String
+  name          String
+  price         Decimal      @db.Decimal(10, 2)
+  durationValue Int
+  durationUnit  DurationUnit @default(MONTHS)
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  gym           Gym            @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  subscriptions Subscription[]
+
+  @@index([gymId])
+}
+
+model Member {
+  id           String   @id @default(cuid())
+  gymId        String
+  memberNumber Int
+  name         String
+  phone        String
+  email        String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  gym           Gym            @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  subscriptions Subscription[]
+  payments      Payment[]
+
+  @@unique([gymId, memberNumber])
+  @@index([gymId, name])
+}
+
+// A single billing cycle: member holds a package from startDate to endDate.
+model Subscription {
+  id              String   @id @default(cuid())
+  gymId           String
+  memberId        String
+  packageId       String
+  startDate       DateTime
+  endDate         DateTime
+  priceAtPurchase Decimal  @db.Decimal(10, 2)
+  createdById     String?
+  createdAt       DateTime @default(now())
+
+  gym       Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  package   Package  @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  createdBy User?    @relation("SubscriptionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  payments  Payment[]
+
+  @@index([gymId])
+  @@index([memberId])
+  @@index([endDate])
+}
+
+// A manually-recorded payment collected in person.
+model Payment {
+  id             String        @id @default(cuid())
+  gymId          String
+  memberId       String
+  subscriptionId String?
+  amount         Decimal       @db.Decimal(10, 2)
+  method         PaymentMethod @default(CASH)
+  paidAt         DateTime      @default(now())
+  note           String?
+  recordedById   String?
+  createdAt      DateTime      @default(now())
+
+  gym          Gym           @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  member       Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  recordedBy   User?         @relation("PaymentRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+  receipt      Receipt?
+
+  @@index([gymId])
+  @@index([memberId])
+  @@index([paidAt])
+  @@index([subscriptionId])
+}
+
+// Gym profile / branding shown on receipts. One row per gym.
+model GymProfile {
+  id               String   @id @default(cuid())
+  gymId            String   @unique
+  name             String   @default("My Gym")
+  logoUrl          String?
+  address          String?
+  phone            String?
+  ownerNotifyPhone String?
+  ownerNotifyEmail String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  gym Gym @relation(fields: [gymId], references: [id], onDelete: Cascade)
+}
+
+// Immutable snapshot of a payment receipt, so past receipts stay stable even
+// if the gym profile, member, or package details change later. The PDF is
+// regenerated on demand from this data rather than stored as a file.
+// `number` is a per-gym sequential number (see Gym.receiptSeq), not a global
+// autoincrement, so each tenant's receipts start their own numbering.
+model Receipt {
+  id        String   @id @default(cuid())
+  gymId     String
+  number    Int
+  paymentId String   @unique
+  createdAt DateTime @default(now())
+
+  gymName    String
+  gymAddress String?
+  gymPhone   String?
+  gymLogoUrl String?
+
+  memberId    String
+  memberName  String
+  memberPhone String
+  memberEmail String?
+
+  packageName String?
+  amount      Decimal       @db.Decimal(10, 2)
+  amountOwed  Decimal?      @db.Decimal(10, 2)
+  balanceAfter Decimal?     @db.Decimal(10, 2)
+  method      PaymentMethod
+  paidAt      DateTime
+  periodStart DateTime?
+  periodEnd   DateTime?
+
+  gym     Gym     @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@unique([gymId, number])
+  @@index([memberId])
+}

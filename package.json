@@ -1,0 +1,59 @@
+{
+  "name": "gym-management-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first next dev",
+    "build": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first prisma generate && cross-env NODE_OPTIONS=--dns-result-order=ipv4first next build",
+    "start": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first next start",
+    "lint": "next lint",
+    "postinstall": "prisma generate",
+    "db:migrate": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first prisma migrate dev",
+    "db:deploy": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first prisma migrate deploy",
+    "db:push": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first prisma db push",
+    "db:seed": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first prisma db seed",
+    "db:studio": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first prisma studio"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "5.17.0",
+    "@radix-ui/react-avatar": "1.1.0",
+    "@radix-ui/react-dialog": "1.1.1",
+    "@radix-ui/react-label": "2.1.0",
+    "@radix-ui/react-select": "2.1.1",
+    "@radix-ui/react-slot": "1.1.0",
+    "@radix-ui/react-tabs": "1.1.0",
+    "@react-pdf/renderer": "^3.4.4",
+    "@supabase/supabase-js": "^2.110.2",
+    "bcryptjs": "2.4.3",
+    "class-variance-authority": "0.7.0",
+    "clsx": "2.1.1",
+    "lucide-react": "0.417.0",
+    "next": "14.2.5",
+    "next-auth": "5.0.0-beta.20",
+    "next-themes": "^0.4.6",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "recharts": "^3.9.2",
+    "resend": "^6.17.2",
+    "sonner": "1.5.0",
+    "tailwind-merge": "2.4.0",
+    "tailwindcss-animate": "1.0.7",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "2.4.6",
+    "@types/node": "20.14.13",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "autoprefixer": "10.4.19",
+    "cross-env": "^7.0.3",
+    "postcss": "8.4.40",
+    "prisma": "5.17.0",
+    "tailwindcss": "3.4.7",
+    "tsx": "4.16.2",
+    "typescript": "5.5.4"
+  }
+}

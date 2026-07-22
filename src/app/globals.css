@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Light palette — Volt green accent on neutral grey content. */
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 240 10% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 8%;
+
+    /* Primary = Volt Green — CTAs, active states, positive trend only */
+    --primary: 80 100% 45%;
+    --primary-foreground: 240 10% 6%;
+
+    /* Neutral secondary tone (legacy highlight token — no cyan accent) */
+    --highlight: 240 5% 40%;
+    --highlight-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 95%;
+    --secondary-foreground: 240 10% 10%;
+
+    --muted: 240 5% 95%;
+    --muted-foreground: 240 5% 40%;
+
+    --accent: 240 5% 94%;
+    --accent-foreground: 240 10% 10%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 88%;
+    --input: 240 6% 88%;
+    --ring: 80 100% 45%;
+
+    /* Subscription status palette — semantic exceptions only */
+    --status-active: 142 71% 45%;
+    --status-active-foreground: 0 0% 100%;
+    --status-expiring: 38 92% 50%;
+    --status-expiring-foreground: 26 83% 14%;
+    --status-expired: 0 72% 51%;
+    --status-expired-foreground: 0 0% 100%;
+
+    --radius: 0.75rem;
+  }
+
+  /* Dark palette — near-black background, white/grey content, Volt accent. */
+  .dark {
+    --background: 240 6% 7%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 5% 11%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 5% 12%;
+    --popover-foreground: 0 0% 98%;
+
+    /* Primary = Volt Green #B8FF29 */
+    --primary: 80 100% 58%;
+    --primary-foreground: 240 10% 6%;
+
+    /* Neutral secondary tone (legacy highlight token — no cyan accent) */
+    --highlight: 240 5% 65%;
+    --highlight-foreground: 0 0% 98%;
+
+    --secondary: 240 5% 18%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 5% 16%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 240 5% 18%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 5% 20%;
+    --input: 240 5% 20%;
+    --ring: 80 100% 58%;
+
+    /* Teal/amber/red — distinct from Volt so status never reads as brand accent */
+    --status-active: 160 84% 39%;
+    --status-active-foreground: 0 0% 100%;
+    --status-expiring: 38 92% 50%;
+    --status-expiring-foreground: 26 83% 14%;
+    --status-expired: 0 70% 58%;
+    --status-expired-foreground: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  ::selection {
+    background-color: hsl(var(--primary) / 0.25);
+    color: hsl(var(--foreground));
+  }
+  .font-mono {
+    font-feature-settings: "tnum" 1, "zero" 1;
+  }
+}
+
+@layer utilities {
+  .hover-lift {
+    @apply transition-[transform,box-shadow] duration-150 ease-out;
+    @apply hover:scale-[1.02] hover:shadow-soft;
+  }
+  .hover-lift-glow {
+    @apply transition-[transform,box-shadow] duration-150 ease-out;
+    @apply hover:scale-[1.02] hover:shadow-glow-lift;
+  }
+  .hover-lift-row {
+    @apply transition-[background-color,box-shadow] duration-150 ease-out;
+    @apply hover:shadow-soft;
+  }
+}

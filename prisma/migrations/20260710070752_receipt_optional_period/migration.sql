@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Receipt" ALTER COLUMN "packageName" DROP NOT NULL,
+ALTER COLUMN "periodStart" DROP NOT NULL,
+ALTER COLUMN "periodEnd" DROP NOT NULL;

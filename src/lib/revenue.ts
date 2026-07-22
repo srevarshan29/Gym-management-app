@@ -1,0 +1,58 @@
+import { withTenant } from "@/lib/db-context";
+
+export type MonthlyRevenuePoint = {
+  monthKey: string;
+  monthLabel: string;
+  monthTooltip: string;
+  revenue: number;
+};
+
+/**
+ * Sum of Payment.amount per calendar month for the last N months,
+ * scoped to a single gym. Months with no payments return revenue 0.
+ */
+export async function getMonthlyRevenueTrend(
+  gymId: string,
+  monthCount = 6,
+): Promise<MonthlyRevenuePoint[]> {
+  return withTenant(gymId, async (tx) => {
+    const now = new Date();
+    const startMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() - (monthCount - 1),
+      1,
+    );
+
+    const buckets: MonthlyRevenuePoint[] = [];
+    for (let i = monthCount - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      buckets.push({
+        monthKey: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+        monthLabel: new Intl.DateTimeFormat("en-IN", { month: "short" }).format(d),
+        monthTooltip: new Intl.DateTimeFormat("en-IN", {
+          month: "long",
+          year: "numeric",
+        }).format(d),
+        revenue: 0,
+      });
+    }
+
+    const payments = await tx.payment.findMany({
+      where: { gymId, paidAt: { gte: startMonth } },
+      select: { amount: true, paidAt: true },
+    });
+
+    const indexByKey = new Map(buckets.map((b, i) => [b.monthKey, i]));
+
+    for (const payment of payments) {
+      const d = new Date(payment.paidAt);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const idx = indexByKey.get(key);
+      if (idx !== undefined) {
+        buckets[idx].revenue += Number(payment.amount);
+      }
+    }
+
+    return buckets;
+  });
+}

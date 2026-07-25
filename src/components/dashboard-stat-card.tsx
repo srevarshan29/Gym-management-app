@@ -20,54 +20,68 @@ const TONE_CLASSES: Record<
   {
     accent: string;
     icon: string;
+    ring: string;
     hover: string;
     sparkline: string;
     footerLink: string;
+    trend: string;
   }
 > = {
   green: {
-    accent: "from-emerald-500/20 to-transparent",
-    icon: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+    accent: "from-primary/20 to-transparent",
+    icon: "bg-primary/15 text-primary",
+    ring: "ring-border/70",
     hover: "hover:shadow-glow-lift hover:ring-primary/35",
-    sparkline: "hsl(142 71% 45%)",
+    sparkline: "hsl(var(--primary))",
     footerLink: "text-primary",
+    trend: "text-primary",
   },
   blue: {
-    accent: "from-sky-500/20 to-transparent",
-    icon: "bg-sky-500/15 text-sky-600 dark:text-sky-400",
+    accent: "from-primary/20 to-transparent",
+    icon: "bg-primary/15 text-primary",
+    ring: "ring-border/70",
     hover: "hover:shadow-glow-lift hover:ring-primary/35",
-    sparkline: "hsl(199 89% 48%)",
+    sparkline: "hsl(var(--primary))",
     footerLink: "text-primary",
-  },
-  orange: {
-    accent: "from-[hsl(var(--status-expiring)/0.25)] to-transparent",
-    icon: "bg-[hsl(var(--status-expiring)/0.15)] text-[hsl(var(--status-expiring))]",
-    hover:
-      "hover:shadow-[0_0_0_1px_hsl(var(--status-expiring)/0.5),0_0_16px_-2px_hsl(var(--status-expiring)/0.45)] hover:ring-[hsl(var(--status-expiring)/0.4)]",
-    sparkline: "hsl(var(--status-expiring))",
-    footerLink: "text-[hsl(var(--status-expiring))]",
-  },
-  red: {
-    accent: "from-[hsl(var(--status-expired)/0.25)] to-transparent",
-    icon: "bg-[hsl(var(--status-expired)/0.15)] text-[hsl(var(--status-expired))]",
-    hover:
-      "hover:shadow-[0_0_0_1px_hsl(var(--status-expired)/0.5),0_0_16px_-2px_hsl(var(--status-expired)/0.45)] hover:ring-[hsl(var(--status-expired)/0.4)]",
-    sparkline: "hsl(var(--status-expired))",
-    footerLink: "text-[hsl(var(--status-expired))]",
+    trend: "text-primary",
   },
   primary: {
     accent: "from-primary/25 to-transparent",
     icon: "bg-primary/15 text-primary",
+    ring: "ring-border/70",
     hover: "hover:shadow-glow-lift hover:ring-primary/35",
     sparkline: "hsl(var(--primary))",
     footerLink: "text-primary",
+    trend: "text-primary",
   },
   amber: {
-    accent: "from-amber-500/20 to-transparent",
-    icon: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+    accent: "from-primary/15 to-transparent",
+    icon: "bg-primary/15 text-primary",
+    ring: "ring-primary/30",
     hover: "hover:shadow-glow-lift hover:ring-primary/35",
-    sparkline: "hsl(38 92% 50%)",
+    sparkline: "hsl(var(--primary))",
     footerLink: "text-primary",
+    trend: "text-primary",
+  },
+  orange: {
+    accent: "from-[hsl(var(--status-expiring)/0.25)] to-transparent",
+    icon: "bg-[hsl(var(--status-expiring)/0.15)] text-[hsl(var(--status-expiring))]",
+    ring: "ring-[hsl(var(--status-expiring)/0.35)]",
+    hover:
+      "hover:shadow-[0_0_0_1px_hsl(var(--status-expiring)/0.5),0_0_16px_-2px_hsl(var(--status-expiring)/0.45)] hover:ring-[hsl(var(--status-expiring)/0.4)]",
+    sparkline: "hsl(var(--status-expiring))",
+    footerLink: "text-[hsl(var(--status-expiring))]",
+    trend: "text-[hsl(var(--status-expiring))]",
+  },
+  red: {
+    accent: "from-[hsl(var(--status-expired)/0.25)] to-transparent",
+    icon: "bg-[hsl(var(--status-expired)/0.15)] text-[hsl(var(--status-expired))]",
+    ring: "ring-[hsl(var(--status-expired)/0.35)]",
+    hover:
+      "hover:shadow-[0_0_0_1px_hsl(var(--status-expired)/0.5),0_0_16px_-2px_hsl(var(--status-expired)/0.45)] hover:ring-[hsl(var(--status-expired)/0.4)]",
+    sparkline: "hsl(var(--status-expired))",
+    footerLink: "text-[hsl(var(--status-expired))]",
+    trend: "text-[hsl(var(--status-expired))]",
   },
 };
 
@@ -79,6 +93,7 @@ export function DashboardStatCard({
   href,
   tone,
   sparkline,
+  trendLabel,
   footerLabel,
 }: {
   title: string;
@@ -88,17 +103,20 @@ export function DashboardStatCard({
   href: string;
   tone: DashboardStatTone;
   sparkline: number[];
+  trendLabel?: string;
   footerLabel?: string;
 }) {
   const styles = TONE_CLASSES[tone];
+  const showSparkline = !footerLabel;
 
   return (
     <Link href={href} className="group block cursor-pointer">
       <Card
         className={cn(
           "relative overflow-hidden rounded-2xl border-0 bg-card/90 shadow-soft backdrop-blur-sm",
-          "ring-1 ring-border/70 transition-[transform,box-shadow,ring-color] duration-150 ease-out",
+          "ring-1 transition-[transform,box-shadow,ring-color] duration-150 ease-out",
           "hover:-translate-y-0.5",
+          styles.ring,
           styles.hover,
         )}
       >
@@ -110,7 +128,7 @@ export function DashboardStatCard({
           aria-hidden
         />
         <CardContent className="relative space-y-3 p-5">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2.5">
             <div
               className={cn(
                 "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl [&_svg]:size-5",
@@ -119,11 +137,12 @@ export function DashboardStatCard({
             >
               {icon}
             </div>
-            <DashboardStatSparkline data={sparkline} color={styles.sparkline} />
+            <p className="text-sm font-medium leading-tight text-muted-foreground">
+              {title}
+            </p>
           </div>
 
           <div className="min-w-0 space-y-1">
-            <p className="text-sm leading-none text-muted-foreground">{title}</p>
             <p className="font-mono text-3xl font-bold tracking-tight text-foreground">
               {value}
             </p>
@@ -132,17 +151,28 @@ export function DashboardStatCard({
             ) : null}
           </div>
 
-          {footerLabel ? (
-            <p
-              className={cn(
-                "flex items-center gap-1 text-xs font-medium transition-colors",
-                styles.footerLink,
-              )}
-            >
-              {footerLabel}
-              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-            </p>
-          ) : null}
+          <div className="flex min-h-10 items-end justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              {trendLabel ? (
+                <p className={cn("text-xs font-medium", styles.trend)}>
+                  {trendLabel}
+                </p>
+              ) : footerLabel ? (
+                <p
+                  className={cn(
+                    "flex items-center gap-1 text-xs font-medium",
+                    styles.footerLink,
+                  )}
+                >
+                  {footerLabel}
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </p>
+              ) : null}
+            </div>
+            {showSparkline ? (
+              <DashboardStatSparkline data={sparkline} color={styles.sparkline} />
+            ) : null}
+          </div>
         </CardContent>
       </Card>
     </Link>

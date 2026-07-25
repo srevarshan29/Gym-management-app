@@ -16,12 +16,12 @@ export function DashboardStatSparkline({
 
   if (!hasSignal) {
     return (
-      <div className="h-9 w-24 shrink-0 rounded-md bg-muted/40" aria-hidden />
+      <div className="h-10 w-28 shrink-0 rounded-md bg-muted/40" aria-hidden />
     );
   }
 
   return (
-    <div className="h-9 w-24 shrink-0" aria-hidden>
+    <div className="h-10 w-28 shrink-0" aria-hidden>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
           <Area

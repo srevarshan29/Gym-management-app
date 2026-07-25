@@ -23,12 +23,14 @@ export type FinancialSparklines = {
 export type DashboardMetrics = {
   totalMembers: number;
   activeCount: number;
+  activeMembersTrendLabel: string | undefined;
   expiringSoonCount: number;
   expiredCount: number;
   expiringSoon: MemberListItem[];
   newMembersThisMonth: number;
   newMembersLastMonth: number;
   newMembersHint: string;
+  newMembersTrendLabel: string | undefined;
   collectionRatePercent: number;
   collectionCollected: number;
   collectionExpected: number;
@@ -121,14 +123,29 @@ function monthBounds(reference: Date) {
 }
 
 function formatNewMembersHint(thisMonth: number, lastMonth: number): string {
-  if (lastMonth === 0) {
-    if (thisMonth === 0) return "No new members this month";
-    return `+${thisMonth} this month — no joins last month`;
+  if (thisMonth === 0) return "No new members this month";
+  return `+${thisMonth} this month`;
+}
+
+/** Percent change trend label for KPI cards (e.g. "↑ 8% from last month"). */
+export function formatTrendLabel(
+  current: number,
+  previous: number,
+  periodLabel = "last month",
+): string | undefined {
+  if (current === 0 && previous === 0) return undefined;
+  if (previous === 0) {
+    return current > 0 ? `↑ new vs ${periodLabel}` : undefined;
   }
-  const pct = Math.round(((thisMonth - lastMonth) / lastMonth) * 100);
-  const arrow = pct > 0 ? "↑" : pct < 0 ? "↓" : "→";
-  const pctLabel = pct === 0 ? "same as last month" : `${Math.abs(pct)}% from last month`;
-  return `+${thisMonth} this month ${arrow} ${pctLabel}`;
+  const pct = Math.round(((current - previous) / previous) * 100);
+  if (pct === 0) return `→ same as ${periodLabel}`;
+  const arrow = pct > 0 ? "↑" : "↓";
+  return `${arrow} ${Math.abs(pct)}% from ${periodLabel}`;
+}
+
+function sparklineTrendLabel(values: number[], periodLabel = "last week"): string | undefined {
+  if (values.length < 2) return undefined;
+  return formatTrendLabel(values[values.length - 1], values[values.length - 2], periodLabel);
 }
 
 function computePackageDistribution(
@@ -267,15 +284,22 @@ export async function getDashboardMetrics(gymId: string): Promise<DashboardMetri
   const pendingMembers = members.filter((m) => m.pendingAmount > 0);
   const pendingTotal = pendingMembers.reduce((sum, m) => sum + m.pendingAmount, 0);
 
+  const sparklines = computeSparklines(members, now);
+
   return {
     totalMembers: members.length,
     activeCount,
+    activeMembersTrendLabel: sparklineTrendLabel(sparklines.activeMembers),
     expiringSoonCount: expiringSoon.length,
     expiredCount,
     expiringSoon,
     newMembersThisMonth,
     newMembersLastMonth,
     newMembersHint: formatNewMembersHint(newMembersThisMonth, newMembersLastMonth),
+    newMembersTrendLabel: formatTrendLabel(
+      newMembersThisMonth,
+      newMembersLastMonth,
+    ),
     collectionRatePercent,
     collectionCollected,
     collectionExpected,
@@ -284,6 +308,6 @@ export async function getDashboardMetrics(gymId: string): Promise<DashboardMetri
     pendingMemberCount: pendingMembers.length,
     pendingHint: `${formatCurrency(pendingTotal)} • ${pendingMembers.length} member${pendingMembers.length === 1 ? "" : "s"}`,
     packageDistribution: computePackageDistribution(members),
-    sparklines: computeSparklines(members, now),
+    sparklines,
   };
 }

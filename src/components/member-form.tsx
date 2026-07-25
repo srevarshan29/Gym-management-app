@@ -3,8 +3,10 @@
 import * as React from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { toast } from "sonner";
+import { Upload } from "lucide-react";
 
 import { createMember, updateMember } from "@/app/actions/members";
+import { MemberAvatar } from "@/components/member-avatar";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,7 +26,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/utils";
+import { MEMBER_GENDER_OPTIONS } from "@/lib/member-gender";
 import type { ActionResult } from "@/lib/action-result";
+import type { MemberGender } from "@prisma/client";
 
 export type PackageOption = {
   id: string;
@@ -46,6 +50,8 @@ type EditProps = {
     name: string;
     phone: string;
     email: string | null;
+    photoUrl: string | null;
+    gender: MemberGender;
     notes: string | null;
   };
 };
@@ -73,10 +79,32 @@ export function MemberForm(props: Props) {
   );
   const [method, setMethod] = React.useState("CASH");
   const [logPayment, setLogPayment] = React.useState(false);
+  const [photoPreview, setPhotoPreview] = React.useState<string | null>(
+    props.mode === "edit" ? props.member.photoUrl : null,
+  );
+  const [gender, setGender] = React.useState<MemberGender>(
+    props.mode === "edit" ? props.member.gender : "PREFER_NOT_TO_SAY",
+  );
+  const [displayName, setDisplayName] = React.useState(
+    props.mode === "edit" ? props.member.name : "New member",
+  );
 
   React.useEffect(() => {
     if (state && !state.ok) toast.error(state.error);
   }, [state]);
+
+  function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Photo must be smaller than 5MB.");
+      e.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setPhotoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  }
 
   const selectedPackage =
     props.mode === "create"
@@ -95,6 +123,35 @@ export function MemberForm(props: Props) {
           <CardDescription>Basic contact information.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex items-center gap-4">
+            <MemberAvatar
+              name={displayName}
+              photoUrl={photoPreview}
+              gender={gender}
+              seed={props.mode === "edit" ? props.member.id : displayName}
+              size="md"
+            />
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="photo"
+                className="flex w-fit cursor-pointer items-center gap-1.5 rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium shadow-soft hover:bg-accent"
+              >
+                <Upload className="h-4 w-4" /> Upload photo
+              </Label>
+              <input
+                id="photo"
+                name="photo"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={onPhotoChange}
+              />
+              <p className="text-xs text-muted-foreground">
+                PNG or JPG, up to 5MB. Shown on the members list and profile.
+              </p>
+            </div>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="name">Full name</Label>
@@ -104,7 +161,30 @@ export function MemberForm(props: Props) {
                 defaultValue={props.mode === "edit" ? props.member.name : ""}
                 placeholder="Jane Doe"
                 required
+                onChange={(e) => setDisplayName(e.target.value || "New member")}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender</Label>
+              <input type="hidden" name="gender" value={gender} />
+              <Select
+                value={gender}
+                onValueChange={(value) => setGender(value as MemberGender)}
+              >
+                <SelectTrigger id="gender">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MEMBER_GENDER_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Used for the default avatar when no photo is uploaded.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone number</Label>

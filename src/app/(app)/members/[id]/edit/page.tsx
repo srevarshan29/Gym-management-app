@@ -39,6 +39,8 @@ export default async function EditMemberPage({
           name: member.name,
           phone: member.phone,
           email: member.email,
+          photoUrl: member.photoUrl,
+          gender: member.gender,
           notes: member.notes,
         }}
       />

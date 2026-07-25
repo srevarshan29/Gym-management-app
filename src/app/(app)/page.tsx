@@ -1,18 +1,37 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Users, TrendingUp, AlertTriangle, CalendarClock, LineChart } from "lucide-react";
+import {
+  Users,
+  TrendingUp,
+  AlertTriangle,
+  CalendarClock,
+  LineChart,
+  UserPlus,
+  Percent,
+  Wallet,
+  PieChart,
+} from "lucide-react";
 
 import { requireGym } from "@/lib/session";
-import { canViewFinancials } from "@/lib/permissions";
+import {
+  canLogPayments,
+  canManageMembers,
+  canManagePackages,
+  canViewFinancials,
+} from "@/lib/permissions";
 import { withTenant } from "@/lib/db-context";
-import { getMembersWithStatus } from "@/lib/queries";
+import { getDashboardMetrics } from "@/lib/dashboard-metrics";
 import { getMonthlyRevenueTrend } from "@/lib/revenue";
-import { formatCurrency, formatDate, initials } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { daysUntil } from "@/lib/subscription";
 import { PageHeader } from "@/components/page-header";
+import { MemberAvatar } from "@/components/member-avatar";
 import { RevenueTrendChart } from "@/components/revenue-trend-chart";
+import { PackageDistributionChart } from "@/components/package-distribution-chart";
+import { DashboardStatCard } from "@/components/dashboard-stat-card";
+import { DashboardAlerts } from "@/components/dashboard-alerts";
+import { DashboardQuickActions } from "@/components/dashboard-quick-actions";
 import { StatusBadge } from "@/components/status-badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Card,
   CardContent,
@@ -24,16 +43,26 @@ import {
 export default async function DashboardPage() {
   const user = await requireGym();
   const showFinancials = canViewFinancials(user.role);
+  const canLog = canLogPayments(user.role);
 
   return (
-    <div>
-      <PageHeader
-        title={`Welcome back${user.name ? `, ${user.name.split(" ")[0]}` : ""}`}
-        description="Here is what is happening at your gym."
-      />
-
-      <Suspense fallback={<DashboardSkeleton showFinancials={showFinancials} />}>
-        <DashboardBody gymId={user.gymId} showFinancials={showFinancials} />
+    <div className="relative">
+      <Suspense
+        fallback={
+          <DashboardSkeleton
+            showFinancials={showFinancials}
+            showPending={canLog}
+          />
+        }
+      >
+        <DashboardBody
+          gymId={user.gymId}
+          userName={user.name ?? null}
+          showFinancials={showFinancials}
+          canLogPayments={canLog}
+          canManageMembers={canManageMembers(user.role)}
+          canManagePackages={canManagePackages(user.role)}
+        />
       </Suspense>
     </div>
   );
@@ -41,22 +70,20 @@ export default async function DashboardPage() {
 
 async function DashboardBody({
   gymId,
+  userName,
   showFinancials,
+  canLogPayments,
+  canManageMembers,
+  canManagePackages,
 }: {
   gymId: string;
+  userName: string | null;
   showFinancials: boolean;
+  canLogPayments: boolean;
+  canManageMembers: boolean;
+  canManagePackages: boolean;
 }) {
-  const members = await getMembersWithStatus(gymId);
-
-  const activeCount = members.filter(
-    (m) => m.status === "ACTIVE" || m.status === "EXPIRING_SOON",
-  ).length;
-  const expiringSoon = members
-    .filter((m) => m.status === "EXPIRING_SOON")
-    .sort(
-      (a, b) => (a.endDate?.getTime() ?? 0) - (b.endDate?.getTime() ?? 0),
-    );
-  const expiredCount = members.filter((m) => m.status === "EXPIRED").length;
+  const metrics = await getDashboardMetrics(gymId);
 
   let monthRevenue = 0;
   let revenueTrend: Awaited<ReturnType<typeof getMonthlyRevenueTrend>> = [];
@@ -79,57 +106,134 @@ async function DashboardBody({
 
   return (
     <>
-      <div
-        className={`grid gap-4 sm:grid-cols-2 ${showFinancials ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}
-      >
-        <StatCard
-          title="Active members"
-          value={String(activeCount)}
-          icon={<Users className="h-5 w-5" />}
-          hint={`${members.length} total members`}
-        />
-
-        {showFinancials ? (
-          <StatCard
-            title="Revenue this month"
-            value={formatCurrency(monthRevenue)}
-            icon={<TrendingUp className="h-5 w-5" />}
-            hint="Payments recorded this month"
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 flex-1 [&>div]:mb-0">
+          <PageHeader
+            title={`Welcome back${userName ? `, ${userName.split(" ")[0]}` : ""}`}
+            description="Here is what is happening at your gym."
           />
-        ) : null}
-
-        <StatCard
-          title="Expiring soon"
-          value={String(expiringSoon.length)}
-          icon={<CalendarClock className="h-5 w-5" />}
-          hint="Ending within 7 days"
-        />
-
-        <StatCard
-          title="Expired subscriptions"
-          value={String(expiredCount)}
-          icon={<AlertTriangle className="h-5 w-5" />}
-          hint="Members who need to renew"
+        </div>
+        <DashboardQuickActions
+          canManageMembers={canManageMembers}
+          canLogPayments={canLogPayments}
+          canManagePackages={canManagePackages}
         />
       </div>
 
-      {showFinancials ? (
-        <Card className="mt-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <DashboardStatCard
+          title="Active members"
+          value={String(metrics.activeCount)}
+          hint={`${metrics.totalMembers} total members`}
+          icon={<Users className="h-5 w-5" />}
+          href="/members"
+          tone="green"
+        />
+
+        <DashboardStatCard
+          title="New members this month"
+          value={String(metrics.newMembersThisMonth)}
+          hint={metrics.newMembersHint}
+          icon={<UserPlus className="h-5 w-5" />}
+          href="/members"
+          tone="primary"
+        />
+
+        {showFinancials ? (
+          <DashboardStatCard
+            title="Revenue this month"
+            value={formatCurrency(monthRevenue)}
+            hint="Payments recorded this month"
+            icon={<TrendingUp className="h-5 w-5" />}
+            href="/payments"
+            tone="blue"
+          />
+        ) : null}
+
+        <DashboardStatCard
+          title="Expiring soon"
+          value={String(metrics.expiringSoonCount)}
+          hint="Ending within 7 days"
+          icon={<CalendarClock className="h-5 w-5" />}
+          href="/renewals"
+          tone="orange"
+        />
+
+        <DashboardStatCard
+          title="Expired subscriptions"
+          value={String(metrics.expiredCount)}
+          hint="Members who need to renew"
+          icon={<AlertTriangle className="h-5 w-5" />}
+          href="/expired"
+          tone="red"
+        />
+
+        {showFinancials ? (
+          <DashboardStatCard
+            title="Collection rate"
+            value={`${metrics.collectionRatePercent}%`}
+            hint={metrics.collectionHint}
+            icon={<Percent className="h-5 w-5" />}
+            href="/payments"
+            tone="blue"
+          />
+        ) : null}
+
+        {canLogPayments ? (
+          <DashboardStatCard
+            title="Pending payments"
+            value={formatCurrency(metrics.pendingTotal)}
+            hint={metrics.pendingHint}
+            icon={<Wallet className="h-5 w-5" />}
+            href="/payments"
+            tone="amber"
+          />
+        ) : null}
+      </div>
+
+      <DashboardAlerts
+        expiredCount={metrics.expiredCount}
+        expiringSoonCount={metrics.expiringSoonCount}
+        pendingCount={metrics.pendingMemberCount}
+        showPending={canLogPayments}
+      />
+
+      <div
+        className={`mt-6 grid gap-6 ${showFinancials ? "lg:grid-cols-2" : ""}`}
+      >
+        {showFinancials ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LineChart className="h-5 w-5 text-muted-foreground" />
+                Revenue trend
+              </CardTitle>
+              <CardDescription>
+                Monthly payments collected over the last 6 months (actual amounts
+                paid, including partial installments).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RevenueTrendChart data={revenueTrend} />
+            </CardContent>
+          </Card>
+        ) : null}
+
+        <Card className={showFinancials ? undefined : "col-span-full"}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <LineChart className="h-5 w-5 text-muted-foreground" />
-              Revenue trend
+              <PieChart className="h-5 w-5 text-muted-foreground" />
+              Membership distribution
             </CardTitle>
             <CardDescription>
-              Monthly payments collected over the last 6 months (actual amounts
-              paid, including partial installments).
+              Active members by package type.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <RevenueTrendChart data={revenueTrend} />
+            <PackageDistributionChart data={metrics.packageDistribution} />
           </CardContent>
         </Card>
-      ) : null}
+      </div>
 
       <Card className="mt-6">
         <CardHeader>
@@ -142,24 +246,28 @@ async function DashboardBody({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {expiringSoon.length === 0 ? (
+          {metrics.expiringSoon.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
               No subscriptions expiring in the next 7 days.
             </p>
           ) : (
             <ul className="divide-y">
-              {expiringSoon.map((m) => {
+              {metrics.expiringSoon.map((m) => {
                 const days = m.endDate ? daysUntil(m.endDate) : 0;
                 return (
                   <li key={m.id}>
                     <Link
                       href={`/members/${m.id}`}
-                      className="flex items-center justify-between gap-4 py-3 transition-colors hover:bg-accent/50"
+                      className="hover-lift-row flex items-center justify-between gap-4 py-3 transition-colors hover:bg-accent/50"
                     >
                       <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarFallback>{initials(m.name)}</AvatarFallback>
-                        </Avatar>
+                        <MemberAvatar
+                          name={m.name}
+                          photoUrl={m.photoUrl}
+                          gender={m.gender}
+                          seed={m.id}
+                          size="sm"
+                        />
                         <div>
                           <p className="font-medium">{m.name}</p>
                           <p className="text-xs text-muted-foreground">
@@ -190,13 +298,21 @@ async function DashboardBody({
   );
 }
 
-function DashboardSkeleton({ showFinancials }: { showFinancials: boolean }) {
-  const cardCount = showFinancials ? 4 : 3;
+function DashboardSkeleton({
+  showFinancials,
+  showPending,
+}: {
+  showFinancials: boolean;
+  showPending: boolean;
+}) {
+  let cardCount = 4;
+  if (showFinancials) cardCount = 7;
+  else if (showPending) cardCount = 5;
+
   return (
     <div className="animate-pulse">
-      <div
-        className={`grid gap-4 sm:grid-cols-2 ${showFinancials ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}
-      >
+      <div className="mb-6 h-16 rounded-lg bg-muted/50" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {Array.from({ length: cardCount }).map((_, i) => (
           <Card key={i}>
             <CardContent className="flex items-center gap-4 p-6">
@@ -209,17 +325,32 @@ function DashboardSkeleton({ showFinancials }: { showFinancials: boolean }) {
           </Card>
         ))}
       </div>
-      {showFinancials ? (
-        <Card className="mt-6">
+      <Card className="mt-6">
+        <CardHeader>
+          <div className="h-5 w-40 rounded bg-muted" />
+        </CardHeader>
+        <CardContent className="h-12 rounded bg-muted/50" />
+      </Card>
+      <div className={`mt-6 grid gap-6 ${showFinancials ? "lg:grid-cols-2" : ""}`}>
+        {showFinancials ? (
+          <Card>
+            <CardHeader>
+              <div className="h-5 w-36 rounded bg-muted" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-[280px] rounded-lg bg-muted/50" />
+            </CardContent>
+          </Card>
+        ) : null}
+        <Card>
           <CardHeader>
-            <div className="h-5 w-36 rounded bg-muted" />
-            <div className="mt-2 h-4 w-64 rounded bg-muted" />
+            <div className="h-5 w-44 rounded bg-muted" />
           </CardHeader>
           <CardContent>
             <div className="h-[280px] rounded-lg bg-muted/50" />
           </CardContent>
         </Card>
-      ) : null}
+      </div>
       <Card className="mt-6">
         <CardHeader>
           <div className="h-5 w-40 rounded bg-muted" />
@@ -237,40 +368,5 @@ function DashboardSkeleton({ showFinancials }: { showFinancials: boolean }) {
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-const STAT_ICON_CLASSES = "bg-muted text-muted-foreground";
-
-function StatCard({
-  title,
-  value,
-  icon,
-  hint,
-}: {
-  title: string;
-  value: string;
-  icon: React.ReactNode;
-  hint?: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="flex items-center gap-4 p-6">
-        <div
-          className={`flex h-12 w-12 items-center justify-center rounded-xl ${STAT_ICON_CLASSES}`}
-        >
-          {icon}
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="font-mono text-2xl font-bold tracking-tight text-foreground">
-            {value}
-          </p>
-          {hint ? (
-            <p className="text-xs text-muted-foreground">{hint}</p>
-          ) : null}
-        </div>
-      </CardContent>
-    </Card>
   );
 }

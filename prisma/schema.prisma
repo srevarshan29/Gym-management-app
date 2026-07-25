@@ -31,6 +31,13 @@ enum PaymentMethod {
   OTHER
 }
 
+enum MemberGender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
 // A tenant. Every gym-scoped row belongs to exactly one Gym. memberSeq and
 // receiptSeq are atomically incremented (via a single UPDATE ... RETURNING)
 // to hand out per-gym sequential numbers without collisions.
@@ -97,6 +104,8 @@ model Member {
   name         String
   phone        String
   email        String?
+  photoUrl     String?
+  gender       MemberGender @default(PREFER_NOT_TO_SAY)
   notes        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -129,6 +138,8 @@ model Subscription {
 
   @@index([gymId])
   @@index([memberId])
+  @@index([packageId])
+  @@index([createdById])
   @@index([endDate])
 }
 
@@ -155,6 +166,7 @@ model Payment {
   @@index([memberId])
   @@index([paidAt])
   @@index([subscriptionId])
+  @@index([recordedById])
 }
 
 // Gym profile / branding shown on receipts. One row per gym.

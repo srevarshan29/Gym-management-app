@@ -7,12 +7,14 @@ import { canViewFinancials, canDeleteMembers, canLogPayments } from "@/lib/permi
 import { withTenant } from "@/lib/db-context";
 import { getMemberDetail } from "@/lib/queries";
 import { durationLabel, statusFromEndDate } from "@/lib/subscription";
+import { memberGenderLabel } from "@/lib/member-gender";
 import {
   computeSubscriptionBalance,
   sumPaymentAmounts,
 } from "@/lib/subscription-balance";
-import { cn, formatCurrency, formatDate, initials } from "@/lib/utils";
+import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
+import { MemberAvatar } from "@/components/member-avatar";
 import { PendingDuesBadge, StatusBadge } from "@/components/status-badge";
 import { RenewDialog } from "@/components/renew-dialog";
 import { PaymentDialog } from "@/components/payment-dialog";
@@ -20,7 +22,6 @@ import { DeleteMemberButton } from "@/components/delete-member-button";
 import { AutoOpenReceipt } from "@/components/auto-open-receipt";
 import type { PackageOption } from "@/components/member-form";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Card,
   CardContent,
@@ -100,9 +101,13 @@ export default async function MemberProfilePage({
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <Avatar className="h-14 w-14 text-lg">
-            <AvatarFallback>{initials(member.name)}</AvatarFallback>
-          </Avatar>
+          <MemberAvatar
+            name={member.name}
+            photoUrl={member.photoUrl}
+            gender={member.gender}
+            seed={member.id}
+            size="lg"
+          />
           <div>
             <div className="flex items-center gap-3">
               <h1 className="font-display text-2xl font-bold tracking-tight">
@@ -164,6 +169,7 @@ export default async function MemberProfilePage({
               value={current ? formatDate(current.endDate) : "—"}
               mono
             />
+            <Detail label="Gender" value={memberGenderLabel(member.gender)} />
             <Detail label="Member since" value={formatDate(member.createdAt)} mono />
             <Detail label="Added by" value={addedByName ?? "—"} />
             {canLog && currentBalance ? (

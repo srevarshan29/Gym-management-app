@@ -6,6 +6,10 @@ import { z } from "zod";
 import { withTenant } from "@/lib/db-context";
 import { requireGym } from "@/lib/session";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
+import {
+  isDisplayNameTakenInGym,
+  normalizeDisplayName,
+} from "@/lib/user-display-name";
 
 const updateMyProfileSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
@@ -22,42 +26,37 @@ export async function updateMyProfile(
     return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
   }
 
-  const name = parsed.data.name;
+  const name = normalizeDisplayName(parsed.data.name);
 
-  const current = await withTenant(user.gymId, (tx) =>
-    tx.user.findFirst({
+  const outcome = await withTenant(user.gymId, async (tx) => {
+    const current = await tx.user.findFirst({
       where: { id: user.id, gymId: user.gymId },
       select: { name: true },
-    }),
-  );
-  if (!current) {
-    return actionError("Could not update profile.");
-  }
-
-  if (name !== current.name) {
-    const taken = await withTenant(user.gymId, (tx) =>
-      tx.user.findFirst({
-        where: {
-          gymId: user.gymId,
-          id: { not: user.id },
-          name,
-        },
-        select: { id: true },
-      }),
-    );
-    if (taken) {
-      return actionError("This name is already in use");
+    });
+    if (!current) {
+      return { ok: false as const, error: "Could not update profile." };
     }
-  }
 
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.user.updateMany({
+    const nameChanged =
+      name.localeCompare(current.name, undefined, { sensitivity: "accent" }) !==
+      0;
+    if (nameChanged && (await isDisplayNameTakenInGym(tx, user.gymId, name, user.id))) {
+      return { ok: false as const, error: "This name is already in use" };
+    }
+
+    const result = await tx.user.updateMany({
       where: { id: user.id, gymId: user.gymId },
       data: { name },
-    }),
-  );
-  if (result.count === 0) {
-    return actionError("Could not update profile.");
+    });
+    if (result.count === 0) {
+      return { ok: false as const, error: "Could not update profile." };
+    }
+
+    return { ok: true as const };
+  });
+
+  if (!outcome.ok) {
+    return actionError(outcome.error);
   }
 
   revalidatePath("/", "layout");

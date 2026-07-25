@@ -15,23 +15,54 @@
 
 # misc
 .DS_Store
+Thumbs.db
 *.pem
+*.key
+*.p12
+*.pfx
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# local env files
+# local env files — never commit secrets (keep .env.example as the template)
 .env
-.env*.local
+.env.*
+!.env.example
 
-# vercel
+# auth / cloud provider credentials
+auth.json
+credentials.json
+service-account*.json
+*.credentials.json
+
+# vercel (contains project/org tokens)
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
-# prisma
+# prisma — local SQLite dev databases
 /prisma/*.db
+/prisma/*.db-journal
+*.db
+*.db-journal
+
+# supabase local CLI state (can include linked project refs)
+.supabase/
+
+# IDE / editor (optional local settings)
+.idea/
+*.swp
+*.swo
+*~
+
+# turbo
+.turbo/
+
+# local uploads / scratch (if added later)
+/uploads/
+/tmp/

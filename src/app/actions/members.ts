@@ -11,12 +11,21 @@ import { computeEndDate } from "@/lib/subscription";
 import { createReceiptForPayment } from "@/lib/receipts";
 import { nextMemberNumber } from "@/lib/gym-sequence";
 import { notifyPaymentLogged } from "@/lib/notifications";
+import { uploadMemberPhoto } from "@/lib/storage";
 import { actionError, type ActionResult } from "@/lib/action-result";
+
+const memberGenderSchema = z.enum([
+  "MALE",
+  "FEMALE",
+  "OTHER",
+  "PREFER_NOT_TO_SAY",
+]);
 
 const createSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
   phone: z.string().trim().min(3, "Phone number is required").max(30),
   email: z.string().trim().email("Enter a valid email").optional().or(z.literal("")),
+  gender: memberGenderSchema.default("PREFER_NOT_TO_SAY"),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
   packageId: z.string().trim().min(1, "Select a package"),
   startDate: z.string().optional(),
@@ -30,8 +39,32 @@ const updateSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
   phone: z.string().trim().min(3, "Phone number is required").max(30),
   email: z.string().trim().email("Enter a valid email").optional().or(z.literal("")),
+  gender: memberGenderSchema.default("PREFER_NOT_TO_SAY"),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
 });
+
+async function persistMemberPhoto(
+  gymId: string,
+  memberId: string,
+  formData: FormData,
+): Promise<string | undefined> {
+  const photo = formData.get("photo");
+  if (!(photo instanceof File) || photo.size === 0) return undefined;
+
+  const result = await uploadMemberPhoto(photo, memberId);
+  if ("error" in result) {
+    console.warn(`[members] photo upload failed for ${memberId}:`, result.error);
+    return undefined;
+  }
+
+  await withTenant(gymId, (tx) =>
+    tx.member.updateMany({
+      where: { id: memberId, gymId },
+      data: { photoUrl: result.url },
+    }),
+  );
+  return result.url;
+}
 
 export async function createMember(
   _prev: ActionResult | undefined,
@@ -79,6 +112,7 @@ export async function createMember(
         name: data.name,
         phone: data.phone,
         email: data.email || null,
+        gender: data.gender,
         notes: data.notes || null,
       },
     });
@@ -114,6 +148,8 @@ export async function createMember(
     return { member: created, paymentId: createdPaymentId };
   });
 
+  await persistMemberPhoto(gymId, member.id, formData);
+
   revalidatePath("/members");
   revalidatePath("/");
 
@@ -136,17 +172,25 @@ export async function updateMember(
   if (!parsed.success) {
     return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
   }
-  const { id, name, phone, email, notes } = parsed.data;
+  const { id, name, phone, email, gender, notes } = parsed.data;
 
   const result = await withTenant(user.gymId, (tx) =>
     tx.member.updateMany({
       where: { id, gymId: user.gymId },
-      data: { name, phone, email: email || null, notes: notes || null },
+      data: {
+        name,
+        phone,
+        email: email || null,
+        gender,
+        notes: notes || null,
+      },
     }),
   );
   if (result.count === 0) {
     return actionError("Member not found.");
   }
+
+  await persistMemberPhoto(user.gymId, id, formData);
 
   revalidatePath("/members");
   revalidatePath(`/members/${id}`);

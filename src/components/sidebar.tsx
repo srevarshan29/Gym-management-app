@@ -10,6 +10,8 @@ import {
   CreditCard,
   Settings,
   Dumbbell,
+  CalendarClock,
+  CalendarX2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,6 +28,8 @@ type NavItem = {
 const NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/members", label: "Members", icon: Users },
+  { href: "/renewals", label: "Upcoming Renewals", icon: CalendarClock },
+  { href: "/expired", label: "Expired Memberships", icon: CalendarX2 },
   { href: "/packages", label: "Packages", icon: Package },
   {
     href: "/payments",

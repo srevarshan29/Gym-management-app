@@ -31,6 +31,19 @@ export function statusFromEndDate(
   return "ACTIVE";
 }
 
+/** Human-readable label for how long ago a subscription expired. */
+export function expiredDaysAgoLabel(
+  endDate: Date | string,
+  now: Date = new Date(),
+): string {
+  const days = daysUntil(endDate, now);
+  if (days >= 0) return "";
+  const ago = Math.abs(days);
+  if (ago === 0) return "Expired today";
+  if (ago === 1) return "Expired 1 day ago";
+  return `Expired ${ago} days ago`;
+}
+
 /** Compute the end date of a subscription given a start date and a package duration. */
 export function computeEndDate(
   startDate: Date,

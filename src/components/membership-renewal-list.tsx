@@ -1,0 +1,160 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { ArrowRight, Search } from "lucide-react";
+import type { MemberGender } from "@prisma/client";
+
+import { MemberAvatar } from "@/components/member-avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { expiredDaysAgoLabel } from "@/lib/subscription";
+import { formatDate } from "@/lib/utils";
+
+export type MembershipRenewalListItem = {
+  id: string;
+  memberNumber: number;
+  name: string;
+  phone: string;
+  photoUrl: string | null;
+  gender: MemberGender;
+  packageName: string;
+  endDate: string;
+};
+
+type MembershipRenewalListProps = {
+  items: MembershipRenewalListItem[];
+  variant: "expired" | "upcoming";
+  emptyMessage: string;
+  searchPlaceholder: string;
+};
+
+function matchesSearch(
+  item: MembershipRenewalListItem,
+  query: string,
+): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    item.name.toLowerCase().includes(q) ||
+    item.packageName.toLowerCase().includes(q)
+  );
+}
+
+export function MembershipRenewalList({
+  items,
+  variant,
+  emptyMessage,
+  searchPlaceholder,
+}: MembershipRenewalListProps) {
+  const [query, setQuery] = React.useState("");
+  const filtered = React.useMemo(
+    () => items.filter((item) => matchesSearch(item, query)),
+    [items, query],
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="relative max-w-md">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={searchPlaceholder}
+          className="pl-9"
+          aria-label="Search members"
+        />
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          {items.length === 0 ? (
+            <p className="py-12 text-center text-sm text-muted-foreground">
+              {emptyMessage}
+            </p>
+          ) : filtered.length === 0 ? (
+            <p className="py-12 text-center text-sm text-muted-foreground">
+              No members match your search.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Member</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Package</TableHead>
+                  <TableHead>Expiry date</TableHead>
+                  {variant === "expired" ? (
+                    <TableHead>Expired</TableHead>
+                  ) : null}
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((item) => {
+                  const endDate = new Date(item.endDate);
+                  return (
+                    <TableRow key={item.id} className="hover-lift-row">
+                      <TableCell className="min-w-[140px] max-w-[200px] px-3 py-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <MemberAvatar
+                            name={item.name}
+                            photoUrl={item.photoUrl}
+                            gender={item.gender}
+                            seed={item.id}
+                            size="sm"
+                          />
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">{item.name}</p>
+                            <p className="font-mono text-xs text-muted-foreground">
+                              #{String(item.memberNumber).padStart(4, "0")}
+                            </p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap px-3 py-3 font-mono tabular-nums">
+                        {item.phone}
+                      </TableCell>
+                      <TableCell className="px-3 py-3">{item.packageName}</TableCell>
+                      <TableCell className="whitespace-nowrap px-3 py-3 font-mono">
+                        {formatDate(endDate)}
+                      </TableCell>
+                      {variant === "expired" ? (
+                        <TableCell className="whitespace-nowrap px-3 py-3 text-status-expired">
+                          {expiredDaysAgoLabel(endDate)}
+                        </TableCell>
+                      ) : null}
+                      <TableCell className="px-3 py-3 text-right">
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="sm"
+                          className="gap-1 hover-lift"
+                        >
+                          <Link href={`/members/${item.id}`}>
+                            View profile
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

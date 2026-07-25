@@ -46,7 +46,13 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
-export function PackageDialog({ pkg }: { pkg?: PackageInput }) {
+export function PackageDialog({
+  pkg,
+  trigger,
+}: {
+  pkg?: PackageInput;
+  trigger?: React.ReactNode;
+}) {
   const isEdit = Boolean(pkg);
   const [open, setOpen] = React.useState(false);
   const [unit, setUnit] = React.useState<"MONTHS" | "DAYS">(
@@ -75,15 +81,16 @@ export function PackageDialog({ pkg }: { pkg?: PackageInput }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {isEdit ? (
-          <Button variant="ghost" size="sm" className="gap-1">
-            <Pencil className="h-4 w-4" /> Edit
-          </Button>
-        ) : (
-          <Button className="gap-1">
-            <Plus className="h-4 w-4" /> New package
-          </Button>
-        )}
+        {trigger ??
+          (isEdit ? (
+            <Button variant="ghost" size="sm" className="gap-1">
+              <Pencil className="h-4 w-4" /> Edit
+            </Button>
+          ) : (
+            <Button className="gap-1">
+              <Plus className="h-4 w-4" /> New package
+            </Button>
+          ))}
       </DialogTrigger>
       <DialogContent>
         <form action={formAction} className="space-y-4">

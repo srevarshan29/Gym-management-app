@@ -3,11 +3,11 @@ import { Plus } from "lucide-react";
 
 import { requireGym } from "@/lib/session";
 import { getMembersWithStatus } from "@/lib/queries";
-import { formatCurrency, formatDate, initials } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
+import { MemberAvatar } from "@/components/member-avatar";
 import { PendingDuesBadge, StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -58,28 +58,32 @@ export default async function MembersPage() {
               <TableBody>
                 {members.map((m) => (
                   <TableRow key={m.id} className="cursor-pointer">
-                    <TableCell>
+                    <TableCell className="px-3 py-3">
                       <Link href={`/members/${m.id}`} className="block font-mono text-muted-foreground">
                         #{String(m.memberNumber).padStart(4, "0")}
                       </Link>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="min-w-[140px] max-w-[200px] px-3 py-3">
                       <Link
                         href={`/members/${m.id}`}
-                        className="flex items-center gap-3"
+                        className="flex min-w-0 items-center gap-2"
                       >
-                        <Avatar>
-                          <AvatarFallback>{initials(m.name)}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{m.name}</span>
+                        <MemberAvatar
+                          name={m.name}
+                          photoUrl={m.photoUrl}
+                          gender={m.gender}
+                          seed={m.id}
+                          size="sm"
+                        />
+                        <span className="truncate font-medium">{m.name}</span>
                       </Link>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap px-3 py-3 tabular-nums">
                       <Link href={`/members/${m.id}`} className="block font-mono">
                         {m.phone}
                       </Link>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="px-3 py-3">
                       <Link href={`/members/${m.id}`} className="block">
                         {m.packageName ?? (
                           <span className="text-muted-foreground">
@@ -88,12 +92,12 @@ export default async function MembersPage() {
                         )}
                       </Link>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="px-3 py-3">
                       <Link href={`/members/${m.id}`} className="block text-muted-foreground">
                         {m.addedByName ?? "—"}
                       </Link>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="px-3 py-3">
                       <Link href={`/members/${m.id}`} className="block">
                         <div className="flex flex-wrap items-center gap-2">
                           <StatusBadge status={m.status} />
@@ -101,7 +105,7 @@ export default async function MembersPage() {
                         </div>
                       </Link>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="px-3 py-3">
                       <Link href={`/members/${m.id}`} className="block font-mono">
                         {m.pendingAmount > 0 ? (
                           formatCurrency(m.pendingAmount)
@@ -110,7 +114,7 @@ export default async function MembersPage() {
                         )}
                       </Link>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="px-3 py-3">
                       <Link href={`/members/${m.id}`} className="block font-mono">
                         {m.endDate ? (
                           formatDate(m.endDate)

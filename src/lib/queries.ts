@@ -1,5 +1,7 @@
 import type { Prisma } from "@prisma/client";
 
+import type { MemberGender } from "@prisma/client";
+
 import { withTenant } from "@/lib/db-context";
 import {
   computeSubscriptionBalance,
@@ -15,6 +17,8 @@ export type MemberListItem = {
   memberNumber: number;
   name: string;
   phone: string;
+  photoUrl: string | null;
+  gender: MemberGender;
   packageName: string | null;
   currentSubscriptionId: string | null;
   startDate: Date | null;
@@ -65,6 +69,8 @@ async function fetchMembersWithStatus(
       memberNumber: m.memberNumber,
       name: m.name,
       phone: m.phone,
+      photoUrl: m.photoUrl,
+      gender: m.gender,
       packageName: current?.package.name ?? null,
       currentSubscriptionId: current?.id ?? null,
       startDate: current?.startDate ?? null,
@@ -125,6 +131,60 @@ export async function getPendingMembers(gymId: string): Promise<PendingMember[]>
       endDate: m.endDate!,
       status: m.status,
     }));
+}
+
+export type MembershipRenewalRow = {
+  id: string;
+  memberNumber: number;
+  name: string;
+  phone: string;
+  photoUrl: string | null;
+  gender: MemberGender;
+  packageName: string;
+  endDate: Date;
+};
+
+function toMembershipRenewalRow(
+  m: MemberListItem & { endDate: Date },
+): MembershipRenewalRow {
+  return {
+    id: m.id,
+    memberNumber: m.memberNumber,
+    name: m.name,
+    phone: m.phone,
+    photoUrl: m.photoUrl,
+    gender: m.gender,
+    packageName: m.packageName ?? "—",
+    endDate: m.endDate,
+  };
+}
+
+/** Members whose current subscription has expired, most recently expired first. */
+export async function getExpiredMemberships(
+  gymId: string,
+): Promise<MembershipRenewalRow[]> {
+  const members = await getMembersWithStatus(gymId);
+  return members
+    .filter(
+      (m): m is MemberListItem & { endDate: Date } =>
+        m.status === "EXPIRED" && m.endDate != null,
+    )
+    .sort((a, b) => b.endDate.getTime() - a.endDate.getTime())
+    .map(toMembershipRenewalRow);
+}
+
+/** Members expiring within EXPIRING_SOON_DAYS, soonest expiry first. */
+export async function getUpcomingRenewals(
+  gymId: string,
+): Promise<MembershipRenewalRow[]> {
+  const members = await getMembersWithStatus(gymId);
+  return members
+    .filter(
+      (m): m is MemberListItem & { endDate: Date } =>
+        m.status === "EXPIRING_SOON" && m.endDate != null,
+    )
+    .sort((a, b) => a.endDate.getTime() - b.endDate.getTime())
+    .map(toMembershipRenewalRow);
 }
 
 /**

@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const MAX_LOGO_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 let cachedClient: SupabaseClient | null | undefined;
 
@@ -21,25 +21,22 @@ function getSupabaseAdmin(): SupabaseClient | null {
 
 export type UploadResult = { url: string } | { error: string };
 
-/** Uploads a gym logo image to Supabase Storage and returns its public URL. */
-export async function uploadGymLogo(file: File): Promise<UploadResult> {
+async function uploadImage(file: File, path: string): Promise<UploadResult> {
   const supabase = getSupabaseAdmin();
   if (!supabase) {
     return {
       error:
-        "Logo upload is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to enable it.",
+        "Image upload is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to enable it.",
     };
   }
   if (!file.type.startsWith("image/")) {
-    return { error: "Logo must be an image file." };
+    return { error: "File must be an image." };
   }
-  if (file.size > MAX_LOGO_BYTES) {
-    return { error: "Logo must be smaller than 5MB." };
+  if (file.size > MAX_IMAGE_BYTES) {
+    return { error: "Image must be smaller than 5MB." };
   }
 
   const bucket = process.env.SUPABASE_STORAGE_BUCKET || "gym-assets";
-  const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-  const path = `logo-${Date.now()}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
   const { error: uploadError } = await supabase.storage
@@ -47,9 +44,24 @@ export async function uploadGymLogo(file: File): Promise<UploadResult> {
     .upload(path, buffer, { contentType: file.type, upsert: true });
 
   if (uploadError) {
-    return { error: `Could not upload logo: ${uploadError.message}` };
+    return { error: `Could not upload image: ${uploadError.message}` };
   }
 
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return { url: data.publicUrl };
+}
+
+/** Uploads a gym logo image to Supabase Storage and returns its public URL. */
+export async function uploadGymLogo(file: File): Promise<UploadResult> {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+  return uploadImage(file, `logo-${Date.now()}.${ext}`);
+}
+
+/** Uploads a member profile photo and returns its public URL. */
+export async function uploadMemberPhoto(
+  file: File,
+  memberId: string,
+): Promise<UploadResult> {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  return uploadImage(file, `members/${memberId}-${Date.now()}.${ext}`);
 }

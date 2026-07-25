@@ -8,6 +8,7 @@ import { withPlatformLookup, withTenant } from "@/lib/db-context";
 import { requireGym } from "@/lib/session";
 import { canManageStaff } from "@/lib/permissions";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
+import { isDisplayNameTakenInGym, normalizeDisplayName } from "@/lib/user-display-name";
 
 const createStaffSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
@@ -30,6 +31,7 @@ export async function createStaff(
     return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
   }
   const { name, email, password, role } = parsed.data;
+  const displayName = normalizeDisplayName(name);
 
   const existing = await withPlatformLookup((tx) =>
     tx.user.findUnique({ where: { email } }),
@@ -38,10 +40,23 @@ export async function createStaff(
     return actionError("An account with that email already exists.");
   }
 
+  const nameTaken = await withTenant(user.gymId, (tx) =>
+    isDisplayNameTakenInGym(tx, user.gymId, displayName),
+  );
+  if (nameTaken) {
+    return actionError("This name is already in use");
+  }
+
   const passwordHash = await bcrypt.hash(password, 10);
   await withTenant(user.gymId, (tx) =>
     tx.user.create({
-      data: { name, email, passwordHash, role, gymId: user.gymId },
+      data: {
+        name: displayName,
+        email,
+        passwordHash,
+        role,
+        gymId: user.gymId,
+      },
     }),
   );
 

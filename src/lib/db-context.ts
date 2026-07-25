@@ -14,11 +14,18 @@ async function applyContext(
   switch (ctx.kind) {
     case "tenant":
       await tx.$executeRaw`SELECT set_config('app.gym_id', ${ctx.gymId}, true)`;
+      // Explicit false — unset GUCs make app_is_super_admin() NULL and break NOT checks.
+      await tx.$executeRaw`SELECT set_config('app.is_super_admin', 'false', true)`;
+      await tx.$executeRaw`SELECT set_config('app.platform_lookup', 'false', true)`;
       break;
     case "super_admin":
+      await tx.$executeRaw`SELECT set_config('app.gym_id', '', true)`;
       await tx.$executeRaw`SELECT set_config('app.is_super_admin', 'true', true)`;
+      await tx.$executeRaw`SELECT set_config('app.platform_lookup', 'false', true)`;
       break;
     case "platform_lookup":
+      await tx.$executeRaw`SELECT set_config('app.gym_id', '', true)`;
+      await tx.$executeRaw`SELECT set_config('app.is_super_admin', 'false', true)`;
       await tx.$executeRaw`SELECT set_config('app.platform_lookup', 'true', true)`;
       break;
   }

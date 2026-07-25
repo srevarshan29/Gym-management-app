@@ -44,4 +44,24 @@ SELECT set_config('app.platform_lookup', 'true', true);
 SELECT count(*) AS users_platform_lookup FROM "User" WHERE email = 'owner@gym.test';
 -- expect: 1
 
+-- ---------------------------------------------------------------------------
+-- 5) Tenant user insert (staff provisioning)
+-- ---------------------------------------------------------------------------
+SELECT set_config('app.gym_id', 'gym_default_0000000001', true);
+SELECT set_config('app.is_super_admin', 'false', true);
+SELECT set_config('app.platform_lookup', 'false', true);
+
+-- expect: succeeds (rollback at end)
+INSERT INTO "User" ("id", "gymId", "name", "email", "passwordHash", "role", "createdAt", "updatedAt")
+VALUES (
+  'rls_smoke_user_insert',
+  'gym_default_0000000001',
+  'RLS Smoke',
+  'rls-smoke-insert@test.local',
+  'hash',
+  'STAFF',
+  NOW(),
+  NOW()
+);
+
 ROLLBACK;

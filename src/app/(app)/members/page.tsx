@@ -7,6 +7,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { MemberAvatar } from "@/components/member-avatar";
 import { PendingDuesBadge, StatusBadge } from "@/components/status-badge";
+import { PtBadge } from "@/components/pt-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -101,6 +102,7 @@ export default async function MembersPage() {
                       <Link href={`/members/${m.id}`} className="block">
                         <div className="flex flex-wrap items-center gap-2">
                           <StatusBadge status={m.status} />
+                          {m.isPt ? <PtBadge /> : null}
                           {m.pendingAmount > 0 ? <PendingDuesBadge /> : null}
                         </div>
                       </Link>

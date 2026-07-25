@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { requireGym } from "@/lib/session";
 import { canLogPayments } from "@/lib/permissions";
 import { withTenant } from "@/lib/db-context";
+import { getGymStaffOptions } from "@/lib/staff";
 import { durationLabel } from "@/lib/subscription";
 import { PageHeader } from "@/components/page-header";
 import { MemberForm, type PackageOption } from "@/components/member-form";
@@ -12,12 +13,15 @@ import { Button } from "@/components/ui/button";
 export default async function NewMemberPage() {
   const user = await requireGym();
 
-  const packages = await withTenant(user.gymId, (tx) =>
-    tx.package.findMany({
-      where: { gymId: user.gymId, isActive: true },
-      orderBy: { name: "asc" },
-    }),
-  );
+  const [packages, staffOptions] = await Promise.all([
+    withTenant(user.gymId, (tx) =>
+      tx.package.findMany({
+        where: { gymId: user.gymId, isActive: true },
+        orderBy: { name: "asc" },
+      }),
+    ),
+    getGymStaffOptions(user.gymId),
+  ]);
 
   const options: PackageOption[] = packages.map((p) => ({
     id: p.id,
@@ -40,6 +44,7 @@ export default async function NewMemberPage() {
         mode="create"
         packages={options}
         canRecordPayment={canLogPayments(user.role)}
+        staffOptions={staffOptions}
       />
     </div>
   );

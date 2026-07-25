@@ -29,6 +29,9 @@ export type MemberListItem = {
   paidAmount: number | null;
   pendingAmount: number;
   addedByName: string | null;
+  isPt: boolean;
+  trainerId: string | null;
+  trainerName: string | null;
 };
 
 async function fetchMembersWithStatus(
@@ -39,6 +42,7 @@ async function fetchMembersWithStatus(
     where: { gymId },
     orderBy: { createdAt: "desc" },
     include: {
+      trainer: { select: { id: true, name: true } },
       subscriptions: {
         orderBy: { createdAt: "asc" },
         include: {
@@ -82,6 +86,9 @@ async function fetchMembersWithStatus(
       paidAmount: balance?.paidAmount ?? null,
       pendingAmount: balance?.pendingAmount ?? 0,
       addedByName,
+      isPt: m.isPt,
+      trainerId: m.trainerId,
+      trainerName: m.trainer?.name ?? null,
     };
   });
 }
@@ -200,6 +207,7 @@ export async function getMemberDetail(gymId: string, id: string) {
     tx.member.findFirst({
       where: { id, gymId },
       include: {
+        trainer: { select: { id: true, name: true } },
         subscriptions: {
           orderBy: { startDate: "desc" },
           include: {

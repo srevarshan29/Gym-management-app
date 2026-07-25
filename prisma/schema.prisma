@@ -75,6 +75,7 @@ model User {
   gym                  Gym?           @relation(fields: [gymId], references: [id], onDelete: Cascade)
   createdSubscriptions Subscription[] @relation("SubscriptionCreatedBy")
   recordedPayments     Payment[]      @relation("PaymentRecordedBy")
+  trainedMembers       Member[]       @relation("MemberTrainer")
 
   @@index([gymId])
 }
@@ -107,15 +108,20 @@ model Member {
   photoUrl     String?
   gender       MemberGender @default(PREFER_NOT_TO_SAY)
   notes        String?
+  isPt         Boolean      @default(false)
+  trainerId    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   gym           Gym            @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  trainer       User?          @relation("MemberTrainer", fields: [trainerId], references: [id], onDelete: SetNull)
   subscriptions Subscription[]
   payments      Payment[]
 
   @@unique([gymId, memberNumber])
   @@index([gymId, name])
+  @@index([gymId, isPt])
+  @@index([trainerId])
 }
 
 // A single billing cycle: member holds a package from startDate to endDate.

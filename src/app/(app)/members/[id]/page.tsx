@@ -16,6 +16,7 @@ import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { MemberAvatar } from "@/components/member-avatar";
 import { PendingDuesBadge, StatusBadge } from "@/components/status-badge";
+import { PtBadge } from "@/components/pt-badge";
 import { RenewDialog } from "@/components/renew-dialog";
 import { PaymentDialog } from "@/components/payment-dialog";
 import { DeleteMemberButton } from "@/components/delete-member-button";
@@ -114,6 +115,7 @@ export default async function MemberProfilePage({
                 {member.name}
               </h1>
               <StatusBadge status={status} />
+              {member.isPt ? <PtBadge /> : null}
               {currentBalance && currentBalance.pendingAmount > 0 ? (
                 <PendingDuesBadge />
               ) : null}
@@ -124,6 +126,14 @@ export default async function MemberProfilePage({
                 <Phone className="h-3.5 w-3.5" /> {member.phone}
               </span>
             </p>
+            {member.isPt ? (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Trainer:{" "}
+                {member.trainer?.name ?? (
+                  <span className="italic">Unassigned</span>
+                )}
+              </p>
+            ) : null}
           </div>
         </div>
 

@@ -12,6 +12,7 @@ import { createReceiptForPayment } from "@/lib/receipts";
 import { nextMemberNumber } from "@/lib/gym-sequence";
 import { notifyPaymentLogged } from "@/lib/notifications";
 import { uploadMemberPhoto } from "@/lib/storage";
+import { validateTrainerForGym } from "@/lib/staff";
 import { actionError, type ActionResult } from "@/lib/action-result";
 
 const memberGenderSchema = z.enum([
@@ -32,6 +33,8 @@ const createSchema = z.object({
   logPayment: z.enum(["0", "1"]).default("0"),
   amount: z.string().optional(),
   method: z.enum(["CASH", "UPI", "CARD", "BANK_TRANSFER", "OTHER"]).default("CASH"),
+  isPt: z.enum(["0", "1"]).default("0"),
+  trainerId: z.string().optional().or(z.literal("")),
 });
 
 const updateSchema = z.object({
@@ -41,7 +44,31 @@ const updateSchema = z.object({
   email: z.string().trim().email("Enter a valid email").optional().or(z.literal("")),
   gender: memberGenderSchema.default("PREFER_NOT_TO_SAY"),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
+  isPt: z.enum(["0", "1"]).default("0"),
+  trainerId: z.string().optional().or(z.literal("")),
 });
+
+async function resolvePtFields(
+  gymId: string,
+  isPtRaw: "0" | "1",
+  trainerIdRaw: string | undefined,
+): Promise<{ isPt: boolean; trainerId: string | null } | ActionResult> {
+  const isPt = isPtRaw === "1";
+  if (!isPt) {
+    return { isPt: false, trainerId: null };
+  }
+
+  const trainerId =
+    trainerIdRaw && trainerIdRaw.trim() !== "" ? trainerIdRaw.trim() : null;
+  if (trainerId) {
+    const valid = await validateTrainerForGym(gymId, trainerId);
+    if (!valid) {
+      return actionError("Selected trainer is not valid for this gym.");
+    }
+  }
+
+  return { isPt: true, trainerId };
+}
 
 async function persistMemberPhoto(
   gymId: string,
@@ -102,6 +129,10 @@ export async function createMember(
     return actionError("Invalid payment amount.");
   }
 
+  const ptFields = await resolvePtFields(user.gymId, data.isPt, data.trainerId);
+  if ("ok" in ptFields) return ptFields;
+  const { isPt, trainerId } = ptFields;
+
   const { member, paymentId } = await withTenant(gymId, async (tx) => {
     const memberNumber = await nextMemberNumber(tx, gymId);
 
@@ -114,6 +145,8 @@ export async function createMember(
         email: data.email || null,
         gender: data.gender,
         notes: data.notes || null,
+        isPt,
+        trainerId,
       },
     });
 
@@ -151,6 +184,7 @@ export async function createMember(
   await persistMemberPhoto(gymId, member.id, formData);
 
   revalidatePath("/members");
+  revalidatePath("/members/pt");
   revalidatePath("/");
 
   if (paymentId) {
@@ -172,7 +206,12 @@ export async function updateMember(
   if (!parsed.success) {
     return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
   }
-  const { id, name, phone, email, gender, notes } = parsed.data;
+  const { id, name, phone, email, gender, notes, isPt: isPtRaw, trainerId: trainerIdRaw } =
+    parsed.data;
+
+  const ptFields = await resolvePtFields(user.gymId, isPtRaw, trainerIdRaw);
+  if ("ok" in ptFields) return ptFields;
+  const { isPt, trainerId } = ptFields;
 
   const result = await withTenant(user.gymId, (tx) =>
     tx.member.updateMany({
@@ -183,6 +222,8 @@ export async function updateMember(
         email: email || null,
         gender,
         notes: notes || null,
+        isPt,
+        trainerId,
       },
     }),
   );
@@ -193,6 +234,7 @@ export async function updateMember(
   await persistMemberPhoto(user.gymId, id, formData);
 
   revalidatePath("/members");
+  revalidatePath("/members/pt");
   revalidatePath(`/members/${id}`);
   redirect(`/members/${id}`);
 }
@@ -212,6 +254,7 @@ export async function deleteMember(formData: FormData): Promise<void> {
     throw new Error("Member not found.");
   }
   revalidatePath("/members");
+  revalidatePath("/members/pt");
   revalidatePath("/");
   redirect("/members");
 }

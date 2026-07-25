@@ -37,10 +37,16 @@ export type PackageOption = {
   durationLabel: string;
 };
 
+export type StaffOption = {
+  id: string;
+  name: string;
+};
+
 type CreateProps = {
   mode: "create";
   packages: PackageOption[];
   canRecordPayment: boolean;
+  staffOptions: StaffOption[];
 };
 
 type EditProps = {
@@ -53,7 +59,10 @@ type EditProps = {
     photoUrl: string | null;
     gender: MemberGender;
     notes: string | null;
+    isPt: boolean;
+    trainerId: string | null;
   };
+  staffOptions: StaffOption[];
 };
 
 type Props = CreateProps | EditProps;
@@ -87,6 +96,12 @@ export function MemberForm(props: Props) {
   );
   const [displayName, setDisplayName] = React.useState(
     props.mode === "edit" ? props.member.name : "New member",
+  );
+  const [isPt, setIsPt] = React.useState(
+    props.mode === "edit" ? props.member.isPt : false,
+  );
+  const [trainerId, setTrainerId] = React.useState(
+    props.mode === "edit" ? props.member.trainerId ?? "" : "",
   );
 
   React.useEffect(() => {
@@ -220,6 +235,51 @@ export function MemberForm(props: Props) {
               }
               placeholder="Any relevant notes about this member"
             />
+          </div>
+
+          <input type="hidden" name="isPt" value={isPt ? "1" : "0"} />
+          <input type="hidden" name="trainerId" value={isPt ? trainerId : ""} />
+
+          <div className="rounded-lg border p-4">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-input accent-primary"
+                checked={isPt}
+                onChange={(e) => {
+                  setIsPt(e.target.checked);
+                  if (!e.target.checked) setTrainerId("");
+                }}
+              />
+              Personal training (PT) member
+            </label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              PT members appear on the PT Members page and can be assigned a
+              trainer.
+            </p>
+            {isPt ? (
+              <div className="mt-4 space-y-2">
+                <Label>Trainer (optional)</Label>
+                <Select
+                  value={trainerId || "__none__"}
+                  onValueChange={(value) =>
+                    setTrainerId(value === "__none__" ? "" : value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="No trainer assigned" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">No trainer</SelectItem>
+                    {props.staffOptions.map((staff) => (
+                      <SelectItem key={staff.id} value={staff.id}>
+                        {staff.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
           </div>
         </CardContent>
       </Card>

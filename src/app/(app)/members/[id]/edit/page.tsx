@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { requireGym } from "@/lib/session";
 import { withTenant } from "@/lib/db-context";
+import { getGymStaffOptions } from "@/lib/staff";
 import { PageHeader } from "@/components/page-header";
 import { MemberForm } from "@/components/member-form";
 import { Button } from "@/components/ui/button";
@@ -15,11 +16,14 @@ export default async function EditMemberPage({
 }) {
   const user = await requireGym();
 
-  const member = await withTenant(user.gymId, (tx) =>
-    tx.member.findFirst({
-      where: { id: params.id, gymId: user.gymId },
-    }),
-  );
+  const [member, staffOptions] = await Promise.all([
+    withTenant(user.gymId, (tx) =>
+      tx.member.findFirst({
+        where: { id: params.id, gymId: user.gymId },
+      }),
+    ),
+    getGymStaffOptions(user.gymId),
+  ]);
   if (!member) notFound();
 
   return (
@@ -42,7 +46,10 @@ export default async function EditMemberPage({
           photoUrl: member.photoUrl,
           gender: member.gender,
           notes: member.notes,
+          isPt: member.isPt,
+          trainerId: member.trainerId,
         }}
+        staffOptions={staffOptions}
       />
     </div>
   );

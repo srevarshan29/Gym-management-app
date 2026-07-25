@@ -100,47 +100,54 @@ export function DashboardStatCard({
   value: string;
   hint?: string;
   icon: React.ReactNode;
-  href: string;
+  href?: string;
   tone: DashboardStatTone;
-  sparkline: number[];
+  sparkline?: number[];
   trendLabel?: string;
   footerLabel?: string;
 }) {
   const styles = TONE_CLASSES[tone];
+  const isInteractive = Boolean(href);
 
-  return (
-    <Link href={href} className="group block cursor-pointer">
-      <Card
+  const card = (
+    <Card
+      className={cn(
+        "relative overflow-hidden rounded-2xl border-0 bg-card/90 shadow-soft backdrop-blur-sm",
+        "ring-1 transition-[transform,box-shadow,ring-color] duration-150 ease-out",
+        isInteractive && "hover:-translate-y-0.5",
+        styles.ring,
+        isInteractive && styles.hover,
+      )}
+    >
+      <div
         className={cn(
-          "relative overflow-hidden rounded-2xl border-0 bg-card/90 shadow-soft backdrop-blur-sm",
-          "ring-1 transition-[transform,box-shadow,ring-color] duration-150 ease-out",
-          "hover:-translate-y-0.5",
-          styles.ring,
-          styles.hover,
+          "pointer-events-none absolute inset-x-0 top-0 h-14 bg-gradient-to-b opacity-80",
+          styles.accent,
         )}
-      >
+        aria-hidden
+      />
+      <CardContent className="relative space-y-3 p-5">
         <div
           className={cn(
-            "pointer-events-none absolute inset-x-0 top-0 h-14 bg-gradient-to-b opacity-80",
-            styles.accent,
+            sparkline
+              ? "grid grid-cols-[minmax(0,1fr)_5rem] items-center gap-x-3"
+              : "flex min-w-0 items-center gap-2.5",
           )}
-          aria-hidden
-        />
-        <CardContent className="relative space-y-3 p-5">
-          <div className="grid grid-cols-[minmax(0,1fr)_5rem] items-center gap-x-3">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <div
-                className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl [&_svg]:size-5",
-                  styles.icon,
-                )}
-              >
-                {icon}
-              </div>
-              <p className="truncate text-sm font-medium leading-tight text-muted-foreground">
-                {title}
-              </p>
+        >
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div
+              className={cn(
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl [&_svg]:size-5",
+                styles.icon,
+              )}
+            >
+              {icon}
             </div>
+            <p className="truncate text-sm font-medium leading-tight text-muted-foreground">
+              {title}
+            </p>
+          </div>
+          {sparkline ? (
             <div
               className="flex h-8 w-20 shrink-0 items-center justify-end overflow-hidden"
               aria-hidden
@@ -150,38 +157,48 @@ export function DashboardStatCard({
                 className={styles.sparklineStroke}
               />
             </div>
-          </div>
+          ) : null}
+        </div>
 
-          <div className="min-w-0 space-y-1">
-            <p className="font-mono text-3xl font-bold tracking-tight text-foreground">
-              {value}
-            </p>
-            {hint ? (
-              <p className="truncate text-xs text-muted-foreground">{hint}</p>
+        <div className="min-w-0 space-y-1">
+          <p className="font-mono text-3xl font-bold tracking-tight text-foreground">
+            {value}
+          </p>
+          {hint ? (
+            <p className="truncate text-xs text-muted-foreground">{hint}</p>
+          ) : null}
+        </div>
+
+        {trendLabel || footerLabel ? (
+          <div className="min-h-5">
+            {trendLabel ? (
+              <p className={cn("text-xs font-medium", styles.trend)}>
+                {trendLabel}
+              </p>
+            ) : footerLabel ? (
+              <p
+                className={cn(
+                  "flex items-center gap-1 text-xs font-medium",
+                  styles.footerLink,
+                )}
+              >
+                {footerLabel}
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              </p>
             ) : null}
           </div>
-
-          {trendLabel || footerLabel ? (
-            <div className="min-h-5">
-              {trendLabel ? (
-                <p className={cn("text-xs font-medium", styles.trend)}>
-                  {trendLabel}
-                </p>
-              ) : footerLabel ? (
-                <p
-                  className={cn(
-                    "flex items-center gap-1 text-xs font-medium",
-                    styles.footerLink,
-                  )}
-                >
-                  {footerLabel}
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
-    </Link>
+        ) : null}
+      </CardContent>
+    </Card>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="group block cursor-pointer">
+        {card}
+      </Link>
+    );
+  }
+
+  return <div className="block">{card}</div>;
 }

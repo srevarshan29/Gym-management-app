@@ -3,42 +3,54 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  LayoutDashboard,
-  Users,
-  Package,
-  CreditCard,
-  Settings,
-  Dumbbell,
-  CalendarClock,
-  CalendarX2,
-  type LucideIcon,
-} from "lucide-react";
+import { Dumbbell } from "lucide-react";
 
+import { useSidebar } from "@/components/sidebar-provider";
+import {
+  SIDEBAR_FOOTER_ITEM,
+  SIDEBAR_SECTIONS,
+  getActiveNavHref,
+  isNavItemVisible,
+  type SidebarNavItem,
+} from "@/lib/sidebar-nav";
 import { cn } from "@/lib/utils";
 
-type NavItem = {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-  ownerOnly?: boolean;
-  requiresLogPayments?: boolean;
-};
+function NavLink({
+  item,
+  activeHref,
+  pendingHref,
+  isPending,
+  onNavigate,
+}: {
+  item: SidebarNavItem;
+  activeHref: string | null;
+  pendingHref: string | null;
+  isPending: boolean;
+  onNavigate: (href: string, e: React.MouseEvent<HTMLAnchorElement>) => void;
+}) {
+  const active = pendingHref
+    ? item.href === pendingHref
+    : activeHref === item.href;
+  const Icon = item.icon;
 
-const NAV: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/members", label: "Members", icon: Users },
-  { href: "/renewals", label: "Upcoming Renewals", icon: CalendarClock },
-  { href: "/expired", label: "Expired Memberships", icon: CalendarX2 },
-  { href: "/packages", label: "Packages", icon: Package },
-  {
-    href: "/payments",
-    label: "Payments",
-    icon: CreditCard,
-    requiresLogPayments: true,
-  },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
+  return (
+    <Link
+      href={item.href}
+      onClick={(e) => onNavigate(item.href, e)}
+      aria-busy={pendingHref === item.href && isPending}
+      className={cn(
+        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        active
+          ? "hover-lift-glow bg-primary text-primary-foreground shadow-glow"
+          : "hover-lift text-muted-foreground hover:bg-accent hover:text-foreground",
+        pendingHref === item.href && isPending ? "opacity-80" : "",
+      )}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      {item.label}
+    </Link>
+  );
+}
 
 export function Sidebar({
   isOwner,
@@ -49,23 +61,18 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { collapsed } = useSidebar();
   const [isPending, startTransition] = React.useTransition();
-  // Tracks which link was just clicked so it can look "active" instantly,
-  // before the server component for the destination has actually resolved.
   const [pendingHref, setPendingHref] = React.useState<string | null>(null);
 
-  const items = NAV.filter((item) => {
-    if (item.ownerOnly && !isOwner) return false;
-    if (item.requiresLogPayments && !canLogPayments) return false;
-    return true;
-  });
-
   React.useEffect(() => {
-    // Once the real route catches up, drop the optimistic pending state.
     if (!isPending) setPendingHref(null);
   }, [isPending, pathname]);
 
-  function handleNavigate(href: string, e: React.MouseEvent<HTMLAnchorElement>) {
+  function handleNavigate(
+    href: string,
+    e: React.MouseEvent<HTMLAnchorElement>,
+  ) {
     if (href === pathname) return;
     e.preventDefault();
     setPendingHref(href);
@@ -74,44 +81,90 @@ export function Sidebar({
     });
   }
 
+  const showFooter = isNavItemVisible(
+    SIDEBAR_FOOTER_ITEM,
+    isOwner,
+    canLogPayments,
+  );
+
+  const allNavItems = React.useMemo(() => {
+    const items = SIDEBAR_SECTIONS.flatMap((section) =>
+      section.items.filter((item) =>
+        isNavItemVisible(item, isOwner, canLogPayments),
+      ),
+    );
+    if (showFooter) items.push(SIDEBAR_FOOTER_ITEM);
+    return items;
+  }, [isOwner, canLogPayments, showFooter]);
+
+  const activeHref = getActiveNavHref(pathname, allNavItems);
+
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-r bg-card/70 px-4 py-6 backdrop-blur md:flex">
-      <div className="mb-8 flex items-center gap-2 px-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+    <aside
+      className={cn(
+        "hidden shrink-0 flex-col border-r bg-card/70 backdrop-blur transition-all duration-200 md:flex",
+        collapsed
+          ? "w-0 overflow-hidden border-r-0 px-0 py-0 opacity-0 pointer-events-none"
+          : "w-64 px-4 py-6 opacity-100",
+      )}
+    >
+      <div className="mb-6 flex items-center gap-2 px-2">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Dumbbell className="h-5 w-5" />
         </div>
-        <span className="font-display text-lg font-bold tracking-tight">GymDesk</span>
+        <span className="font-display text-lg font-bold tracking-tight whitespace-nowrap">
+          GymDesk
+        </span>
       </div>
 
-      <nav className="flex flex-col gap-1">
-        {items.map((item) => {
-          const active = pendingHref
-            ? item.href === pendingHref
-            : item.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(item.href);
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={(e) => handleNavigate(item.href, e)}
-              aria-busy={pendingHref === item.href && isPending}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                // Second (and last) glow element in the app, by design.
-                active
-                  ? "hover-lift-glow bg-primary text-primary-foreground shadow-glow"
-                  : "hover-lift text-muted-foreground hover:bg-accent hover:text-foreground",
-                pendingHref === item.href && isPending ? "opacity-80" : "",
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <nav className="flex flex-col gap-1 overflow-y-auto">
+          {SIDEBAR_SECTIONS.map((section, sectionIndex) => {
+            const visibleItems = section.items.filter((item) =>
+              isNavItemVisible(item, isOwner, canLogPayments),
+            );
+
+            return (
+              <div key={section.id}>
+                <p
+                  className={cn(
+                    "px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+                    sectionIndex === 0 ? "pt-0" : "pt-4",
+                  )}
+                >
+                  {section.label}
+                </p>
+                {visibleItems.length > 0 ? (
+                  <div className="flex flex-col gap-1">
+                    {visibleItems.map((item) => (
+                      <NavLink
+                        key={item.href}
+                        item={item}
+                        activeHref={activeHref}
+                        pendingHref={pendingHref}
+                        isPending={isPending}
+                        onNavigate={handleNavigate}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </nav>
+
+        {showFooter ? (
+          <div className="mt-auto border-t border-border/60 pt-4">
+            <NavLink
+              item={SIDEBAR_FOOTER_ITEM}
+              activeHref={activeHref}
+              pendingHref={pendingHref}
+              isPending={isPending}
+              onNavigate={handleNavigate}
+            />
+          </div>
+        ) : null}
+      </div>
     </aside>
   );
 }

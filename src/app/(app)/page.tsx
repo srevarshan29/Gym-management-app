@@ -8,12 +8,14 @@ import {
   UserPlus,
   Percent,
   Wallet,
+  PieChart,
 } from "lucide-react";
 
 import { requireGym } from "@/lib/session";
 import {
   canLogPayments,
   canManageMembers,
+  canManagePackages,
   canViewFinancials,
 } from "@/lib/permissions";
 import { withTenant } from "@/lib/db-context";
@@ -30,6 +32,7 @@ import { getMonthlyRevenueTrend } from "@/lib/revenue";
 import { formatCurrency } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { RevenueTrendChart } from "@/components/revenue-trend-chart";
+import { PackageDistributionChart } from "@/components/package-distribution-chart";
 import { DashboardStatCard } from "@/components/dashboard-stat-card";
 import { DashboardRenewalPanel } from "@/components/dashboard-renewal-panel";
 import { DashboardQuickActions } from "@/components/dashboard-quick-actions";
@@ -62,6 +65,7 @@ export default async function DashboardPage() {
           showFinancials={showFinancials}
           canLogPayments={canLog}
           canManageMembers={canManageMembers(user.role)}
+          canManagePackages={canManagePackages(user.role)}
         />
       </Suspense>
     </div>
@@ -74,12 +78,14 @@ async function DashboardBody({
   showFinancials,
   canLogPayments,
   canManageMembers,
+  canManagePackages,
 }: {
   gymId: string;
   userName: string | null;
   showFinancials: boolean;
   canLogPayments: boolean;
   canManageMembers: boolean;
+  canManagePackages: boolean;
 }) {
   const [metrics, upcoming, expired] = await Promise.all([
     getDashboardMetrics(gymId),
@@ -138,6 +144,8 @@ async function DashboardBody({
         <DashboardQuickActions
           canManageMembers={canManageMembers}
           canLogPayments={canLogPayments}
+          canManagePackages={canManagePackages}
+          showFinancialReports={showFinancials}
         />
       </div>
 
@@ -239,20 +247,37 @@ async function DashboardBody({
       </div>
 
       {showFinancials ? (
-        <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <LineChart className="h-5 w-5 text-primary" />
-              Revenue Overview
-            </CardTitle>
-            <CardDescription>
-              Monthly payments collected over the last 6 months.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RevenueTrendChart data={revenueTrend} />
-          </CardContent>
-        </Card>
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LineChart className="h-5 w-5 text-primary" />
+                Revenue trend
+              </CardTitle>
+              <CardDescription>
+                Monthly payments collected over the last 6 months.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RevenueTrendChart data={revenueTrend} />
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PieChart className="h-5 w-5 text-primary" />
+                Membership distribution
+              </CardTitle>
+              <CardDescription>
+                Active members by package type.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PackageDistributionChart data={metrics.packageDistribution} />
+            </CardContent>
+          </Card>
+        </div>
       ) : null}
     </>
   );

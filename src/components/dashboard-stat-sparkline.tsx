@@ -1,41 +1,53 @@
 "use client";
 
-import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import { cn } from "@/lib/utils";
 
 type DashboardStatSparklineProps = {
   data: number[];
-  color: string;
+  className?: string;
 };
 
+const WIDTH = 80;
+const HEIGHT = 32;
+
+/** Lightweight SVG sparkline — avoids Recharts ResponsiveContainer sizing issues in KPI cards. */
 export function DashboardStatSparkline({
   data,
-  color,
+  className,
 }: DashboardStatSparklineProps) {
-  const chartData = data.map((v, i) => ({ i, v }));
-  const hasSignal = data.some((v) => v > 0);
+  const series = data.length > 0 ? data : [0, 0, 0, 0, 0, 0];
+  const max = Math.max(...series, 1);
+  const min = Math.min(...series, 0);
+  const range = max - min || 1;
 
-  if (!hasSignal) {
-    return (
-      <div className="h-10 w-28 shrink-0 rounded-md bg-muted/40" aria-hidden />
-    );
-  }
+  const points = series
+    .map((value, index) => {
+      const x =
+        series.length === 1 ? WIDTH / 2 : (index / (series.length - 1)) * WIDTH;
+      const y = HEIGHT - 4 - ((value - min) / range) * (HEIGHT - 8);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+
+  const areaPoints = `0,${HEIGHT} ${points} ${WIDTH},${HEIGHT}`;
 
   return (
-    <div className="h-10 w-28 shrink-0" aria-hidden>
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={chartData} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
-          <Area
-            type="monotone"
-            dataKey="v"
-            stroke={color}
-            fill={color}
-            fillOpacity={0.15}
-            strokeWidth={1.5}
-            dot={false}
-            isAnimationActive={false}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
+    <svg
+      width={WIDTH}
+      height={HEIGHT}
+      viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+      className={cn("block max-h-full max-w-full", className)}
+      aria-hidden
+    >
+      <polygon points={areaPoints} fill="currentColor" fillOpacity={0.15} />
+      <polyline
+        points={points}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

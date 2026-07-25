@@ -22,7 +22,7 @@ const TONE_CLASSES: Record<
     icon: string;
     ring: string;
     hover: string;
-    sparkline: string;
+    sparklineStroke: string;
     footerLink: string;
     trend: string;
   }
@@ -32,7 +32,7 @@ const TONE_CLASSES: Record<
     icon: "bg-primary/15 text-primary",
     ring: "ring-border/70",
     hover: "hover:shadow-glow-lift hover:ring-primary/35",
-    sparkline: "hsl(var(--primary))",
+    sparklineStroke: "text-primary",
     footerLink: "text-primary",
     trend: "text-primary",
   },
@@ -41,7 +41,7 @@ const TONE_CLASSES: Record<
     icon: "bg-primary/15 text-primary",
     ring: "ring-border/70",
     hover: "hover:shadow-glow-lift hover:ring-primary/35",
-    sparkline: "hsl(var(--primary))",
+    sparklineStroke: "text-primary",
     footerLink: "text-primary",
     trend: "text-primary",
   },
@@ -50,7 +50,7 @@ const TONE_CLASSES: Record<
     icon: "bg-primary/15 text-primary",
     ring: "ring-border/70",
     hover: "hover:shadow-glow-lift hover:ring-primary/35",
-    sparkline: "hsl(var(--primary))",
+    sparklineStroke: "text-primary",
     footerLink: "text-primary",
     trend: "text-primary",
   },
@@ -59,7 +59,7 @@ const TONE_CLASSES: Record<
     icon: "bg-primary/15 text-primary",
     ring: "ring-primary/30",
     hover: "hover:shadow-glow-lift hover:ring-primary/35",
-    sparkline: "hsl(var(--primary))",
+    sparklineStroke: "text-primary",
     footerLink: "text-primary",
     trend: "text-primary",
   },
@@ -69,7 +69,7 @@ const TONE_CLASSES: Record<
     ring: "ring-[hsl(var(--status-expiring)/0.35)]",
     hover:
       "hover:shadow-[0_0_0_1px_hsl(var(--status-expiring)/0.5),0_0_16px_-2px_hsl(var(--status-expiring)/0.45)] hover:ring-[hsl(var(--status-expiring)/0.4)]",
-    sparkline: "hsl(var(--status-expiring))",
+    sparklineStroke: "text-[hsl(var(--status-expiring))]",
     footerLink: "text-[hsl(var(--status-expiring))]",
     trend: "text-[hsl(var(--status-expiring))]",
   },
@@ -79,7 +79,7 @@ const TONE_CLASSES: Record<
     ring: "ring-[hsl(var(--status-expired)/0.35)]",
     hover:
       "hover:shadow-[0_0_0_1px_hsl(var(--status-expired)/0.5),0_0_16px_-2px_hsl(var(--status-expired)/0.45)] hover:ring-[hsl(var(--status-expired)/0.4)]",
-    sparkline: "hsl(var(--status-expired))",
+    sparklineStroke: "text-[hsl(var(--status-expired))]",
     footerLink: "text-[hsl(var(--status-expired))]",
     trend: "text-[hsl(var(--status-expired))]",
   },
@@ -107,7 +107,6 @@ export function DashboardStatCard({
   footerLabel?: string;
 }) {
   const styles = TONE_CLASSES[tone];
-  const showSparkline = !footerLabel;
 
   return (
     <Link href={href} className="group block cursor-pointer">
@@ -128,18 +127,29 @@ export function DashboardStatCard({
           aria-hidden
         />
         <CardContent className="relative space-y-3 p-5">
-          <div className="flex items-center gap-2.5">
-            <div
-              className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl [&_svg]:size-5",
-                styles.icon,
-              )}
-            >
-              {icon}
+          <div className="grid grid-cols-[minmax(0,1fr)_5rem] items-center gap-x-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div
+                className={cn(
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl [&_svg]:size-5",
+                  styles.icon,
+                )}
+              >
+                {icon}
+              </div>
+              <p className="truncate text-sm font-medium leading-tight text-muted-foreground">
+                {title}
+              </p>
             </div>
-            <p className="text-sm font-medium leading-tight text-muted-foreground">
-              {title}
-            </p>
+            <div
+              className="flex h-8 w-20 shrink-0 items-center justify-end overflow-hidden"
+              aria-hidden
+            >
+              <DashboardStatSparkline
+                data={sparkline}
+                className={styles.sparklineStroke}
+              />
+            </div>
           </div>
 
           <div className="min-w-0 space-y-1">
@@ -151,8 +161,8 @@ export function DashboardStatCard({
             ) : null}
           </div>
 
-          <div className="flex min-h-10 items-end justify-between gap-2">
-            <div className="min-w-0 flex-1">
+          {trendLabel || footerLabel ? (
+            <div className="min-h-5">
               {trendLabel ? (
                 <p className={cn("text-xs font-medium", styles.trend)}>
                   {trendLabel}
@@ -169,10 +179,7 @@ export function DashboardStatCard({
                 </p>
               ) : null}
             </div>
-            {showSparkline ? (
-              <DashboardStatSparkline data={sparkline} color={styles.sparkline} />
-            ) : null}
-          </div>
+          ) : null}
         </CardContent>
       </Card>
     </Link>

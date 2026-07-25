@@ -19,6 +19,7 @@ export type MemberListItem = {
   phone: string;
   photoUrl: string | null;
   gender: MemberGender;
+  createdAt: Date;
   packageName: string | null;
   currentSubscriptionId: string | null;
   startDate: Date | null;
@@ -71,6 +72,7 @@ async function fetchMembersWithStatus(
       phone: m.phone,
       photoUrl: m.photoUrl,
       gender: m.gender,
+      createdAt: m.createdAt,
       packageName: current?.package.name ?? null,
       currentSubscriptionId: current?.id ?? null,
       startDate: current?.startDate ?? null,

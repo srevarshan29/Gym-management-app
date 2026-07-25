@@ -20,7 +20,7 @@ import {
   canViewFinancials,
 } from "@/lib/permissions";
 import { withTenant } from "@/lib/db-context";
-import { getDashboardMetrics } from "@/lib/dashboard-metrics";
+import { getDashboardMetrics, getFinancialSparklines } from "@/lib/dashboard-metrics";
 import { getMonthlyRevenueTrend } from "@/lib/revenue";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { daysUntil } from "@/lib/subscription";
@@ -87,11 +87,14 @@ async function DashboardBody({
 
   let monthRevenue = 0;
   let revenueTrend: Awaited<ReturnType<typeof getMonthlyRevenueTrend>> = [];
+  let financialSparklines: Awaited<ReturnType<typeof getFinancialSparklines>> | null =
+    null;
+
   if (showFinancials) {
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const [agg, trend] = await Promise.all([
+    const [agg, trend, finSparklines] = await Promise.all([
       withTenant(gymId, (tx) =>
         tx.payment.aggregate({
           _sum: { amount: true },
@@ -99,9 +102,21 @@ async function DashboardBody({
         }),
       ),
       getMonthlyRevenueTrend(gymId),
+      getFinancialSparklines(
+        gymId,
+        metrics.collectionExpected,
+        metrics.pendingTotal,
+      ),
     ]);
     monthRevenue = Number(agg._sum.amount ?? 0);
     revenueTrend = trend;
+    financialSparklines = finSparklines;
+  } else if (canLogPayments) {
+    financialSparklines = await getFinancialSparklines(
+      gymId,
+      metrics.collectionExpected,
+      metrics.pendingTotal,
+    );
   }
 
   return (
@@ -120,7 +135,10 @@ async function DashboardBody({
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <section
+        aria-label="Key metrics"
+        className="relative z-10 -mt-1 mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      >
         <DashboardStatCard
           title="Active members"
           value={String(metrics.activeCount)}
@@ -128,6 +146,7 @@ async function DashboardBody({
           icon={<Users className="h-5 w-5" />}
           href="/members"
           tone="green"
+          sparkline={metrics.sparklines.activeMembers}
         />
 
         <DashboardStatCard
@@ -137,6 +156,7 @@ async function DashboardBody({
           icon={<UserPlus className="h-5 w-5" />}
           href="/members"
           tone="primary"
+          sparkline={metrics.sparklines.newMembers}
         />
 
         {showFinancials ? (
@@ -147,6 +167,7 @@ async function DashboardBody({
             icon={<TrendingUp className="h-5 w-5" />}
             href="/payments"
             tone="blue"
+            sparkline={financialSparklines?.revenue ?? []}
           />
         ) : null}
 
@@ -157,6 +178,8 @@ async function DashboardBody({
           icon={<CalendarClock className="h-5 w-5" />}
           href="/renewals"
           tone="orange"
+          sparkline={metrics.sparklines.expiringSoon}
+          footerLabel="View upcoming"
         />
 
         <DashboardStatCard
@@ -166,6 +189,8 @@ async function DashboardBody({
           icon={<AlertTriangle className="h-5 w-5" />}
           href="/expired"
           tone="red"
+          sparkline={metrics.sparklines.expired}
+          footerLabel="View expired"
         />
 
         {showFinancials ? (
@@ -176,6 +201,7 @@ async function DashboardBody({
             icon={<Percent className="h-5 w-5" />}
             href="/payments"
             tone="blue"
+            sparkline={financialSparklines?.collectionRate ?? []}
           />
         ) : null}
 
@@ -185,11 +211,12 @@ async function DashboardBody({
             value={formatCurrency(metrics.pendingTotal)}
             hint={metrics.pendingHint}
             icon={<Wallet className="h-5 w-5" />}
-            href="/payments"
+            href="/payments?tab=pending"
             tone="amber"
+            sparkline={financialSparklines?.pending ?? []}
           />
         ) : null}
-      </div>
+      </section>
 
       <DashboardAlerts
         expiredCount={metrics.expiredCount}
@@ -312,19 +339,29 @@ function DashboardSkeleton({
   return (
     <div className="animate-pulse">
       <div className="mb-6 h-16 rounded-lg bg-muted/50" />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <section
+        aria-label="Key metrics"
+        className="relative z-10 -mt-1 mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      >
         {Array.from({ length: cardCount }).map((_, i) => (
-          <Card key={i}>
-            <CardContent className="flex items-center gap-4 p-6">
-              <div className="h-12 w-12 rounded-xl bg-muted" />
-              <div className="flex-1 space-y-2">
+          <Card
+            key={i}
+            className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70"
+          >
+            <CardContent className="space-y-3 p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="h-10 w-10 shrink-0 rounded-xl bg-muted" />
+                <div className="h-9 w-24 shrink-0 rounded-md bg-muted/60" />
+              </div>
+              <div className="space-y-2">
                 <div className="h-3 w-24 rounded bg-muted" />
-                <div className="h-6 w-16 rounded bg-muted" />
+                <div className="h-8 w-20 rounded bg-muted" />
+                <div className="h-3 w-32 rounded bg-muted" />
               </div>
             </CardContent>
           </Card>
         ))}
-      </div>
+      </section>
       <Card className="mt-6">
         <CardHeader>
           <div className="h-5 w-40 rounded bg-muted" />

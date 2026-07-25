@@ -50,7 +50,7 @@ export function DashboardAlerts({
             />
             {showPending ? (
               <AlertChip
-                href="/payments"
+                href="/payments?tab=pending"
                 label="Pending payments"
                 count={pendingCount}
                 emoji="💰"

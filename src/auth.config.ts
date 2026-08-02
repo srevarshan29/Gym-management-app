@@ -46,6 +46,11 @@ export const authConfig = {
         return true;
       }
 
+      const isPublicRegister = nextUrl.pathname.startsWith("/register");
+      if (isPublicRegister) {
+        return true;
+      }
+
       // Every other (matched) route requires a session.
       return isLoggedIn;
     },
@@ -65,6 +70,8 @@ export const authConfig = {
         session.user.id = (token.id as string) ?? "";
         session.user.role = ((token.role as Role) ?? "STAFF") as Role;
         session.user.gymId = (token.gymId as string | null) ?? null;
+        session.user.name = (token.name as string | null | undefined) ?? session.user.name;
+        session.user.email = (token.email as string | null | undefined) ?? session.user.email;
       }
       return session;
     },

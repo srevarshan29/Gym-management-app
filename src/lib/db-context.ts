@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { Prisma as PrismaNamespace } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 
@@ -6,6 +7,42 @@ export type DbContext =
   | { kind: "tenant"; gymId: string }
   | { kind: "super_admin" }
   | { kind: "platform_lookup" };
+
+const TX_OPTIONS = {
+  maxWait: 15_000,
+  timeout: 30_000,
+} as const;
+
+const TRANSIENT_ERROR_CODES = new Set([
+  "P1001", // Can't reach database server
+  "P1002", // Database server timed out
+  "P1017", // Server closed the connection
+  "P2034", // Transaction failed due to conflict
+]);
+
+function isPoolExhaustionError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return error.message.includes("Unable to start a transaction");
+}
+
+function isTransientDbError(error: unknown): boolean {
+  // Pool exhausted — retrying immediately makes contention worse.
+  if (isPoolExhaustionError(error)) return false;
+
+  if (error instanceof PrismaNamespace.PrismaClientKnownRequestError) {
+    if (error.code === "P2028") return false;
+    return TRANSIENT_ERROR_CODES.has(error.code);
+  }
+  if (error instanceof Error) {
+    const msg = error.message;
+    return (
+      msg.includes("Server has closed the connection") ||
+      msg.includes("Transaction already closed") ||
+      msg.includes("Connection terminated")
+    );
+  }
+  return false;
+}
 
 async function applyContext(
   tx: Prisma.TransactionClient,
@@ -31,6 +68,16 @@ async function applyContext(
   }
 }
 
+async function runInContext<T>(
+  ctx: DbContext,
+  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    await applyContext(tx, ctx);
+    return fn(tx);
+  }, TX_OPTIONS);
+}
+
 /**
  * Runs fn inside a transaction with RLS session GUCs set via SET LOCAL.
  * Required for Supabase transaction pooler (pgbouncer) — GUCs must live
@@ -40,10 +87,22 @@ export async function withDbContext<T>(
   ctx: DbContext,
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
 ): Promise<T> {
-  return prisma.$transaction(async (tx) => {
-    await applyContext(tx, ctx);
-    return fn(tx);
-  });
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await runInContext(ctx, fn);
+    } catch (error) {
+      lastError = error;
+      if (!isTransientDbError(error) || attempt === 2) {
+        throw error;
+      }
+      await prisma.$connect();
+      await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+    }
+  }
+
+  throw lastError;
 }
 
 export function withTenant<T>(

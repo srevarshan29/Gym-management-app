@@ -169,10 +169,9 @@ function toMembershipRenewalRow(
 }
 
 /** Members whose current subscription has expired, most recently expired first. */
-export async function getExpiredMemberships(
-  gymId: string,
-): Promise<MembershipRenewalRow[]> {
-  const members = await getMembersWithStatus(gymId);
+export function filterExpiredMemberships(
+  members: MemberListItem[],
+): MembershipRenewalRow[] {
   return members
     .filter(
       (m): m is MemberListItem & { endDate: Date } =>
@@ -182,11 +181,16 @@ export async function getExpiredMemberships(
     .map(toMembershipRenewalRow);
 }
 
-/** Members expiring within EXPIRING_SOON_DAYS, soonest expiry first. */
-export async function getUpcomingRenewals(
+export async function getExpiredMemberships(
   gymId: string,
 ): Promise<MembershipRenewalRow[]> {
-  const members = await getMembersWithStatus(gymId);
+  return filterExpiredMemberships(await getMembersWithStatus(gymId));
+}
+
+/** Members expiring within EXPIRING_SOON_DAYS, soonest expiry first. */
+export function filterUpcomingRenewals(
+  members: MemberListItem[],
+): MembershipRenewalRow[] {
   return members
     .filter(
       (m): m is MemberListItem & { endDate: Date } =>
@@ -194,6 +198,12 @@ export async function getUpcomingRenewals(
     )
     .sort((a, b) => a.endDate.getTime() - b.endDate.getTime())
     .map(toMembershipRenewalRow);
+}
+
+export async function getUpcomingRenewals(
+  gymId: string,
+): Promise<MembershipRenewalRow[]> {
+  return filterUpcomingRenewals(await getMembersWithStatus(gymId));
 }
 
 /**

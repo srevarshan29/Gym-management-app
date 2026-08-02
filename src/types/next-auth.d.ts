@@ -21,5 +21,7 @@ declare module "next-auth/jwt" {
     id: string;
     role: Role;
     gymId: string | null;
+    name?: string | null;
+    email?: string | null;
   }
 }

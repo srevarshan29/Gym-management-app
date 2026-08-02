@@ -35,6 +35,7 @@ const createSchema = z.object({
   method: z.enum(["CASH", "UPI", "CARD", "BANK_TRANSFER", "OTHER"]).default("CASH"),
   isPt: z.enum(["0", "1"]).default("0"),
   trainerId: z.string().optional().or(z.literal("")),
+  visitorId: z.string().optional().or(z.literal("")),
 });
 
 const updateSchema = z.object({
@@ -178,6 +179,14 @@ export async function createMember(
       createdPaymentId = payment.id;
     }
 
+    const visitorId = data.visitorId?.trim();
+    if (visitorId) {
+      await tx.visitor.updateMany({
+        where: { id: visitorId, gymId, status: "pending" },
+        data: { status: "converted" },
+      });
+    }
+
     return { member: created, paymentId: createdPaymentId };
   });
 
@@ -185,6 +194,9 @@ export async function createMember(
 
   revalidatePath("/members");
   revalidatePath("/members/pt");
+  revalidatePath("/members/visitors");
+  revalidatePath("/members/register-qr");
+  revalidatePath("/analytics");
   revalidatePath("/");
 
   if (paymentId) {

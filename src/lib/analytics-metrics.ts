@@ -1,5 +1,6 @@
 import { withTenant } from "@/lib/db-context";
 import { getMonthlyRevenueTrend, type MonthlyRevenuePoint } from "@/lib/revenue";
+import { getVisitorCount } from "@/lib/visitors";
 
 export type MonthlyMemberJoinPoint = {
   monthKey: string;
@@ -79,7 +80,7 @@ export async function getAnalyticsPageData(gymId: string): Promise<AnalyticsPage
   const now = new Date();
   const { startThisMonth, startNextMonth } = monthBounds(now);
 
-  const [totalMembers, paymentsLoggedThisMonth, memberJoins, revenueTrend] =
+  const [totalMembers, paymentsLoggedThisMonth, visitorsCount, memberJoins, revenueTrend] =
     await Promise.all([
       withTenant(gymId, (tx) => tx.member.count({ where: { gymId } })),
       withTenant(gymId, (tx) =>
@@ -90,6 +91,7 @@ export async function getAnalyticsPageData(gymId: string): Promise<AnalyticsPage
           },
         }),
       ),
+      getVisitorCount(gymId),
       getMonthlyMemberJoins(gymId, ANALYTICS_MONTH_COUNT),
       getMonthlyRevenueTrend(gymId, ANALYTICS_MONTH_COUNT),
     ]);
@@ -100,7 +102,7 @@ export async function getAnalyticsPageData(gymId: string): Promise<AnalyticsPage
   return {
     totalMembers,
     paymentsLoggedThisMonth,
-    visitorsCount: 0,
+    visitorsCount,
     avgRevenuePerMonth,
     memberJoins,
     revenueTrend,

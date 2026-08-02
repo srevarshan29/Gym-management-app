@@ -64,7 +64,7 @@ export default async function AnalyticsPage() {
         <DashboardStatCard
           title="Visitors"
           value={String(data.visitorsCount)}
-          hint="Coming soon"
+          hint="Pending walk-ins"
           icon={<UserCheck className="h-5 w-5" />}
           tone="primary"
         />

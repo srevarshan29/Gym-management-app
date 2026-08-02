@@ -42,13 +42,14 @@ enum MemberGender {
 // receiptSeq are atomically incremented (via a single UPDATE ... RETURNING)
 // to hand out per-gym sequential numbers without collisions.
 model Gym {
-  id         String   @id @default(cuid())
-  name       String
-  slug       String?  @unique
-  memberSeq  Int      @default(0)
-  receiptSeq Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  name               String
+  slug               String?  @unique
+  registrationToken  String   @unique @default(cuid())
+  memberSeq          Int      @default(0)
+  receiptSeq         Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   users         User[]
   members       Member[]
@@ -57,6 +58,9 @@ model Gym {
   payments      Payment[]
   receipts      Receipt[]
   profile       GymProfile?
+  visitors      Visitor[]
+  dietPlans     DietPlan[]
+  workoutPlans  WorkoutPlan[]
 }
 
 // Gym staff accounts. gymId is null only for SUPER_ADMIN (platform-level,
@@ -117,11 +121,88 @@ model Member {
   trainer       User?          @relation("MemberTrainer", fields: [trainerId], references: [id], onDelete: SetNull)
   subscriptions Subscription[]
   payments      Payment[]
+  dietPlan      DietPlan?
+  workoutPlan   WorkoutPlan?
 
   @@unique([gymId, memberNumber])
   @@index([gymId, name])
   @@index([gymId, isPt])
   @@index([trainerId])
+}
+
+enum VisitorStatus {
+  pending
+  converted
+}
+
+enum VisitorSource {
+  walk_in
+  qr_registration
+}
+
+// Walk-in / trial visit log — not tied to packages or subscriptions.
+model Visitor {
+  id        String         @id @default(cuid())
+  gymId     String
+  name      String
+  phone     String
+  email     String?
+  gender    MemberGender?
+  visitDate DateTime       @db.Date
+  notes     String?
+  status    VisitorStatus  @default(pending)
+  source    VisitorSource  @default(walk_in)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  gym Gym @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@index([gymId, visitDate])
+  @@index([gymId, name])
+  @@index([gymId, status])
+  @@index([gymId, source, status])
+}
+
+enum WorkoutLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+// One active nutrition plan per member (no history).
+model DietPlan {
+  id             String   @id @default(cuid())
+  gymId          String
+  memberId       String   @unique
+  title          String
+  caloriesPerDay Int
+  mealPlan       String   @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  gym    Gym    @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([gymId, memberId])
+  @@index([gymId])
+}
+
+// One active training plan per member (no history).
+model WorkoutPlan {
+  id              String       @id @default(cuid())
+  gymId           String
+  memberId        String       @unique
+  title           String
+  level           WorkoutLevel
+  weeklySchedule  String       @db.Text
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  gym    Gym    @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([gymId, memberId])
+  @@index([gymId])
 }
 
 // A single billing cycle: member holds a package from startDate to endDate.

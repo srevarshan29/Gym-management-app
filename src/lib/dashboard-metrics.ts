@@ -238,26 +238,32 @@ export async function getFinancialSparklines(
   return { revenue, collectionRate, pending };
 }
 
-export async function getDashboardMetrics(gymId: string): Promise<DashboardMetrics> {
+export async function getDashboardMetrics(
+  gymId: string,
+  membersPreloaded?: MemberListItem[],
+): Promise<DashboardMetrics> {
   const now = new Date();
   const { startThisMonth, startLastMonth } = monthBounds(now);
 
-  const [members, newMembersThisMonth, newMembersLastMonth] = await Promise.all([
-    getMembersWithStatus(gymId),
-    withTenant(gymId, (tx) =>
-      tx.member.count({
-        where: { gymId, createdAt: { gte: startThisMonth } },
-      }),
-    ),
-    withTenant(gymId, (tx) =>
-      tx.member.count({
-        where: {
-          gymId,
-          createdAt: { gte: startLastMonth, lt: startThisMonth },
-        },
-      }),
-    ),
-  ]);
+  const members = membersPreloaded ?? (await getMembersWithStatus(gymId));
+
+  const [newMembersThisMonth, newMembersLastMonth] = await withTenant(
+    gymId,
+    async (tx) => {
+      const [thisMonth, lastMonth] = await Promise.all([
+        tx.member.count({
+          where: { gymId, createdAt: { gte: startThisMonth } },
+        }),
+        tx.member.count({
+          where: {
+            gymId,
+            createdAt: { gte: startLastMonth, lt: startThisMonth },
+          },
+        }),
+      ]);
+      return [thisMonth, lastMonth] as const;
+    },
+  );
 
   const activeCount = members.filter(
     (m) => m.status === "ACTIVE" || m.status === "EXPIRING_SOON",

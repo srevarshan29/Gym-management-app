@@ -9,8 +9,33 @@ import { durationLabel } from "@/lib/subscription";
 import { PageHeader } from "@/components/page-header";
 import { MemberForm, type PackageOption } from "@/components/member-form";
 import { Button } from "@/components/ui/button";
+import type { MemberGender } from "@prisma/client";
 
-export default async function NewMemberPage() {
+const GENDER_VALUES: MemberGender[] = [
+  "MALE",
+  "FEMALE",
+  "OTHER",
+  "PREFER_NOT_TO_SAY",
+];
+
+function parseGender(raw?: string): MemberGender | undefined {
+  if (!raw) return undefined;
+  return GENDER_VALUES.includes(raw as MemberGender)
+    ? (raw as MemberGender)
+    : undefined;
+}
+
+export default async function NewMemberPage({
+  searchParams,
+}: {
+  searchParams?: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    gender?: string;
+    visitorId?: string;
+  };
+}) {
   const user = await requireGym();
 
   const [packages, staffOptions] = await Promise.all([
@@ -45,6 +70,11 @@ export default async function NewMemberPage() {
         packages={options}
         canRecordPayment={canLogPayments(user.role)}
         staffOptions={staffOptions}
+        initialName={searchParams?.name}
+        initialPhone={searchParams?.phone}
+        initialEmail={searchParams?.email}
+        initialGender={parseGender(searchParams?.gender)}
+        visitorId={searchParams?.visitorId}
       />
     </div>
   );

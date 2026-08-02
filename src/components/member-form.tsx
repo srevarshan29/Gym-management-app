@@ -47,6 +47,11 @@ type CreateProps = {
   packages: PackageOption[];
   canRecordPayment: boolean;
   staffOptions: StaffOption[];
+  initialName?: string;
+  initialPhone?: string;
+  initialEmail?: string;
+  initialGender?: MemberGender;
+  visitorId?: string;
 };
 
 type EditProps = {
@@ -92,10 +97,18 @@ export function MemberForm(props: Props) {
     props.mode === "edit" ? props.member.photoUrl : null,
   );
   const [gender, setGender] = React.useState<MemberGender>(
-    props.mode === "edit" ? props.member.gender : "PREFER_NOT_TO_SAY",
+    props.mode === "edit"
+      ? props.member.gender
+      : props.mode === "create" && props.initialGender
+        ? props.initialGender
+        : "PREFER_NOT_TO_SAY",
   );
   const [displayName, setDisplayName] = React.useState(
-    props.mode === "edit" ? props.member.name : "New member",
+    props.mode === "edit"
+      ? props.member.name
+      : props.mode === "create"
+        ? (props.initialName ?? "New member")
+        : "New member",
   );
   const [isPt, setIsPt] = React.useState(
     props.mode === "edit" ? props.member.isPt : false,
@@ -130,6 +143,9 @@ export function MemberForm(props: Props) {
     <form action={formAction} className="space-y-6">
       {props.mode === "edit" ? (
         <input type="hidden" name="id" value={props.member.id} />
+      ) : null}
+      {props.mode === "create" && props.visitorId ? (
+        <input type="hidden" name="visitorId" value={props.visitorId} />
       ) : null}
 
       <Card>
@@ -173,7 +189,11 @@ export function MemberForm(props: Props) {
               <Input
                 id="name"
                 name="name"
-                defaultValue={props.mode === "edit" ? props.member.name : ""}
+                defaultValue={
+                  props.mode === "edit"
+                    ? props.member.name
+                    : (props.initialName ?? "")
+                }
                 placeholder="Jane Doe"
                 required
                 onChange={(e) => setDisplayName(e.target.value || "New member")}
@@ -206,7 +226,11 @@ export function MemberForm(props: Props) {
               <Input
                 id="phone"
                 name="phone"
-                defaultValue={props.mode === "edit" ? props.member.phone : ""}
+                defaultValue={
+                  props.mode === "edit"
+                    ? props.member.phone
+                    : (props.initialPhone ?? "")
+                }
                 placeholder="+91 98765 43210"
                 required
               />
@@ -218,7 +242,11 @@ export function MemberForm(props: Props) {
               id="email"
               name="email"
               type="email"
-              defaultValue={props.mode === "edit" ? (props.member.email ?? "") : ""}
+              defaultValue={
+                props.mode === "edit"
+                  ? (props.member.email ?? "")
+                  : (props.initialEmail ?? "")
+              }
               placeholder="jane@example.com"
             />
             <p className="text-xs text-muted-foreground">

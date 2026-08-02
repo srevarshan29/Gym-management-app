@@ -25,8 +25,9 @@ import {
   formatTrendLabel,
 } from "@/lib/dashboard-metrics";
 import {
-  getExpiredMemberships,
-  getUpcomingRenewals,
+  filterExpiredMemberships,
+  filterUpcomingRenewals,
+  getMembersWithStatus,
 } from "@/lib/queries";
 import { getMonthlyRevenueTrend } from "@/lib/revenue";
 import { formatCurrency } from "@/lib/utils";
@@ -87,11 +88,10 @@ async function DashboardBody({
   canManageMembers: boolean;
   canManagePackages: boolean;
 }) {
-  const [metrics, upcoming, expired] = await Promise.all([
-    getDashboardMetrics(gymId),
-    getUpcomingRenewals(gymId),
-    getExpiredMemberships(gymId),
-  ]);
+  const members = await getMembersWithStatus(gymId);
+  const metrics = await getDashboardMetrics(gymId, members);
+  const upcoming = filterUpcomingRenewals(members);
+  const expired = filterExpiredMemberships(members);
 
   let monthRevenue = 0;
   let revenueTrend: Awaited<ReturnType<typeof getMonthlyRevenueTrend>> = [];

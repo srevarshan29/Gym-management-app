@@ -11,6 +11,34 @@ const globalForPrisma = globalThis as unknown as {
  *
  * Migrations/seeds always use DIRECT_URL via schema.prisma directUrl.
  */
+function normalizeSupabasePoolerUrl(url: string): string {
+  const parsed = new URL(url.replace(/^postgresql:/, "postgres:"));
+  // Session pooler (5432) has IPv4 and supports interactive transactions.
+  // Transaction pooler (6543) is IPv4 too but breaks prisma.$transaction GUC setup.
+  if (
+    parsed.hostname.includes("pooler.supabase.com") &&
+    (parsed.port === "6543" || parsed.searchParams.has("pgbouncer"))
+  ) {
+    parsed.port = "5432";
+    parsed.searchParams.delete("pgbouncer");
+  }
+  return parsed.toString().replace(/^postgres:/, "postgresql:");
+}
+
+function withPoolParams(url: string): string {
+  const parsed = new URL(url.replace(/^postgresql:/, "postgres:"));
+  if (!parsed.searchParams.has("connection_limit")) {
+    parsed.searchParams.set("connection_limit", "5");
+  }
+  if (!parsed.searchParams.has("pool_timeout")) {
+    parsed.searchParams.set("pool_timeout", "20");
+  }
+  if (!parsed.searchParams.has("connect_timeout")) {
+    parsed.searchParams.set("connect_timeout", "30");
+  }
+  return parsed.toString().replace(/^postgres:/, "postgresql:");
+}
+
 function resolveDatabaseUrl(): string {
   const useRls = process.env.USE_RLS_ROLE === "true";
   if (useRls) {
@@ -21,13 +49,33 @@ function resolveDatabaseUrl(): string {
           "Run scripts/setup-gym-app-role.sql and add the gym_app connection string.",
       );
     }
-    return rlsUrl;
+    const rlsHost = new URL(
+      rlsUrl.replace(/^postgresql:/, "postgres:"),
+    ).hostname;
+    // db.*.supabase.co is IPv6-only — unreachable on many networks (and with ipv4first DNS).
+    if (rlsHost.startsWith("db.") && rlsHost.endsWith(".supabase.co")) {
+      const fallback = process.env.DATABASE_URL;
+      if (!fallback) {
+        throw new Error(
+          "DATABASE_URL_RLS uses the direct Supabase host (IPv6-only). " +
+            "Set USE_RLS_ROLE=false or use the session pooler DATABASE_URL instead.",
+        );
+      }
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "[prisma] Direct Supabase host unreachable on IPv4 — using DATABASE_URL pooler. " +
+            "Set USE_RLS_ROLE=false to silence this.",
+        );
+      }
+      return withPoolParams(normalizeSupabasePoolerUrl(fallback));
+    }
+    return withPoolParams(rlsUrl);
   }
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error("DATABASE_URL is not set.");
   }
-  return url;
+  return withPoolParams(normalizeSupabasePoolerUrl(url));
 }
 
 export const prisma =

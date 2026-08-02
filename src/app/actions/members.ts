@@ -172,6 +172,7 @@ export async function createMember(
           subscriptionId: subscription.id,
           amount,
           method: data.method,
+          paidAt: startDate,
           recordedById: user.id,
         },
       });

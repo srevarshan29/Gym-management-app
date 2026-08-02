@@ -3,10 +3,7 @@ import type { Prisma } from "@prisma/client";
 import type { MemberGender } from "@prisma/client";
 
 import { withTenant } from "@/lib/db-context";
-import {
-  computeSubscriptionBalance,
-  sumPaymentAmounts,
-} from "@/lib/subscription-balance";
+import { computeSubscriptionBalance } from "@/lib/subscription-balance";
 import {
   statusFromEndDate,
   type SubscriptionStatus,
@@ -34,40 +31,112 @@ export type MemberListItem = {
   trainerName: string | null;
 };
 
+type SubscriptionRow = {
+  id: string;
+  memberId: string;
+  startDate: Date;
+  endDate: Date;
+  createdAt: Date;
+  priceAtPurchase: Prisma.Decimal;
+  package: { name: string };
+  createdBy: { name: string } | null;
+};
+
+type FetchMembersOptions = {
+  /** When false, skips payment aggregation (renewals/expired lists). */
+  includeBalance?: boolean;
+};
+
 async function fetchMembersWithStatus(
   tx: Prisma.TransactionClient,
   gymId: string,
+  options: FetchMembersOptions = {},
 ): Promise<MemberListItem[]> {
-  const members = await tx.member.findMany({
-    where: { gymId },
-    orderBy: { createdAt: "desc" },
-    include: {
-      trainer: { select: { id: true, name: true } },
-      subscriptions: {
-        orderBy: { createdAt: "asc" },
-        include: {
-          package: { select: { name: true } },
-          payments: { select: { amount: true } },
-          createdBy: { select: { name: true } },
-        },
+  const includeBalance = options.includeBalance ?? true;
+
+  const [members, subscriptions] = await Promise.all([
+    tx.member.findMany({
+      where: { gymId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        memberNumber: true,
+        name: true,
+        phone: true,
+        photoUrl: true,
+        gender: true,
+        createdAt: true,
+        isPt: true,
+        trainerId: true,
+        trainer: { select: { id: true, name: true } },
       },
-    },
-  });
+    }),
+    tx.subscription.findMany({
+      where: { gymId },
+      select: {
+        id: true,
+        memberId: true,
+        startDate: true,
+        endDate: true,
+        createdAt: true,
+        priceAtPurchase: true,
+        package: { select: { name: true } },
+        createdBy: { select: { name: true } },
+      },
+    }),
+  ]);
+
+  const subsByMember = new Map<string, SubscriptionRow[]>();
+  for (const sub of subscriptions) {
+    const list = subsByMember.get(sub.memberId) ?? [];
+    list.push(sub);
+    subsByMember.set(sub.memberId, list);
+  }
+
+  const currentSubByMember = new Map<string, SubscriptionRow>();
+  const addedByNameByMember = new Map<string, string | null>();
+
+  for (const [memberId, subs] of subsByMember) {
+    const current = [...subs].sort(
+      (a, b) => b.endDate.getTime() - a.endDate.getTime(),
+    )[0]!;
+    currentSubByMember.set(memberId, current);
+
+    const firstByCreated = [...subs].sort(
+      (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+    )[0];
+    addedByNameByMember.set(memberId, firstByCreated?.createdBy?.name ?? null);
+  }
+
+  const paidBySubId = new Map<string, number>();
+  if (includeBalance) {
+    const currentIds = [...currentSubByMember.values()].map((s) => s.id);
+    if (currentIds.length > 0) {
+      const groups = await tx.payment.groupBy({
+        by: ["subscriptionId"],
+        where: {
+          gymId,
+          subscriptionId: { in: currentIds },
+        },
+        _sum: { amount: true },
+      });
+      for (const row of groups) {
+        if (row.subscriptionId) {
+          paidBySubId.set(row.subscriptionId, Number(row._sum.amount ?? 0));
+        }
+      }
+    }
+  }
 
   return members.map((m) => {
-    const current =
-      m.subscriptions.length > 0
-        ? [...m.subscriptions].sort(
-            (a, b) => b.endDate.getTime() - a.endDate.getTime(),
-          )[0]
-        : undefined;
-    const addedByName = m.subscriptions[0]?.createdBy?.name ?? null;
-    const balance = current
-      ? computeSubscriptionBalance(
-          Number(current.priceAtPurchase),
-          sumPaymentAmounts(current.payments),
-        )
-      : null;
+    const current = currentSubByMember.get(m.id);
+    const balance =
+      includeBalance && current
+        ? computeSubscriptionBalance(
+            Number(current.priceAtPurchase),
+            paidBySubId.get(current.id) ?? 0,
+          )
+        : null;
 
     return {
       id: m.id,
@@ -85,7 +154,7 @@ async function fetchMembersWithStatus(
       subsAmount: balance?.subsAmount ?? null,
       paidAmount: balance?.paidAmount ?? null,
       pendingAmount: balance?.pendingAmount ?? 0,
-      addedByName,
+      addedByName: addedByNameByMember.get(m.id) ?? null,
       isPt: m.isPt,
       trainerId: m.trainerId,
       trainerName: m.trainer?.name ?? null,
@@ -98,7 +167,9 @@ async function fetchMembersWithStatus(
  * subscription and installment balance on that period.
  */
 export async function getMembersWithStatus(gymId: string): Promise<MemberListItem[]> {
-  return withTenant(gymId, (tx) => fetchMembersWithStatus(tx, gymId));
+  return withTenant(gymId, (tx) =>
+    fetchMembersWithStatus(tx, gymId, { includeBalance: true }),
+  );
 }
 
 export type PendingMember = {
@@ -184,7 +255,10 @@ export function filterExpiredMemberships(
 export async function getExpiredMemberships(
   gymId: string,
 ): Promise<MembershipRenewalRow[]> {
-  return filterExpiredMemberships(await getMembersWithStatus(gymId));
+  const members = await withTenant(gymId, (tx) =>
+    fetchMembersWithStatus(tx, gymId, { includeBalance: false }),
+  );
+  return filterExpiredMemberships(members);
 }
 
 /** Members expiring within EXPIRING_SOON_DAYS, soonest expiry first. */
@@ -203,7 +277,10 @@ export function filterUpcomingRenewals(
 export async function getUpcomingRenewals(
   gymId: string,
 ): Promise<MembershipRenewalRow[]> {
-  return filterUpcomingRenewals(await getMembersWithStatus(gymId));
+  const members = await withTenant(gymId, (tx) =>
+    fetchMembersWithStatus(tx, gymId, { includeBalance: false }),
+  );
+  return filterUpcomingRenewals(members);
 }
 
 /**

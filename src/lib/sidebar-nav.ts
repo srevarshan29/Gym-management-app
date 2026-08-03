@@ -15,6 +15,10 @@ import {
   Apple,
   ClipboardList,
   Settings,
+  ShieldCheck,
+  Briefcase,
+  CalendarDays,
+  FileSpreadsheet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -24,6 +28,8 @@ export type SidebarNavItem = {
   icon: LucideIcon;
   /** Hidden from non-owners (financial/reporting pages). */
   ownerOnly?: boolean;
+  /** Hidden from Staff; visible to Owner and Admin. */
+  ownerOrAdminOnly?: boolean;
   /** Hidden unless role can log payments. */
   requiresLogPayments?: boolean;
 };
@@ -114,7 +120,31 @@ export const SIDEBAR_SECTIONS: SidebarNavSection[] = [
   {
     id: "operations",
     label: "Operations",
-    items: [],
+    items: [
+      {
+        href: "/operations/admins",
+        label: "Admins",
+        icon: ShieldCheck,
+        ownerOnly: true,
+      },
+      {
+        href: "/operations/employees",
+        label: "Employees",
+        icon: Briefcase,
+        ownerOrAdminOnly: true,
+      },
+      {
+        href: "/operations/events",
+        label: "Events",
+        icon: CalendarDays,
+      },
+      {
+        href: "/operations/reports",
+        label: "Reports",
+        icon: FileSpreadsheet,
+        ownerOrAdminOnly: true,
+      },
+    ],
   },
 ];
 
@@ -122,8 +152,10 @@ export function isNavItemVisible(
   item: SidebarNavItem,
   isOwner: boolean,
   canLogPayments: boolean,
+  isOwnerOrAdmin: boolean,
 ): boolean {
   if (item.ownerOnly && !isOwner) return false;
+  if (item.ownerOrAdminOnly && !isOwnerOrAdmin) return false;
   if (item.requiresLogPayments && !canLogPayments) return false;
   return true;
 }

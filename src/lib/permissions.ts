@@ -35,6 +35,21 @@ export function canManagePackages(role: Role | undefined | null): boolean {
   return role === "OWNER" || role === "ADMIN";
 }
 
+/** HR employee records (salary optional). Owner and Admin only. */
+export function canManageEmployees(role: Role | undefined | null): boolean {
+  return canManagePackages(role);
+}
+
+/** Gym events (workshops, open houses). Owner, Admin, and Staff. */
+export function canManageEvents(role: Role | undefined | null): boolean {
+  return canManageMembers(role);
+}
+
+/** CSV reports (bulk export). Owner and Admin only. */
+export function canExportReports(role: Role | undefined | null): boolean {
+  return canManageEmployees(role);
+}
+
 export function canManageMembers(role: Role | undefined | null): boolean {
   return role === "OWNER" || role === "ADMIN" || role === "STAFF";
 }

@@ -103,20 +103,21 @@ async function DashboardBody({
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const [agg, trend, finSparklines] = await Promise.all([
-      withTenant(gymId, (tx) =>
+    const [agg, trend, finSparklines] = await (async () => {
+      const aggResult = await withTenant(gymId, (tx) =>
         tx.payment.aggregate({
           _sum: { amount: true },
           where: { gymId, paidAt: { gte: start, lt: end } },
         }),
-      ),
-      getMonthlyRevenueTrend(gymId),
-      getFinancialSparklines(
+      );
+      const trendResult = await getMonthlyRevenueTrend(gymId);
+      const finResult = await getFinancialSparklines(
         gymId,
         metrics.collectionExpected,
         metrics.pendingTotal,
-      ),
-    ]);
+      );
+      return [aggResult, trendResult, finResult] as const;
+    })();
     monthRevenue = Number(agg._sum.amount ?? 0);
     revenueTrend = trend;
     financialSparklines = finSparklines;

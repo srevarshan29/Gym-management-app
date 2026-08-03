@@ -18,6 +18,7 @@ const ROLE_LABEL: Record<string, string> = {
 export function AppShell({
   user,
   isOwner,
+  isOwnerOrAdmin,
   canLogPayments,
   children,
 }: {
@@ -27,13 +28,18 @@ export function AppShell({
     role: string;
   };
   isOwner: boolean;
+  isOwnerOrAdmin: boolean;
   canLogPayments: boolean;
   children: React.ReactNode;
 }) {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen bg-background">
-        <Sidebar isOwner={isOwner} canLogPayments={canLogPayments} />
+        <Sidebar
+          isOwner={isOwner}
+          isOwnerOrAdmin={isOwnerOrAdmin}
+          canLogPayments={canLogPayments}
+        />
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex h-16 items-center justify-between gap-3 border-b bg-card px-6">

@@ -17,7 +17,7 @@ This is a single-tenant app: all data belongs to one gym.
 - Packages: create/edit custom membership packages (name, price, months/days)
 - Payments: "Paid" tab (completed payments) and "Pending" tab (members whose
   current billing cycle has no matching payment) — owner only
-- Settings: owners create staff accounts and assign roles
+- **Operations → Admins:** owners create staff accounts and assign roles
 
 ### Role permissions
 
@@ -75,7 +75,7 @@ This is a single-tenant app: all data belongs to one gym.
    ```
 
    Open http://localhost:3000 and sign in with the seeded owner credentials.
-   Create additional staff from **Settings**.
+   Create additional staff from **Operations → Admins**.
 
 ## Useful scripts
 
@@ -123,7 +123,8 @@ src/
       members/         # list, new, [id] profile, [id]/edit
       packages/        # packages CRUD
       payments/        # paid + pending tabs (owner only)
-      settings/        # staff management (owner only)
+      operations/admins/ # staff accounts & roles (owner only)
+      settings/        # account & gym profile
     actions/           # server actions (members, packages, payments, ...)
   components/          # UI primitives + feature components
   lib/                 # prisma client, queries, permissions, helpers

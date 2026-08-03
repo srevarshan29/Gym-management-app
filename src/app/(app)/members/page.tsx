@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { Plus } from "lucide-react";
 
 import { requireGym } from "@/lib/session";
@@ -6,6 +7,7 @@ import { getMembersWithStatus } from "@/lib/queries";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { MemberAvatar } from "@/components/member-avatar";
+import { MembersPageSkeleton } from "@/components/page-loading-skeletons";
 import { PendingDuesBadge, StatusBadge } from "@/components/status-badge";
 import { PtBadge } from "@/components/pt-badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +23,16 @@ import {
 
 export default async function MembersPage() {
   const user = await requireGym();
-  const members = await getMembersWithStatus(user.gymId);
+
+  return (
+    <Suspense fallback={<MembersPageSkeleton />}>
+      <MembersPageContent gymId={user.gymId} />
+    </Suspense>
+  );
+}
+
+async function MembersPageContent({ gymId }: { gymId: string }) {
+  const members = await getMembersWithStatus(gymId);
 
   return (
     <div>

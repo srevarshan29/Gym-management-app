@@ -1,14 +1,46 @@
+import { Suspense } from "react";
+
 import { requireGym } from "@/lib/session";
 import { canManageMembers } from "@/lib/permissions";
 import { getWorkoutPlansPageData } from "@/lib/workout-plans";
 import { PageHeader } from "@/components/page-header";
+import { ProgrammePlansPageSkeleton } from "@/components/page-loading-skeletons";
 import { WorkoutPlanDialog } from "@/components/workout-plan-dialog";
 import { WorkoutPlansList } from "@/components/workout-plans-list";
 
 export default async function WorkoutPlansPage() {
   const user = await requireGym();
   const canManage = canManageMembers(user.role);
-  const { plans, members } = await getWorkoutPlansPageData(user.gymId);
+
+  return (
+    <div className="space-y-6">
+      <Suspense fallback={<WorkoutPlansPageShell />}>
+        <WorkoutPlansPageContent gymId={user.gymId} canManage={canManage} />
+      </Suspense>
+    </div>
+  );
+}
+
+function WorkoutPlansPageShell() {
+  return (
+    <>
+      <PageHeader
+        title="Workout Plans"
+        description="Training programmes assigned to members."
+      />
+      <ProgrammePlansPageSkeleton />
+    </>
+  );
+}
+
+async function WorkoutPlansPageContent({
+  gymId,
+  canManage,
+}: {
+  gymId: string;
+  canManage: boolean;
+}) {
+  const { plans, members } = await getWorkoutPlansPageData(gymId);
 
   const assignedMemberIds = new Set(plans.map((plan) => plan.memberId));
   const eligibleMembers = members.filter(
@@ -25,7 +57,7 @@ export default async function WorkoutPlansPage() {
   }));
 
   return (
-    <div className="space-y-6">
+    <>
       <PageHeader
         title="Workout Plans"
         description="Training programmes assigned to members."
@@ -36,6 +68,6 @@ export default async function WorkoutPlansPage() {
       </PageHeader>
 
       <WorkoutPlansList plans={rows} members={members} canManage={canManage} />
-    </div>
+    </>
   );
 }

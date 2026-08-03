@@ -1,11 +1,35 @@
+import { Suspense } from "react";
+
 import { requireGym } from "@/lib/session";
 import { getExpiredMemberships } from "@/lib/queries";
 import { PageHeader } from "@/components/page-header";
+import { RenewalListPageSkeleton } from "@/components/page-loading-skeletons";
 import { MembershipRenewalList } from "@/components/membership-renewal-list";
 
 export default async function ExpiredMembershipsPage() {
   const user = await requireGym();
-  const rows = await getExpiredMemberships(user.gymId);
+
+  return (
+    <Suspense fallback={<ExpiredMembershipsPageSkeleton />}>
+      <ExpiredMembershipsPageContent gymId={user.gymId} />
+    </Suspense>
+  );
+}
+
+function ExpiredMembershipsPageSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <PageHeader
+        title="Expired Memberships"
+        description="Members whose current subscription has expired."
+      />
+      <RenewalListPageSkeleton />
+    </div>
+  );
+}
+
+async function ExpiredMembershipsPageContent({ gymId }: { gymId: string }) {
+  const rows = await getExpiredMemberships(gymId);
 
   const items = rows.map((row) => ({
     ...row,

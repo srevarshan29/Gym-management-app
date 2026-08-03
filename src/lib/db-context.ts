@@ -9,7 +9,7 @@ export type DbContext =
   | { kind: "platform_lookup" };
 
 const TX_OPTIONS = {
-  maxWait: 15_000,
+  maxWait: 25_000,
   timeout: 30_000,
 } as const;
 
@@ -22,7 +22,11 @@ const TRANSIENT_ERROR_CODES = new Set([
 
 function isPoolExhaustionError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
-  return error.message.includes("Unable to start a transaction");
+  const msg = error.message;
+  return (
+    msg.includes("Unable to start a transaction") ||
+    msg.includes("Timed out fetching a new connection from the connection pool")
+  );
 }
 
 function isTransientDbError(error: unknown): boolean {
@@ -94,6 +98,10 @@ export async function withDbContext<T>(
       return await runInContext(ctx, fn);
     } catch (error) {
       lastError = error;
+      if (isPoolExhaustionError(error) && attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+        continue;
+      }
       if (!isTransientDbError(error) || attempt === 2) {
         throw error;
       }

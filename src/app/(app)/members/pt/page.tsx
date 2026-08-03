@@ -1,16 +1,33 @@
+import { Suspense } from "react";
 import { Dumbbell, Users } from "lucide-react";
 
 import { requireGym } from "@/lib/session";
 import { canManageMembers } from "@/lib/permissions";
 import { getPtMembersPageData } from "@/lib/pt-members";
 import { PageHeader } from "@/components/page-header";
+import { PtMembersPageSkeleton } from "@/components/page-loading-skeletons";
 import { DashboardStatCard } from "@/components/dashboard-stat-card";
 import { PtMembersPanel } from "@/components/pt-members-panel";
 
 export default async function PtMembersPage() {
   const user = await requireGym();
-  const data = await getPtMembersPageData(user.gymId);
   const canManage = canManageMembers(user.role);
+
+  return (
+    <Suspense fallback={<PtMembersPageSkeleton />}>
+      <PtMembersPageContent gymId={user.gymId} canManage={canManage} />
+    </Suspense>
+  );
+}
+
+async function PtMembersPageContent({
+  gymId,
+  canManage,
+}: {
+  gymId: string;
+  canManage: boolean;
+}) {
+  const data = await getPtMembersPageData(gymId);
 
   return (
     <div>

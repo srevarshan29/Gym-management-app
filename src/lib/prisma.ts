@@ -31,7 +31,7 @@ function withPoolParams(url: string): string {
     parsed.searchParams.set("connection_limit", "5");
   }
   if (!parsed.searchParams.has("pool_timeout")) {
-    parsed.searchParams.set("pool_timeout", "20");
+    parsed.searchParams.set("pool_timeout", "45");
   }
   if (!parsed.searchParams.has("connect_timeout")) {
     parsed.searchParams.set("connect_timeout", "30");
@@ -78,16 +78,40 @@ function resolveDatabaseUrl(): string {
   return withPoolParams(normalizeSupabasePoolerUrl(url));
 }
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
+function createPrismaClient(): PrismaClient {
+  return new PrismaClient({
     datasources: { db: { url: resolveDatabaseUrl() } },
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
 }
+
+/** Drop a dev singleton created before the generated client included new models. */
+function isStaleDevPrismaClient(client: PrismaClient): boolean {
+  if (process.env.NODE_ENV === "production") return false;
+  const c = client as PrismaClient & {
+    employee?: unknown;
+    gymEvent?: unknown;
+  };
+  return typeof c.employee === "undefined" || typeof c.gymEvent === "undefined";
+}
+
+function initPrisma(): PrismaClient {
+  let client = globalForPrisma.prisma;
+  if (client && isStaleDevPrismaClient(client)) {
+    void client.$disconnect().catch(() => {});
+    globalForPrisma.prisma = undefined;
+    client = undefined;
+  }
+  if (!client) {
+    client = createPrismaClient();
+    if (process.env.NODE_ENV !== "production") {
+      globalForPrisma.prisma = client;
+    }
+  }
+  return client;
+}
+
+export const prisma = initPrisma();
 
 /** True when the app is connected as the restricted gym_app role. */
 export function isRlsEnforced(): boolean {

@@ -54,9 +54,11 @@ function NavLink({
 
 export function Sidebar({
   isOwner,
+  isOwnerOrAdmin,
   canLogPayments,
 }: {
   isOwner: boolean;
+  isOwnerOrAdmin: boolean;
   canLogPayments: boolean;
 }) {
   const pathname = usePathname();
@@ -85,17 +87,18 @@ export function Sidebar({
     SIDEBAR_FOOTER_ITEM,
     isOwner,
     canLogPayments,
+    isOwnerOrAdmin,
   );
 
   const allNavItems = React.useMemo(() => {
     const items = SIDEBAR_SECTIONS.flatMap((section) =>
       section.items.filter((item) =>
-        isNavItemVisible(item, isOwner, canLogPayments),
+        isNavItemVisible(item, isOwner, canLogPayments, isOwnerOrAdmin),
       ),
     );
     if (showFooter) items.push(SIDEBAR_FOOTER_ITEM);
     return items;
-  }, [isOwner, canLogPayments, showFooter]);
+  }, [isOwner, isOwnerOrAdmin, canLogPayments, showFooter]);
 
   const activeHref = getActiveNavHref(pathname, allNavItems);
 
@@ -121,7 +124,7 @@ export function Sidebar({
         <nav className="flex flex-col gap-1 overflow-y-auto">
           {SIDEBAR_SECTIONS.map((section, sectionIndex) => {
             const visibleItems = section.items.filter((item) =>
-              isNavItemVisible(item, isOwner, canLogPayments),
+              isNavItemVisible(item, isOwner, canLogPayments, isOwnerOrAdmin),
             );
 
             return (

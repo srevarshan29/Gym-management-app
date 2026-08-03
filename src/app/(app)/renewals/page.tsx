@@ -1,12 +1,36 @@
+import { Suspense } from "react";
+
 import { requireGym } from "@/lib/session";
 import { getUpcomingRenewals } from "@/lib/queries";
 import { EXPIRING_SOON_DAYS } from "@/lib/subscription";
 import { PageHeader } from "@/components/page-header";
+import { RenewalListPageSkeleton } from "@/components/page-loading-skeletons";
 import { MembershipRenewalList } from "@/components/membership-renewal-list";
 
 export default async function UpcomingRenewalsPage() {
   const user = await requireGym();
-  const rows = await getUpcomingRenewals(user.gymId);
+
+  return (
+    <Suspense fallback={<UpcomingRenewalsPageSkeleton />}>
+      <UpcomingRenewalsPageContent gymId={user.gymId} />
+    </Suspense>
+  );
+}
+
+function UpcomingRenewalsPageSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <PageHeader
+        title="Upcoming Renewals"
+        description={`Subscriptions expiring within ${EXPIRING_SOON_DAYS} days.`}
+      />
+      <RenewalListPageSkeleton />
+    </div>
+  );
+}
+
+async function UpcomingRenewalsPageContent({ gymId }: { gymId: string }) {
+  const rows = await getUpcomingRenewals(gymId);
 
   const items = rows.map((row) => ({
     ...row,

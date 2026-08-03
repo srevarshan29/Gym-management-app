@@ -1,7 +1,10 @@
+import { Suspense } from "react";
+
 import { requireGym } from "@/lib/session";
 import { canManageMembers } from "@/lib/permissions";
 import { getRegisterQrPageData, getRegistrationUrl } from "@/lib/registration";
 import { PageHeader } from "@/components/page-header";
+import { RegisterQrPageSkeleton } from "@/components/page-loading-skeletons";
 import { RegistrationQrPanel } from "@/components/registration-qr-panel";
 import { QrRegistrationsList } from "@/components/qr-registrations-list";
 
@@ -19,13 +22,6 @@ export default async function RegisterQrPage({
   const canManage = canManageMembers(user.role);
   const view = parseView(searchParams?.view);
 
-  const { registrationToken, registrations } = await getRegisterQrPageData(
-    user.gymId,
-    view,
-  );
-
-  const registrationUrl = getRegistrationUrl(registrationToken);
-
   return (
     <div className="space-y-8">
       <PageHeader
@@ -33,6 +29,38 @@ export default async function RegisterQrPage({
         description="Self-service member registration via QR code."
       />
 
+      <Suspense
+        key={view}
+        fallback={<RegisterQrPageSkeleton />}
+      >
+        <RegisterQrPageContent
+          gymId={user.gymId}
+          canManage={canManage}
+          view={view}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+async function RegisterQrPageContent({
+  gymId,
+  canManage,
+  view,
+}: {
+  gymId: string;
+  canManage: boolean;
+  view: "pending" | "converted" | "all";
+}) {
+  const { registrationToken, registrations } = await getRegisterQrPageData(
+    gymId,
+    view,
+  );
+
+  const registrationUrl = getRegistrationUrl(registrationToken);
+
+  return (
+    <>
       <RegistrationQrPanel registrationUrl={registrationUrl} />
 
       <div>
@@ -45,6 +73,6 @@ export default async function RegisterQrPage({
           view={view}
         />
       </div>
-    </div>
+    </>
   );
 }

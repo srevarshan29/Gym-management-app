@@ -60,7 +60,7 @@ export async function createStaff(
     }),
   );
 
-  revalidatePath("/settings");
+  revalidatePath("/operations/admins");
   return actionOk("Staff account created.");
 }
 
@@ -93,7 +93,7 @@ export async function updateStaffRole(
     return actionError("Staff account not found.");
   }
 
-  revalidatePath("/settings");
+  revalidatePath("/operations/admins");
   return actionOk("Role updated.");
 }
 
@@ -114,5 +114,5 @@ export async function deleteStaff(formData: FormData): Promise<void> {
   if (result.count === 0) {
     throw new Error("Staff account not found.");
   }
-  revalidatePath("/settings");
+  revalidatePath("/operations/admins");
 }

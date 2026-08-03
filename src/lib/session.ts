@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 import type { Role } from "@prisma/client";
 
 import { auth } from "@/auth";
@@ -48,6 +49,20 @@ export async function requireGym(): Promise<GymSessionUser> {
   const user = await requireUser();
   if (user.role === "SUPER_ADMIN" || !user.gymId) {
     redirect("/admin");
+  }
+  return user as GymSessionUser;
+}
+
+/** Route handlers: return 401 instead of redirecting to login. */
+export async function requireGymForApi(): Promise<
+  GymSessionUser | NextResponse
+> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (user.role === "SUPER_ADMIN" || !user.gymId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   return user as GymSessionUser;
 }

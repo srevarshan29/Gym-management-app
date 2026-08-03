@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import {
   BarChart3,
@@ -13,6 +14,7 @@ import { canViewFinancials } from "@/lib/permissions";
 import { getAnalyticsPageData } from "@/lib/analytics-metrics";
 import { formatCurrency } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
+import { AnalyticsPageSkeleton } from "@/components/page-loading-skeletons";
 import { DashboardStatCard } from "@/components/dashboard-stat-card";
 import { MemberJoinsChart } from "@/components/member-joins-chart";
 import { RevenueTrendChart } from "@/components/revenue-trend-chart";
@@ -30,7 +32,15 @@ export default async function AnalyticsPage() {
     redirect("/");
   }
 
-  const data = await getAnalyticsPageData(user.gymId);
+  return (
+    <Suspense fallback={<AnalyticsPageSkeleton />}>
+      <AnalyticsPageContent gymId={user.gymId} />
+    </Suspense>
+  );
+}
+
+async function AnalyticsPageContent({ gymId }: { gymId: string }) {
+  const data = await getAnalyticsPageData(gymId);
 
   return (
     <div>

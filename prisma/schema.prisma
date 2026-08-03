@@ -61,6 +61,8 @@ model Gym {
   visitors      Visitor[]
   dietPlans     DietPlan[]
   workoutPlans  WorkoutPlan[]
+  employees     Employee[]
+  gymEvents     GymEvent[]
 }
 
 // Gym staff accounts. gymId is null only for SUPER_ADMIN (platform-level,
@@ -161,6 +163,41 @@ model Visitor {
   @@index([gymId, name])
   @@index([gymId, status])
   @@index([gymId, source, status])
+}
+
+// HR roster — people who work at the gym (not app login accounts; see User).
+model Employee {
+  id          String    @id @default(cuid())
+  gymId       String
+  name        String
+  phone       String
+  position    String
+  joiningDate DateTime  @db.Date
+  salary      Decimal?  @db.Decimal(12, 2)
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  gym Gym @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@index([gymId])
+  @@index([gymId, name])
+}
+
+model GymEvent {
+  id          String   @id @default(cuid())
+  gymId       String
+  title       String
+  eventDate   DateTime @db.Date
+  location    String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  gym Gym @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@index([gymId])
+  @@index([gymId, eventDate])
 }
 
 enum WorkoutLevel {

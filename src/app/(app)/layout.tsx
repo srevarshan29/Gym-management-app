@@ -1,5 +1,5 @@
 import { requireGym } from "@/lib/session";
-import { canLogPayments } from "@/lib/permissions";
+import { canLogPayments, canManageEmployees } from "@/lib/permissions";
 import { AppShell } from "@/components/app-shell";
 
 export default async function AppLayout({
@@ -18,6 +18,7 @@ export default async function AppLayout({
         role: user.role,
       }}
       isOwner={isOwner}
+      isOwnerOrAdmin={canManageEmployees(user.role)}
       canLogPayments={canLogPayments(user.role)}
     >
       {children}

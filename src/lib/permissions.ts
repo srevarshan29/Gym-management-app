@@ -10,6 +10,11 @@ export function canViewFinancials(role: Role | undefined | null): boolean {
   return role === "OWNER";
 }
 
+/** Manual ledger on Accounts & Finance (same sensitivity as gym-wide financials). */
+export function canManageLedger(role: Role | undefined | null): boolean {
+  return canViewFinancials(role);
+}
+
 /** Record a payment against a member (Owner, Admin, Staff). */
 export function canLogPayments(role: Role | undefined | null): boolean {
   return role === "OWNER" || role === "ADMIN" || role === "STAFF";

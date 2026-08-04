@@ -91,8 +91,13 @@ function isStaleDevPrismaClient(client: PrismaClient): boolean {
   const c = client as PrismaClient & {
     employee?: unknown;
     gymEvent?: unknown;
+    ledgerTransaction?: unknown;
   };
-  return typeof c.employee === "undefined" || typeof c.gymEvent === "undefined";
+  return (
+    typeof c.employee === "undefined" ||
+    typeof c.gymEvent === "undefined" ||
+    typeof c.ledgerTransaction === "undefined"
+  );
 }
 
 function initPrisma(): PrismaClient {

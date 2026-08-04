@@ -115,8 +115,9 @@ export function ChartCardsSkeleton({ count = 2 }: { count?: number }) {
 
 export function MembersPageSkeleton() {
   return (
-    <div className="animate-pulse">
+    <div className="animate-pulse space-y-4">
       <PageHeaderSkeleton actionWidth={128} />
+      <div className="h-10 w-full max-w-md rounded-md bg-muted" />
       <TableCardSkeleton rows={8} />
     </div>
   );
@@ -186,6 +187,24 @@ export function RenewalListPageSkeleton() {
   return (
     <div className="animate-pulse space-y-4">
       <div className="h-10 w-full max-w-sm rounded-md bg-muted" />
+      <TableCardSkeleton rows={6} />
+    </div>
+  );
+}
+
+export function FinancePendingDuesPageSkeleton() {
+  return <RenewalListPageSkeleton />;
+}
+
+export function FinanceSubscriptionsPageSkeleton() {
+  return <KpiGridSkeleton count={3} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" />;
+}
+
+export function AccountsFinancePageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <KpiGridSkeleton count={3} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" />
+      <div className="h-10 w-full max-w-md rounded-md bg-muted" />
       <TableCardSkeleton rows={6} />
     </div>
   );

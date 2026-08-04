@@ -29,3 +29,8 @@ export function initials(name: string): string {
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
+
+/** Digits only — for matching phone numbers across formatting (+91, spaces, dashes). */
+export function phoneDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}

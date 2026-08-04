@@ -177,6 +177,8 @@ export type PendingMember = {
   memberNumber: number;
   memberName: string;
   phone: string;
+  photoUrl: string | null;
+  gender: MemberGender;
   subscriptionId: string;
   packageName: string;
   subsAmount: number;
@@ -203,6 +205,8 @@ export async function getPendingMembers(gymId: string): Promise<PendingMember[]>
       memberNumber: m.memberNumber,
       memberName: m.name,
       phone: m.phone,
+      photoUrl: m.photoUrl,
+      gender: m.gender,
       subscriptionId: m.currentSubscriptionId,
       packageName: m.packageName ?? "—",
       subsAmount: m.subsAmount ?? 0,
@@ -210,7 +214,38 @@ export async function getPendingMembers(gymId: string): Promise<PendingMember[]>
       amountDue: m.pendingAmount,
       endDate: m.endDate!,
       status: m.status,
-    }));
+    }))
+    .sort((a, b) => b.amountDue - a.amountDue);
+}
+
+export type SubscriptionSummaryCounts = {
+  active: number;
+  expiringSoon: number;
+  expired: number;
+};
+
+/** Mutually exclusive lifecycle buckets (ACTIVE / EXPIRING_SOON / EXPIRED only). */
+export function subscriptionSummaryCounts(
+  members: MemberListItem[],
+): SubscriptionSummaryCounts {
+  let active = 0;
+  let expiringSoon = 0;
+  let expired = 0;
+  for (const m of members) {
+    if (m.status === "ACTIVE") active += 1;
+    else if (m.status === "EXPIRING_SOON") expiringSoon += 1;
+    else if (m.status === "EXPIRED") expired += 1;
+  }
+  return { active, expiringSoon, expired };
+}
+
+export async function getSubscriptionSummaryCounts(
+  gymId: string,
+): Promise<SubscriptionSummaryCounts> {
+  const members = await withTenant(gymId, (tx) =>
+    fetchMembersWithStatus(tx, gymId, { includeBalance: false }),
+  );
+  return subscriptionSummaryCounts(members);
 }
 
 export type MembershipRenewalRow = {

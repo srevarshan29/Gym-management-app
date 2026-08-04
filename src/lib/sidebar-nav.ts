@@ -80,7 +80,7 @@ export const SIDEBAR_SECTIONS: SidebarNavSection[] = [
         icon: CreditCard,
         requiresLogPayments: true,
       },
-      { href: "/finance/pending-dues", label: "Pending Dues", icon: Clock },
+      { href: "/finance/pending-dues", label: "Pending Dues", icon: Clock, requiresLogPayments: true },
       {
         href: "/finance/subscriptions",
         label: "Subscriptions",

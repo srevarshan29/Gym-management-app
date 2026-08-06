@@ -1,8 +1,10 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 import type { Role } from "@prisma/client";
 
 import { auth } from "@/auth";
+import { withPlatformLookup } from "@/lib/db-context";
 
 export type SessionUser = {
   id: string;
@@ -15,10 +17,39 @@ export type SessionUser = {
 /** A SessionUser known to belong to a gym (gymId narrowed to string). */
 export type GymSessionUser = SessionUser & { gymId: string };
 
-export async function getCurrentUser(): Promise<SessionUser | null> {
+/**
+ * JWT proves identity; role/gymId/existence come from the DB so demotion and
+ * deletion take effect on the next request. Deduped once per server request.
+ */
+const resolveCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const session = await auth();
-  if (!session?.user) return null;
-  return session.user as SessionUser;
+  if (!session?.user?.id) return null;
+
+  const dbUser = await withPlatformLookup((tx) =>
+    tx.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true, name: true, email: true, role: true, gymId: true },
+    }),
+  );
+
+  if (!dbUser) {
+    // Cannot call signOut() here — cookie writes are forbidden during RSC
+    // render. Bounce through the /logout Route Handler, which is allowed to
+    // clear the session cookie and then send the user to /login.
+    redirect("/logout");
+  }
+
+  return {
+    id: dbUser.id,
+    name: dbUser.name,
+    email: dbUser.email,
+    role: dbUser.role,
+    gymId: dbUser.gymId,
+  };
+});
+
+export async function getCurrentUser(): Promise<SessionUser | null> {
+  return resolveCurrentUser();
 }
 
 /** Use in server components/actions to require any authenticated staff member. */

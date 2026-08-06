@@ -46,6 +46,13 @@ export const authConfig = {
         return true;
       }
 
+      // /logout is a Route Handler that clears the session cookie — must be
+      // reachable even when the JWT is stale (e.g. user deleted from DB).
+      const isLogout = nextUrl.pathname.startsWith("/logout");
+      if (isLogout) {
+        return true;
+      }
+
       const isPublicRegister = nextUrl.pathname.startsWith("/register");
       if (isPublicRegister) {
         return true;

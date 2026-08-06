@@ -2,6 +2,9 @@ import { requireGym } from "@/lib/session";
 import { canLogPayments, canManageEmployees } from "@/lib/permissions";
 import { AppShell } from "@/components/app-shell";
 
+/** Session/role is resolved here; keep route dynamic (see next.config staleTimes). */
+export const dynamic = "force-dynamic";
+
 export default async function AppLayout({
   children,
 }: {

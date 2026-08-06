@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/utils";
 import { MEMBER_GENDER_OPTIONS } from "@/lib/member-gender";
+import { MembershipPolicyConsent } from "@/components/membership-policy-consent";
 import type { ActionResult } from "@/lib/action-result";
 import type { MemberGender } from "@prisma/client";
 
@@ -52,6 +53,7 @@ type CreateProps = {
   initialEmail?: string;
   initialGender?: MemberGender;
   visitorId?: string;
+  membershipPolicyText?: string | null;
 };
 
 type EditProps = {
@@ -412,6 +414,10 @@ export function MemberForm(props: Props) {
             ) : null}
           </CardContent>
         </Card>
+      ) : null}
+
+      {props.mode === "create" && props.membershipPolicyText ? (
+        <MembershipPolicyConsent policyText={props.membershipPolicyText} />
       ) : null}
 
       <div className="flex justify-end gap-2">

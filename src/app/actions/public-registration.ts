@@ -6,6 +6,8 @@ import { z } from "zod";
 
 import { withTenant } from "@/lib/db-context";
 import { getGymByRegistrationToken } from "@/lib/registration";
+import { getMembershipPolicyForGymPublic } from "@/lib/gym-profile";
+import { isMembershipPolicyRequired } from "@/lib/membership-policy";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
 
@@ -68,6 +70,17 @@ export async function submitPublicRegistration(
     return actionError("Please wait a moment before submitting.");
   }
 
+  const policyText = await getMembershipPolicyForGymPublic(gym.id);
+  let policyConsent: { text: string; agreedAt: Date } | null = null;
+  if (isMembershipPolicyRequired(policyText)) {
+    if (formData.get("agreeMembershipPolicy") !== "1") {
+      return actionError(
+        "You must agree to the gym's membership policy to register.",
+      );
+    }
+    policyConsent = { text: policyText!, agreedAt: new Date() };
+  }
+
   const headerList = await headers();
   const ip = getClientIp(headerList.get("x-forwarded-for"));
   const rateKey = `qr-reg:${gym.id}:${ip}`;
@@ -99,6 +112,8 @@ export async function submitPublicRegistration(
         notes: "Self-registered via QR",
         status: "pending",
         source: "qr_registration",
+        membershipPolicyAgreedText: policyConsent?.text ?? null,
+        membershipPolicyAgreedAt: policyConsent?.agreedAt ?? null,
       },
     });
     return false;

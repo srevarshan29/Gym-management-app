@@ -9,6 +9,7 @@ import { updateGymProfile } from "@/app/actions/gym-profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { ActionResult } from "@/lib/action-result";
 import type { GymProfileData } from "@/lib/gym-profile";
@@ -98,6 +99,22 @@ export function GymProfileForm({ profile }: { profile: GymProfileData }) {
           defaultValue={profile.address ?? ""}
           placeholder="Street, city, state, PIN"
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="membership-policy">Membership policy &amp; liability waiver</Label>
+        <Textarea
+          id="membership-policy"
+          name="membershipPolicyText"
+          defaultValue={profile.membershipPolicyText}
+          rows={12}
+          placeholder="Leave empty to skip policy acceptance during registration."
+          className="font-mono text-sm"
+        />
+        <p className="text-xs text-muted-foreground">
+          Shown to new members during registration. Clear this field to disable
+          the agreement step for your gym.
+        </p>
       </div>
 
       <div className="rounded-lg border p-4">

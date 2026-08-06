@@ -14,6 +14,8 @@ import { notifyPaymentLogged } from "@/lib/notifications";
 import { uploadMemberPhoto } from "@/lib/storage";
 import { validateTrainerForGym } from "@/lib/staff";
 import { actionError, type ActionResult } from "@/lib/action-result";
+import { getMembershipPolicyForGym } from "@/lib/gym-profile";
+import { isMembershipPolicyRequired } from "@/lib/membership-policy";
 
 const memberGenderSchema = z.enum([
   "MALE",
@@ -134,6 +136,17 @@ export async function createMember(
   if ("ok" in ptFields) return ptFields;
   const { isPt, trainerId } = ptFields;
 
+  const policyText = await getMembershipPolicyForGym(gymId);
+  let policyConsent: { text: string; agreedAt: Date } | null = null;
+  if (isMembershipPolicyRequired(policyText)) {
+    if (formData.get("agreeMembershipPolicy") !== "1") {
+      return actionError(
+        "You must agree to the gym's membership policy before adding this member.",
+      );
+    }
+    policyConsent = { text: policyText!, agreedAt: new Date() };
+  }
+
   const { member, paymentId } = await withTenant(gymId, async (tx) => {
     const memberNumber = await nextMemberNumber(tx, gymId);
 
@@ -148,6 +161,8 @@ export async function createMember(
         notes: data.notes || null,
         isPt,
         trainerId,
+        membershipPolicyAgreedText: policyConsent?.text ?? null,
+        membershipPolicyAgreedAt: policyConsent?.agreedAt ?? null,
       },
     });
 

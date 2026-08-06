@@ -51,14 +51,18 @@ type Staff = {
 export function StaffManager({
   staff,
   currentUserId,
+  currentUserRole,
 }: {
   staff: Staff[];
   currentUserId: string;
+  currentUserRole: "OWNER" | "ADMIN" | "STAFF";
 }) {
+  const canAssignOwner = currentUserRole === "OWNER";
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <CreateStaffDialog />
+        <CreateStaffDialog canAssignOwner={canAssignOwner} />
       </div>
       <Table>
         <TableHeader>
@@ -86,6 +90,7 @@ export function StaffManager({
                   id={s.id}
                   role={s.role}
                   disabled={s.id === currentUserId}
+                  canAssignOwner={canAssignOwner}
                 />
               </TableCell>
               <TableCell className="text-right">
@@ -107,10 +112,12 @@ function RoleSelect({
   id,
   role,
   disabled,
+  canAssignOwner,
 }: {
   id: string;
   role: string;
   disabled: boolean;
+  canAssignOwner: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
@@ -136,7 +143,9 @@ function RoleSelect({
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="OWNER">Owner</SelectItem>
+        {canAssignOwner ? (
+          <SelectItem value="OWNER">Owner</SelectItem>
+        ) : null}
         <SelectItem value="ADMIN">Admin</SelectItem>
         <SelectItem value="STAFF">Staff</SelectItem>
       </SelectContent>
@@ -206,7 +215,7 @@ function CreateSubmit() {
   );
 }
 
-function CreateStaffDialog() {
+function CreateStaffDialog({ canAssignOwner }: { canAssignOwner: boolean }) {
   const [open, setOpen] = React.useState(false);
   const [role, setRole] = React.useState("STAFF");
   const router = useRouter();
@@ -269,9 +278,11 @@ function CreateStaffDialog() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="OWNER">
-                  Owner (full access incl. finances)
-                </SelectItem>
+                {canAssignOwner ? (
+                  <SelectItem value="OWNER">
+                    Owner (full access incl. finances)
+                  </SelectItem>
+                ) : null}
                 <SelectItem value="ADMIN">
                   Admin (manage members &amp; packages)
                 </SelectItem>

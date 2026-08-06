@@ -8,6 +8,7 @@ import { requireGym } from "@/lib/session";
 import { canManageStaff } from "@/lib/permissions";
 import { uploadGymLogo } from "@/lib/storage";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
+import { persistMembershipPolicyText } from "@/lib/membership-policy";
 
 const profileSchema = z.object({
   name: z.string().trim().min(1, "Gym name is required").max(120),
@@ -20,6 +21,7 @@ const profileSchema = z.object({
     .email("Enter a valid owner email")
     .optional()
     .or(z.literal("")),
+  membershipPolicyText: z.string().max(20000).optional().or(z.literal("")),
 });
 
 export async function updateGymProfile(
@@ -57,6 +59,9 @@ export async function updateGymProfile(
     phone: data.phone || null,
     ownerNotifyPhone: data.ownerNotifyPhone || null,
     ownerNotifyEmail: data.ownerNotifyEmail || null,
+    membershipPolicyText: persistMembershipPolicyText(
+      data.membershipPolicyText,
+    ),
     ...(logoUrl ? { logoUrl } : {}),
   };
 

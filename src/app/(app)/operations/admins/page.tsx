@@ -49,7 +49,11 @@ export default async function AdminsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <StaffManager staff={staff} currentUserId={user.id} />
+          <StaffManager
+            staff={staff}
+            currentUserId={user.id}
+            currentUserRole={user.role as "OWNER" | "ADMIN" | "STAFF"}
+          />
         </CardContent>
       </Card>
     </div>

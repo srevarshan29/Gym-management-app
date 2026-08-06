@@ -20,6 +20,7 @@ import { PtBadge } from "@/components/pt-badge";
 import { RenewDialog } from "@/components/renew-dialog";
 import { PaymentDialog } from "@/components/payment-dialog";
 import { DeleteMemberButton } from "@/components/delete-member-button";
+import { MemberPolicyConsentSection } from "@/components/member-policy-consent-section";
 import { AutoOpenReceipt } from "@/components/auto-open-receipt";
 import type { PackageOption } from "@/components/member-form";
 import { Button } from "@/components/ui/button";
@@ -211,6 +212,11 @@ export default async function MemberProfilePage({
             ) : null}
           </CardContent>
         </Card>
+
+        <MemberPolicyConsentSection
+          agreedText={member.membershipPolicyAgreedText}
+          agreedAt={member.membershipPolicyAgreedAt}
+        />
 
         <Card>
           <CardHeader>

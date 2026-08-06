@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import type { ActionResult } from "@/lib/action-result";
 import { MEMBER_GENDER_OPTIONS } from "@/lib/member-gender";
+import { MembershipPolicyConsent } from "@/components/membership-policy-consent";
 import type { MemberGender } from "@prisma/client";
 
 function SubmitButton() {
@@ -30,9 +31,11 @@ function SubmitButton() {
 export function PublicRegistrationForm({
   token,
   gymName,
+  membershipPolicyText,
 }: {
   token: string;
   gymName: string;
+  membershipPolicyText: string | null;
 }) {
   const formLoadedAt = React.useRef(String(Date.now()));
   const [gender, setGender] = React.useState<MemberGender>("PREFER_NOT_TO_SAY");
@@ -126,6 +129,10 @@ export function PublicRegistrationForm({
           </SelectContent>
         </Select>
       </div>
+
+      {membershipPolicyText ? (
+        <MembershipPolicyConsent policyText={membershipPolicyText} />
+      ) : null}
 
       {state && !state.ok ? (
         <p className="text-sm text-destructive">{state.error}</p>

@@ -7,12 +7,16 @@ import { z } from "zod";
 import { withPlatformLookup, withSuperAdmin } from "@/lib/db-context";
 import { requireSuperAdmin } from "@/lib/session";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
+import { DEFAULT_MEMBERSHIP_POLICY_TEXT } from "@/lib/membership-policy";
 
 const createGymSchema = z.object({
   gymName: z.string().trim().min(1, "Gym name is required").max(120),
   ownerName: z.string().trim().min(1, "Owner name is required").max(120),
   ownerEmail: z.string().trim().email("Enter a valid email"),
-  ownerPassword: z.string().min(8, "Password must be at least 8 characters"),
+  ownerPassword: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(72, "Password must be at most 72 characters"),
 });
 
 /**
@@ -52,7 +56,13 @@ export async function createGym(
         role: "OWNER",
       },
     });
-    await tx.gymProfile.create({ data: { gymId: gym.id, name: gymName } });
+    await tx.gymProfile.create({
+      data: {
+        gymId: gym.id,
+        name: gymName,
+        membershipPolicyText: DEFAULT_MEMBERSHIP_POLICY_TEXT,
+      },
+    });
   });
 
   revalidatePath("/admin");

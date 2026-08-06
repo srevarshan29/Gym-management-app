@@ -13,7 +13,10 @@ import { isDisplayNameTakenInGym, normalizeDisplayName } from "@/lib/user-displa
 const createStaffSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
   email: z.string().trim().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(72, "Password must be at most 72 characters"),
   role: z.enum(["OWNER", "ADMIN", "STAFF"]),
 });
 
@@ -31,6 +34,9 @@ export async function createStaff(
     return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
   }
   const { name, email, password, role } = parsed.data;
+  if (role === "OWNER" && user.role !== "OWNER") {
+    return actionError("Only an owner can assign the owner role.");
+  }
   const displayName = normalizeDisplayName(name);
 
   const existing = await withPlatformLookup((tx) =>
@@ -77,6 +83,10 @@ export async function updateStaffRole(
   const role = String(formData.get("role") ?? "");
   if (!id || !["OWNER", "ADMIN", "STAFF"].includes(role)) {
     return actionError("Invalid input.");
+  }
+
+  if (role === "OWNER" && user.role !== "OWNER") {
+    return actionError("Only an owner can assign the owner role.");
   }
 
   if (id === user.id && role !== "OWNER") {

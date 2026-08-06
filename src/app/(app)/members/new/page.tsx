@@ -9,6 +9,7 @@ import { durationLabel } from "@/lib/subscription";
 import { PageHeader } from "@/components/page-header";
 import { MemberForm, type PackageOption } from "@/components/member-form";
 import { Button } from "@/components/ui/button";
+import { getMembershipPolicyForGym } from "@/lib/gym-profile";
 import type { MemberGender } from "@prisma/client";
 
 const GENDER_VALUES: MemberGender[] = [
@@ -38,7 +39,7 @@ export default async function NewMemberPage({
 }) {
   const user = await requireGym();
 
-  const [packages, staffOptions] = await Promise.all([
+  const [packages, staffOptions, membershipPolicyText] = await Promise.all([
     withTenant(user.gymId, (tx) =>
       tx.package.findMany({
         where: { gymId: user.gymId, isActive: true },
@@ -46,6 +47,7 @@ export default async function NewMemberPage({
       }),
     ),
     getGymStaffOptions(user.gymId),
+    getMembershipPolicyForGym(user.gymId),
   ]);
 
   const options: PackageOption[] = packages.map((p) => ({
@@ -75,6 +77,7 @@ export default async function NewMemberPage({
         initialEmail={searchParams?.email}
         initialGender={parseGender(searchParams?.gender)}
         visitorId={searchParams?.visitorId}
+        membershipPolicyText={membershipPolicyText}
       />
     </div>
   );

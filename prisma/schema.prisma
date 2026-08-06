@@ -123,6 +123,8 @@ model Member {
   notes        String?
   isPt         Boolean      @default(false)
   trainerId    String?
+  membershipPolicyAgreedText String?   @db.Text
+  membershipPolicyAgreedAt   DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -161,6 +163,8 @@ model Visitor {
   notes     String?
   status    VisitorStatus  @default(pending)
   source    VisitorSource  @default(walk_in)
+  membershipPolicyAgreedText String?   @db.Text
+  membershipPolicyAgreedAt   DateTime?
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 
@@ -331,6 +335,7 @@ model GymProfile {
   phone            String?
   ownerNotifyPhone String?
   ownerNotifyEmail String?
+  membershipPolicyText String? @db.Text
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

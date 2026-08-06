@@ -2,6 +2,25 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
+const ALLOWED_IMAGE_TYPES = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+} as const;
+
+type AllowedImageMime = keyof typeof ALLOWED_IMAGE_TYPES;
+
+function extensionForMime(mime: string): AllowedImageMime | null {
+  if (mime === "image/svg+xml" || mime === "image/svg") {
+    return null;
+  }
+  if (mime in ALLOWED_IMAGE_TYPES) {
+    return mime as AllowedImageMime;
+  }
+  return null;
+}
+
 let cachedClient: SupabaseClient | null | undefined;
 
 /** Returns null if Supabase Storage env vars are not configured. */
@@ -21,7 +40,10 @@ function getSupabaseAdmin(): SupabaseClient | null {
 
 export type UploadResult = { url: string } | { error: string };
 
-async function uploadImage(file: File, path: string): Promise<UploadResult> {
+async function uploadImage(
+  file: File,
+  pathWithoutExt: string,
+): Promise<UploadResult> {
   const supabase = getSupabaseAdmin();
   if (!supabase) {
     return {
@@ -29,19 +51,31 @@ async function uploadImage(file: File, path: string): Promise<UploadResult> {
         "Image upload is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to enable it.",
     };
   }
-  if (!file.type.startsWith("image/")) {
-    return { error: "File must be an image." };
+
+  const mime = file.type;
+  if (mime === "image/svg+xml" || mime === "image/svg") {
+    return { error: "SVG uploads are not allowed." };
+  }
+
+  const allowedMime = extensionForMime(mime);
+  if (!allowedMime) {
+    return {
+      error: "File must be a JPEG, PNG, WebP, or GIF image.",
+    };
   }
   if (file.size > MAX_IMAGE_BYTES) {
     return { error: "Image must be smaller than 5MB." };
   }
 
-  const bucket = process.env.SUPABASE_STORAGE_BUCKET || "gym-assets";
+  const ext = ALLOWED_IMAGE_TYPES[allowedMime];
+  const path = `${pathWithoutExt}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
+
+  const bucket = process.env.SUPABASE_STORAGE_BUCKET || "gym-assets";
 
   const { error: uploadError } = await supabase.storage
     .from(bucket)
-    .upload(path, buffer, { contentType: file.type, upsert: true });
+    .upload(path, buffer, { contentType: allowedMime, upsert: true });
 
   if (uploadError) {
     return { error: `Could not upload image: ${uploadError.message}` };
@@ -53,8 +87,7 @@ async function uploadImage(file: File, path: string): Promise<UploadResult> {
 
 /** Uploads a gym logo image to Supabase Storage and returns its public URL. */
 export async function uploadGymLogo(file: File): Promise<UploadResult> {
-  const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-  return uploadImage(file, `logo-${Date.now()}.${ext}`);
+  return uploadImage(file, `logo-${Date.now()}`);
 }
 
 /** Uploads a member profile photo and returns its public URL. */
@@ -62,6 +95,5 @@ export async function uploadMemberPhoto(
   file: File,
   memberId: string,
 ): Promise<UploadResult> {
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  return uploadImage(file, `members/${memberId}-${Date.now()}.${ext}`);
+  return uploadImage(file, `members/${memberId}-${Date.now()}`);
 }

@@ -10,6 +10,7 @@ import { getMembershipPolicyForGymPublic } from "@/lib/gym-profile";
 import { isMembershipPolicyRequired } from "@/lib/membership-policy";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
+import { normalizeMemberEmail } from "@/lib/member-portal/constants";
 
 const MIN_SUBMIT_MS = 3000;
 const RATE_LIMIT = 5;
@@ -25,12 +26,7 @@ const memberGenderSchema = z.enum([
 const publicRegistrationSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
   phone: z.string().trim().min(3, "Phone number is required").max(30),
-  email: z
-    .string()
-    .trim()
-    .email("Enter a valid email")
-    .optional()
-    .or(z.literal("")),
+  email: z.string().trim().email("Enter a valid email"),
   gender: memberGenderSchema.default("PREFER_NOT_TO_SAY"),
   website: z.string().optional(),
   formLoadedAt: z.string().optional(),
@@ -106,7 +102,7 @@ export async function submitPublicRegistration(
         gymId: gym.id,
         name: data.name,
         phone: data.phone,
-        email: data.email || null,
+        email: normalizeMemberEmail(data.email),
         gender: data.gender,
         visitDate: todayDate(),
         notes: "Self-registered via QR",

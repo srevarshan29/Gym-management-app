@@ -95,6 +95,33 @@ This is a single-tenant app: all data belongs to one gym.
    local shell pointed at the production `DATABASE_URL`, or a deploy hook).
 4. Seed the owner once against production: `npm run db:seed`.
 
+## Member portal (Google sign-in)
+
+Members use a **separate** Auth.js instance (`/api/member-auth`) with Google OAuth.
+Staff login is unchanged (email + password).
+
+### Google Cloud Console
+
+1. Open [Google Cloud Console](https://console.cloud.google.com/) and create or select a project.
+2. **OAuth consent screen** (APIs & Services): External app, add scopes `openid`, `email`, `profile`.
+   While **Testing**, add test user Gmail addresses that will sign in.
+3. **Credentials** → Create **OAuth client ID** → **Web application**:
+   - Authorized JavaScript origins: `http://localhost:3000` and your production URL.
+   - Authorized redirect URIs:
+     - `http://localhost:3000/api/member-auth/callback/google`
+     - `https://YOUR_HOST/api/member-auth/callback/google`
+4. Copy Client ID and Client secret into `.env`:
+   - `MEMBER_AUTH_GOOGLE_CLIENT_ID`
+   - `MEMBER_AUTH_GOOGLE_CLIENT_SECRET`
+5. Set `NEXT_PUBLIC_APP_URL` to your public app URL (used in portal login links staff share).
+6. Use `AUTH_TRUST_HOST=true` on production if OAuth callbacks fail host validation.
+
+### Enabling access
+
+1. Member must have an **email** on file (required on new staff/QR registration).
+2. Staff opens the member profile and clicks **Enable member portal**, then shares the gym login link.
+3. Member opens `/member/login/{gymToken}` and chooses **Continue with Google** with the same email.
+
 ## How subscription status & "Pending" work
 
 - A subscription runs from `startDate` to `endDate` (computed from the package

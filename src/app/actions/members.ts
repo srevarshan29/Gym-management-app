@@ -13,9 +13,10 @@ import { nextMemberNumber } from "@/lib/gym-sequence";
 import { notifyPaymentLogged } from "@/lib/notifications";
 import { uploadMemberPhoto } from "@/lib/storage";
 import { validateTrainerForGym } from "@/lib/staff";
-import { actionError, type ActionResult } from "@/lib/action-result";
+import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
 import { getMembershipPolicyForGym } from "@/lib/gym-profile";
 import { isMembershipPolicyRequired } from "@/lib/membership-policy";
+import { normalizeMemberEmail } from "@/lib/member-portal/constants";
 
 const memberGenderSchema = z.enum([
   "MALE",
@@ -27,7 +28,7 @@ const memberGenderSchema = z.enum([
 const createSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
   phone: z.string().trim().min(3, "Phone number is required").max(30),
-  email: z.string().trim().email("Enter a valid email").optional().or(z.literal("")),
+  email: z.string().trim().email("Enter a valid email"),
   gender: memberGenderSchema.default("PREFER_NOT_TO_SAY"),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
   packageId: z.string().trim().min(1, "Select a package"),
@@ -156,7 +157,7 @@ export async function createMember(
         memberNumber,
         name: data.name,
         phone: data.phone,
-        email: data.email || null,
+        email: normalizeMemberEmail(data.email),
         gender: data.gender,
         notes: data.notes || null,
         isPt,
@@ -247,7 +248,7 @@ export async function updateMember(
       data: {
         name,
         phone,
-        email: email || null,
+        email: email?.trim() ? normalizeMemberEmail(email) : null,
         gender,
         notes: notes || null,
         isPt,
@@ -285,4 +286,88 @@ export async function deleteMember(formData: FormData): Promise<void> {
   revalidatePath("/members/pt");
   revalidatePath("/");
   redirect("/members");
+}
+
+const DELETE_ALL_CONFIRM = "DELETE";
+
+/** Owner-only: remove every member in the current gym (cascades subscriptions, payments, plans). */
+export async function deleteAllGymMembers(
+  _prev: ActionResult | undefined,
+  formData: FormData,
+): Promise<ActionResult> {
+  const user = await requireGym();
+  if (!canDeleteMembers(user.role)) {
+    return actionError("Only owners can delete all members.");
+  }
+
+  const confirm = String(formData.get("confirm") ?? "").trim();
+  if (confirm !== DELETE_ALL_CONFIRM) {
+    return actionError(`Type ${DELETE_ALL_CONFIRM} to confirm this action.`);
+  }
+
+  const gymId = user.gymId;
+  const deletedCount = await withTenant(gymId, async (tx) => {
+    const result = await tx.member.deleteMany({ where: { gymId } });
+    await tx.gym.update({
+      where: { id: gymId },
+      data: { memberSeq: 0, receiptSeq: 0 },
+    });
+    return result.count;
+  });
+
+  revalidatePath("/");
+  revalidatePath("/members");
+  revalidatePath("/members/pt");
+  revalidatePath("/members/visitors");
+  revalidatePath("/analytics");
+  revalidatePath("/payments");
+  revalidatePath("/expired");
+  revalidatePath("/renewals");
+  revalidatePath("/programmes/diet");
+  revalidatePath("/programmes/workout");
+  revalidatePath("/finance/subscriptions");
+  revalidatePath("/finance/pending-dues");
+  revalidatePath("/settings");
+
+  return actionOk(
+    deletedCount === 0
+      ? "No members to delete. Member counters were reset."
+      : `Deleted ${deletedCount} member${deletedCount === 1 ? "" : "s"} and all related subscriptions, payments, and plans for this gym.`,
+  );
+}
+
+const CLEAR_EMAILS_CONFIRM = "CLEAR";
+
+/** Owner-only: set email to null on every member in the current gym. */
+export async function clearAllMemberEmails(
+  _prev: ActionResult | undefined,
+  formData: FormData,
+): Promise<ActionResult> {
+  const user = await requireGym();
+  if (!canDeleteMembers(user.role)) {
+    return actionError("Only owners can clear member emails.");
+  }
+
+  const confirm = String(formData.get("confirm") ?? "").trim();
+  if (confirm !== CLEAR_EMAILS_CONFIRM) {
+    return actionError(`Type ${CLEAR_EMAILS_CONFIRM} to confirm this action.`);
+  }
+
+  const gymId = user.gymId;
+  const updatedCount = await withTenant(gymId, (tx) =>
+    tx.member.updateMany({
+      where: { gymId },
+      data: { email: null },
+    }),
+  );
+
+  revalidatePath("/members");
+  revalidatePath("/members/pt");
+  revalidatePath("/settings");
+
+  return actionOk(
+    updatedCount.count === 0
+      ? "No members in this gym."
+      : `Cleared email on ${updatedCount.count} member${updatedCount.count === 1 ? "" : "s"} (this gym only).`,
+  );
 }

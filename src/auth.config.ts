@@ -76,7 +76,7 @@ export const authConfig = {
       if (session.user) {
         session.user.id = (token.id as string) ?? "";
         session.user.role = ((token.role as Role) ?? "STAFF") as Role;
-        session.user.gymId = (token.gymId as string | null) ?? null;
+        session.user.gymId = (token.gymId as string | null | undefined) ?? null;
         session.user.name = (token.name as string | null | undefined) ?? session.user.name;
         session.user.email = (token.email as string | null | undefined) ?? session.user.email;
       }

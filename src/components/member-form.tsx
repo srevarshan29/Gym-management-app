@@ -239,7 +239,9 @@ export function MemberForm(props: Props) {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email (optional)</Label>
+            <Label htmlFor="email">
+              {props.mode === "create" ? "Email" : "Email (optional)"}
+            </Label>
             <Input
               id="email"
               name="email"
@@ -250,9 +252,12 @@ export function MemberForm(props: Props) {
                   : (props.initialEmail ?? "")
               }
               placeholder="jane@example.com"
+              required={props.mode === "create"}
             />
             <p className="text-xs text-muted-foreground">
-              Used to email payment receipts. Leave blank to skip email receipts.
+              {props.mode === "create"
+                ? "Required for member portal sign-in and payment receipts."
+                : "Used for member portal Google sign-in and email receipts. Leave blank if not available."}
             </p>
           </div>
           <div className="space-y-2">

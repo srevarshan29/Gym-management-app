@@ -21,6 +21,7 @@ import { RenewDialog } from "@/components/renew-dialog";
 import { PaymentDialog } from "@/components/payment-dialog";
 import { DeleteMemberButton } from "@/components/delete-member-button";
 import { MemberPolicyConsentSection } from "@/components/member-policy-consent-section";
+import { MemberPortalStaffCard } from "@/components/member-portal/member-portal-staff-card";
 import { AutoOpenReceipt } from "@/components/auto-open-receipt";
 import type { PackageOption } from "@/components/member-form";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,18 @@ export default async function MemberProfilePage({
 
   const member = await getMemberDetail(user.gymId, params.id);
   if (!member) notFound();
+
+  const portalMeta = await withTenant(user.gymId, (tx) =>
+    tx.member.findFirst({
+      where: { id: params.id, gymId: user.gymId },
+      select: {
+        portalEnabledAt: true,
+        email: true,
+      },
+    }),
+  );
+  const portalActive = !!portalMeta?.portalEnabledAt;
+  const hasEmail = !!portalMeta?.email?.trim();
 
   const current = [...member.subscriptions].sort(
     (a, b) => b.endDate.getTime() - a.endDate.getTime(),
@@ -216,6 +229,12 @@ export default async function MemberProfilePage({
         <MemberPolicyConsentSection
           agreedText={member.membershipPolicyAgreedText}
           agreedAt={member.membershipPolicyAgreedAt}
+        />
+
+        <MemberPortalStaffCard
+          memberId={member.id}
+          portalActive={portalActive}
+          hasEmail={hasEmail}
         />
 
         <Card>

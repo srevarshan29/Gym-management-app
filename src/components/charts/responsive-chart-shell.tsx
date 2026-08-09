@@ -1,49 +1,60 @@
 "use client";
 
-import type { ReactElement } from "react";
-import { ResponsiveContainer } from "recharts";
+import * as React from "react";
+import { cloneElement, isValidElement, type ReactElement } from "react";
 
 import { useChartLayout } from "@/hooks/use-chart-layout";
 import { cn } from "@/lib/utils";
 
 type ResponsiveChartShellProps = {
-  children: ReactElement;
+  children: ReactElement<{ width?: number; height?: number }>;
   className?: string;
 };
 
 /**
- * Constrains Recharts to a measured box so ResponsiveContainer does not collapse
- * or mis-size in flex/grid layouts (common on mobile landscape).
+ * Measures its container and passes explicit width/height to Recharts charts.
+ * Avoids ResponsiveContainer's zero-size inner div trick, which often fails on mobile.
  */
 export function ResponsiveChartShell({
   children,
   className,
 }: ResponsiveChartShellProps) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const { compact, shortViewport } = useChartLayout();
+  const [width, setWidth] = React.useState(0);
 
-  const heightClass = shortViewport
-    ? "h-[min(180px,40vh)]"
-    : compact
-      ? "h-[220px]"
-      : "h-[280px]";
+  const height = shortViewport ? 180 : compact ? 220 : 280;
+
+  React.useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const next = Math.round(el.getBoundingClientRect().width);
+      if (next > 0) setWidth(next);
+    };
+
+    measure();
+
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(el);
+    window.addEventListener("orientationchange", measure);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("orientationchange", measure);
+    };
+  }, []);
 
   return (
     <div
-      className={cn(
-        "chart-shell w-full min-w-0 max-w-full overflow-hidden",
-        heightClass,
-        className,
-      )}
+      ref={containerRef}
+      className={cn("chart-shell w-full min-w-0 max-w-full", className)}
+      style={{ height }}
     >
-      <ResponsiveContainer
-        width="100%"
-        height="100%"
-        minWidth={0}
-        debounce={100}
-        initialDimension={{ width: 360, height: 220 }}
-      >
-        {children}
-      </ResponsiveContainer>
+      {width > 0 && isValidElement(children)
+        ? cloneElement(children, { width, height })
+        : null}
     </div>
   );
 }

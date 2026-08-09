@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Dumbbell } from "lucide-react";
+import { Dumbbell, X } from "lucide-react";
 
 import { useSidebar } from "@/components/sidebar-provider";
 import {
@@ -14,6 +14,7 @@ import {
   type SidebarNavItem,
 } from "@/lib/sidebar-nav";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 function NavLink({
   item,
@@ -52,24 +53,34 @@ function NavLink({
   );
 }
 
-export function Sidebar({
+function SidebarNavContent({
   isOwner,
   isOwnerOrAdmin,
   canLogPayments,
+  onClose,
+  showCloseButton,
 }: {
   isOwner: boolean;
   isOwnerOrAdmin: boolean;
   canLogPayments: boolean;
+  onClose?: () => void;
+  showCloseButton?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { collapsed } = useSidebar();
   const [isPending, startTransition] = React.useTransition();
   const [pendingHref, setPendingHref] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!isPending) setPendingHref(null);
   }, [isPending, pathname]);
+
+  const prevPathname = React.useRef(pathname);
+  React.useEffect(() => {
+    if (prevPathname.current === pathname) return;
+    prevPathname.current = pathname;
+    onClose?.();
+  }, [pathname, onClose]);
 
   function handleNavigate(
     href: string,
@@ -103,21 +114,28 @@ export function Sidebar({
   const activeHref = getActiveNavHref(pathname, allNavItems);
 
   return (
-    <aside
-      className={cn(
-        "hidden shrink-0 flex-col border-r bg-card/70 backdrop-blur transition-all duration-200 md:flex",
-        collapsed
-          ? "w-0 overflow-hidden border-r-0 px-0 py-0 opacity-0 pointer-events-none"
-          : "w-64 px-4 py-6 opacity-100",
-      )}
-    >
-      <div className="mb-6 flex items-center gap-2 px-2">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Dumbbell className="h-5 w-5" />
+    <>
+      <div className="mb-6 flex items-center justify-between gap-2 px-2">
+        <div className="flex items-center gap-2">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Dumbbell className="h-5 w-5" />
+          </div>
+          <span className="font-display text-lg font-bold tracking-tight whitespace-nowrap">
+            GymDesk
+          </span>
         </div>
-        <span className="font-display text-lg font-bold tracking-tight whitespace-nowrap">
-          GymDesk
-        </span>
+        {showCloseButton ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0"
+            onClick={onClose}
+            aria-label="Close navigation menu"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        ) : null}
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col">
@@ -168,6 +186,63 @@ export function Sidebar({
           </div>
         ) : null}
       </div>
-    </aside>
+    </>
+  );
+}
+
+export function Sidebar({
+  isOwner,
+  isOwnerOrAdmin,
+  canLogPayments,
+}: {
+  isOwner: boolean;
+  isOwnerOrAdmin: boolean;
+  canLogPayments: boolean;
+}) {
+  const { collapsed, mobileOpen, closeMobile } = useSidebar();
+
+  return (
+    <>
+      {mobileOpen ? (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          aria-label="Close navigation menu"
+          onClick={closeMobile}
+        />
+      ) : null}
+
+      <aside
+        id="mobile-sidebar"
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex w-[min(18rem,88vw)] flex-col border-r bg-card px-4 py-6 shadow-lg transition-transform duration-200 ease-out md:hidden",
+          mobileOpen ? "translate-x-0" : "-translate-x-full pointer-events-none",
+        )}
+        aria-hidden={!mobileOpen}
+      >
+        <SidebarNavContent
+          isOwner={isOwner}
+          isOwnerOrAdmin={isOwnerOrAdmin}
+          canLogPayments={canLogPayments}
+          onClose={closeMobile}
+          showCloseButton
+        />
+      </aside>
+
+      <aside
+        className={cn(
+          "hidden shrink-0 flex-col border-r bg-card/70 backdrop-blur transition-all duration-200 md:flex",
+          collapsed
+            ? "w-0 overflow-hidden border-r-0 px-0 py-0 opacity-0 pointer-events-none"
+            : "w-64 px-4 py-6 opacity-100",
+        )}
+      >
+        <SidebarNavContent
+          isOwner={isOwner}
+          isOwnerOrAdmin={isOwnerOrAdmin}
+          canLogPayments={canLogPayments}
+        />
+      </aside>
+    </>
   );
 }

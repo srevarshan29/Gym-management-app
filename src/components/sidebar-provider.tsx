@@ -7,12 +7,17 @@ const STORAGE_KEY = "gymdesk-sidebar-collapsed";
 type SidebarContextValue = {
   collapsed: boolean;
   toggleCollapsed: () => void;
+  mobileOpen: boolean;
+  openMobile: () => void;
+  closeMobile: () => void;
+  toggleMobile: () => void;
 };
 
 const SidebarContext = React.createContext<SidebarContextValue | null>(null);
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = React.useState(false);
   const [hydrated, setHydrated] = React.useState(false);
 
   React.useEffect(() => {
@@ -24,6 +29,15 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     }
     setHydrated(true);
   }, []);
+
+  React.useEffect(() => {
+    if (!mobileOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
 
   const toggleCollapsed = React.useCallback(() => {
     setCollapsed((prev) => {
@@ -37,9 +51,31 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const openMobile = React.useCallback(() => setMobileOpen(true), []);
+  const closeMobile = React.useCallback(() => setMobileOpen(false), []);
+  const toggleMobile = React.useCallback(
+    () => setMobileOpen((open) => !open),
+    [],
+  );
+
   const value = React.useMemo(
-    () => ({ collapsed: hydrated ? collapsed : false, toggleCollapsed }),
-    [collapsed, hydrated, toggleCollapsed],
+    () => ({
+      collapsed: hydrated ? collapsed : false,
+      toggleCollapsed,
+      mobileOpen,
+      openMobile,
+      closeMobile,
+      toggleMobile,
+    }),
+    [
+      collapsed,
+      hydrated,
+      toggleCollapsed,
+      mobileOpen,
+      openMobile,
+      closeMobile,
+      toggleMobile,
+    ],
   );
 
   return (

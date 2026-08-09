@@ -125,13 +125,9 @@
     @apply hover:shadow-soft;
   }
 
-  /* Recharts: keep charts inside cards on narrow / landscape viewports */
-  .chart-shell .recharts-wrapper,
-  .chart-shell .recharts-surface {
+  /* Recharts: keep charts inside cards on narrow viewports */
+  .chart-shell svg {
     max-width: 100%;
-  }
-
-  .chart-shell .recharts-cartesian-axis-tick-value {
-    font-size: inherit;
+    overflow: visible;
   }
 }

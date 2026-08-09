@@ -51,7 +51,7 @@ async function AnalyticsPageContent({ gymId }: { gymId: string }) {
 
       <section
         aria-label="Analytics summary"
-        className="mb-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        className="mb-8 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4"
       >
         <DashboardStatCard
           title="Total members"
@@ -89,8 +89,8 @@ async function AnalyticsPageContent({ gymId }: { gymId: string }) {
         />
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-2">
+        <Card className="min-w-0 rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" />
@@ -100,12 +100,12 @@ async function AnalyticsPageContent({ gymId }: { gymId: string }) {
               New member signups per month over the last 12 months.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="min-w-0">
             <MemberJoinsChart data={data.memberJoins} />
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
+        <Card className="min-w-0 rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <LineChart className="h-5 w-5 text-primary" />
@@ -115,7 +115,7 @@ async function AnalyticsPageContent({ gymId }: { gymId: string }) {
               Monthly payments collected over the last 12 months.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="min-w-0">
             <RevenueTrendChart data={data.revenueTrend} />
           </CardContent>
         </Card>

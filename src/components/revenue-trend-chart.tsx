@@ -4,12 +4,18 @@ import {
   CartesianGrid,
   Line,
   LineChart,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
+import { ResponsiveChartShell } from "@/components/charts/responsive-chart-shell";
+import {
+  chartMargins,
+  useChartLayout,
+  xAxisInterval,
+  yAxisWidth,
+} from "@/hooks/use-chart-layout";
 import type { MonthlyRevenuePoint } from "@/lib/revenue";
 import { formatCurrency } from "@/lib/utils";
 
@@ -46,57 +52,65 @@ function RevenueTooltip({
 }
 
 export function RevenueTrendChart({ data }: { data: MonthlyRevenuePoint[] }) {
+  const { compact } = useChartLayout();
+  const tickSize = compact ? 10 : 12;
+
   return (
-    <div className="h-[280px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={data}
-          margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
-        >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke={GRID_COLOR}
-            vertical={false}
-          />
-          <XAxis
-            dataKey="monthLabel"
-            tick={{ fill: AXIS_COLOR, fontSize: 12 }}
-            tickLine={false}
-            axisLine={{ stroke: GRID_COLOR }}
-          />
-          <YAxis
-            tick={{ fill: AXIS_COLOR, fontSize: 12 }}
-            tickLine={false}
-            axisLine={false}
-            tickFormatter={formatAxisCurrency}
-            domain={[0, "auto"]}
-            allowDecimals={false}
-          />
-          <Tooltip
-            content={<RevenueTooltip />}
-            cursor={{ stroke: LINE_COLOR, strokeWidth: 1, strokeDasharray: "4 4" }}
-          />
-          <Line
-            type="monotone"
-            dataKey="revenue"
-            stroke={LINE_COLOR}
-            strokeWidth={2.5}
-            dot={{
-              r: 4,
-              fill: LINE_COLOR,
-              stroke: "hsl(var(--card))",
-              strokeWidth: 2,
-            }}
-            activeDot={{
-              r: 6,
-              fill: LINE_COLOR,
-              stroke: "hsl(var(--card))",
-              strokeWidth: 2,
-            }}
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+    <ResponsiveChartShell>
+      <LineChart data={data} margin={chartMargins(compact)}>
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke={GRID_COLOR}
+          vertical={false}
+        />
+        <XAxis
+          dataKey="monthLabel"
+          tick={{ fill: AXIS_COLOR, fontSize: tickSize }}
+          tickLine={false}
+          axisLine={{ stroke: GRID_COLOR }}
+          interval={xAxisInterval(data.length, compact)}
+          minTickGap={compact ? 24 : 8}
+          angle={0}
+          textAnchor="middle"
+          height={compact ? 28 : 32}
+        />
+        <YAxis
+          width={yAxisWidth(compact)}
+          tick={{ fill: AXIS_COLOR, fontSize: tickSize }}
+          tickLine={false}
+          axisLine={false}
+          tickFormatter={formatAxisCurrency}
+          domain={[0, "auto"]}
+          allowDecimals={false}
+        />
+        <Tooltip
+          content={<RevenueTooltip />}
+          cursor={{
+            stroke: LINE_COLOR,
+            strokeWidth: 1,
+            strokeDasharray: "4 4",
+          }}
+        />
+        <Line
+          type="monotone"
+          dataKey="revenue"
+          stroke={LINE_COLOR}
+          strokeWidth={2.5}
+          dot={{
+            r: compact ? 3 : 4,
+            fill: LINE_COLOR,
+            stroke: "hsl(var(--card))",
+            strokeWidth: 2,
+          }}
+          activeDot={{
+            r: compact ? 5 : 6,
+            fill: LINE_COLOR,
+            stroke: "hsl(var(--card))",
+            strokeWidth: 2,
+          }}
+          isAnimationActive={false}
+        />
+      </LineChart>
+    </ResponsiveChartShell>
   );
 }

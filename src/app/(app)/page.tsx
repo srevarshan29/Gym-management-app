@@ -135,7 +135,7 @@ async function DashboardBody({
 
   return (
     <>
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="mb-6 flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1 [&>div]:mb-0">
           <PageHeader
             title={`Welcome back${userName ? `, ${userName.split(" ")[0]}` : ""}`}
@@ -143,6 +143,7 @@ async function DashboardBody({
           />
         </div>
         <DashboardQuickActions
+          className="w-full min-w-0 justify-start sm:justify-end"
           canManageMembers={canManageMembers}
           canLogPayments={canLogPayments}
           canManagePackages={canManagePackages}
@@ -152,7 +153,7 @@ async function DashboardBody({
 
       <section
         aria-label="Key metrics"
-        className="relative z-10 -mt-1 mb-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        className="relative z-10 -mt-1 mb-3 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4"
       >
         <DashboardStatCard
           title="Active members"
@@ -203,7 +204,7 @@ async function DashboardBody({
 
       <section
         aria-label="Additional metrics"
-        className="relative z-10 mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        className="relative z-10 mb-8 grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3"
       >
         <DashboardStatCard
           title="New members this month"
@@ -242,14 +243,18 @@ async function DashboardBody({
         ) : null}
       </section>
 
-      <div className="mb-6 grid gap-6 lg:grid-cols-2">
-        <DashboardRenewalPanel variant="upcoming" items={upcoming} />
-        <DashboardRenewalPanel variant="expired" items={expired} />
+      <div className="mb-6 grid min-w-0 gap-6 lg:grid-cols-2">
+        <div className="min-w-0">
+          <DashboardRenewalPanel variant="upcoming" items={upcoming} />
+        </div>
+        <div className="min-w-0">
+          <DashboardRenewalPanel variant="expired" items={expired} />
+        </div>
       </div>
 
       {showFinancials ? (
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
+        <div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-2">
+          <Card className="min-w-0 rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <LineChart className="h-5 w-5 text-primary" />
@@ -259,12 +264,12 @@ async function DashboardBody({
                 Monthly payments collected over the last 6 months.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="min-w-0">
               <RevenueTrendChart data={revenueTrend} />
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
+          <Card className="min-w-0 rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <PieChart className="h-5 w-5 text-primary" />
@@ -274,7 +279,7 @@ async function DashboardBody({
                 Active members by package type.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="min-w-0">
               <PackageDistributionChart data={metrics.packageDistribution} />
             </CardContent>
           </Card>

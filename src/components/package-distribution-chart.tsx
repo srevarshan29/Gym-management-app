@@ -1,13 +1,9 @@
 "use client";
 
-import {
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
+import { Cell, Pie, PieChart, Tooltip } from "recharts";
 
+import { ResponsiveChartShell } from "@/components/charts/responsive-chart-shell";
+import { useChartLayout } from "@/hooks/use-chart-layout";
 import type { PackageDistributionPoint } from "@/lib/dashboard-metrics";
 
 const SLICE_COLORS = [
@@ -43,28 +39,31 @@ export function PackageDistributionChart({
 }: {
   data: PackageDistributionPoint[];
 }) {
+  const { compact, shortViewport } = useChartLayout();
+
   if (data.length === 0) {
     return (
-      <p className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+      <p className="flex h-[220px] items-center justify-center text-sm text-muted-foreground sm:h-[280px]">
         No active memberships to chart.
       </p>
     );
   }
 
   const top = data[0];
+  const useCompactPie = compact || shortViewport;
 
   return (
-    <div className="relative h-[280px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
+    <div className="relative w-full min-w-0 max-w-full overflow-hidden">
+      <ResponsiveChartShell>
+        <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
           <Pie
             data={data}
             dataKey="count"
             nameKey="name"
             cx="50%"
             cy="50%"
-            innerRadius={72}
-            outerRadius={108}
+            innerRadius={useCompactPie ? "42%" : "58%"}
+            outerRadius={useCompactPie ? "72%" : "86%"}
             paddingAngle={2}
             isAnimationActive={false}
           >
@@ -79,10 +78,26 @@ export function PackageDistributionChart({
           </Pie>
           <Tooltip content={<DistributionTooltip />} />
         </PieChart>
-      </ResponsiveContainer>
+      </ResponsiveChartShell>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-        <p className="max-w-[100px] truncate text-xs font-medium">{top.name}</p>
-        <p className="font-mono text-lg font-bold">{top.count}</p>
+        <p
+          className={
+            useCompactPie
+              ? "max-w-[72px] truncate text-[10px] font-medium"
+              : "max-w-[100px] truncate text-xs font-medium"
+          }
+        >
+          {top.name}
+        </p>
+        <p
+          className={
+            useCompactPie
+              ? "font-mono text-base font-bold"
+              : "font-mono text-lg font-bold"
+          }
+        >
+          {top.count}
+        </p>
         <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
           Most popular
         </p>

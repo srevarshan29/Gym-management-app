@@ -161,7 +161,7 @@ export function DashboardStatCard({
         </div>
 
         <div className="min-w-0 space-y-1">
-          <p className="font-mono text-3xl font-bold tracking-tight text-foreground">
+          <p className="font-mono text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             {value}
           </p>
           {hint ? (

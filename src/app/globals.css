@@ -124,4 +124,14 @@
     @apply transition-[background-color,box-shadow] duration-150 ease-out;
     @apply hover:shadow-soft;
   }
+
+  /* Recharts: keep charts inside cards on narrow / landscape viewports */
+  .chart-shell .recharts-wrapper,
+  .chart-shell .recharts-surface {
+    max-width: 100%;
+  }
+
+  .chart-shell .recharts-cartesian-axis-tick-value {
+    font-size: inherit;
+  }
 }

@@ -113,8 +113,17 @@ Staff login is unchanged (email + password).
 4. Copy Client ID and Client secret into `.env`:
    - `MEMBER_AUTH_GOOGLE_CLIENT_ID`
    - `MEMBER_AUTH_GOOGLE_CLIENT_SECRET`
-5. Set `NEXT_PUBLIC_APP_URL` to your public app URL (used in portal login links staff share).
+5. Set **`NEXT_PUBLIC_APP_URL`** to your **canonical public URL** (see below). Portal login links copied by staff also use the **current request host** on Vercel, so they work without this var on `*.vercel.app` deployments.
 6. Use `AUTH_TRUST_HOST=true` on production if OAuth callbacks fail host validation.
+
+**Vercel — `NEXT_PUBLIC_APP_URL`**
+
+| Situation | Value |
+|-----------|--------|
+| Default `*.vercel.app` host only | Optional; links use the live site URL from the request. Set to `https://<your-project>.vercel.app` if you want env-only URLs (e.g. emails later). |
+| **Custom domain** (e.g. `app.yourgym.com`) | **Required** — `https://app.yourgym.com` (no trailing slash). Ensures shared links and any non-request code paths use the custom domain, not a preview `VERCEL_URL`. |
+
+Redeploy after changing this variable (it is baked into client bundles when set).
 
 ### Enabling access
 

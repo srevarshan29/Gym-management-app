@@ -1,4 +1,5 @@
 import type { MemberGender, VisitorStatus } from "@prisma/client";
+import { headers } from "next/headers";
 
 import { withPlatformLookup, withTenant } from "@/lib/db-context";
 
@@ -8,14 +9,50 @@ export type GymRegistrationInfo = {
   registrationToken: string;
 };
 
+function normalizeBaseUrl(url: string): string {
+  return url.replace(/\/$/, "");
+}
+
+/**
+ * Public app origin from env (QR links, fallbacks).
+ * On Vercel, set NEXT_PUBLIC_APP_URL to your canonical URL (custom domain if you use one).
+ */
 export function getAppBaseUrl(): string {
+  const fromPublic = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (fromPublic) return normalizeBaseUrl(fromPublic);
+
   if (process.env.AUTH_URL) {
-    return process.env.AUTH_URL.replace(/\/$/, "");
+    return normalizeBaseUrl(process.env.AUTH_URL);
   }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel) {
+    return `https://${vercel}`;
   }
+
   return "http://localhost:3000";
+}
+
+/**
+ * Origin for links staff copy while using the app (member portal login, etc.).
+ * Uses the incoming request host on the server so production matches the live site
+ * even when NEXT_PUBLIC_APP_URL is unset; falls back to {@link getAppBaseUrl}.
+ */
+export async function getAppBaseUrlFromRequest(): Promise<string> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  if (host) {
+    const hostname = host.split(",")[0]?.trim();
+    if (hostname) {
+      const proto =
+        h.get("x-forwarded-proto") ??
+        (hostname.startsWith("localhost") || hostname.startsWith("127.0.0.1")
+          ? "http"
+          : "https");
+      return normalizeBaseUrl(`${proto}://${hostname}`);
+    }
+  }
+  return getAppBaseUrl();
 }
 
 export function getRegistrationUrl(token: string): string {

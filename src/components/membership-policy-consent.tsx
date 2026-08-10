@@ -2,20 +2,27 @@
 
 import * as React from "react";
 
-import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 type Props = {
   policyText: string;
+  variant?: "default" | "embedded";
 };
 
-export function MembershipPolicyConsent({ policyText }: Props) {
+export function MembershipPolicyConsent({
+  policyText,
+  variant = "default",
+}: Props) {
   const [agreed, setAgreed] = React.useState(false);
+  const embedded = variant === "embedded";
 
   return (
-    <div className="rounded-lg border p-4 space-y-3">
-      <p className="text-sm font-medium">Membership policy</p>
+    <div className={cn(embedded ? "space-y-3" : "space-y-3 rounded-lg border p-4")}>
+      {!embedded ? (
+        <p className="text-sm font-medium">Membership policy</p>
+      ) : null}
       <div
-        className="max-h-48 overflow-y-auto rounded-md border bg-muted/40 p-3 text-sm whitespace-pre-wrap text-muted-foreground"
+        className="max-h-48 overflow-y-auto rounded-md border border-border bg-muted/40 p-3 text-sm whitespace-pre-wrap text-muted-foreground"
         role="document"
         aria-label="Gym membership policy"
       >

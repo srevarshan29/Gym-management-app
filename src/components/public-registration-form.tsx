@@ -2,11 +2,32 @@
 
 import * as React from "react";
 import { useFormState, useFormStatus } from "react-dom";
+import {
+  ArrowRight,
+  Dumbbell,
+  Lock,
+  Mail,
+  Phone,
+  Shield,
+  User,
+  Users,
+} from "lucide-react";
 
 import { submitPublicRegistration } from "@/app/actions/public-registration";
+import { FitnessProfileFields } from "@/components/fitness-profile-fields";
+import { MembershipPolicyConsent } from "@/components/membership-policy-consent";
+import {
+  RegistrationInput,
+  RegistrationSelectWrapper,
+} from "@/components/public-registration/registration-field";
+import {
+  RegistrationShell,
+  RegistrationStepPanel,
+} from "@/components/public-registration/registration-shell";
+import { RegistrationStepCard } from "@/components/public-registration/registration-step-card";
+import { RegistrationStepIndicator } from "@/components/public-registration/registration-step-indicator";
+import { RegistrationSuccess } from "@/components/public-registration/registration-success";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -15,33 +36,73 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ActionResult } from "@/lib/action-result";
+import { signupBodyMetricsSchema } from "@/lib/fitness-goal";
 import { MEMBER_GENDER_OPTIONS } from "@/lib/member-gender";
-import { MembershipPolicyConsent } from "@/components/membership-policy-consent";
-import { FitnessProfileFields } from "@/components/fitness-profile-fields";
+import { isMembershipPolicyRequired } from "@/lib/membership-policy";
 import type { FitnessGoal, MemberGender } from "@prisma/client";
 
-function SubmitButton() {
+type StepId = 1 | 2 | 3;
+
+function ActionButton({
+  isFinalStep,
+  pendingLabel,
+  continueLabel,
+  submitLabel,
+}: {
+  isFinalStep: boolean;
+  pendingLabel: string;
+  continueLabel: string;
+  submitLabel: string;
+}) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? "Submitting..." : "Submit registration"}
+    <Button type={isFinalStep ? "submit" : "button"} className="w-full" disabled={pending}>
+      {pending
+        ? pendingLabel
+        : isFinalStep
+          ? submitLabel
+          : continueLabel}
+      {!pending && !isFinalStep ? <ArrowRight className="h-4 w-4" /> : null}
+      {!pending && isFinalStep ? <ArrowRight className="h-4 w-4" /> : null}
     </Button>
   );
+}
+
+function validateOptionalBodyMetrics(form: HTMLFormElement): string | null {
+  const values = {
+    ageYears: (form.elements.namedItem("ageYears") as HTMLInputElement)?.value ?? "",
+    heightCm: (form.elements.namedItem("heightCm") as HTMLInputElement)?.value ?? "",
+    weightKg: (form.elements.namedItem("weightKg") as HTMLInputElement)?.value ?? "",
+  };
+
+  const result = signupBodyMetricsSchema.safeParse(values);
+  if (result.success) return null;
+  return result.error.errors[0]?.message ?? "Invalid body stats.";
 }
 
 export function PublicRegistrationForm({
   token,
   gymName,
+  logoUrl,
   membershipPolicyText,
 }: {
   token: string;
   gymName: string;
+  logoUrl?: string | null;
   membershipPolicyText: string | null;
 }) {
   const formLoadedAt = React.useRef(String(Date.now()));
+  const formRef = React.useRef<HTMLFormElement>(null);
+  const step1Ref = React.useRef<HTMLDivElement>(null);
+  const [step, setStep] = React.useState<StepId>(1);
   const [gender, setGender] = React.useState<MemberGender>("PREFER_NOT_TO_SAY");
   const [fitnessGoal, setFitnessGoal] = React.useState<FitnessGoal | "">("");
+  const [stepError, setStepError] = React.useState<string | null>(null);
   const [submitted, setSubmitted] = React.useState(false);
+
+  const hasPolicy = isMembershipPolicyRequired(membershipPolicyText);
+  const totalSteps = hasPolicy ? 3 : 2;
+  const isFinalStep = step === totalSteps;
 
   const action = submitPublicRegistration.bind(null, token);
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
@@ -55,99 +116,184 @@ export function PublicRegistrationForm({
     }
   }, [state]);
 
+  function handleContinue() {
+    setStepError(null);
+
+    if (step === 1) {
+      const panel = step1Ref.current;
+      if (!panel) return;
+      const inputs = panel.querySelectorAll<HTMLInputElement>("input, select");
+      for (const input of inputs) {
+        if (!input.checkValidity()) {
+          input.reportValidity();
+          return;
+        }
+      }
+      setStep(2);
+      return;
+    }
+
+    if (step === 2) {
+      if (!fitnessGoal) {
+        setStepError("Select a fitness goal.");
+        return;
+      }
+
+      const form = formRef.current;
+      if (form) {
+        const metricsError = validateOptionalBodyMetrics(form);
+        if (metricsError) {
+          setStepError(metricsError);
+          return;
+        }
+      }
+
+      if (hasPolicy) {
+        setStep(3);
+        return;
+      }
+    }
+  }
+
+  function handleBack() {
+    setStepError(null);
+    if (step > 1) {
+      setStep((step - 1) as StepId);
+    }
+  }
+
   if (submitted) {
     return (
-      <div className="rounded-xl border bg-card p-8 text-center shadow-sm">
-        <h2 className="font-display text-xl font-semibold text-foreground">
-          Thank you!
-        </h2>
-        <p className="mt-3 text-sm text-muted-foreground">
-          {state && state.ok
-            ? (state.message ?? "Front desk will confirm your registration.")
-            : "Front desk will confirm your registration."}
-        </p>
-      </div>
+      <RegistrationSuccess
+        message={
+          state && state.ok
+            ? (state.message ??
+              "Our front desk team will confirm your registration shortly.")
+            : "Our front desk team will confirm your registration shortly."
+        }
+      />
     );
   }
 
   return (
-    <form action={formAction} className="space-y-4">
-      <input type="hidden" name="formLoadedAt" value={formLoadedAt.current} />
-      <input
-        type="text"
-        name="website"
-        tabIndex={-1}
-        autoComplete="off"
-        className="hidden"
-        aria-hidden
-      />
-      <input type="hidden" name="gender" value={gender} />
+    <RegistrationShell
+      gymName={gymName}
+      logoUrl={logoUrl}
+      showBack={step > 1}
+      onBack={handleBack}
+    >
+      <RegistrationStepIndicator currentStep={step} totalSteps={totalSteps} />
 
-      <div className="mb-2 text-center">
-        <p className="text-sm text-muted-foreground">Register at</p>
-        <p className="font-display text-lg font-semibold">{gymName}</p>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="name">Full name</Label>
-        <Input id="name" name="name" placeholder="Jane Doe" required />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="phone">Phone number</Label>
-        <Input
-          id="phone"
-          name="phone"
-          placeholder="+91 98765 43210"
-          required
+      <form ref={formRef} action={formAction} className="space-y-4">
+        <input type="hidden" name="formLoadedAt" value={formLoadedAt.current} />
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          className="hidden"
+          aria-hidden
         />
-      </div>
+        <input type="hidden" name="gender" value={gender} />
 
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          placeholder="you@example.com"
-          required
-        />
-      </div>
+        <RegistrationStepPanel hidden={step !== 1}>
+          <div ref={step1Ref}>
+            <RegistrationStepCard icon={User} title="Personal Information">
+              <RegistrationInput
+                id="name"
+                name="name"
+                label="Full name"
+                icon={User}
+                placeholder="Jane Doe"
+                required
+              />
+              <RegistrationInput
+                id="phone"
+                name="phone"
+                label="Phone number"
+                icon={Phone}
+                placeholder="+91 98765 43210"
+                required
+              />
+              <RegistrationInput
+                id="email"
+                name="email"
+                type="email"
+                label="Email"
+                icon={Mail}
+                placeholder="you@example.com"
+                required
+              />
+              <RegistrationSelectWrapper id="gender" label="Gender" icon={Users}>
+                <Select
+                  value={gender}
+                  onValueChange={(value) => setGender(value as MemberGender)}
+                >
+                  <SelectTrigger id="gender" className="bg-muted/40 pl-10 focus:ring-primary">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MEMBER_GENDER_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </RegistrationSelectWrapper>
+            </RegistrationStepCard>
+          </div>
+        </RegistrationStepPanel>
 
-      <div className="space-y-2">
-        <Label htmlFor="gender">Gender</Label>
-        <Select
-          value={gender}
-          onValueChange={(value) => setGender(value as MemberGender)}
-        >
-          <SelectTrigger id="gender">
-            <SelectValue placeholder="Select gender" />
-          </SelectTrigger>
-          <SelectContent>
-            {MEMBER_GENDER_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+        <RegistrationStepPanel hidden={step !== 2}>
+          <RegistrationStepCard icon={Dumbbell} title="Fitness Profile">
+            <FitnessProfileFields
+              fitnessGoal={fitnessGoal}
+              onFitnessGoalChange={setFitnessGoal}
+              fitnessGoalRequired
+              variant="embedded"
+            />
+          </RegistrationStepCard>
+        </RegistrationStepPanel>
 
-      <FitnessProfileFields
-        fitnessGoal={fitnessGoal}
-        onFitnessGoalChange={setFitnessGoal}
-        fitnessGoalRequired
-      />
+        {hasPolicy && membershipPolicyText ? (
+          <RegistrationStepPanel hidden={step !== 3}>
+            <RegistrationStepCard icon={Shield} title="Membership Policy">
+              <MembershipPolicyConsent
+                policyText={membershipPolicyText}
+                variant="embedded"
+              />
+            </RegistrationStepCard>
+          </RegistrationStepPanel>
+        ) : null}
 
-      {membershipPolicyText ? (
-        <MembershipPolicyConsent policyText={membershipPolicyText} />
-      ) : null}
+        {stepError ? (
+          <p className="text-sm text-destructive">{stepError}</p>
+        ) : null}
 
-      {state && !state.ok ? (
-        <p className="text-sm text-destructive">{state.error}</p>
-      ) : null}
+        {state && !state.ok ? (
+          <p className="text-sm text-destructive">{state.error}</p>
+        ) : null}
 
-      <SubmitButton />
-    </form>
+        {isFinalStep ? (
+          <ActionButton
+            isFinalStep
+            pendingLabel="Submitting..."
+            continueLabel="Continue"
+            submitLabel="Submit Registration"
+          />
+        ) : (
+          <Button type="button" className="w-full" onClick={handleContinue}>
+            Continue
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        )}
+
+        <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+          <Lock className="h-3 w-3 shrink-0" />
+          Your data is secure and encrypted
+        </p>
+      </form>
+    </RegistrationShell>
   );
 }

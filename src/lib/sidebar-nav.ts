@@ -115,6 +115,11 @@ export const SIDEBAR_SECTIONS: SidebarNavSection[] = [
         label: "Workout Plans",
         icon: ClipboardList,
       },
+      {
+        href: "/programmes/exercises",
+        label: "Exercise Library",
+        icon: Dumbbell,
+      },
     ],
   },
   {

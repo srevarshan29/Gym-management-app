@@ -7,17 +7,7 @@ import { withTenant } from "@/lib/db-context";
 import { requireGym } from "@/lib/session";
 import { canManageMembers } from "@/lib/permissions";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
-
-const workoutPlanSchema = z.object({
-  memberId: z.string().trim().min(1, "Select a member"),
-  title: z.string().trim().min(1, "Plan title is required").max(120),
-  level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]),
-  weeklySchedule: z
-    .string()
-    .trim()
-    .min(1, "Weekly schedule is required")
-    .max(10000, "Weekly schedule is too long"),
-});
+import { workoutPlanPayloadSchema } from "@/lib/workout-tracking/types";
 
 async function assertMemberInGym(gymId: string, memberId: string) {
   const member = await withTenant(gymId, (tx) =>
@@ -29,85 +19,94 @@ async function assertMemberInGym(gymId: string, memberId: string) {
   return Boolean(member);
 }
 
-export async function createWorkoutPlan(
-  _prev: ActionResult | undefined,
-  formData: FormData,
-): Promise<ActionResult> {
+function normalizeExercises(
+  exercises: z.infer<typeof workoutPlanPayloadSchema>["exercises"],
+) {
+  return exercises.map((row, index) => ({
+    exerciseId: row.exerciseId?.trim() || null,
+    customName: row.customName?.trim() || null,
+    sortOrder: index,
+    targetSets: row.targetSets,
+    targetReps: row.targetReps.trim(),
+    tempo: row.tempo?.trim() || null,
+    restSeconds: row.restSeconds ?? null,
+    targetWeightKg: row.targetWeightKg ?? null,
+  }));
+}
+
+export async function saveWorkoutPlan(
+  payload: unknown,
+): Promise<ActionResult & { planId?: string }> {
   const user = await requireGym();
   if (!canManageMembers(user.role)) {
     return actionError("You do not have permission to manage workout plans.");
   }
 
-  const parsed = workoutPlanSchema.safeParse(Object.fromEntries(formData));
+  const parsed = workoutPlanPayloadSchema.safeParse(payload);
   if (!parsed.success) {
     return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
   }
 
-  const { memberId, title, level, weeklySchedule } = parsed.data;
-
+  const { memberId, title, durationWeeks, focusGoal } = parsed.data;
   if (!(await assertMemberInGym(user.gymId, memberId))) {
     return actionError("Member not found.");
   }
 
-  const existing = await withTenant(user.gymId, (tx) =>
-    tx.workoutPlan.findFirst({
+  const exerciseRows = normalizeExercises(parsed.data.exercises);
+
+  const planId = await withTenant(user.gymId, async (tx) => {
+    const existing = await tx.workoutPlan.findFirst({
       where: { gymId: user.gymId, memberId },
       select: { id: true },
-    }),
-  );
-  if (existing) {
-    return actionError(
-      "This member already has a workout plan. Edit or delete it first.",
-    );
-  }
+    });
 
-  await withTenant(user.gymId, (tx) =>
-    tx.workoutPlan.create({
+    if (existing) {
+      await tx.workoutPlan.update({
+        where: { id: existing.id },
+        data: {
+          title,
+          durationWeeks: durationWeeks ?? null,
+          focusGoal: focusGoal?.trim() || null,
+          level: null,
+          weeklySchedule: null,
+        },
+      });
+      await tx.workoutPlanExercise.deleteMany({
+        where: { workoutPlanId: existing.id },
+      });
+      await tx.workoutPlanExercise.createMany({
+        data: exerciseRows.map((row) => ({
+          gymId: user.gymId,
+          workoutPlanId: existing.id,
+          ...row,
+        })),
+      });
+      return existing.id;
+    }
+
+    const created = await tx.workoutPlan.create({
       data: {
         gymId: user.gymId,
         memberId,
         title,
-        level,
-        weeklySchedule,
+        durationWeeks: durationWeeks ?? null,
+        focusGoal: focusGoal?.trim() || null,
+        exercises: {
+          create: exerciseRows.map((row) => ({
+            gymId: user.gymId,
+            ...row,
+          })),
+        },
       },
-    }),
-  );
+      select: { id: true },
+    });
+    return created.id;
+  });
 
   revalidatePath("/programmes/workout");
-  return actionOk("Workout plan created.");
-}
-
-export async function updateWorkoutPlan(
-  _prev: ActionResult | undefined,
-  formData: FormData,
-): Promise<ActionResult> {
-  const user = await requireGym();
-  if (!canManageMembers(user.role)) {
-    return actionError("You do not have permission to manage workout plans.");
-  }
-
-  const id = String(formData.get("id") ?? "");
-  if (!id) return actionError("Missing plan id.");
-
-  const parsed = workoutPlanSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
-  }
-
-  const { memberId, title, level, weeklySchedule } = parsed.data;
-
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.workoutPlan.updateMany({
-      where: { id, gymId: user.gymId, memberId },
-      data: { title, level, weeklySchedule },
-    }),
-  );
-  if (result.count === 0) {
-    return actionError("Workout plan not found.");
-  }
-
-  revalidatePath("/programmes/workout");
-  return actionOk("Workout plan updated.");
+  revalidatePath(`/programmes/workout/${planId}/edit`);
+  revalidatePath("/member/workout");
+  return { ...actionOk("Workout plan saved."), planId };
 }
 
 export async function deleteWorkoutPlan(id: string): Promise<ActionResult> {
@@ -124,5 +123,6 @@ export async function deleteWorkoutPlan(id: string): Promise<ActionResult> {
   }
 
   revalidatePath("/programmes/workout");
+  revalidatePath("/member/workout");
   return actionOk("Workout plan deleted.");
 }

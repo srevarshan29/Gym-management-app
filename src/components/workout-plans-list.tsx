@@ -1,15 +1,12 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { deleteWorkoutPlan } from "@/app/actions/workout-plans";
-import {
-  WorkoutPlanDialog,
-  type WorkoutPlanInput,
-} from "@/components/workout-plan-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -31,16 +28,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { MemberOption } from "@/lib/programme-types";
-import { workoutLevelLabel, WORKOUT_LEVELS } from "@/lib/workout-level";
+import type { WorkoutPlanListItem } from "@/lib/workout-plans";
 
 type WorkoutPlansListProps = {
-  plans: WorkoutPlanInput[];
-  members: MemberOption[];
+  plans: WorkoutPlanListItem[];
   canManage: boolean;
 };
 
-function matchesSearch(plan: WorkoutPlanInput, query: string): boolean {
+function matchesSearch(plan: WorkoutPlanListItem, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
   return plan.memberName.toLowerCase().includes(q);
@@ -101,24 +96,11 @@ function DeleteWorkoutPlanButton({
   );
 }
 
-export function WorkoutPlansList({
-  plans,
-  members,
-  canManage,
-}: WorkoutPlansListProps) {
+export function WorkoutPlansList({ plans, canManage }: WorkoutPlansListProps) {
   const [query, setQuery] = React.useState("");
   const filtered = React.useMemo(
     () => plans.filter((plan) => matchesSearch(plan, query)),
     [plans, query],
-  );
-
-  const assignedMemberIds = React.useMemo(
-    () => new Set(plans.map((plan) => plan.memberId)),
-    [plans],
-  );
-  const eligibleMembers = React.useMemo(
-    () => members.filter((member) => !assignedMemberIds.has(member.id)),
-    [members, assignedMemberIds],
   );
 
   return (
@@ -144,12 +126,14 @@ export function WorkoutPlansList({
               <p className="text-sm text-muted-foreground">
                 No workout plans yet.
                 {canManage
-                  ? " Add a plan to assign a training programme to a member."
+                  ? " Add a structured plan for a member."
                   : ""}
               </p>
               {canManage ? (
                 <div className="mt-4">
-                  <WorkoutPlanDialog members={eligibleMembers} />
+                  <Button asChild>
+                    <Link href="/programmes/workout/new">Add plan</Link>
+                  </Button>
                 </div>
               ) : null}
             </div>
@@ -163,7 +147,8 @@ export function WorkoutPlansList({
                 <TableRow>
                   <TableHead>Member</TableHead>
                   <TableHead>Plan title</TableHead>
-                  <TableHead>Level</TableHead>
+                  <TableHead>Exercises</TableHead>
+                  <TableHead>Duration</TableHead>
                   {canManage ? (
                     <TableHead className="text-right">Actions</TableHead>
                   ) : null}
@@ -175,20 +160,30 @@ export function WorkoutPlansList({
                     <TableCell className="min-w-[120px] font-medium">
                       {plan.memberName}
                     </TableCell>
-                    <TableCell>{plan.title}</TableCell>
-                    <TableCell>{workoutLevelLabel(plan.level)}</TableCell>
+                    <TableCell>
+                      <div>
+                        {plan.title}
+                        {plan.isLegacy ? (
+                          <span className="mt-1 block text-xs text-amber-500">
+                            Legacy text plan
+                          </span>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {plan.isLegacy ? "—" : plan.exerciseCount}
+                    </TableCell>
+                    <TableCell>
+                      {plan.durationWeeks ? `${plan.durationWeeks} wks` : "—"}
+                    </TableCell>
                     {canManage ? (
                       <TableCell className="text-right">
                         <div className="flex flex-wrap items-center justify-end gap-2">
-                          <WorkoutPlanDialog
-                            plan={plan}
-                            members={eligibleMembers}
-                            trigger={
-                              <Button variant="outline" size="sm">
-                                Edit
-                              </Button>
-                            }
-                          />
+                          <Button asChild variant="outline" size="sm">
+                            <Link href={`/programmes/workout/${plan.id}/edit`}>
+                              Edit
+                            </Link>
+                          </Button>
                           <DeleteWorkoutPlanButton
                             id={plan.id}
                             memberName={plan.memberName}

@@ -74,6 +74,7 @@ model Gym {
   visitors      Visitor[]
   dietPlans     DietPlan[]
   workoutPlans  WorkoutPlan[]
+  exercises     Exercise[]
   employees     Employee[]
   gymEvents     GymEvent[]
   ledgerTransactions LedgerTransaction[]
@@ -255,6 +256,140 @@ enum WorkoutLevel {
   ADVANCED
 }
 
+enum MuscleGroup {
+  CHEST
+  BACK
+  LEGS
+  SHOULDERS
+  ARMS
+  CORE
+}
+
+enum WorkoutSessionStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+// Per-gym exercise library (seeded defaults + staff custom entries).
+model Exercise {
+  id                 String       @id @default(cuid())
+  gymId              String
+  name               String
+  muscleGroup        MuscleGroup
+  defaultSets        Int?
+  defaultReps        String?
+  defaultTempo       String?
+  defaultRestSeconds Int?
+  isSeeded           Boolean      @default(false)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  gym                 Gym                  @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  workoutPlanExercises WorkoutPlanExercise[]
+
+  @@unique([gymId, name])
+  @@index([gymId, muscleGroup])
+}
+
+// One active training plan per member (no history).
+model WorkoutPlan {
+  id              String        @id @default(cuid())
+  gymId           String
+  memberId        String        @unique
+  title           String
+  durationWeeks   Int?
+  focusGoal       String?       @db.Text
+  level           WorkoutLevel?
+  weeklySchedule  String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  gym       Gym                   @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  member    Member                @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  exercises WorkoutPlanExercise[]
+  sessions  WorkoutSession[]
+
+  @@unique([gymId, memberId])
+  @@index([gymId])
+}
+
+// An exercise line item within a member's workout plan.
+model WorkoutPlanExercise {
+  id              String   @id @default(cuid())
+  gymId           String
+  workoutPlanId   String
+  exerciseId      String?
+  customName      String?
+  sortOrder       Int
+  targetSets      Int
+  targetReps      String
+  tempo           String?
+  restSeconds     Int?
+  targetWeightKg  Decimal? @db.Decimal(6, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workoutPlan WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  exercise    Exercise?   @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  sessionExercises WorkoutSessionExercise[]
+
+  @@index([workoutPlanId, sortOrder])
+  @@index([gymId])
+  @@index([exerciseId])
+}
+
+// A member's logged workout visit.
+model WorkoutSession {
+  id              String               @id @default(cuid())
+  gymId           String
+  memberId        String
+  workoutPlanId   String
+  status          WorkoutSessionStatus   @default(IN_PROGRESS)
+  startedAt       DateTime             @default(now())
+  completedAt     DateTime?
+  durationSeconds Int?
+
+  workoutPlan WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  exercises   WorkoutSessionExercise[]
+
+  @@index([gymId, memberId, status])
+  @@index([workoutPlanId])
+}
+
+// An exercise performed during a session.
+model WorkoutSessionExercise {
+  id                    String   @id @default(cuid())
+  gymId                 String
+  workoutSessionId      String
+  workoutPlanExerciseId String
+  sortOrder             Int
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  session      WorkoutSession      @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  planExercise WorkoutPlanExercise @relation(fields: [workoutPlanExerciseId], references: [id], onDelete: Cascade)
+  sets         WorkoutSetLog[]
+
+  @@index([workoutSessionId, sortOrder])
+  @@index([gymId])
+  @@index([workoutPlanExerciseId])
+}
+
+// Per-set weight logged by the member.
+model WorkoutSetLog {
+  id                   String   @id @default(cuid())
+  gymId                String
+  sessionExerciseId    String
+  setNumber            Int
+  weightKg             Decimal  @db.Decimal(6, 2)
+  loggedAt             DateTime @default(now())
+
+  sessionExercise WorkoutSessionExercise @relation(fields: [sessionExerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionExerciseId, setNumber])
+  @@index([gymId])
+}
+
 // One active nutrition plan per member (no history).
 model DietPlan {
   id             String   @id @default(cuid())
@@ -265,24 +400,6 @@ model DietPlan {
   mealPlan       String   @db.Text
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
-  gym    Gym    @relation(fields: [gymId], references: [id], onDelete: Cascade)
-  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
-
-  @@unique([gymId, memberId])
-  @@index([gymId])
-}
-
-// One active training plan per member (no history).
-model WorkoutPlan {
-  id              String       @id @default(cuid())
-  gymId           String
-  memberId        String       @unique
-  title           String
-  level           WorkoutLevel
-  weeklySchedule  String       @db.Text
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
 
   gym    Gym    @relation(fields: [gymId], references: [id], onDelete: Cascade)
   member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)

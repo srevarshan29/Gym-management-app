@@ -23,6 +23,7 @@ import { PaymentDialog } from "@/components/payment-dialog";
 import { DeleteMemberButton } from "@/components/delete-member-button";
 import { MemberPolicyConsentSection } from "@/components/member-policy-consent-section";
 import { MemberPortalStaffCard } from "@/components/member-portal/member-portal-staff-card";
+import { MemberWorkoutProgressStaffCard } from "@/components/workout/member-workout-progress-staff-card";
 import { AutoOpenReceipt } from "@/components/auto-open-receipt";
 import type { PackageOption } from "@/components/member-form";
 import { Button } from "@/components/ui/button";
@@ -53,8 +54,10 @@ const METHOD_LABEL: Record<string, string> = {
 
 export default async function MemberProfilePage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams: { exercise?: string; grouping?: string };
 }) {
   const user = await requireGym();
   const showFinancials = canViewFinancials(user.role);
@@ -246,6 +249,14 @@ export default async function MemberProfilePage({
           memberId={member.id}
           portalActive={portalActive}
           hasEmail={hasEmail}
+        />
+
+        <MemberWorkoutProgressStaffCard
+          gymId={user.gymId}
+          memberId={member.id}
+          memberName={member.name}
+          exerciseKey={searchParams.exercise}
+          grouping={searchParams.grouping === "monthly" ? "monthly" : "weekly"}
         />
 
         <Card>

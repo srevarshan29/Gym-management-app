@@ -8,6 +8,7 @@ import { withPlatformLookup, withSuperAdmin } from "@/lib/db-context";
 import { requireSuperAdmin } from "@/lib/session";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
 import { DEFAULT_MEMBERSHIP_POLICY_TEXT } from "@/lib/membership-policy";
+import { seedExercisesForGym } from "@/lib/exercises";
 
 const createGymSchema = z.object({
   gymName: z.string().trim().min(1, "Gym name is required").max(120),
@@ -63,6 +64,7 @@ export async function createGym(
         membershipPolicyText: DEFAULT_MEMBERSHIP_POLICY_TEXT,
       },
     });
+    await seedExercisesForGym(tx, gym.id);
   });
 
   revalidatePath("/admin");

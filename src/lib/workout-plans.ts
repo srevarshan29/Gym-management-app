@@ -1,7 +1,12 @@
-import type { WorkoutLevel } from "@prisma/client";
+import type { MuscleGroup } from "@prisma/client";
 
 import { withTenant } from "@/lib/db-context";
+import { muscleGroupLabel } from "@/lib/exercises";
 import type { MemberOption } from "@/lib/programme-types";
+import type {
+  WorkoutPlanDetail,
+  WorkoutPlanExerciseView,
+} from "@/lib/workout-tracking/types";
 
 export type { MemberOption };
 
@@ -10,14 +15,48 @@ export type WorkoutPlanListItem = {
   memberId: string;
   memberName: string;
   title: string;
-  level: WorkoutLevel;
-  weeklySchedule: string;
+  durationWeeks: number | null;
+  focusGoal: string | null;
+  exerciseCount: number;
+  isLegacy: boolean;
 };
 
 export type WorkoutPlansPageData = {
   plans: WorkoutPlanListItem[];
   members: MemberOption[];
 };
+
+function mapExerciseRow(
+  row: {
+    id: string;
+    exerciseId: string | null;
+    customName: string | null;
+    sortOrder: number;
+    targetSets: number;
+    targetReps: string;
+    tempo: string | null;
+    restSeconds: number | null;
+    targetWeightKg: { toString(): string } | null;
+    exercise: { name: string; muscleGroup: MuscleGroup } | null;
+  },
+): WorkoutPlanExerciseView {
+  return {
+    id: row.id,
+    exerciseId: row.exerciseId,
+    customName: row.customName,
+    displayName: row.exercise?.name ?? row.customName ?? "Exercise",
+    muscleGroup: row.exercise
+      ? muscleGroupLabel(row.exercise.muscleGroup)
+      : null,
+    sortOrder: row.sortOrder,
+    targetSets: row.targetSets,
+    targetReps: row.targetReps,
+    tempo: row.tempo,
+    restSeconds: row.restSeconds,
+    targetWeightKg:
+      row.targetWeightKg != null ? Number(row.targetWeightKg) : null,
+  };
+}
 
 export async function getWorkoutPlansPageData(
   gymId: string,
@@ -31,9 +70,11 @@ export async function getWorkoutPlansPageData(
           id: true,
           memberId: true,
           title: true,
-          level: true,
+          durationWeeks: true,
+          focusGoal: true,
           weeklySchedule: true,
           member: { select: { name: true } },
+          _count: { select: { exercises: true } },
         },
       }),
       tx.member.findMany({
@@ -49,10 +90,115 @@ export async function getWorkoutPlansPageData(
         memberId: plan.memberId,
         memberName: plan.member.name,
         title: plan.title,
-        level: plan.level,
-        weeklySchedule: plan.weeklySchedule,
+        durationWeeks: plan.durationWeeks,
+        focusGoal: plan.focusGoal,
+        exerciseCount: plan._count.exercises,
+        isLegacy:
+          plan._count.exercises === 0 && Boolean(plan.weeklySchedule?.trim()),
       })),
       members,
+    };
+  });
+}
+
+export async function getWorkoutPlanDetail(
+  gymId: string,
+  planId: string,
+): Promise<WorkoutPlanDetail | null> {
+  return withTenant(gymId, async (tx) => {
+    const plan = await tx.workoutPlan.findFirst({
+      where: { id: planId, gymId },
+      select: {
+        id: true,
+        memberId: true,
+        title: true,
+        durationWeeks: true,
+        focusGoal: true,
+        level: true,
+        weeklySchedule: true,
+        member: { select: { name: true } },
+        exercises: {
+          orderBy: { sortOrder: "asc" },
+          select: {
+            id: true,
+            exerciseId: true,
+            customName: true,
+            sortOrder: true,
+            targetSets: true,
+            targetReps: true,
+            tempo: true,
+            restSeconds: true,
+            targetWeightKg: true,
+            exercise: { select: { name: true, muscleGroup: true } },
+          },
+        },
+      },
+    });
+    if (!plan) return null;
+
+    return {
+      id: plan.id,
+      memberId: plan.memberId,
+      memberName: plan.member.name,
+      title: plan.title,
+      durationWeeks: plan.durationWeeks,
+      focusGoal: plan.focusGoal,
+      level: plan.level,
+      weeklySchedule: plan.weeklySchedule,
+      isLegacy:
+        plan.exercises.length === 0 && Boolean(plan.weeklySchedule?.trim()),
+      exercises: plan.exercises.map(mapExerciseRow),
+    };
+  });
+}
+
+export async function getMemberWorkoutPlanDetail(
+  gymId: string,
+  memberId: string,
+): Promise<WorkoutPlanDetail | null> {
+  return withTenant(gymId, async (tx) => {
+    const plan = await tx.workoutPlan.findFirst({
+      where: { gymId, memberId },
+      select: {
+        id: true,
+        memberId: true,
+        title: true,
+        durationWeeks: true,
+        focusGoal: true,
+        level: true,
+        weeklySchedule: true,
+        member: { select: { name: true } },
+        exercises: {
+          orderBy: { sortOrder: "asc" },
+          select: {
+            id: true,
+            exerciseId: true,
+            customName: true,
+            sortOrder: true,
+            targetSets: true,
+            targetReps: true,
+            tempo: true,
+            restSeconds: true,
+            targetWeightKg: true,
+            exercise: { select: { name: true, muscleGroup: true } },
+          },
+        },
+      },
+    });
+    if (!plan) return null;
+
+    return {
+      id: plan.id,
+      memberId: plan.memberId,
+      memberName: plan.member.name,
+      title: plan.title,
+      durationWeeks: plan.durationWeeks,
+      focusGoal: plan.focusGoal,
+      level: plan.level,
+      weeklySchedule: plan.weeklySchedule,
+      isLegacy:
+        plan.exercises.length === 0 && Boolean(plan.weeklySchedule?.trim()),
+      exercises: plan.exercises.map(mapExerciseRow),
     };
   });
 }

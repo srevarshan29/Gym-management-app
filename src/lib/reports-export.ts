@@ -305,12 +305,14 @@ export async function buildReportCsv(
     }
     case "workout-plans": {
       const { plans } = await getWorkoutPlansPageData(gymId);
-      const headers = ["Member", "Title", "Level", "Weekly schedule"];
+      const headers = ["Member", "Title", "Duration (weeks)", "Focus goal", "Exercises", "Legacy"];
       const rows = plans.map((p) => [
         p.memberName,
         p.title,
-        p.level,
-        p.weeklySchedule,
+        p.durationWeeks ?? "",
+        p.focusGoal ?? "",
+        p.isLegacy ? "" : p.exerciseCount,
+        p.isLegacy ? "Yes" : "No",
       ]);
       return {
         filename: `workout-plans-${stamp}.csv`,

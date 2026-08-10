@@ -5,7 +5,37 @@ import {
 } from "@/lib/subscription-balance";
 import { statusFromEndDate } from "@/lib/subscription";
 
-export async function getMemberPortalOverview(gymId: string, memberId: string) {
+export type MemberPortalOverview = {
+  memberName: string;
+  memberNumber: number;
+  packageName: string | null;
+  status: ReturnType<typeof statusFromEndDate>;
+  daysRemaining: number | null;
+  planTotalDays: number | null;
+  paidAmount: number | null;
+  pendingAmount: number | null;
+  endDate: Date | null;
+};
+
+function normalizeDay(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function inclusiveDayCount(start: Date, end: Date): number {
+  const startDay = normalizeDay(start);
+  const endDay = normalizeDay(end);
+  const diff = Math.round(
+    (endDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24),
+  );
+  return Math.max(1, diff + 1);
+}
+
+export async function getMemberPortalOverview(
+  gymId: string,
+  memberId: string,
+): Promise<MemberPortalOverview | null> {
   const member = await prisma.member.findFirst({
     where: { id: memberId, gymId },
     select: {
@@ -31,21 +61,22 @@ export async function getMemberPortalOverview(gymId: string, memberId: string) {
     return {
       memberName: member.name,
       memberNumber: member.memberNumber,
-      packageName: null as string | null,
+      packageName: null,
       status: "NONE" as const,
-      daysRemaining: null as number | null,
-      pendingAmount: null as number | null,
+      daysRemaining: null,
+      planTotalDays: null,
+      paidAmount: null,
+      pendingAmount: null,
+      endDate: null,
     };
   }
 
-  const end = new Date(current.endDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const endDay = new Date(end);
-  endDay.setHours(0, 0, 0, 0);
+  const endDay = normalizeDay(current.endDate);
+  const today = normalizeDay(new Date());
   const daysRemaining = Math.ceil(
     (endDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
   );
+  const planTotalDays = inclusiveDayCount(current.startDate, current.endDate);
 
   const balance = computeSubscriptionBalance(
     Number(current.priceAtPurchase),
@@ -58,7 +89,10 @@ export async function getMemberPortalOverview(gymId: string, memberId: string) {
     packageName: current.package.name,
     status: statusFromEndDate(current.endDate),
     daysRemaining,
+    planTotalDays,
+    paidAmount: balance.paidAmount,
     pendingAmount: balance.pendingAmount,
+    endDate: current.endDate,
   };
 }
 

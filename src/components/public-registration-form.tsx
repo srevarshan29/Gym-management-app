@@ -17,7 +17,8 @@ import {
 import type { ActionResult } from "@/lib/action-result";
 import { MEMBER_GENDER_OPTIONS } from "@/lib/member-gender";
 import { MembershipPolicyConsent } from "@/components/membership-policy-consent";
-import type { MemberGender } from "@prisma/client";
+import { FitnessProfileFields } from "@/components/fitness-profile-fields";
+import type { FitnessGoal, MemberGender } from "@prisma/client";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -39,6 +40,7 @@ export function PublicRegistrationForm({
 }) {
   const formLoadedAt = React.useRef(String(Date.now()));
   const [gender, setGender] = React.useState<MemberGender>("PREFER_NOT_TO_SAY");
+  const [fitnessGoal, setFitnessGoal] = React.useState<FitnessGoal | "">("");
   const [submitted, setSubmitted] = React.useState(false);
 
   const action = submitPublicRegistration.bind(null, token);
@@ -130,6 +132,12 @@ export function PublicRegistrationForm({
           </SelectContent>
         </Select>
       </div>
+
+      <FitnessProfileFields
+        fitnessGoal={fitnessGoal}
+        onFitnessGoalChange={setFitnessGoal}
+        fitnessGoalRequired
+      />
 
       {membershipPolicyText ? (
         <MembershipPolicyConsent policyText={membershipPolicyText} />

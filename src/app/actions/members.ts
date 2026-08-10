@@ -17,6 +17,11 @@ import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
 import { getMembershipPolicyForGym } from "@/lib/gym-profile";
 import { isMembershipPolicyRequired } from "@/lib/membership-policy";
 import { normalizeMemberEmail } from "@/lib/member-portal/constants";
+import {
+  fitnessGoalSchema,
+  optionalFitnessGoalSchema,
+  signupBodyMetricsSchema,
+} from "@/lib/fitness-goal";
 
 const memberGenderSchema = z.enum([
   "MALE",
@@ -39,7 +44,8 @@ const createSchema = z.object({
   isPt: z.enum(["0", "1"]).default("0"),
   trainerId: z.string().optional().or(z.literal("")),
   visitorId: z.string().optional().or(z.literal("")),
-});
+  fitnessGoal: fitnessGoalSchema,
+}).merge(signupBodyMetricsSchema);
 
 const updateSchema = z.object({
   id: z.string().min(1),
@@ -50,7 +56,8 @@ const updateSchema = z.object({
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
   isPt: z.enum(["0", "1"]).default("0"),
   trainerId: z.string().optional().or(z.literal("")),
-});
+  fitnessGoal: optionalFitnessGoalSchema,
+}).merge(signupBodyMetricsSchema);
 
 async function resolvePtFields(
   gymId: string,
@@ -97,6 +104,20 @@ async function persistMemberPhoto(
   return result.url;
 }
 
+async function resolvePolicyConsent(
+  gymId: string,
+  formData: FormData,
+): Promise<{ text: string; agreedAt: Date } | ActionResult | null> {
+  const policyText = await getMembershipPolicyForGym(gymId);
+  if (!isMembershipPolicyRequired(policyText)) return null;
+  if (formData.get("agreeMembershipPolicy") !== "1") {
+    return actionError(
+      "You must agree to the gym's membership policy before adding this member.",
+    );
+  }
+  return { text: policyText!, agreedAt: new Date() };
+}
+
 export async function createMember(
   _prev: ActionResult | undefined,
   formData: FormData,
@@ -137,16 +158,47 @@ export async function createMember(
   if ("ok" in ptFields) return ptFields;
   const { isPt, trainerId } = ptFields;
 
-  const policyText = await getMembershipPolicyForGym(gymId);
-  let policyConsent: { text: string; agreedAt: Date } | null = null;
-  if (isMembershipPolicyRequired(policyText)) {
-    if (formData.get("agreeMembershipPolicy") !== "1") {
-      return actionError(
-        "You must agree to the gym's membership policy before adding this member.",
-      );
+  const policyConsent = await resolvePolicyConsent(gymId, formData);
+  if (policyConsent && "ok" in policyConsent) return policyConsent;
+
+  const visitorId = data.visitorId?.trim();
+  let visitorMetrics: {
+    fitnessGoal: typeof data.fitnessGoal | null;
+    ageYears: number | null;
+    heightCm: number | null;
+    weightKg: number | null;
+  } | null = null;
+  if (visitorId) {
+    const visitor = await withTenant(gymId, (tx) =>
+      tx.visitor.findFirst({
+        where: { id: visitorId, gymId, status: "pending" },
+        select: {
+          fitnessGoal: true,
+          ageYears: true,
+          heightCm: true,
+          weightKg: true,
+        },
+      }),
+    );
+    if (visitor) {
+      visitorMetrics = {
+        fitnessGoal: visitor.fitnessGoal,
+        ageYears: visitor.ageYears,
+        heightCm: visitor.heightCm,
+        weightKg:
+          visitor.weightKg != null ? Number(visitor.weightKg) : null,
+      };
     }
-    policyConsent = { text: policyText!, agreedAt: new Date() };
   }
+
+  const fitnessGoal = data.fitnessGoal ?? visitorMetrics?.fitnessGoal ?? null;
+  const ageYears = data.ageYears ?? visitorMetrics?.ageYears ?? null;
+  const heightCm = data.heightCm ?? visitorMetrics?.heightCm ?? null;
+  const weightKg =
+    data.weightKg ??
+    (visitorMetrics?.weightKg != null
+      ? Number(visitorMetrics.weightKg)
+      : null);
 
   const { member, paymentId } = await withTenant(gymId, async (tx) => {
     const memberNumber = await nextMemberNumber(tx, gymId);
@@ -162,8 +214,16 @@ export async function createMember(
         notes: data.notes || null,
         isPt,
         trainerId,
-        membershipPolicyAgreedText: policyConsent?.text ?? null,
-        membershipPolicyAgreedAt: policyConsent?.agreedAt ?? null,
+        fitnessGoal,
+        ageYears,
+        heightCm,
+        weightKg,
+        membershipPolicyAgreedText:
+          policyConsent && "text" in policyConsent ? policyConsent.text : null,
+        membershipPolicyAgreedAt:
+          policyConsent && "agreedAt" in policyConsent
+            ? policyConsent.agreedAt
+            : null,
       },
     });
 
@@ -235,8 +295,20 @@ export async function updateMember(
   if (!parsed.success) {
     return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
   }
-  const { id, name, phone, email, gender, notes, isPt: isPtRaw, trainerId: trainerIdRaw } =
-    parsed.data;
+  const {
+    id,
+    name,
+    phone,
+    email,
+    gender,
+    notes,
+    isPt: isPtRaw,
+    trainerId: trainerIdRaw,
+    fitnessGoal,
+    ageYears,
+    heightCm,
+    weightKg,
+  } = parsed.data;
 
   const ptFields = await resolvePtFields(user.gymId, isPtRaw, trainerIdRaw);
   if ("ok" in ptFields) return ptFields;
@@ -253,6 +325,10 @@ export async function updateMember(
         notes: notes || null,
         isPt,
         trainerId,
+        fitnessGoal,
+        ageYears,
+        heightCm,
+        weightKg,
       },
     }),
   );

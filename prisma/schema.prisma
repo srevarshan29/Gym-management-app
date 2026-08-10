@@ -38,6 +38,14 @@ enum MemberGender {
   PREFER_NOT_TO_SAY
 }
 
+enum FitnessGoal {
+  WEIGHT_LOSS
+  MUSCLE_GAIN
+  GENERAL_FITNESS
+  STRENGTH_TRAINING
+  ENDURANCE
+}
+
 enum LedgerTransactionType {
   INCOME
   EXPENSE
@@ -129,6 +137,7 @@ model Member {
   ageYears                   Int?
   heightCm                   Int?
   weightKg                   Decimal?  @db.Decimal(5, 1)
+  fitnessGoal                FitnessGoal?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -169,6 +178,10 @@ model Visitor {
   source    VisitorSource  @default(walk_in)
   membershipPolicyAgreedText String?   @db.Text
   membershipPolicyAgreedAt   DateTime?
+  fitnessGoal                FitnessGoal?
+  ageYears                   Int?
+  heightCm                   Int?
+  weightKg                   Decimal?  @db.Decimal(5, 1)
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 

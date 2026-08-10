@@ -25,9 +25,11 @@ import { prisma } from "@/lib/prisma";
 import { uploadMemberPhoto } from "@/lib/storage";
 
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
-
+import {
+  optionalFitnessGoalSchema,
+  signupBodyMetricsSchema,
+} from "@/lib/fitness-goal";
 import { revalidatePath } from "next/cache";
-
 import { z } from "zod";
 
 
@@ -94,102 +96,37 @@ export async function memberSignOutAction(): Promise<void> {
 
 
 
-const profileSchema = z.object({
-
-  ageYears: z
-
-    .string()
-
-    .optional()
-
-    .or(z.literal(""))
-
-    .transform((v) => (v === "" || v == null ? null : Number(v)))
-
-    .refine((v) => v == null || (Number.isInteger(v) && v >= 1 && v <= 120), {
-
-      message: "Enter a valid age.",
-
-    }),
-
-  heightCm: z
-
-    .string()
-
-    .optional()
-
-    .or(z.literal(""))
-
-    .transform((v) => (v === "" || v == null ? null : Number(v)))
-
-    .refine((v) => v == null || (Number.isInteger(v) && v >= 50 && v <= 300), {
-
-      message: "Enter height in cm (50–300).",
-
-    }),
-
-  weightKg: z
-
-    .string()
-
-    .optional()
-
-    .or(z.literal(""))
-
-    .transform((v) => (v === "" || v == null ? null : Number(v)))
-
-    .refine((v) => v == null || (v >= 20 && v <= 500), {
-
-      message: "Enter weight in kg (20–500).",
-
-    }),
-
-});
-
-
+const profileSchema = z
+  .object({
+    fitnessGoal: optionalFitnessGoalSchema,
+  })
+  .merge(signupBodyMetricsSchema);
 
 export async function updateMemberPortalProfile(
-
   _prev: ActionResult | undefined,
-
   formData: FormData,
-
 ): Promise<ActionResult> {
-
   const session = await requireMember();
 
   const parsed = profileSchema.safeParse({
-
+    fitnessGoal: formData.get("fitnessGoal"),
     ageYears: formData.get("ageYears"),
-
     heightCm: formData.get("heightCm"),
-
     weightKg: formData.get("weightKg"),
-
   });
 
   if (!parsed.success) {
-
     return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
-
   }
 
-
-
   await prisma.member.updateMany({
-
     where: { id: session.memberId, gymId: session.gymId },
-
     data: {
-
+      fitnessGoal: parsed.data.fitnessGoal,
       ageYears: parsed.data.ageYears,
-
       heightCm: parsed.data.heightCm,
-
       weightKg: parsed.data.weightKg,
-
     },
-
   });
 
 
@@ -219,6 +156,7 @@ export async function updateMemberPortalProfile(
 
 
   revalidatePath("/member/profile");
+  revalidatePath("/member/tools");
 
   return actionOk("Profile updated.");
 

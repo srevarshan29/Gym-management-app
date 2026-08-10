@@ -29,6 +29,7 @@ export default async function MemberProfilePage() {
               phone: row.phone,
               photoUrl: row.photoUrl,
               gender: row.gender,
+              fitnessGoal: row.fitnessGoal,
               ageYears: row.ageYears,
               heightCm: row.heightCm,
               weightKg: row.weightKg != null ? Number(row.weightKg) : null,

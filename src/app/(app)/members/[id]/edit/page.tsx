@@ -48,6 +48,10 @@ export default async function EditMemberPage({
           notes: member.notes,
           isPt: member.isPt,
           trainerId: member.trainerId,
+          fitnessGoal: member.fitnessGoal,
+          ageYears: member.ageYears,
+          heightCm: member.heightCm,
+          weightKg: member.weightKg != null ? Number(member.weightKg) : null,
         }}
         staffOptions={staffOptions}
       />

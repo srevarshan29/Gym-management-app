@@ -28,8 +28,9 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import { MEMBER_GENDER_OPTIONS } from "@/lib/member-gender";
 import { MembershipPolicyConsent } from "@/components/membership-policy-consent";
+import { FitnessProfileFields } from "@/components/fitness-profile-fields";
 import type { ActionResult } from "@/lib/action-result";
-import type { MemberGender } from "@prisma/client";
+import type { FitnessGoal, MemberGender } from "@prisma/client";
 
 export type PackageOption = {
   id: string;
@@ -52,6 +53,10 @@ type CreateProps = {
   initialPhone?: string;
   initialEmail?: string;
   initialGender?: MemberGender;
+  initialFitnessGoal?: FitnessGoal;
+  initialAgeYears?: number | null;
+  initialHeightCm?: number | null;
+  initialWeightKg?: number | null;
   visitorId?: string;
   membershipPolicyText?: string | null;
 };
@@ -68,6 +73,10 @@ type EditProps = {
     notes: string | null;
     isPt: boolean;
     trainerId: string | null;
+    fitnessGoal: FitnessGoal | null;
+    ageYears: number | null;
+    heightCm: number | null;
+    weightKg: number | null;
   };
   staffOptions: StaffOption[];
 };
@@ -117,6 +126,13 @@ export function MemberForm(props: Props) {
   );
   const [trainerId, setTrainerId] = React.useState(
     props.mode === "edit" ? props.member.trainerId ?? "" : "",
+  );
+  const [fitnessGoal, setFitnessGoal] = React.useState<FitnessGoal | "">(
+    props.mode === "edit"
+      ? (props.member.fitnessGoal ?? "")
+      : props.mode === "create" && props.initialFitnessGoal
+        ? props.initialFitnessGoal
+        : "",
   );
 
   React.useEffect(() => {
@@ -316,6 +332,33 @@ export function MemberForm(props: Props) {
               </div>
             ) : null}
           </div>
+
+          <FitnessProfileFields
+            fitnessGoal={fitnessGoal}
+            onFitnessGoalChange={setFitnessGoal}
+            fitnessGoalRequired={props.mode === "create"}
+            defaultAgeYears={
+              props.mode === "edit"
+                ? props.member.ageYears
+                : props.mode === "create"
+                  ? props.initialAgeYears
+                  : undefined
+            }
+            defaultHeightCm={
+              props.mode === "edit"
+                ? props.member.heightCm
+                : props.mode === "create"
+                  ? props.initialHeightCm
+                  : undefined
+            }
+            defaultWeightKg={
+              props.mode === "edit"
+                ? props.member.weightKg
+                : props.mode === "create"
+                  ? props.initialWeightKg
+                  : undefined
+            }
+          />
         </CardContent>
       </Card>
 

@@ -6,19 +6,20 @@ import { toast } from "sonner";
 import { Upload } from "lucide-react";
 
 import { MemberPhotoBanner } from "@/components/member-photo-banner";
+import { FitnessProfileFields } from "@/components/fitness-profile-fields";
 import { updateMemberPortalProfile } from "@/app/actions/member-portal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { memberGenderLabel } from "@/lib/member-gender";
 import type { ActionResult } from "@/lib/action-result";
-import type { MemberGender } from "@prisma/client";
+import type { FitnessGoal, MemberGender } from "@prisma/client";
 
 type Profile = {
   name: string;
   phone: string;
   photoUrl: string | null;
   gender: MemberGender;
+  fitnessGoal: FitnessGoal | null;
   ageYears: number | null;
   heightCm: number | null;
   weightKg: number | null;
@@ -40,6 +41,9 @@ export function MemberPortalProfileForm({ profile }: { profile: Profile }) {
   );
   const [photoPreview, setPhotoPreview] = React.useState<string | null>(
     profile.photoUrl,
+  );
+  const [fitnessGoal, setFitnessGoal] = React.useState<FitnessGoal | "">(
+    profile.fitnessGoal ?? "",
   );
 
   React.useEffect(() => {
@@ -99,53 +103,13 @@ export function MemberPortalProfileForm({ profile }: { profile: Profile }) {
         </div>
       </div>
 
-      <div className="rounded-lg border p-4">
-        <p className="mb-3 text-sm font-medium">Body metrics (optional)</p>
-        <p className="mb-4 text-xs text-muted-foreground">
-          Used in a future update for personalised diet and workout suggestions.
-        </p>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="ageYears">Age (years)</Label>
-            <Input
-              id="ageYears"
-              name="ageYears"
-              type="number"
-              min={1}
-              max={120}
-              defaultValue={profile.ageYears ?? ""}
-              placeholder="—"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="heightCm">Height (cm)</Label>
-            <Input
-              id="heightCm"
-              name="heightCm"
-              type="number"
-              min={50}
-              max={300}
-              defaultValue={profile.heightCm ?? ""}
-              placeholder="—"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="weightKg">Weight (kg)</Label>
-            <Input
-              id="weightKg"
-              name="weightKg"
-              type="number"
-              min={20}
-              max={500}
-              step={0.1}
-              defaultValue={
-                profile.weightKg != null ? String(profile.weightKg) : ""
-              }
-              placeholder="—"
-            />
-          </div>
-        </div>
-      </div>
+      <FitnessProfileFields
+        fitnessGoal={fitnessGoal}
+        onFitnessGoalChange={setFitnessGoal}
+        defaultAgeYears={profile.ageYears}
+        defaultHeightCm={profile.heightCm}
+        defaultWeightKg={profile.weightKg}
+      />
 
       <Submit />
     </form>

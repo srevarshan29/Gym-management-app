@@ -13,21 +13,46 @@ function normalizeBaseUrl(url: string): string {
   return url.replace(/\/$/, "");
 }
 
+function hostFromUrl(url: string): string | null {
+  try {
+    const withScheme = url.startsWith("http") ? url : `https://${url}`;
+    return new URL(withScheme).hostname;
+  } catch {
+    return null;
+  }
+}
+
+function isLocalHostname(hostname: string): boolean {
+  return (
+    hostname === "localhost" ||
+    hostname.startsWith("127.0.0.1") ||
+    hostname.endsWith(".localhost")
+  );
+}
+
 /**
- * Public app origin from env (QR links, fallbacks).
- * On Vercel, set NEXT_PUBLIC_APP_URL to your canonical URL (custom domain if you use one).
+ * Canonical public origin for member-facing links (QR registration, portal login).
+ * Never uses preview deployment hosts — preview URLs are Vercel password-protected.
+ *
+ * Priority: NEXT_PUBLIC_APP_URL → VERCEL_PROJECT_PRODUCTION_URL → production VERCEL_URL
+ * → AUTH_URL → localhost.
  */
 export function getAppBaseUrl(): string {
   const fromPublic = process.env.NEXT_PUBLIC_APP_URL?.trim();
   if (fromPublic) return normalizeBaseUrl(fromPublic);
 
-  if (process.env.AUTH_URL) {
-    return normalizeBaseUrl(process.env.AUTH_URL);
+  const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  if (productionHost) {
+    return normalizeBaseUrl(`https://${productionHost}`);
   }
 
-  const vercel = process.env.VERCEL_URL?.trim();
-  if (vercel) {
-    return `https://${vercel}`;
+  if (process.env.VERCEL_ENV === "production") {
+    const vercel = process.env.VERCEL_URL?.trim();
+    if (vercel) return normalizeBaseUrl(`https://${vercel}`);
+  }
+
+  if (process.env.AUTH_URL) {
+    return normalizeBaseUrl(process.env.AUTH_URL);
   }
 
   return "http://localhost:3000";
@@ -35,24 +60,35 @@ export function getAppBaseUrl(): string {
 
 /**
  * Origin for links staff copy while using the app (member portal login, etc.).
- * Uses the incoming request host on the server so production matches the live site
- * even when NEXT_PUBLIC_APP_URL is unset; falls back to {@link getAppBaseUrl}.
+ * Uses the incoming request host only on trusted hosts (local dev or canonical
+ * production). Preview deployments always use {@link getAppBaseUrl}.
  */
 export async function getAppBaseUrlFromRequest(): Promise<string> {
+  const canonical = getAppBaseUrl();
+
+  if (process.env.VERCEL_ENV === "preview") {
+    return canonical;
+  }
+
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host");
-  if (host) {
-    const hostname = host.split(",")[0]?.trim();
-    if (hostname) {
-      const proto =
-        h.get("x-forwarded-proto") ??
-        (hostname.startsWith("localhost") || hostname.startsWith("127.0.0.1")
-          ? "http"
-          : "https");
-      return normalizeBaseUrl(`${proto}://${hostname}`);
-    }
+  if (!host) return canonical;
+
+  const hostname = host.split(",")[0]?.trim();
+  if (!hostname) return canonical;
+
+  const canonicalHost = hostFromUrl(canonical);
+  if (
+    canonicalHost &&
+    (hostname === canonicalHost || isLocalHostname(hostname))
+  ) {
+    const proto =
+      h.get("x-forwarded-proto") ??
+      (isLocalHostname(hostname) ? "http" : "https");
+    return normalizeBaseUrl(`${proto}://${hostname}`);
   }
-  return getAppBaseUrl();
+
+  return canonical;
 }
 
 export function getRegistrationUrl(token: string): string {

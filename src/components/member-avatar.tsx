@@ -49,7 +49,7 @@ function FallbackImage({
       src={src}
       alt=""
       aria-hidden
-      className={cn("h-full w-full object-cover", className)}
+      className={cn("h-full w-full object-cover object-[center_25%]", className)}
       draggable={false}
     />
   );
@@ -119,7 +119,7 @@ export function MemberAvatar({
       <AvatarImage
         src={photoUrl}
         alt={name}
-        className="object-cover"
+        className="object-cover object-[center_25%]"
         onLoadingStatusChange={(status) => {
           if (status === "error") setImageFailed(true);
         }}

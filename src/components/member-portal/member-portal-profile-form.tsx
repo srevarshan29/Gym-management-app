@@ -5,8 +5,8 @@ import { useFormState, useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
 
+import { MemberPhotoBanner } from "@/components/member-photo-banner";
 import { updateMemberPortalProfile } from "@/app/actions/member-portal";
-import { MemberAvatar } from "@/components/member-avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,15 +50,14 @@ export function MemberPortalProfileForm({ profile }: { profile: Profile }) {
 
   return (
     <form action={formAction} className="space-y-6">
-      <div className="flex items-center gap-4">
-        <MemberAvatar
+      <div className="space-y-3">
+        <MemberPhotoBanner
           name={profile.name}
           photoUrl={photoPreview}
           gender={profile.gender}
           seed={profile.name}
-          size="lg"
         />
-        <div className="space-y-1.5">
+        <div className="flex justify-center sm:justify-start">
           <Label
             htmlFor="photo"
             className="flex w-fit cursor-pointer items-center gap-1.5 rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium shadow-soft hover:bg-accent"

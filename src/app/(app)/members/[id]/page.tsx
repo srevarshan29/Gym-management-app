@@ -15,6 +15,7 @@ import {
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { MemberAvatar } from "@/components/member-avatar";
+import { MemberPhotoBanner } from "@/components/member-photo-banner";
 import { PendingDuesBadge, StatusBadge } from "@/components/status-badge";
 import { PtBadge } from "@/components/pt-badge";
 import { RenewDialog } from "@/components/renew-dialog";
@@ -115,14 +116,23 @@ export default async function MemberProfilePage({
       </div>
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
-          <MemberAvatar
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <MemberPhotoBanner
             name={member.name}
             photoUrl={member.photoUrl}
             gender={member.gender}
             seed={member.id}
-            size="lg"
+            className="sm:hidden"
           />
+          <div className="flex items-center gap-4">
+            <MemberAvatar
+              name={member.name}
+              photoUrl={member.photoUrl}
+              gender={member.gender}
+              seed={member.id}
+              size="lg"
+              className="hidden sm:flex"
+            />
           <div>
             <div className="flex items-center gap-3">
               <h1 className="font-display text-2xl font-bold tracking-tight">
@@ -149,6 +159,7 @@ export default async function MemberProfilePage({
               </p>
             ) : null}
           </div>
+        </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

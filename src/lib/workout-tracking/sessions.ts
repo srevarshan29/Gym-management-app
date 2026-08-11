@@ -1,23 +1,41 @@
 import { prisma } from "@/lib/prisma";
 import { muscleGroupLabel } from "@/lib/exercises";
-import type { MuscleGroup } from "@prisma/client";
+import type { ExerciseTrackingType, MuscleGroup } from "@prisma/client";
+
+export type ActiveWorkoutSetLog = {
+  setNumber: number;
+  weightKg: number | null;
+  durationSeconds: number | null;
+};
 
 export type ActiveWorkoutSession = {
   id: string;
-  startedAt: Date;
+  startedAt: string;
   durationSeconds: number | null;
   exercises: {
     id: string;
     sortOrder: number;
     displayName: string;
     muscleGroup: string | null;
+    trackingType: ExerciseTrackingType;
     targetSets: number;
     targetReps: string;
     targetWeightKg: number | null;
     restSeconds: number | null;
-    sets: { setNumber: number; weightKg: number }[];
+    sets: ActiveWorkoutSetLog[];
   }[];
 };
+
+function resolveTrackingType(planExercise: {
+  trackingTypeOverride: ExerciseTrackingType | null;
+  exercise: { trackingType: ExerciseTrackingType } | null;
+}): ExerciseTrackingType {
+  return (
+    planExercise.trackingTypeOverride ??
+    planExercise.exercise?.trackingType ??
+    "WEIGHTED"
+  );
+}
 
 export async function getActiveWorkoutSession(
   gymId: string,
@@ -42,12 +60,15 @@ export async function getActiveWorkoutSession(
               targetWeightKg: true,
               restSeconds: true,
               customName: true,
-              exercise: { select: { name: true, muscleGroup: true } },
+              trackingTypeOverride: true,
+              exercise: {
+                select: { name: true, muscleGroup: true, trackingType: true },
+              },
             },
           },
           sets: {
             orderBy: { setNumber: "asc" },
-            select: { setNumber: true, weightKg: true },
+            select: { setNumber: true, weightKg: true, durationSeconds: true },
           },
         },
       },
@@ -57,7 +78,7 @@ export async function getActiveWorkoutSession(
 
   return {
     id: session.id,
-    startedAt: session.startedAt,
+    startedAt: session.startedAt.toISOString(),
     durationSeconds: session.durationSeconds,
     exercises: session.exercises.map((row) => ({
       id: row.id,
@@ -69,6 +90,7 @@ export async function getActiveWorkoutSession(
       muscleGroup: row.planExercise.exercise
         ? muscleGroupLabel(row.planExercise.exercise.muscleGroup as MuscleGroup)
         : null,
+      trackingType: resolveTrackingType(row.planExercise),
       targetSets: row.planExercise.targetSets,
       targetReps: row.planExercise.targetReps,
       targetWeightKg:
@@ -78,7 +100,8 @@ export async function getActiveWorkoutSession(
       restSeconds: row.planExercise.restSeconds,
       sets: row.sets.map((set) => ({
         setNumber: set.setNumber,
-        weightKg: Number(set.weightKg),
+        weightKg: set.weightKg != null ? Number(set.weightKg) : null,
+        durationSeconds: set.durationSeconds,
       })),
     })),
   };

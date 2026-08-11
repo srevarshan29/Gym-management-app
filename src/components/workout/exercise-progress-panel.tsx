@@ -89,7 +89,9 @@ export function ExerciseProgressPanel({
         {progress ? (
           <>
             <p className="text-sm text-muted-foreground">
-              Max weight per {grouping === "weekly" ? "week" : "month"} for{" "}
+              {progress.trackingType === "TIME"
+                ? `Max duration per ${grouping === "weekly" ? "week" : "month"} for`
+                : `Max weight per ${grouping === "weekly" ? "week" : "month"} for`}{" "}
               <span className="font-medium text-foreground">
                 {progress.exerciseName}
               </span>
@@ -97,6 +99,7 @@ export function ExerciseProgressPanel({
             <ExerciseProgressChart
               data={progress.points}
               targetWeightKg={progress.targetWeightKg}
+              trackingType={progress.trackingType}
             />
           </>
         ) : null}

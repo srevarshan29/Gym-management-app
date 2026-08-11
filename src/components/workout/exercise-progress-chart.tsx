@@ -18,26 +18,35 @@ import {
   yAxisWidth,
 } from "@/hooks/use-chart-layout";
 import type { ExerciseProgressPoint } from "@/lib/workout-tracking/progress";
+import type { ExerciseTrackingType } from "@prisma/client";
 
 const LINE_COLOR = "hsl(var(--primary))";
 const GRID_COLOR = "hsl(var(--border))";
 const AXIS_COLOR = "hsl(var(--muted-foreground))";
 
-type ChartRow = ExerciseProgressPoint & { maxWeightKg: number };
+type ChartRow = ExerciseProgressPoint & {
+  chartValue: number;
+};
 
 function ProgressTooltip({
   active,
   payload,
+  trackingType,
 }: {
   active?: boolean;
   payload?: { payload: ChartRow }[];
+  trackingType: ExerciseTrackingType;
 }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
+  const valueLabel =
+    trackingType === "TIME"
+      ? `${row.maxDurationSeconds ?? 0}s`
+      : `${row.maxWeightKg ?? 0} kg`;
   return (
     <div className="rounded-lg border bg-card px-3 py-2 shadow-soft">
       <p className="text-xs text-muted-foreground">{row.label}</p>
-      <p className="font-mono text-sm font-semibold">{row.maxWeightKg} kg</p>
+      <p className="font-mono text-sm font-semibold">{valueLabel}</p>
     </div>
   );
 }
@@ -45,12 +54,21 @@ function ProgressTooltip({
 export function ExerciseProgressChart({
   data,
   targetWeightKg,
+  trackingType,
 }: {
   data: ExerciseProgressPoint[];
   targetWeightKg: number | null;
+  trackingType: ExerciseTrackingType;
 }) {
   const { compact } = useChartLayout();
   const tickSize = compact ? 10 : 12;
+  const chartData: ChartRow[] = data.map((point) => ({
+    ...point,
+    chartValue:
+      trackingType === "TIME"
+        ? point.maxDurationSeconds ?? 0
+        : point.maxWeightKg ?? 0,
+  }));
 
   if (data.length === 0) {
     return (
@@ -62,7 +80,7 @@ export function ExerciseProgressChart({
 
   return (
     <ResponsiveChartShell>
-      <LineChart data={data} margin={chartMargins(compact)}>
+      <LineChart data={chartData} margin={chartMargins(compact)}>
         <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
         <XAxis
           dataKey="label"
@@ -77,10 +95,12 @@ export function ExerciseProgressChart({
           tickLine={false}
           axisLine={false}
           domain={[0, "auto"]}
-          allowDecimals
+          allowDecimals={trackingType !== "TIME"}
         />
-        <Tooltip content={<ProgressTooltip />} />
-        {targetWeightKg != null ? (
+        <Tooltip
+          content={<ProgressTooltip trackingType={trackingType} />}
+        />
+        {trackingType === "WEIGHTED" && targetWeightKg != null ? (
           <ReferenceLine
             y={targetWeightKg}
             stroke="hsl(var(--muted-foreground))"
@@ -94,7 +114,7 @@ export function ExerciseProgressChart({
         ) : null}
         <Line
           type="monotone"
-          dataKey="maxWeightKg"
+          dataKey="chartValue"
           stroke={LINE_COLOR}
           strokeWidth={2.5}
           dot={{

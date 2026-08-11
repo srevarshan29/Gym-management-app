@@ -1,4 +1,4 @@
-import type { MuscleGroup, Prisma } from "@prisma/client";
+import type { ExerciseTrackingType, MuscleGroup, Prisma } from "@prisma/client";
 
 export type SeedExercise = {
   name: string;
@@ -7,6 +7,7 @@ export type SeedExercise = {
   defaultReps?: string;
   defaultTempo?: string;
   defaultRestSeconds?: number;
+  trackingType?: ExerciseTrackingType;
 };
 
 export const MUSCLE_GROUP_VALUES = [
@@ -64,7 +65,7 @@ export const SEED_EXERCISES: SeedExercise[] = [
   { name: "Tricep Pushdown", muscleGroup: "ARMS", defaultSets: 3, defaultReps: "12-15", defaultRestSeconds: 60 },
   { name: "Skull Crushers", muscleGroup: "ARMS", defaultSets: 3, defaultReps: "10-12", defaultRestSeconds: 60 },
   // Core
-  { name: "Plank", muscleGroup: "CORE", defaultSets: 3, defaultReps: "45-60s", defaultRestSeconds: 45 },
+  { name: "Plank", muscleGroup: "CORE", defaultSets: 3, defaultReps: "45-60s", defaultRestSeconds: 45, trackingType: "TIME" },
   { name: "Hanging Leg Raise", muscleGroup: "CORE", defaultSets: 3, defaultReps: "10-15", defaultRestSeconds: 60 },
   { name: "Cable Crunch", muscleGroup: "CORE", defaultSets: 3, defaultReps: "15-20", defaultRestSeconds: 45 },
   { name: "Russian Twist", muscleGroup: "CORE", defaultSets: 3, defaultReps: "20", defaultRestSeconds: 45 },
@@ -83,6 +84,7 @@ export async function seedExercisesForGym(
       defaultReps: item.defaultReps ?? null,
       defaultTempo: item.defaultTempo ?? null,
       defaultRestSeconds: item.defaultRestSeconds ?? null,
+      trackingType: item.trackingType ?? "WEIGHTED",
       isSeeded: true,
     })),
     skipDuplicates: true,

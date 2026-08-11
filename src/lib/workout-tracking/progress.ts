@@ -1,18 +1,32 @@
 import { prisma } from "@/lib/prisma";
+import type { ExerciseTrackingType } from "@prisma/client";
 
 export type ProgressGrouping = "weekly" | "monthly";
 
 export type ExerciseProgressPoint = {
   label: string;
-  maxWeightKg: number;
+  maxWeightKg: number | null;
+  maxDurationSeconds: number | null;
   sessionDate: Date;
 };
 
 export type ExerciseProgressData = {
   exerciseName: string;
+  trackingType: ExerciseTrackingType;
   targetWeightKg: number | null;
   points: ExerciseProgressPoint[];
 };
+
+function resolveTrackingType(planExercise: {
+  trackingTypeOverride: ExerciseTrackingType | null;
+  exercise: { trackingType: ExerciseTrackingType } | null;
+}): ExerciseTrackingType {
+  return (
+    planExercise.trackingTypeOverride ??
+    planExercise.exercise?.trackingType ??
+    "WEIGHTED"
+  );
+}
 
 function bucketKey(date: Date, grouping: ProgressGrouping): string {
   const year = date.getFullYear();
@@ -60,13 +74,17 @@ export async function getExerciseProgressData(
     },
     select: {
       targetWeightKg: true,
-      exercise: { select: { name: true } },
+      trackingTypeOverride: true,
+      exercise: { select: { name: true, trackingType: true } },
       customName: true,
     },
   });
 
   const exerciseName =
     planExercise?.exercise?.name ?? planExercise?.customName ?? customName ?? "Exercise";
+  const trackingType = planExercise
+    ? resolveTrackingType(planExercise)
+    : "WEIGHTED";
 
   const setLogs = await prisma.workoutSetLog.findMany({
     where: {
@@ -84,6 +102,7 @@ export async function getExerciseProgressData(
     },
     select: {
       weightKg: true,
+      durationSeconds: true,
       sessionExercise: {
         select: {
           workoutSessionId: true,
@@ -97,6 +116,7 @@ export async function getExerciseProgressData(
   if (setLogs.length === 0) {
     return {
       exerciseName,
+      trackingType,
       targetWeightKg:
         planExercise?.targetWeightKg != null
           ? Number(planExercise.targetWeightKg)
@@ -105,25 +125,59 @@ export async function getExerciseProgressData(
     };
   }
 
-  const sessionMax = new Map<string, { date: Date; max: number }>();
+  const sessionMax = new Map<
+    string,
+    { date: Date; maxWeightKg: number | null; maxDurationSeconds: number | null }
+  >();
 
   for (const log of setLogs) {
     const sessionId = log.sessionExercise.workoutSessionId;
     const session = log.sessionExercise.session;
     const date = session.completedAt ?? session.startedAt;
-    const weight = Number(log.weightKg);
+    const weight =
+      log.weightKg != null ? Number(log.weightKg) : null;
+    const duration = log.durationSeconds;
     const existing = sessionMax.get(sessionId);
-    if (!existing || weight > existing.max) {
-      sessionMax.set(sessionId, { date, max: weight });
+
+    if (trackingType === "TIME") {
+      if (duration == null) continue;
+      if (!existing || duration > (existing.maxDurationSeconds ?? 0)) {
+        sessionMax.set(sessionId, {
+          date,
+          maxWeightKg: null,
+          maxDurationSeconds: duration,
+        });
+      }
+      continue;
+    }
+
+    if (weight == null) continue;
+    if (!existing || weight > (existing.maxWeightKg ?? 0)) {
+      sessionMax.set(sessionId, {
+        date,
+        maxWeightKg: weight,
+        maxDurationSeconds: null,
+      });
     }
   }
 
-  const bucketed = new Map<string, { date: Date; max: number }>();
+  const bucketed = new Map<
+    string,
+    { date: Date; maxWeightKg: number | null; maxDurationSeconds: number | null }
+  >();
   for (const entry of sessionMax.values()) {
     const key = bucketKey(entry.date, grouping);
     const current = bucketed.get(key);
-    if (!current || entry.max > current.max) {
-      bucketed.set(key, { date: entry.date, max: entry.max });
+    const entryValue =
+      trackingType === "TIME"
+        ? entry.maxDurationSeconds ?? 0
+        : entry.maxWeightKg ?? 0;
+    const currentValue =
+      trackingType === "TIME"
+        ? current?.maxDurationSeconds ?? 0
+        : current?.maxWeightKg ?? 0;
+    if (!current || entryValue > currentValue) {
+      bucketed.set(key, entry);
     }
   }
 
@@ -131,12 +185,14 @@ export async function getExerciseProgressData(
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, value]) => ({
       label: bucketLabel(key, grouping),
-      maxWeightKg: value.max,
+      maxWeightKg: value.maxWeightKg,
+      maxDurationSeconds: value.maxDurationSeconds,
       sessionDate: value.date,
     }));
 
   return {
     exerciseName,
+    trackingType,
     targetWeightKg:
       planExercise?.targetWeightKg != null
         ? Number(planExercise.targetWeightKg)

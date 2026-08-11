@@ -20,6 +20,10 @@ import { Label } from "@/components/ui/label";
 import type { ActiveWorkoutSession } from "@/lib/workout-tracking/sessions";
 import type { WorkoutPlanDetail } from "@/lib/workout-tracking/types";
 
+function toIsoTimestamp(value: string | Date): string {
+  return typeof value === "string" ? value : value.toISOString();
+}
+
 type MemberWorkoutPageClientProps = {
   plan: WorkoutPlanDetail | null;
   activeSession: ActiveWorkoutSession | null;
@@ -33,7 +37,7 @@ export function MemberWorkoutPageClient({
 }: MemberWorkoutPageClientProps) {
   const router = useRouter();
   const [activeSession, setActiveSession] = React.useState(initialSession);
-  const [weights, setWeights] = React.useState<Record<string, string>>({});
+  const [setValues, setSetValues] = React.useState<Record<string, string>>({});
   const [pending, setPending] = React.useState(false);
 
   React.useEffect(() => {
@@ -42,43 +46,96 @@ export function MemberWorkoutPageClient({
 
   async function onStart() {
     setPending(true);
-    const result = await startWorkoutSession();
-    setPending(false);
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
+    try {
+      const result = await startWorkoutSession();
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(result.message ?? "Workout started.");
+      router.refresh();
+    } catch (error) {
+      console.error("[workout] startWorkoutSession failed:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not start workout. Please try again.",
+      );
+    } finally {
+      setPending(false);
     }
-    toast.success(result.message ?? "Workout started.");
-    router.refresh();
   }
 
-  async function onLogSet(sessionExerciseId: string, setNumber: number) {
+  async function onLogSet(
+    sessionExerciseId: string,
+    setNumber: number,
+    trackingType: ActiveWorkoutSession["exercises"][number]["trackingType"],
+  ) {
     const key = `${sessionExerciseId}-${setNumber}`;
-    const weightKg = Number(weights[key]);
-    if (!weightKg && weightKg !== 0) {
-      toast.error("Enter a weight for this set.");
-      return;
+    const rawValue = setValues[key];
+
+    const payload: {
+      sessionExerciseId: string;
+      setNumber: number;
+      weightKg?: number;
+      durationSeconds?: number;
+    } = { sessionExerciseId, setNumber };
+
+    if (trackingType === "WEIGHTED") {
+      const weightKg = Number(rawValue);
+      if (!rawValue && weightKg !== 0) {
+        toast.error("Enter a weight for this set.");
+        return;
+      }
+      payload.weightKg = weightKg;
+    } else if (trackingType === "TIME") {
+      const durationSeconds = Number(rawValue);
+      if (!durationSeconds || durationSeconds < 1) {
+        toast.error("Enter a duration in seconds for this set.");
+        return;
+      }
+      payload.durationSeconds = durationSeconds;
     }
-    const result = await logWorkoutSet({ sessionExerciseId, setNumber, weightKg });
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
+
+    try {
+      const result = await logWorkoutSet(payload);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Set saved.");
+      router.refresh();
+    } catch (error) {
+      console.error("[workout] logWorkoutSet failed:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not save set. Please try again.",
+      );
     }
-    toast.success("Set saved.");
-    router.refresh();
   }
 
   async function onComplete() {
     if (!activeSession) return;
     setPending(true);
-    const result = await completeWorkoutSession(activeSession.id);
-    setPending(false);
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
+    try {
+      const result = await completeWorkoutSession(activeSession.id);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(result.message ?? "Workout completed.");
+      router.refresh();
+    } catch (error) {
+      console.error("[workout] completeWorkoutSession failed:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not complete workout. Please try again.",
+      );
+    } finally {
+      setPending(false);
     }
-    toast.success(result.message ?? "Workout completed.");
-    router.refresh();
   }
 
   if (!plan || plan.isLegacy) {
@@ -100,7 +157,7 @@ export function MemberWorkoutPageClient({
 
   return (
     <div className="space-y-4">
-      <SessionTimer startedAt={activeSession.startedAt.toISOString()} />
+      <SessionTimer startedAt={toIsoTimestamp(activeSession.startedAt)} />
 
       {activeSession.exercises.map((exercise) => (
         <Card key={exercise.id}>
@@ -118,31 +175,68 @@ export function MemberWorkoutPageClient({
               const setNumber = index + 1;
               const key = `${exercise.id}-${setNumber}`;
               const logged = exercise.sets.find((s) => s.setNumber === setNumber);
-              const value =
-                weights[key] ??
-                (logged != null ? String(logged.weightKg) : "");
+              const isTime = exercise.trackingType === "TIME";
+              const isBodyweight = exercise.trackingType === "BODYWEIGHT";
+              const loggedDisplay =
+                logged != null
+                  ? isTime
+                    ? logged.durationSeconds != null
+                      ? String(logged.durationSeconds)
+                      : ""
+                    : logged.weightKg != null
+                      ? String(logged.weightKg)
+                      : ""
+                  : "";
+              const value = setValues[key] ?? loggedDisplay;
+              const isLogged = logged != null;
+
+              if (isBodyweight) {
+                return (
+                  <div
+                    key={key}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/20 p-3"
+                  >
+                    <span className="text-sm font-medium">Set {setNumber}</span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={isLogged ? "secondary" : "default"}
+                      onClick={() =>
+                        onLogSet(exercise.id, setNumber, exercise.trackingType)
+                      }
+                    >
+                      {isLogged ? "Saved" : "Mark done"}
+                    </Button>
+                  </div>
+                );
+              }
+
               return (
                 <div
                   key={key}
                   className="flex items-end gap-2 rounded-lg border border-border bg-muted/20 p-3"
                 >
                   <div className="flex-1 space-y-1">
-                    <Label htmlFor={key}>Set {setNumber} (kg)</Label>
+                    <Label htmlFor={key}>
+                      Set {setNumber} ({isTime ? "seconds" : "kg"})
+                    </Label>
                     <Input
                       id={key}
                       type="number"
-                      min={0}
-                      step={0.5}
+                      min={isTime ? 1 : 0}
+                      step={isTime ? 1 : 0.5}
                       value={value}
                       onChange={(e) =>
-                        setWeights((prev) => ({ ...prev, [key]: e.target.value }))
+                        setSetValues((prev) => ({ ...prev, [key]: e.target.value }))
                       }
                     />
                   </div>
                   <Button
                     type="button"
                     size="sm"
-                    onClick={() => onLogSet(exercise.id, setNumber)}
+                    onClick={() =>
+                      onLogSet(exercise.id, setNumber, exercise.trackingType)
+                    }
                   >
                     Save
                   </Button>

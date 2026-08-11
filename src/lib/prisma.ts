@@ -92,11 +92,13 @@ function isStaleDevPrismaClient(client: PrismaClient): boolean {
     employee?: unknown;
     gymEvent?: unknown;
     ledgerTransaction?: unknown;
+    exercise?: { findFirst?: unknown };
   };
   return (
     typeof c.employee === "undefined" ||
     typeof c.gymEvent === "undefined" ||
-    typeof c.ledgerTransaction === "undefined"
+    typeof c.ledgerTransaction === "undefined" ||
+    typeof c.exercise?.findFirst === "undefined"
   );
 }
 

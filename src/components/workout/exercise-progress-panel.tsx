@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { ExerciseProgressChart } from "@/components/workout/exercise-progress-chart";
 import { Label } from "@/components/ui/label";
@@ -28,16 +28,30 @@ export function ExerciseProgressPanel({
   progress,
 }: ExerciseProgressPanelProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const exerciseKey = initialExerciseKey ?? exercises[0]?.key ?? "";
-  const grouping = initialGrouping;
+
+  const exerciseFromUrl = searchParams.get("exercise");
+  const groupingFromUrl = searchParams.get("grouping");
+
+  const exerciseKey =
+    exerciseFromUrl && exercises.some((item) => item.key === exerciseFromUrl)
+      ? exerciseFromUrl
+      : initialExerciseKey ?? exercises[0]?.key ?? "";
+
+  const grouping =
+    groupingFromUrl === "monthly" || groupingFromUrl === "weekly"
+      ? groupingFromUrl
+      : initialGrouping;
 
   function updateParams(patch: Record<string, string>) {
     const params = new URLSearchParams(searchParams.toString());
     for (const [key, value] of Object.entries(patch)) {
       params.set(key, value);
     }
-    router.replace(`?${params.toString()}`);
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+    router.refresh();
   }
 
   if (exercises.length === 0) {
@@ -97,6 +111,7 @@ export function ExerciseProgressPanel({
               </span>
             </p>
             <ExerciseProgressChart
+              key={`${exerciseKey}-${grouping}`}
               data={progress.points}
               targetWeightKg={progress.targetWeightKg}
               trackingType={progress.trackingType}

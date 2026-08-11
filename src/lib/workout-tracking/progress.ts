@@ -17,6 +17,15 @@ export type ExerciseProgressData = {
   points: ExerciseProgressPoint[];
 };
 
+function planExerciseFilter(
+  exerciseId: string | null,
+  customName: string | null,
+): { exerciseId: string } | { customName: string } | null {
+  if (exerciseId) return { exerciseId };
+  if (customName != null && customName !== "") return { customName };
+  return null;
+}
+
 function resolveTrackingType(planExercise: {
   trackingTypeOverride: ExerciseTrackingType | null;
   exercise: { trackingType: ExerciseTrackingType } | null;
@@ -66,11 +75,21 @@ export async function getExerciseProgressData(
   const exerciseId = isCustom ? null : exerciseKey;
   const customName = isCustom ? exerciseKey.slice("custom:".length) : null;
 
+  const exerciseMatch = planExerciseFilter(exerciseId, customName);
+  if (!exerciseMatch) {
+    return {
+      exerciseName: customName ?? "Exercise",
+      trackingType: "WEIGHTED",
+      targetWeightKg: null,
+      points: [],
+    };
+  }
+
   const planExercise = await prisma.workoutPlanExercise.findFirst({
     where: {
       gymId,
       workoutPlan: { memberId },
-      ...(exerciseId ? { exerciseId } : { customName }),
+      ...exerciseMatch,
     },
     select: {
       targetWeightKg: true,
@@ -95,9 +114,7 @@ export async function getExerciseProgressData(
           gymId,
           status: "COMPLETED",
         },
-        planExercise: exerciseId
-          ? { exerciseId }
-          : { customName: customName ?? undefined },
+        planExercise: exerciseMatch,
       },
     },
     select: {

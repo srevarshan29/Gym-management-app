@@ -94,6 +94,21 @@ export async function startWorkoutSession(): Promise<
   }
 }
 
+function buildSetLogData(
+  trackingType: ExerciseTrackingType,
+  weightKg: number | undefined,
+  durationSeconds: number | undefined,
+): { weightKg: number | null; durationSeconds: number | null } {
+  switch (trackingType) {
+    case "WEIGHTED":
+      return { weightKg: weightKg ?? null, durationSeconds: null };
+    case "TIME":
+      return { weightKg: null, durationSeconds: durationSeconds ?? null };
+    default:
+      return { weightKg: null, durationSeconds: null };
+  }
+}
+
 export async function logWorkoutSet(
   payload: unknown,
 ): Promise<ActionResult> {
@@ -142,6 +157,8 @@ export async function logWorkoutSet(
       }
     }
 
+    const setValues = buildSetLogData(trackingType, weightKg, durationSeconds);
+
     await prisma.workoutSetLog.upsert({
       where: {
         sessionExerciseId_setNumber: { sessionExerciseId, setNumber },
@@ -150,13 +167,9 @@ export async function logWorkoutSet(
         gymId: member.gymId,
         sessionExerciseId,
         setNumber,
-        weightKg: trackingType === "WEIGHTED" ? weightKg : null,
-        durationSeconds: trackingType === "TIME" ? durationSeconds : null,
+        ...setValues,
       },
-      update: {
-        weightKg: trackingType === "WEIGHTED" ? weightKg : null,
-        durationSeconds: trackingType === "TIME" ? durationSeconds : null,
-      },
+      update: setValues,
     });
 
     revalidatePath("/member/workout");

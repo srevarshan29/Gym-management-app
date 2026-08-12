@@ -80,12 +80,12 @@ export function buildMonthlyMemberJoinsFromEarliestStarts(
 
 async function fetchEarliestJoinStartsInWindow(
   tx: Prisma.TransactionClient,
-  gymId: string,
+  tenantGymId: string,
   startMonth: Date,
 ): Promise<Date[]> {
   const groups = await tx.subscription.groupBy({
     by: ["memberId"],
-    where: { gymId },
+    where: { gymId: tenantGymId },
     _min: { startDate: true },
     having: {
       startDate: {
@@ -107,15 +107,15 @@ async function fetchEarliestJoinStartsInWindow(
  * Months with no signups return joins: 0.
  */
 export async function getMonthlyMemberJoins(
-  gymId: string,
+  tenantGymId: string,
   monthCount = ANALYTICS_MONTH_COUNT,
 ): Promise<MonthlyMemberJoinPoint[]> {
-  return withTenant(gymId, async (tx) => {
+  return withTenant(tenantGymId, async (tx) => {
     const now = new Date();
     const startMonth = chartStartMonth(monthCount, now);
     const earliestStarts = await fetchEarliestJoinStartsInWindow(
       tx,
-      gymId,
+      tenantGymId,
       startMonth,
     );
     return buildMonthlyMemberJoinsFromEarliestStarts(
@@ -126,8 +126,10 @@ export async function getMonthlyMemberJoins(
   });
 }
 
-export async function getAnalyticsPageData(gymId: string): Promise<AnalyticsPageData> {
-  return withTenant(gymId, async (tx) => {
+export async function getAnalyticsPageData(
+  tenantGymId: string,
+): Promise<AnalyticsPageData> {
+  return withTenant(tenantGymId, async (tx) => {
     const now = new Date();
     const { startThisMonth, startNextMonth } = monthBounds(now);
     const startMonth = chartStartMonth(ANALYTICS_MONTH_COUNT, now);
@@ -139,19 +141,23 @@ export async function getAnalyticsPageData(gymId: string): Promise<AnalyticsPage
       earliestStarts,
       payments,
     ] = await Promise.all([
-      tx.member.count({ where: { gymId } }),
+      tx.member.count({ where: { gymId: tenantGymId } }),
       tx.payment.count({
         where: {
-          gymId,
+          gymId: tenantGymId,
           paidAt: { gte: startThisMonth, lt: startNextMonth },
         },
       }),
       tx.visitor.count({
-        where: { gymId, status: "pending", source: "walk_in" },
+        where: {
+          gymId: tenantGymId,
+          status: "pending",
+          source: "walk_in",
+        },
       }),
-      fetchEarliestJoinStartsInWindow(tx, gymId, startMonth),
+      fetchEarliestJoinStartsInWindow(tx, tenantGymId, startMonth),
       tx.payment.findMany({
-        where: { gymId, paidAt: { gte: startMonth } },
+        where: { gymId: tenantGymId, paidAt: { gte: startMonth } },
         select: { amount: true, paidAt: true },
       }),
     ]);

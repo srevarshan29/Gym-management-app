@@ -18,12 +18,12 @@ export type DietPlansPageData = {
 };
 
 export async function getDietPlansPageData(
-  gymId: string,
+  tenantGymId: string,
 ): Promise<DietPlansPageData> {
-  return withTenant(gymId, async (tx) => {
+  return withTenant(tenantGymId, async (tx) => {
     const [plans, members] = await Promise.all([
       tx.dietPlan.findMany({
-        where: { gymId },
+        where: { gymId: tenantGymId },
         orderBy: [{ member: { name: "asc" } }],
         select: {
           id: true,
@@ -35,7 +35,7 @@ export async function getDietPlansPageData(
         },
       }),
       tx.member.findMany({
-        where: { gymId },
+        where: { gymId: tenantGymId },
         orderBy: { name: "asc" },
         select: { id: true, name: true },
       }),
@@ -45,7 +45,7 @@ export async function getDietPlansPageData(
       plans: plans.map((plan) => ({
         id: plan.id,
         memberId: plan.memberId,
-        memberName: plan.member.name,
+        memberName: plan.member?.name ?? "",
         title: plan.title,
         caloriesPerDay: plan.caloriesPerDay,
         mealPlan: plan.mealPlan,

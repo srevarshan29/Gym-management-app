@@ -74,7 +74,7 @@ export default async function DashboardPage() {
 }
 
 async function DashboardBody({
-  gymId,
+  gymId: tenantGymId,
   userName,
   showFinancials,
   canLogPayments,
@@ -88,8 +88,8 @@ async function DashboardBody({
   canManageMembers: boolean;
   canManagePackages: boolean;
 }) {
-  const members = await getMembersWithStatus(gymId);
-  const metrics = await getDashboardMetrics(gymId, members);
+  const members = await getMembersWithStatus(tenantGymId);
+  const metrics = await getDashboardMetrics(tenantGymId, members);
   const upcoming = filterUpcomingRenewals(members);
   const expired = filterExpiredMemberships(members);
 
@@ -104,15 +104,18 @@ async function DashboardBody({
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const [agg, trend, finSparklines] = await (async () => {
-      const aggResult = await withTenant(gymId, (tx) =>
+      const aggResult = await withTenant(tenantGymId, (tx) =>
         tx.payment.aggregate({
           _sum: { amount: true },
-          where: { gymId, paidAt: { gte: start, lt: end } },
+          where: {
+            gymId: tenantGymId,
+            paidAt: { gte: start, lt: end },
+          },
         }),
       );
-      const trendResult = await getMonthlyRevenueTrend(gymId);
+      const trendResult = await getMonthlyRevenueTrend(tenantGymId);
       const finResult = await getFinancialSparklines(
-        gymId,
+        tenantGymId,
         metrics.collectionExpected,
         metrics.pendingTotal,
       );
@@ -127,7 +130,7 @@ async function DashboardBody({
     }
   } else if (canLogPayments) {
     financialSparklines = await getFinancialSparklines(
-      gymId,
+      tenantGymId,
       metrics.collectionExpected,
       metrics.pendingTotal,
     );

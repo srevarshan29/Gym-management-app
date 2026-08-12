@@ -74,19 +74,21 @@ function toReceiptData(receipt: RawReceipt): ReceiptData {
  */
 export async function createReceiptForPayment(
   tx: Prisma.TransactionClient,
-  gymId: string,
+  tenantGymId: string,
   paymentId: string,
 ): Promise<RawReceipt> {
   const payment = await tx.payment.findFirstOrThrow({
-    where: { id: paymentId, gymId },
+    where: { id: paymentId, gymId: tenantGymId },
     include: {
       member: true,
       subscription: { include: { package: true } },
     },
   });
 
-  const gymProfile = await tx.gymProfile.findUnique({ where: { gymId } });
-  const number = await nextReceiptNumber(tx, gymId);
+  const gymProfile = await tx.gymProfile.findUnique({
+    where: { gymId: tenantGymId },
+  });
+  const number = await nextReceiptNumber(tx, tenantGymId);
 
   let amountOwed: Prisma.Decimal | null = null;
   let balanceAfter: Prisma.Decimal | null = null;
@@ -94,7 +96,10 @@ export async function createReceiptForPayment(
   if (payment.subscriptionId && payment.subscription) {
     const owed = Number(payment.subscription.priceAtPurchase);
     const paidAgg = await tx.payment.aggregate({
-      where: { gymId, subscriptionId: payment.subscriptionId },
+      where: {
+        gymId: tenantGymId,
+        subscriptionId: payment.subscriptionId,
+      },
       _sum: { amount: true },
     });
     const paidTotal = Number(paidAgg._sum.amount ?? 0);
@@ -104,7 +109,7 @@ export async function createReceiptForPayment(
 
   return tx.receipt.create({
     data: {
-      gymId,
+      gymId: tenantGymId,
       number,
       paymentId: payment.id,
       gymName: gymProfile?.name ?? "My Gym",
@@ -134,14 +139,16 @@ export async function createReceiptForPayment(
  * another tenant can never be returned.
  */
 export async function getOrCreateReceiptByPayment(
-  gymId: string,
+  tenantGymId: string,
   paymentId: string,
 ): Promise<ReceiptData> {
-  return withTenant(gymId, async (tx) => {
-    const existing = await tx.receipt.findFirst({ where: { paymentId, gymId } });
+  return withTenant(tenantGymId, async (tx) => {
+    const existing = await tx.receipt.findFirst({
+      where: { paymentId: paymentId, gymId: tenantGymId },
+    });
     if (existing) return toReceiptData(existing);
 
-    const created = await createReceiptForPayment(tx, gymId, paymentId);
+    const created = await createReceiptForPayment(tx, tenantGymId, paymentId);
     return toReceiptData(created);
   });
 }

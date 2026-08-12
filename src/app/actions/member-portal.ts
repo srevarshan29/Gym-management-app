@@ -25,6 +25,7 @@ import { prisma } from "@/lib/prisma";
 import { uploadMemberPhoto } from "@/lib/storage";
 
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
+import { prismaNull } from "@/lib/prisma-safe";
 import {
   optionalFitnessGoalSchema,
   signupBodyMetricsSchema,
@@ -122,10 +123,10 @@ export async function updateMemberPortalProfile(
   await prisma.member.updateMany({
     where: { id: session.memberId, gymId: session.gymId },
     data: {
-      fitnessGoal: parsed.data.fitnessGoal,
-      ageYears: parsed.data.ageYears,
-      heightCm: parsed.data.heightCm,
-      weightKg: parsed.data.weightKg,
+      fitnessGoal: prismaNull(parsed.data.fitnessGoal),
+      ageYears: prismaNull(parsed.data.ageYears),
+      heightCm: prismaNull(parsed.data.heightCm),
+      weightKg: prismaNull(parsed.data.weightKg),
     },
   });
 

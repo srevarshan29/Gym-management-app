@@ -109,10 +109,10 @@ export async function getGymByRegistrationToken(
   );
 }
 
-export async function getGymRegistrationToken(gymId: string): Promise<string> {
-  const gym = await withTenant(gymId, (tx) =>
+export async function getGymRegistrationToken(tenantGymId: string): Promise<string> {
+  const gym = await withTenant(tenantGymId, (tx) =>
     tx.gym.findFirst({
-      where: { id: gymId },
+      where: { id: tenantGymId },
       select: { registrationToken: true },
     }),
   );
@@ -138,13 +138,13 @@ export type QrRegistrationRow = Omit<QrRegistrationListItem, "createdAt"> & {
 };
 
 export async function getQrRegistrations(
-  gymId: string,
+  tenantGymId: string,
   status: "pending" | "converted" | "all" = "pending",
 ): Promise<QrRegistrationListItem[]> {
-  return withTenant(gymId, (tx) =>
+  return withTenant(tenantGymId, (tx) =>
     tx.visitor.findMany({
       where: {
-        gymId,
+        gymId: tenantGymId,
         source: "qr_registration",
         ...(status !== "all" ? { status } : {}),
       },
@@ -169,12 +169,12 @@ export type RegisterQrPageData = {
 
 /** Single transaction for register-qr page — avoids parallel pool contention. */
 export async function getRegisterQrPageData(
-  gymId: string,
+  tenantGymId: string,
   status: "pending" | "converted" | "all" = "pending",
 ): Promise<RegisterQrPageData> {
-  return withTenant(gymId, async (tx) => {
+  return withTenant(tenantGymId, async (tx) => {
     const gym = await tx.gym.findFirst({
-      where: { id: gymId },
+      where: { id: tenantGymId },
       select: { registrationToken: true },
     });
     if (!gym?.registrationToken) {
@@ -183,7 +183,7 @@ export async function getRegisterQrPageData(
 
     const registrations = await tx.visitor.findMany({
       where: {
-        gymId,
+        gymId: tenantGymId,
         source: "qr_registration",
         ...(status !== "all" ? { status } : {}),
       },

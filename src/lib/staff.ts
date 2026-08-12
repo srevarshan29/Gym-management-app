@@ -6,10 +6,12 @@ export type StaffOption = {
 };
 
 /** Gym staff accounts available as PT trainers (excludes SUPER_ADMIN). */
-export async function getGymStaffOptions(gymId: string): Promise<StaffOption[]> {
-  return withTenant(gymId, (tx) =>
+export async function getGymStaffOptions(
+  tenantGymId: string,
+): Promise<StaffOption[]> {
+  return withTenant(tenantGymId, (tx) =>
     tx.user.findMany({
-      where: { gymId, role: { not: "SUPER_ADMIN" } },
+      where: { gymId: tenantGymId, role: { not: "SUPER_ADMIN" } },
       orderBy: [{ name: "asc" }],
       select: { id: true, name: true },
     }),
@@ -18,12 +20,16 @@ export async function getGymStaffOptions(gymId: string): Promise<StaffOption[]> 
 
 /** Returns true when trainerId is a staff user in the same gym. */
 export async function validateTrainerForGym(
-  gymId: string,
+  tenantGymId: string,
   trainerId: string,
 ): Promise<boolean> {
-  const trainer = await withTenant(gymId, (tx) =>
+  const trainer = await withTenant(tenantGymId, (tx) =>
     tx.user.findFirst({
-      where: { id: trainerId, gymId, role: { not: "SUPER_ADMIN" } },
+      where: {
+        id: trainerId,
+        gymId: tenantGymId,
+        role: { not: "SUPER_ADMIN" },
+      },
       select: { id: true },
     }),
   );

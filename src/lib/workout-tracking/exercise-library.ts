@@ -5,13 +5,13 @@ import { muscleGroupLabel } from "@/lib/exercises";
 import type { ExerciseListItem } from "@/lib/workout-tracking/types";
 
 export async function getExerciseLibrary(
-  gymId: string,
+  tenantGymId: string,
   muscleGroup?: MuscleGroup | null,
 ): Promise<ExerciseListItem[]> {
-  return withTenant(gymId, async (tx) => {
+  return withTenant(tenantGymId, async (tx) => {
     const rows = await tx.exercise.findMany({
       where: {
-        gymId,
+        gymId: tenantGymId,
         ...(muscleGroup ? { muscleGroup } : {}),
       },
       orderBy: [{ muscleGroup: "asc" }, { name: "asc" }],

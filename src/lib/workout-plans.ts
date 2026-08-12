@@ -59,12 +59,12 @@ function mapExerciseRow(
 }
 
 export async function getWorkoutPlansPageData(
-  gymId: string,
+  tenantGymId: string,
 ): Promise<WorkoutPlansPageData> {
-  return withTenant(gymId, async (tx) => {
+  return withTenant(tenantGymId, async (tx) => {
     const [plans, members] = await Promise.all([
       tx.workoutPlan.findMany({
-        where: { gymId },
+        where: { gymId: tenantGymId },
         orderBy: [{ member: { name: "asc" } }],
         select: {
           id: true,
@@ -78,7 +78,7 @@ export async function getWorkoutPlansPageData(
         },
       }),
       tx.member.findMany({
-        where: { gymId },
+        where: { gymId: tenantGymId },
         orderBy: { name: "asc" },
         select: { id: true, name: true },
       }),
@@ -102,12 +102,12 @@ export async function getWorkoutPlansPageData(
 }
 
 export async function getWorkoutPlanDetail(
-  gymId: string,
+  tenantGymId: string,
   planId: string,
 ): Promise<WorkoutPlanDetail | null> {
-  return withTenant(gymId, async (tx) => {
+  return withTenant(tenantGymId, async (tx) => {
     const plan = await tx.workoutPlan.findFirst({
-      where: { id: planId, gymId },
+      where: { id: planId, gymId: tenantGymId },
       select: {
         id: true,
         memberId: true,
@@ -153,12 +153,12 @@ export async function getWorkoutPlanDetail(
 }
 
 export async function getMemberWorkoutPlanDetail(
-  gymId: string,
+  tenantGymId: string,
   memberId: string,
 ): Promise<WorkoutPlanDetail | null> {
-  return withTenant(gymId, async (tx) => {
+  return withTenant(tenantGymId, async (tx) => {
     const plan = await tx.workoutPlan.findFirst({
-      where: { gymId, memberId },
+      where: { gymId: tenantGymId, memberId: memberId },
       select: {
         id: true,
         memberId: true,

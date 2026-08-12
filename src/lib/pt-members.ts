@@ -63,12 +63,12 @@ function toPtMemberRow(member: {
 }
 
 export async function getPtMembersPageData(
-  gymId: string,
+  tenantGymId: string,
 ): Promise<PtMembersPageData> {
   const [ptMembers, staffOptions] = await Promise.all([
-    withTenant(gymId, (tx) =>
+    withTenant(tenantGymId, (tx) =>
       tx.member.findMany({
-        where: { gymId, isPt: true },
+        where: { gymId: tenantGymId, isPt: true },
         orderBy: { name: "asc" },
         include: {
           trainer: { select: { id: true, name: true } },
@@ -80,7 +80,7 @@ export async function getPtMembersPageData(
         },
       }),
     ),
-    getGymStaffOptions(gymId),
+    getGymStaffOptions(tenantGymId),
   ]);
 
   const rows = ptMembers.map(toPtMemberRow);

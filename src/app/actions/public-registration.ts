@@ -10,6 +10,7 @@ import { getMembershipPolicyForGymPublic } from "@/lib/gym-profile";
 import { isMembershipPolicyRequired } from "@/lib/membership-policy";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
+import { prismaNull } from "@/lib/prisma-safe";
 import { normalizeMemberEmail } from "@/lib/member-portal/constants";
 import {
   fitnessGoalSchema,
@@ -112,9 +113,9 @@ export async function submitPublicRegistration(
         email: normalizeMemberEmail(data.email),
         gender: data.gender,
         fitnessGoal: data.fitnessGoal,
-        ageYears: data.ageYears,
-        heightCm: data.heightCm,
-        weightKg: data.weightKg,
+        ageYears: prismaNull(data.ageYears),
+        heightCm: prismaNull(data.heightCm),
+        weightKg: prismaNull(data.weightKg),
         visitDate: todayDate(),
         notes: "Self-registered via QR",
         status: "pending",

@@ -10,24 +10,26 @@ export type AccountsSummary = {
   net: number;
 };
 
-export async function getLedgerTransactions(gymId: string) {
-  return withTenant(gymId, (tx) =>
+export async function getLedgerTransactions(tenantGymId: string) {
+  return withTenant(tenantGymId, (tx) =>
     tx.ledgerTransaction.findMany({
-      where: { gymId },
+      where: { gymId: tenantGymId },
       orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
     }),
   );
 }
 
-export async function getAccountsSummary(gymId: string): Promise<AccountsSummary> {
-  return withTenant(gymId, async (tx) => {
+export async function getAccountsSummary(
+  tenantGymId: string,
+): Promise<AccountsSummary> {
+  return withTenant(tenantGymId, async (tx) => {
     const [ledgerRows, paymentAgg] = await Promise.all([
       tx.ledgerTransaction.findMany({
-        where: { gymId },
+        where: { gymId: tenantGymId },
         select: { type: true, amount: true },
       }),
       tx.payment.aggregate({
-        where: { gymId },
+        where: { gymId: tenantGymId },
         _sum: { amount: true },
       }),
     ]);

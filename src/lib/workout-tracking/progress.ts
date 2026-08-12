@@ -66,7 +66,7 @@ function bucketLabel(key: string, grouping: ProgressGrouping): string {
 }
 
 export async function getExerciseProgressData(
-  gymId: string,
+  tenantGymId: string,
   memberId: string,
   exerciseKey: string,
   grouping: ProgressGrouping = "weekly",
@@ -87,8 +87,8 @@ export async function getExerciseProgressData(
 
   const planExercise = await prisma.workoutPlanExercise.findFirst({
     where: {
-      gymId,
-      workoutPlan: { memberId },
+      gymId: tenantGymId,
+      workoutPlan: { memberId: memberId },
       ...exerciseMatch,
     },
     select: {
@@ -107,11 +107,11 @@ export async function getExerciseProgressData(
 
   const setLogs = await prisma.workoutSetLog.findMany({
     where: {
-      gymId,
+      gymId: tenantGymId,
       sessionExercise: {
         session: {
-          memberId,
-          gymId,
+          memberId: memberId,
+          gymId: tenantGymId,
           status: "COMPLETED",
         },
         planExercise: exerciseMatch,
@@ -219,11 +219,11 @@ export async function getExerciseProgressData(
 }
 
 export async function getMemberExerciseOptions(
-  gymId: string,
+  tenantGymId: string,
   memberId: string,
 ): Promise<{ key: string; label: string }[]> {
   const plan = await prisma.workoutPlan.findFirst({
-    where: { gymId, memberId },
+    where: { gymId: tenantGymId, memberId: memberId },
     select: {
       exercises: {
         orderBy: { sortOrder: "asc" },

@@ -30,7 +30,7 @@ export async function renewSubscription(
   formData: FormData,
 ): Promise<ActionResult<RenewSubscriptionData>> {
   const user = await requireGym();
-  const gymId = user.gymId;
+  const tenantGymId = user.gymId;
 
   const parsed = renewSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -38,22 +38,24 @@ export async function renewSubscription(
   }
   const data = parsed.data;
 
-  const member = await withTenant(gymId, (tx) =>
+  const member = await withTenant(tenantGymId, (tx) =>
     tx.member.findFirst({
-      where: { id: data.memberId, gymId },
+      where: { id: data.memberId, gymId: tenantGymId },
       select: { id: true },
     }),
   );
   if (!member) return actionError("Member not found.");
 
-  const pkg = await withTenant(gymId, (tx) =>
-    tx.package.findFirst({ where: { id: data.packageId, gymId } }),
+  const pkg = await withTenant(tenantGymId, (tx) =>
+    tx.package.findFirst({
+      where: { id: data.packageId, gymId: tenantGymId },
+    }),
   );
   if (!pkg) return actionError("Selected package no longer exists.");
 
-  const latest = await withTenant(gymId, (tx) =>
+  const latest = await withTenant(tenantGymId, (tx) =>
     tx.subscription.findFirst({
-      where: { memberId: data.memberId, gymId },
+      where: { memberId: data.memberId, gymId: tenantGymId },
       orderBy: { endDate: "desc" },
     }),
   );
@@ -75,10 +77,10 @@ export async function renewSubscription(
     return actionError("Invalid payment amount.");
   }
 
-  const paymentId = await withTenant(gymId, async (tx) => {
+  const paymentId = await withTenant(tenantGymId, async (tx) => {
     const subscription = await tx.subscription.create({
       data: {
-        gymId,
+        gymId: tenantGymId,
         memberId: data.memberId,
         packageId: pkg.id,
         startDate,
@@ -91,7 +93,7 @@ export async function renewSubscription(
     if (logPayment) {
       const payment = await tx.payment.create({
         data: {
-          gymId,
+          gymId: tenantGymId,
           memberId: data.memberId,
           subscriptionId: subscription.id,
           amount,
@@ -99,7 +101,7 @@ export async function renewSubscription(
           recordedById: user.id,
         },
       });
-      await createReceiptForPayment(tx, gymId, payment.id);
+      await createReceiptForPayment(tx, tenantGymId, payment.id);
       return payment.id;
     }
     return null;
@@ -111,7 +113,7 @@ export async function renewSubscription(
   revalidatePath("/payments");
 
   if (paymentId) {
-    notifyPaymentLogged(gymId, paymentId).catch((err) =>
+    notifyPaymentLogged(tenantGymId, paymentId).catch((err) =>
       console.error("[subscriptions] notifyPaymentLogged failed:", err),
     );
   }

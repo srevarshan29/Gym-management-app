@@ -10,10 +10,10 @@ export type EmployeeListItem = {
   notes: string | null;
 };
 
-export async function getEmployees(gymId: string): Promise<EmployeeListItem[]> {
-  return withTenant(gymId, (tx) =>
+export async function getEmployees(tenantGymId: string): Promise<EmployeeListItem[]> {
+  return withTenant(tenantGymId, (tx) =>
     tx.employee.findMany({
-      where: { gymId },
+      where: { gymId: tenantGymId },
       orderBy: { name: "asc" },
       select: {
         id: true,

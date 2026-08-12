@@ -26,7 +26,7 @@ export async function logPayment(
   formData: FormData,
 ): Promise<ActionResult<LogPaymentData>> {
   const user = await requireGym();
-  const gymId = user.gymId;
+  const tenantGymId = user.gymId;
   if (!canLogPayments(user.role)) {
     return actionError("You do not have permission to record payments.");
   }
@@ -42,29 +42,33 @@ export async function logPayment(
     return actionError("Invalid payment date.");
   }
 
-  const member = await withTenant(gymId, (tx) =>
+  const member = await withTenant(tenantGymId, (tx) =>
     tx.member.findFirst({
-      where: { id: data.memberId, gymId },
+      where: { id: data.memberId, gymId: tenantGymId },
       select: { id: true },
     }),
   );
   if (!member) return actionError("Member not found.");
 
   if (data.subscriptionId) {
-    const subscription = await withTenant(gymId, (tx) =>
+    const subscription = await withTenant(tenantGymId, (tx) =>
       tx.subscription.findFirst({
-        where: { id: data.subscriptionId, gymId, memberId: data.memberId },
+        where: {
+          id: data.subscriptionId,
+          gymId: tenantGymId,
+          memberId: data.memberId,
+        },
         select: { id: true },
       }),
     );
     if (!subscription) return actionError("Subscription not found.");
   }
 
-  const payment = await withTenant(gymId, async (tx) => {
+  const payment = await withTenant(tenantGymId, async (tx) => {
     const duplicateWindowStart = new Date(paidAt.getTime() - 60_000);
     const recentDuplicate = await tx.payment.findFirst({
       where: {
-        gymId,
+        gymId: tenantGymId,
         memberId: data.memberId,
         amount: data.amount,
         method: data.method,
@@ -79,7 +83,7 @@ export async function logPayment(
 
     const created = await tx.payment.create({
       data: {
-        gymId,
+        gymId: tenantGymId,
         memberId: data.memberId,
         subscriptionId: data.subscriptionId || null,
         amount: data.amount,
@@ -89,7 +93,7 @@ export async function logPayment(
         recordedById: user.id,
       },
     });
-    await createReceiptForPayment(tx, gymId, created.id);
+    await createReceiptForPayment(tx, tenantGymId, created.id);
     return { id: created.id, isDuplicate: false as const };
   });
 
@@ -99,7 +103,7 @@ export async function logPayment(
   revalidatePath("/");
 
   if (!payment.isDuplicate) {
-    notifyPaymentLogged(gymId, payment.id).catch((err) =>
+    notifyPaymentLogged(tenantGymId, payment.id).catch((err) =>
       console.error("[payments] notifyPaymentLogged failed:", err),
     );
   }

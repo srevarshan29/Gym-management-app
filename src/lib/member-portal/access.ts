@@ -1,9 +1,12 @@
 import { prisma } from "@/lib/prisma";
 
 /** Direct prisma for portal reads scoped by session memberId (not withTenant). */
-export async function getMemberPortalRow(gymId: string, memberId: string) {
+export async function getMemberPortalRow(
+  tenantGymId: string,
+  memberId: string,
+) {
   return prisma.member.findFirst({
-    where: { id: memberId, gymId },
+    where: { id: memberId, gymId: tenantGymId },
     select: {
       id: true,
       gymId: true,

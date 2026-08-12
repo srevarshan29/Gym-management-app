@@ -164,7 +164,7 @@ function computePackageDistribution(
 
 /** Visual trend series for financial KPI cards (approximate for pending). */
 export async function getFinancialSparklines(
-  gymId: string,
+  tenantGymId: string,
   collectionExpected: number,
   pendingTotal: number,
   monthCount = 6,
@@ -189,9 +189,9 @@ export async function getFinancialSparklines(
 
   const weekBuckets = lastNWeekBuckets(SPARKLINE_WEEKS, now);
 
-  const payments = await withTenant(gymId, (tx) =>
+  const payments = await withTenant(tenantGymId, (tx) =>
     tx.payment.findMany({
-      where: { gymId, paidAt: { gte: startMonth } },
+      where: { gymId: tenantGymId, paidAt: { gte: startMonth } },
       select: { amount: true, paidAt: true },
     }),
   );
@@ -239,24 +239,24 @@ export async function getFinancialSparklines(
 }
 
 export async function getDashboardMetrics(
-  gymId: string,
+  tenantGymId: string,
   membersPreloaded?: MemberListItem[],
 ): Promise<DashboardMetrics> {
   const now = new Date();
   const { startThisMonth, startLastMonth } = monthBounds(now);
 
-  const members = membersPreloaded ?? (await getMembersWithStatus(gymId));
+  const members = membersPreloaded ?? (await getMembersWithStatus(tenantGymId));
 
   const [newMembersThisMonth, newMembersLastMonth] = await withTenant(
-    gymId,
+    tenantGymId,
     async (tx) => {
       const [thisMonth, lastMonth] = await Promise.all([
         tx.member.count({
-          where: { gymId, createdAt: { gte: startThisMonth } },
+          where: { gymId: tenantGymId, createdAt: { gte: startThisMonth } },
         }),
         tx.member.count({
           where: {
-            gymId,
+            gymId: tenantGymId,
             createdAt: { gte: startLastMonth, lt: startThisMonth },
           },
         }),

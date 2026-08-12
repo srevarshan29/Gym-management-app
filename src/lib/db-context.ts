@@ -146,6 +146,9 @@ export function withTenant<T>(
   gymId: string,
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
 ): Promise<T> {
+  if (typeof gymId !== "string" || gymId.length === 0) {
+    throw new Error("withTenant requires a non-empty gymId");
+  }
   return withDbContext({ kind: "tenant", gymId }, fn);
 }
 

@@ -36,22 +36,14 @@ const resolveCurrentMember = cache(async (): Promise<MemberSession | null> => {
 
 
 
-  const gymId = session.user.gymId;
-
+  const tenantGymId = session.user.gymId;
   const memberId = session.user.memberId;
 
-
-
   const dbMember = await withPlatformLookup((tx) =>
-
     tx.member.findFirst({
-
       where: {
-
         id: memberId,
-
-        gymId,
-
+        gymId: tenantGymId,
       },
 
       select: {

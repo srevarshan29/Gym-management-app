@@ -9,10 +9,10 @@ import { canManageMembers } from "@/lib/permissions";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
 import { workoutPlanPayloadSchema } from "@/lib/workout-tracking/types";
 
-async function assertMemberInGym(gymId: string, memberId: string) {
-  const member = await withTenant(gymId, (tx) =>
+async function assertMemberInGym(tenantGymId: string, memberId: string) {
+  const member = await withTenant(tenantGymId, (tx) =>
     tx.member.findFirst({
-      where: { id: memberId, gymId },
+      where: { id: memberId, gymId: tenantGymId },
       select: { id: true },
     }),
   );
@@ -56,7 +56,7 @@ export async function saveWorkoutPlan(
 
   const planId = await withTenant(user.gymId, async (tx) => {
     const existing = await tx.workoutPlan.findFirst({
-      where: { gymId: user.gymId, memberId },
+      where: { gymId: user.gymId, memberId: memberId },
       select: { id: true },
     });
 

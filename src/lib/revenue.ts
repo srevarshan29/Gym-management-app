@@ -58,10 +58,10 @@ export function buildMonthlyRevenueTrendFromPayments(
  * scoped to a single gym. Months with no payments return revenue 0.
  */
 export async function getMonthlyRevenueTrend(
-  gymId: string,
+  tenantGymId: string,
   monthCount = 6,
 ): Promise<MonthlyRevenuePoint[]> {
-  return withTenant(gymId, async (tx) => {
+  return withTenant(tenantGymId, async (tx) => {
     const now = new Date();
     const startMonth = new Date(
       now.getFullYear(),
@@ -70,7 +70,7 @@ export async function getMonthlyRevenueTrend(
     );
 
     const payments = await tx.payment.findMany({
-      where: { gymId, paidAt: { gte: startMonth } },
+      where: { gymId: tenantGymId, paidAt: { gte: startMonth } },
       select: { amount: true, paidAt: true },
     });
 

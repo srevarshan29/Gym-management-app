@@ -14,6 +14,7 @@ import { notifyPaymentLogged } from "@/lib/notifications";
 import { uploadMemberPhoto } from "@/lib/storage";
 import { validateTrainerForGym } from "@/lib/staff";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
+import { prismaNull } from "@/lib/prisma-safe";
 import { getMembershipPolicyForGym } from "@/lib/gym-profile";
 import { isMembershipPolicyRequired } from "@/lib/membership-policy";
 import { normalizeMemberEmail } from "@/lib/member-portal/constants";
@@ -82,7 +83,7 @@ async function resolvePtFields(
 }
 
 async function persistMemberPhoto(
-  gymId: string,
+  tenantGymId: string,
   memberId: string,
   formData: FormData,
 ): Promise<string | undefined> {
@@ -95,9 +96,9 @@ async function persistMemberPhoto(
     return undefined;
   }
 
-  await withTenant(gymId, (tx) =>
+  await withTenant(tenantGymId, (tx) =>
     tx.member.updateMany({
-      where: { id: memberId, gymId },
+      where: { id: memberId, gymId: tenantGymId },
       data: { photoUrl: result.url },
     }),
   );
@@ -123,7 +124,7 @@ export async function createMember(
   formData: FormData,
 ): Promise<ActionResult> {
   const user = await requireGym();
-  const gymId = user.gymId;
+  const tenantGymId = user.gymId;
 
   const parsed = createSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -131,9 +132,9 @@ export async function createMember(
   }
   const data = parsed.data;
 
-  const existingPhone = await withTenant(gymId, (tx) =>
+  const existingPhone = await withTenant(tenantGymId, (tx) =>
     tx.member.findFirst({
-      where: { gymId, phone: data.phone },
+      where: { gymId: tenantGymId, phone: data.phone },
       select: { id: true },
     }),
   );
@@ -141,8 +142,10 @@ export async function createMember(
     return actionError("A member with this phone number already exists.");
   }
 
-  const pkg = await withTenant(gymId, (tx) =>
-    tx.package.findFirst({ where: { id: data.packageId, gymId } }),
+  const pkg = await withTenant(tenantGymId, (tx) =>
+    tx.package.findFirst({
+      where: { id: data.packageId, gymId: tenantGymId },
+    }),
   );
   if (!pkg) return actionError("Selected package no longer exists.");
 
@@ -168,7 +171,7 @@ export async function createMember(
   if ("ok" in ptFields) return ptFields;
   const { isPt, trainerId } = ptFields;
 
-  const policyConsent = await resolvePolicyConsent(gymId, formData);
+  const policyConsent = await resolvePolicyConsent(tenantGymId, formData);
   if (policyConsent && "ok" in policyConsent) return policyConsent;
 
   const visitorId = data.visitorId?.trim();
@@ -179,9 +182,13 @@ export async function createMember(
     weightKg: number | null;
   } | null = null;
   if (visitorId) {
-    const visitor = await withTenant(gymId, (tx) =>
+    const visitor = await withTenant(tenantGymId, (tx) =>
       tx.visitor.findFirst({
-        where: { id: visitorId, gymId, status: "pending" },
+        where: {
+          id: visitorId,
+          gymId: tenantGymId,
+          status: "pending",
+        },
         select: {
           fitnessGoal: true,
           ageYears: true,
@@ -210,12 +217,12 @@ export async function createMember(
       ? Number(visitorMetrics.weightKg)
       : null);
 
-  const { member, paymentId } = await withTenant(gymId, async (tx) => {
-    const memberNumber = await nextMemberNumber(tx, gymId);
+  const { member, paymentId } = await withTenant(tenantGymId, async (tx) => {
+    const memberNumber = await nextMemberNumber(tx, tenantGymId);
 
     const created = await tx.member.create({
       data: {
-        gymId,
+        gymId: tenantGymId,
         memberNumber,
         name: data.name,
         phone: data.phone,
@@ -239,7 +246,7 @@ export async function createMember(
 
     const subscription = await tx.subscription.create({
       data: {
-        gymId,
+        gymId: tenantGymId,
         memberId: created.id,
         packageId: pkg.id,
         startDate,
@@ -253,7 +260,7 @@ export async function createMember(
     if (logPayment) {
       const payment = await tx.payment.create({
         data: {
-          gymId,
+          gymId: tenantGymId,
           memberId: created.id,
           subscriptionId: subscription.id,
           amount,
@@ -262,14 +269,18 @@ export async function createMember(
           recordedById: user.id,
         },
       });
-      await createReceiptForPayment(tx, gymId, payment.id);
+      await createReceiptForPayment(tx, tenantGymId, payment.id);
       createdPaymentId = payment.id;
     }
 
     const visitorId = data.visitorId?.trim();
     if (visitorId) {
       await tx.visitor.updateMany({
-        where: { id: visitorId, gymId, status: "pending" },
+        where: {
+          id: visitorId,
+          gymId: tenantGymId,
+          status: "pending",
+        },
         data: { status: "converted" },
       });
     }
@@ -277,13 +288,13 @@ export async function createMember(
     return { member: created, paymentId: createdPaymentId };
   });
 
-  await persistMemberPhoto(gymId, member.id, formData);
+  await persistMemberPhoto(tenantGymId, member.id, formData);
 
   revalidatePath("/members");
   revalidatePath("/");
 
   if (paymentId) {
-    notifyPaymentLogged(gymId, paymentId).catch((err) =>
+    notifyPaymentLogged(tenantGymId, paymentId).catch((err) =>
       console.error("[members] notifyPaymentLogged failed:", err),
     );
     redirect(`/members/${member.id}?receipt=${paymentId}`);
@@ -331,10 +342,10 @@ export async function updateMember(
         notes: notes || null,
         isPt,
         trainerId,
-        fitnessGoal,
-        ageYears,
-        heightCm,
-        weightKg,
+        fitnessGoal: prismaNull(fitnessGoal),
+        ageYears: prismaNull(ageYears),
+        heightCm: prismaNull(heightCm),
+        weightKg: prismaNull(weightKg),
       },
     }),
   );
@@ -387,11 +398,13 @@ export async function deleteAllGymMembers(
     return actionError(`Type ${DELETE_ALL_CONFIRM} to confirm this action.`);
   }
 
-  const gymId = user.gymId;
-  const deletedCount = await withTenant(gymId, async (tx) => {
-    const result = await tx.member.deleteMany({ where: { gymId } });
+  const tenantGymId = user.gymId;
+  const deletedCount = await withTenant(tenantGymId, async (tx) => {
+    const result = await tx.member.deleteMany({
+      where: { gymId: tenantGymId },
+    });
     await tx.gym.update({
-      where: { id: gymId },
+      where: { id: tenantGymId },
       data: { memberSeq: 0, receiptSeq: 0 },
     });
     return result.count;
@@ -435,10 +448,10 @@ export async function clearAllMemberEmails(
     return actionError(`Type ${CLEAR_EMAILS_CONFIRM} to confirm this action.`);
   }
 
-  const gymId = user.gymId;
-  const updatedCount = await withTenant(gymId, (tx) =>
+  const tenantGymId = user.gymId;
+  const updatedCount = await withTenant(tenantGymId, (tx) =>
     tx.member.updateMany({
-      where: { gymId },
+      where: { gymId: tenantGymId },
       data: { email: null },
     }),
   );

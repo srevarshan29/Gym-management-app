@@ -35,10 +35,10 @@ function sortEventsUpcomingThenPast(
   return [...upcoming, ...past];
 }
 
-export async function getEvents(gymId: string): Promise<GymEventListItem[]> {
-  const rows = await withTenant(gymId, (tx) =>
+export async function getEvents(tenantGymId: string): Promise<GymEventListItem[]> {
+  const rows = await withTenant(tenantGymId, (tx) =>
     tx.gymEvent.findMany({
-      where: { gymId },
+      where: { gymId: tenantGymId },
       select: {
         id: true,
         title: true,

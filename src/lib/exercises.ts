@@ -73,11 +73,11 @@ export const SEED_EXERCISES: SeedExercise[] = [
 
 export async function seedExercisesForGym(
   tx: Pick<Prisma.TransactionClient, "exercise">,
-  gymId: string,
+  tenantGymId: string,
 ): Promise<void> {
   await tx.exercise.createMany({
     data: SEED_EXERCISES.map((item) => ({
-      gymId,
+      gymId: tenantGymId,
       name: item.name,
       muscleGroup: item.muscleGroup,
       defaultSets: item.defaultSets ?? null,

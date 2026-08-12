@@ -28,9 +28,9 @@ const DEFAULT_PROFILE: GymProfileData = {
 };
 
 /** Each gym has at most one profile row; returns sensible defaults if none exists yet. */
-export async function getGymProfile(gymId: string): Promise<GymProfileData> {
-  const profile = await withTenant(gymId, (tx) =>
-    tx.gymProfile.findUnique({ where: { gymId } }),
+export async function getGymProfile(tenantGymId: string): Promise<GymProfileData> {
+  const profile = await withTenant(tenantGymId, (tx) =>
+    tx.gymProfile.findUnique({ where: { gymId: tenantGymId } }),
   );
   if (!profile) return DEFAULT_PROFILE;
 
@@ -50,11 +50,11 @@ export async function getGymProfile(gymId: string): Promise<GymProfileData> {
 
 /** Active policy for consent checks (null when unset or cleared — no consent required). */
 export async function getMembershipPolicyForGym(
-  gymId: string,
+  tenantGymId: string,
 ): Promise<string | null> {
-  const profile = await withTenant(gymId, (tx) =>
+  const profile = await withTenant(tenantGymId, (tx) =>
     tx.gymProfile.findUnique({
-      where: { gymId },
+      where: { gymId: tenantGymId },
       select: { membershipPolicyText: true },
     }),
   );
@@ -63,7 +63,7 @@ export async function getMembershipPolicyForGym(
 
 /** Public registration: policy text by gym id (tenant-safe). */
 export async function getMembershipPolicyForGymPublic(
-  gymId: string,
+  tenantGymId: string,
 ): Promise<string | null> {
-  return getMembershipPolicyForGym(gymId);
+  return getMembershipPolicyForGym(tenantGymId);
 }

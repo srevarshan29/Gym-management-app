@@ -17,13 +17,13 @@ export type VisitorListItem = {
 };
 
 export async function getVisitors(
-  gymId: string,
+  tenantGymId: string,
   status: VisitorStatusFilter = "pending",
 ): Promise<VisitorListItem[]> {
-  return withTenant(gymId, (tx) =>
+  return withTenant(tenantGymId, (tx) =>
     tx.visitor.findMany({
       where: {
-        gymId,
+        gymId: tenantGymId,
         source: "walk_in",
         ...(status !== "all" ? { status } : {}),
       },
@@ -44,10 +44,14 @@ export async function getVisitors(
 }
 
 /** Pending walk-ins only — converted visitors are excluded from the KPI. */
-export async function getVisitorCount(gymId: string): Promise<number> {
-  return withTenant(gymId, (tx) =>
+export async function getVisitorCount(tenantGymId: string): Promise<number> {
+  return withTenant(tenantGymId, (tx) =>
     tx.visitor.count({
-      where: { gymId, status: "pending", source: "walk_in" },
+      where: {
+        gymId: tenantGymId,
+        status: "pending",
+        source: "walk_in",
+      },
     }),
   );
 }

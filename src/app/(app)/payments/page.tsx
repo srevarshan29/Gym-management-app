@@ -76,7 +76,7 @@ function PaymentsSkeleton({
 }
 
 async function PaymentsBody({
-  gymId,
+  gymId: tenantGymId,
   showFinancialReports,
   defaultTab,
 }: {
@@ -84,15 +84,15 @@ async function PaymentsBody({
   showFinancialReports: boolean;
   defaultTab: "paid" | "pending";
 }) {
-  const pending = await getPendingMembers(gymId);
+  const pending = await getPendingMembers(tenantGymId);
 
   if (!showFinancialReports) {
     return <PendingDuesOnly pending={pending} />;
   }
 
-  const payments = await withTenant(gymId, (tx) =>
+  const payments = await withTenant(tenantGymId, (tx) =>
     tx.payment.findMany({
-      where: { gymId },
+      where: { gymId: tenantGymId },
       orderBy: { paidAt: "desc" },
       include: {
         member: { select: { id: true, name: true } },

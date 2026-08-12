@@ -8,14 +8,14 @@ export function normalizeDisplayName(name: string): string {
 /** True if another user in the same gym already has this display name. */
 export async function isDisplayNameTakenInGym(
   tx: Prisma.TransactionClient,
-  gymId: string,
+  tenantGymId: string,
   name: string,
   excludeUserId?: string,
 ): Promise<boolean> {
   const normalized = normalizeDisplayName(name);
   const existing = await tx.user.findFirst({
     where: {
-      gymId,
+      gymId: tenantGymId,
       ...(excludeUserId ? { id: { not: excludeUserId } } : {}),
       name: { equals: normalized, mode: "insensitive" },
     },

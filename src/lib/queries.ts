@@ -49,14 +49,14 @@ type FetchMembersOptions = {
 
 async function fetchMembersWithStatus(
   tx: Prisma.TransactionClient,
-  gymId: string,
+  tenantGymId: string,
   options: FetchMembersOptions = {},
 ): Promise<MemberListItem[]> {
   const includeBalance = options.includeBalance ?? true;
 
   const [members, subscriptions] = await Promise.all([
     tx.member.findMany({
-      where: { gymId },
+      where: { gymId: tenantGymId },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -72,7 +72,7 @@ async function fetchMembersWithStatus(
       },
     }),
     tx.subscription.findMany({
-      where: { gymId },
+      where: { gymId: tenantGymId },
       select: {
         id: true,
         memberId: true,
@@ -115,7 +115,7 @@ async function fetchMembersWithStatus(
       const groups = await tx.payment.groupBy({
         by: ["subscriptionId"],
         where: {
-          gymId,
+          gymId: tenantGymId,
           subscriptionId: { in: currentIds },
         },
         _sum: { amount: true },
@@ -166,9 +166,11 @@ async function fetchMembersWithStatus(
  * All members of the given gym with their current (latest by endDate)
  * subscription and installment balance on that period.
  */
-export async function getMembersWithStatus(gymId: string): Promise<MemberListItem[]> {
-  return withTenant(gymId, (tx) =>
-    fetchMembersWithStatus(tx, gymId, { includeBalance: true }),
+export async function getMembersWithStatus(
+  tenantGymId: string,
+): Promise<MemberListItem[]> {
+  return withTenant(tenantGymId, (tx) =>
+    fetchMembersWithStatus(tx, tenantGymId, { includeBalance: true }),
   );
 }
 
@@ -192,8 +194,10 @@ export type PendingMember = {
  * Members whose current subscription has an outstanding balance
  * (priceAtPurchase minus linked payments, floored at 0).
  */
-export async function getPendingMembers(gymId: string): Promise<PendingMember[]> {
-  const members = await getMembersWithStatus(gymId);
+export async function getPendingMembers(
+  tenantGymId: string,
+): Promise<PendingMember[]> {
+  const members = await getMembersWithStatus(tenantGymId);
 
   return members
     .filter(
@@ -240,10 +244,10 @@ export function subscriptionSummaryCounts(
 }
 
 export async function getSubscriptionSummaryCounts(
-  gymId: string,
+  tenantGymId: string,
 ): Promise<SubscriptionSummaryCounts> {
-  const members = await withTenant(gymId, (tx) =>
-    fetchMembersWithStatus(tx, gymId, { includeBalance: false }),
+  const members = await withTenant(tenantGymId, (tx) =>
+    fetchMembersWithStatus(tx, tenantGymId, { includeBalance: false }),
   );
   return subscriptionSummaryCounts(members);
 }
@@ -288,10 +292,10 @@ export function filterExpiredMemberships(
 }
 
 export async function getExpiredMemberships(
-  gymId: string,
+  tenantGymId: string,
 ): Promise<MembershipRenewalRow[]> {
-  const members = await withTenant(gymId, (tx) =>
-    fetchMembersWithStatus(tx, gymId, { includeBalance: false }),
+  const members = await withTenant(tenantGymId, (tx) =>
+    fetchMembersWithStatus(tx, tenantGymId, { includeBalance: false }),
   );
   return filterExpiredMemberships(members);
 }
@@ -310,10 +314,10 @@ export function filterUpcomingRenewals(
 }
 
 export async function getUpcomingRenewals(
-  gymId: string,
+  tenantGymId: string,
 ): Promise<MembershipRenewalRow[]> {
-  const members = await withTenant(gymId, (tx) =>
-    fetchMembersWithStatus(tx, gymId, { includeBalance: false }),
+  const members = await withTenant(tenantGymId, (tx) =>
+    fetchMembersWithStatus(tx, tenantGymId, { includeBalance: false }),
   );
   return filterUpcomingRenewals(members);
 }
@@ -324,10 +328,10 @@ export async function getUpcomingRenewals(
  * the member didn't exist — callers must never be able to distinguish
  * "not found" from "belongs to another tenant".
  */
-export async function getMemberDetail(gymId: string, id: string) {
-  return withTenant(gymId, (tx) =>
+export async function getMemberDetail(tenantGymId: string, id: string) {
+  return withTenant(tenantGymId, (tx) =>
     tx.member.findFirst({
-      where: { id, gymId },
+      where: { id: id, gymId: tenantGymId },
       include: {
         trainer: { select: { id: true, name: true } },
         subscriptions: {

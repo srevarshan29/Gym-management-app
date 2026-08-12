@@ -33,11 +33,11 @@ function inclusiveDayCount(start: Date, end: Date): number {
 }
 
 export async function getMemberPortalOverview(
-  gymId: string,
+  tenantGymId: string,
   memberId: string,
 ): Promise<MemberPortalOverview | null> {
   const member = await prisma.member.findFirst({
-    where: { id: memberId, gymId },
+    where: { id: memberId, gymId: tenantGymId },
     select: {
       name: true,
       memberNumber: true,
@@ -96,9 +96,12 @@ export async function getMemberPortalOverview(
   };
 }
 
-export async function getMemberPortalPayments(gymId: string, memberId: string) {
+export async function getMemberPortalPayments(
+  tenantGymId: string,
+  memberId: string,
+) {
   return prisma.payment.findMany({
-    where: { gymId, memberId },
+    where: { gymId: tenantGymId, memberId: memberId },
     orderBy: { paidAt: "desc" },
     select: {
       id: true,
@@ -112,9 +115,12 @@ export async function getMemberPortalPayments(gymId: string, memberId: string) {
   });
 }
 
-export async function getMemberPortalDietPlan(gymId: string, memberId: string) {
+export async function getMemberPortalDietPlan(
+  tenantGymId: string,
+  memberId: string,
+) {
   return prisma.dietPlan.findFirst({
-    where: { gymId, memberId },
+    where: { gymId: tenantGymId, memberId: memberId },
     select: {
       title: true,
       caloriesPerDay: true,
@@ -125,11 +131,11 @@ export async function getMemberPortalDietPlan(gymId: string, memberId: string) {
 }
 
 export async function getMemberPortalWorkoutPlan(
-  gymId: string,
+  tenantGymId: string,
   memberId: string,
 ) {
   return prisma.workoutPlan.findFirst({
-    where: { gymId, memberId },
+    where: { gymId: tenantGymId, memberId: memberId },
     select: {
       title: true,
       level: true,
@@ -139,9 +145,9 @@ export async function getMemberPortalWorkoutPlan(
   });
 }
 
-export async function getMemberPortalEvents(gymId: string) {
+export async function getMemberPortalEvents(tenantGymId: string) {
   const rows = await prisma.gymEvent.findMany({
-    where: { gymId },
+    where: { gymId: tenantGymId },
     orderBy: { eventDate: "asc" },
     select: {
       id: true,

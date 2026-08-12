@@ -110,7 +110,7 @@ export function visibleReportModules(role: Role): ReportModuleMeta[] {
 }
 
 export async function getReportModuleCounts(
-  gymId: string,
+  tenantGymId: string,
 ): Promise<ReportModuleCounts> {
   const [
     memberCount,
@@ -121,16 +121,16 @@ export async function getReportModuleCounts(
     dietPlanCount,
     workoutPlanCount,
     ptMemberCount,
-  ] = await withTenant(gymId, (tx) =>
+  ] = await withTenant(tenantGymId, (tx) =>
     Promise.all([
-      tx.member.count({ where: { gymId } }),
-      tx.payment.count({ where: { gymId } }),
-      tx.employee.count({ where: { gymId } }),
-      tx.visitor.count({ where: { gymId } }),
-      tx.gymEvent.count({ where: { gymId } }),
-      tx.dietPlan.count({ where: { gymId } }),
-      tx.workoutPlan.count({ where: { gymId } }),
-      tx.member.count({ where: { gymId, isPt: true } }),
+      tx.member.count({ where: { gymId: tenantGymId } }),
+      tx.payment.count({ where: { gymId: tenantGymId } }),
+      tx.employee.count({ where: { gymId: tenantGymId } }),
+      tx.visitor.count({ where: { gymId: tenantGymId } }),
+      tx.gymEvent.count({ where: { gymId: tenantGymId } }),
+      tx.dietPlan.count({ where: { gymId: tenantGymId } }),
+      tx.workoutPlan.count({ where: { gymId: tenantGymId } }),
+      tx.member.count({ where: { gymId: tenantGymId, isPt: true } }),
     ]),
   );
 
@@ -151,14 +151,14 @@ function formatPaymentMethod(method: string): string {
 }
 
 export async function buildReportCsv(
-  gymId: string,
+  tenantGymId: string,
   moduleId: ReportModuleId,
 ): Promise<{ filename: string; body: string }> {
   const stamp = new Date().toISOString().slice(0, 10);
 
   switch (moduleId) {
     case "members": {
-      const members = await getMembersWithStatus(gymId);
+      const members = await getMembersWithStatus(tenantGymId);
       const headers = [
         "Member #",
         "Name",
@@ -191,9 +191,9 @@ export async function buildReportCsv(
       };
     }
     case "payments": {
-      const payments = await withTenant(gymId, (tx) =>
+      const payments = await withTenant(tenantGymId, (tx) =>
         tx.payment.findMany({
-          where: { gymId },
+          where: { gymId: tenantGymId },
           orderBy: { paidAt: "desc" },
           include: {
             member: { select: { name: true } },
@@ -224,7 +224,7 @@ export async function buildReportCsv(
       };
     }
     case "employees": {
-      const employees = await getEmployees(gymId);
+      const employees = await getEmployees(tenantGymId);
       const headers = [
         "Name",
         "Phone",
@@ -247,9 +247,9 @@ export async function buildReportCsv(
       };
     }
     case "visitors": {
-      const visitors = await withTenant(gymId, (tx) =>
+      const visitors = await withTenant(tenantGymId, (tx) =>
         tx.visitor.findMany({
-          where: { gymId },
+          where: { gymId: tenantGymId },
           orderBy: [{ visitDate: "desc" }, { createdAt: "desc" }],
           select: {
             name: true,
@@ -276,7 +276,7 @@ export async function buildReportCsv(
       };
     }
     case "events": {
-      const events = await getEvents(gymId);
+      const events = await getEvents(tenantGymId);
       const headers = ["Title", "Date", "Location", "Description"];
       const rows = events.map((e) => [
         e.title,
@@ -290,7 +290,7 @@ export async function buildReportCsv(
       };
     }
     case "diet-plans": {
-      const { plans } = await getDietPlansPageData(gymId);
+      const { plans } = await getDietPlansPageData(tenantGymId);
       const headers = ["Member", "Title", "Calories per day", "Meal plan"];
       const rows = plans.map((p) => [
         p.memberName,
@@ -304,7 +304,7 @@ export async function buildReportCsv(
       };
     }
     case "workout-plans": {
-      const { plans } = await getWorkoutPlansPageData(gymId);
+      const { plans } = await getWorkoutPlansPageData(tenantGymId);
       const headers = ["Member", "Title", "Duration (weeks)", "Focus goal", "Exercises", "Legacy"];
       const rows = plans.map((p) => [
         p.memberName,
@@ -320,7 +320,7 @@ export async function buildReportCsv(
       };
     }
     case "pt-members": {
-      const data = await getPtMembersPageData(gymId);
+      const data = await getPtMembersPageData(tenantGymId);
       const headers = ["Member #", "Name", "Phone", "Package", "Trainer"];
       const rows: (string | number)[][] = [];
       for (const group of data.groups) {

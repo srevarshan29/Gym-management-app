@@ -38,11 +38,15 @@ function resolveTrackingType(planExercise: {
 }
 
 export async function getActiveWorkoutSession(
-  gymId: string,
+  tenantGymId: string,
   memberId: string,
 ): Promise<ActiveWorkoutSession | null> {
   const session = await prisma.workoutSession.findFirst({
-    where: { gymId, memberId, status: "IN_PROGRESS" },
+    where: {
+      gymId: tenantGymId,
+      memberId: memberId,
+      status: "IN_PROGRESS",
+    },
     orderBy: { startedAt: "desc" },
     select: {
       id: true,

@@ -23,10 +23,10 @@ const dietPlanSchema = z.object({
     .max(10000, "Meal plan is too long"),
 });
 
-async function assertMemberInGym(gymId: string, memberId: string) {
-  const member = await withTenant(gymId, (tx) =>
+async function assertMemberInGym(tenantGymId: string, memberId: string) {
+  const member = await withTenant(tenantGymId, (tx) =>
     tx.member.findFirst({
-      where: { id: memberId, gymId },
+      where: { id: memberId, gymId: tenantGymId },
       select: { id: true },
     }),
   );
@@ -55,7 +55,7 @@ export async function createDietPlan(
 
   const existing = await withTenant(user.gymId, (tx) =>
     tx.dietPlan.findFirst({
-      where: { gymId: user.gymId, memberId },
+      where: { gymId: user.gymId, memberId: memberId },
       select: { id: true },
     }),
   );
@@ -102,7 +102,7 @@ export async function updateDietPlan(
 
   const result = await withTenant(user.gymId, (tx) =>
     tx.dietPlan.updateMany({
-      where: { id, gymId: user.gymId, memberId },
+      where: { id: id, gymId: user.gymId, memberId: memberId },
       data: { title, caloriesPerDay, mealPlan },
     }),
   );

@@ -26,34 +26,48 @@ function parseGender(raw?: string): MemberGender | undefined {
     : undefined;
 }
 
+function firstSearchParam(
+  value: string | string[] | undefined,
+): string | undefined {
+  if (value == null) return undefined;
+  const raw = Array.isArray(value) ? value[0] : value;
+  const trimmed = raw?.trim();
+  return trimmed || undefined;
+}
+
 export default async function NewMemberPage({
   searchParams,
 }: {
   searchParams?: {
-    name?: string;
-    phone?: string;
-    email?: string;
-    gender?: string;
-    visitorId?: string;
+    name?: string | string[];
+    phone?: string | string[];
+    email?: string | string[];
+    gender?: string | string[];
+    visitorId?: string | string[];
   };
 }) {
   const user = await requireGym();
-  const visitorId = searchParams?.visitorId?.trim();
+  const tenantGymId = user.gymId;
+  const visitorId = firstSearchParam(searchParams?.visitorId);
 
   const [packages, staffOptions, membershipPolicyText, visitor] =
     await Promise.all([
-      withTenant(user.gymId, (tx) =>
+      withTenant(tenantGymId, (tx) =>
         tx.package.findMany({
-          where: { gymId: user.gymId, isActive: true },
+          where: { gymId: tenantGymId, isActive: true },
           orderBy: { name: "asc" },
         }),
       ),
-      getGymStaffOptions(user.gymId),
-      getMembershipPolicyForGym(user.gymId),
+      getGymStaffOptions(tenantGymId),
+      getMembershipPolicyForGym(tenantGymId),
       visitorId
-        ? withTenant(user.gymId, (tx) =>
+        ? withTenant(tenantGymId, (tx) =>
             tx.visitor.findFirst({
-              where: { id: visitorId, gymId: user.gymId, status: "pending" },
+              where: {
+                id: visitorId,
+                gymId: tenantGymId,
+                status: "pending",
+              },
               select: {
                 name: true,
                 phone: true,
@@ -91,10 +105,12 @@ export default async function NewMemberPage({
         packages={options}
         canRecordPayment={canLogPayments(user.role)}
         staffOptions={staffOptions}
-        initialName={visitor?.name ?? searchParams?.name}
-        initialPhone={visitor?.phone ?? searchParams?.phone}
-        initialEmail={visitor?.email ?? searchParams?.email}
-        initialGender={visitor?.gender ?? parseGender(searchParams?.gender)}
+        initialName={visitor?.name ?? firstSearchParam(searchParams?.name)}
+        initialPhone={visitor?.phone ?? firstSearchParam(searchParams?.phone)}
+        initialEmail={visitor?.email ?? firstSearchParam(searchParams?.email)}
+        initialGender={
+          visitor?.gender ?? parseGender(firstSearchParam(searchParams?.gender))
+        }
         initialFitnessGoal={visitor?.fitnessGoal ?? undefined}
         initialAgeYears={visitor?.ageYears ?? undefined}
         initialHeightCm={visitor?.heightCm ?? undefined}

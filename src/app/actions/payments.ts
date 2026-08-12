@@ -61,6 +61,22 @@ export async function logPayment(
   }
 
   const payment = await withTenant(gymId, async (tx) => {
+    const duplicateWindowStart = new Date(paidAt.getTime() - 60_000);
+    const recentDuplicate = await tx.payment.findFirst({
+      where: {
+        gymId,
+        memberId: data.memberId,
+        amount: data.amount,
+        method: data.method,
+        paidAt: { gte: duplicateWindowStart, lte: paidAt },
+      },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    });
+    if (recentDuplicate) {
+      return { id: recentDuplicate.id, isDuplicate: true as const };
+    }
+
     const created = await tx.payment.create({
       data: {
         gymId,
@@ -74,7 +90,7 @@ export async function logPayment(
       },
     });
     await createReceiptForPayment(tx, gymId, created.id);
-    return created;
+    return { id: created.id, isDuplicate: false as const };
   });
 
   revalidatePath("/payments");
@@ -82,9 +98,11 @@ export async function logPayment(
   revalidatePath("/members");
   revalidatePath("/");
 
-  notifyPaymentLogged(gymId, payment.id).catch((err) =>
-    console.error("[payments] notifyPaymentLogged failed:", err),
-  );
+  if (!payment.isDuplicate) {
+    notifyPaymentLogged(gymId, payment.id).catch((err) =>
+      console.error("[payments] notifyPaymentLogged failed:", err),
+    );
+  }
 
   return actionOk("Payment recorded.", { paymentId: payment.id });
 }

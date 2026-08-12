@@ -24,14 +24,24 @@ export function ExerciseLibraryList({
 
   async function onDelete(id: string) {
     setPendingId(id);
-    const result = await deleteExercise(id);
-    setPendingId(null);
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
+    try {
+      const result = await deleteExercise(id);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(result.message ?? "Exercise removed.");
+      router.refresh();
+    } catch (error) {
+      console.error("[exercises] deleteExercise failed:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not delete exercise. Please try again.",
+      );
+    } finally {
+      setPendingId(null);
     }
-    toast.success(result.message ?? "Exercise removed.");
-    router.refresh();
   }
 
   const groups = Object.keys(grouped).sort();

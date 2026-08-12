@@ -57,12 +57,31 @@ export function PaymentDialog({
   const [receiptPaymentId, setReceiptPaymentId] = React.useState<string | null>(
     null,
   );
+  const inFlightRef = React.useRef(false);
   const router = useRouter();
+
+  const guardedLogPayment = React.useCallback(
+    async (
+      prev: ActionResult<LogPaymentData> | undefined,
+      formData: FormData,
+    ): Promise<ActionResult<LogPaymentData> | undefined> => {
+      if (inFlightRef.current) {
+        return prev;
+      }
+      inFlightRef.current = true;
+      try {
+        return await logPayment(prev, formData);
+      } finally {
+        inFlightRef.current = false;
+      }
+    },
+    [],
+  );
 
   const [state, formAction] = useFormState<
     ActionResult<LogPaymentData> | undefined,
     FormData
-  >(logPayment, undefined);
+  >(guardedLogPayment, undefined);
 
   React.useEffect(() => {
     if (!state) return;

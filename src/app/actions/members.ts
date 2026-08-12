@@ -131,6 +131,16 @@ export async function createMember(
   }
   const data = parsed.data;
 
+  const existingPhone = await withTenant(gymId, (tx) =>
+    tx.member.findFirst({
+      where: { gymId, phone: data.phone },
+      select: { id: true },
+    }),
+  );
+  if (existingPhone) {
+    return actionError("A member with this phone number already exists.");
+  }
+
   const pkg = await withTenant(gymId, (tx) =>
     tx.package.findFirst({ where: { id: data.packageId, gymId } }),
   );
@@ -270,10 +280,6 @@ export async function createMember(
   await persistMemberPhoto(gymId, member.id, formData);
 
   revalidatePath("/members");
-  revalidatePath("/members/pt");
-  revalidatePath("/members/visitors");
-  revalidatePath("/members/register-qr");
-  revalidatePath("/analytics");
   revalidatePath("/");
 
   if (paymentId) {

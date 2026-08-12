@@ -93,9 +93,33 @@ function SubmitButton({ label }: { label: string }) {
 }
 
 export function MemberForm(props: Props) {
-  const action = props.mode === "create" ? createMember : updateMember;
+  const baseAction = props.mode === "create" ? createMember : updateMember;
+  const inFlightRef = React.useRef(false);
+
+  const guardedAction = React.useCallback(
+    async (
+      prev: ActionResult | undefined,
+      formData: FormData,
+    ): Promise<ActionResult | undefined> => {
+      if (props.mode === "create" && inFlightRef.current) {
+        return prev;
+      }
+      if (props.mode === "create") {
+        inFlightRef.current = true;
+      }
+      try {
+        return await baseAction(prev, formData);
+      } finally {
+        if (props.mode === "create") {
+          inFlightRef.current = false;
+        }
+      }
+    },
+    [baseAction, props.mode],
+  );
+
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
-    action,
+    guardedAction,
     undefined,
   );
 

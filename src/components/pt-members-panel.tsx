@@ -55,17 +55,28 @@ function TrainerSelect({
   async function onChange(next: string) {
     setValue(next);
     setPending(true);
-    const result = await updatePtTrainer(
-      memberId,
-      next === UNASSIGNED_VALUE ? null : next,
-    );
-    setPending(false);
-    if (!result.ok) {
-      toast.error(result.error);
+    try {
+      const result = await updatePtTrainer(
+        memberId,
+        next === UNASSIGNED_VALUE ? null : next,
+      );
+      if (!result.ok) {
+        toast.error(result.error);
+        setValue(trainerId ?? UNASSIGNED_VALUE);
+        return;
+      }
+      toast.success(result.message ?? "Trainer updated.");
+    } catch (error) {
+      console.error("[pt-members] updatePtTrainer failed:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not update trainer. Please try again.",
+      );
       setValue(trainerId ?? UNASSIGNED_VALUE);
-      return;
+    } finally {
+      setPending(false);
     }
-    toast.success(result.message ?? "Trainer updated.");
   }
 
   if (disabled) {

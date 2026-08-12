@@ -169,31 +169,41 @@ export function WorkoutPlanBuilder({
     }
 
     setPending(true);
-    const result = await saveWorkoutPlan({
-      memberId,
-      title: title.trim(),
-      durationWeeks: durationWeeks ? Number(durationWeeks) : null,
-      focusGoal,
-      exercises: rows.map((row) => ({
-        exerciseId: row.exerciseId || "",
-        customName: row.customName || "",
-        targetSets: row.targetSets,
-        targetReps: row.targetReps,
-        tempo: row.tempo || "",
-        restSeconds: row.restSeconds,
-        targetWeightKg: row.targetWeightKg,
-      })),
-    });
-    setPending(false);
+    try {
+      const result = await saveWorkoutPlan({
+        memberId,
+        title: title.trim(),
+        durationWeeks: durationWeeks ? Number(durationWeeks) : null,
+        focusGoal,
+        exercises: rows.map((row) => ({
+          exerciseId: row.exerciseId || "",
+          customName: row.customName || "",
+          targetSets: row.targetSets,
+          targetReps: row.targetReps,
+          tempo: row.tempo || "",
+          restSeconds: row.restSeconds,
+          targetWeightKg: row.targetWeightKg,
+        })),
+      });
 
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success(result.message ?? "Workout plan saved.");
+      router.push("/programmes/workout");
+      router.refresh();
+    } catch (error) {
+      console.error("[workout-plan] saveWorkoutPlan failed:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not save workout plan. Please try again.",
+      );
+    } finally {
+      setPending(false);
     }
-
-    toast.success(result.message ?? "Workout plan saved.");
-    router.push("/programmes/workout");
-    router.refresh();
   }
 
   return (

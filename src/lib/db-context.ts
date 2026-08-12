@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { Prisma as PrismaNamespace } from "@prisma/client";
 
-import { prisma } from "@/lib/prisma";
+import { isRlsEnforced, prisma } from "@/lib/prisma";
 
 export type DbContext =
   | { kind: "tenant"; gymId: string }
@@ -19,6 +19,10 @@ const TRANSIENT_ERROR_CODES = new Set([
   "P1017", // Server closed the connection
   "P2034", // Transaction failed due to conflict
 ]);
+
+function asTransactionClient(client: typeof prisma): Prisma.TransactionClient {
+  return client as unknown as Prisma.TransactionClient;
+}
 
 function isPoolExhaustionError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
@@ -72,7 +76,8 @@ async function applyContext(
   }
 }
 
-async function runInContext<T>(
+/** RLS enforced: interactive transaction + session GUCs (unchanged behavior). */
+async function runInContextRls<T>(
   ctx: DbContext,
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
 ): Promise<T> {
@@ -83,9 +88,33 @@ async function runInContext<T>(
 }
 
 /**
- * Runs fn inside a transaction with RLS session GUCs set via SET LOCAL.
- * Required for Supabase transaction pooler (pgbouncer) — GUCs must live
- * inside the same transaction as the queries they protect.
+ * RLS not enforced: skip GUCs. Platform lookups are read-only and run
+ * directly; tenant/super_admin paths keep transactions for write atomicity.
+ */
+async function runInContextNoRls<T>(
+  ctx: DbContext,
+  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  if (ctx.kind === "platform_lookup") {
+    return fn(asTransactionClient(prisma));
+  }
+  return prisma.$transaction((tx) => fn(tx), TX_OPTIONS);
+}
+
+async function runInContext<T>(
+  ctx: DbContext,
+  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  if (isRlsEnforced()) {
+    return runInContextRls(ctx, fn);
+  }
+  return runInContextNoRls(ctx, fn);
+}
+
+/**
+ * Runs fn inside a transaction with RLS session GUCs set via SET LOCAL
+ * when USE_RLS_ROLE=true. When RLS is off, GUCs are skipped and
+ * platform lookups run without a transaction.
  */
 export async function withDbContext<T>(
   ctx: DbContext,

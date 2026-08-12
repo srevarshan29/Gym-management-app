@@ -59,6 +59,16 @@ async function RegisterQrPageContent({
 
   const registrationUrl = getRegistrationUrl(registrationToken);
 
+  const rows = registrations.map((registration) => ({
+    id: registration.id,
+    name: registration.name,
+    phone: registration.phone,
+    email: registration.email,
+    gender: registration.gender,
+    status: registration.status,
+    createdAt: registration.createdAt.toISOString(),
+  }));
+
   return (
     <>
       <RegistrationQrPanel registrationUrl={registrationUrl} />
@@ -68,7 +78,7 @@ async function RegisterQrPageContent({
           Pending registrations
         </h2>
         <QrRegistrationsList
-          registrations={registrations}
+          registrations={rows}
           canManage={canManage}
           view={view}
         />

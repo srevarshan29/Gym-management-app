@@ -29,16 +29,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { memberGenderLabel } from "@/lib/member-gender";
-import type { QrRegistrationListItem } from "@/lib/registration";
+import type { QrRegistrationRow } from "@/lib/registration";
 import { formatDate } from "@/lib/utils";
 
 type QrRegistrationsListProps = {
-  registrations: QrRegistrationListItem[];
+  registrations: QrRegistrationRow[];
   canManage: boolean;
   view: "pending" | "converted" | "all";
 };
 
-function matchesSearch(item: QrRegistrationListItem, query: string): boolean {
+function matchesSearch(item: QrRegistrationRow, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
   return (
@@ -223,7 +223,7 @@ export function QrRegistrationsList({
                         )}
                       </TableCell>
                       <TableCell className="whitespace-nowrap font-mono">
-                        {formatDate(row.createdAt.toISOString())}
+                        {formatDate(row.createdAt)}
                       </TableCell>
                       {view !== "pending" ? (
                         <TableCell>

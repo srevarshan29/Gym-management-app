@@ -132,6 +132,11 @@ export type QrRegistrationListItem = {
   createdAt: Date;
 };
 
+/** Serializable row for client components (dates normalized server-side). */
+export type QrRegistrationRow = Omit<QrRegistrationListItem, "createdAt"> & {
+  createdAt: string;
+};
+
 export async function getQrRegistrations(
   gymId: string,
   status: "pending" | "converted" | "all" = "pending",

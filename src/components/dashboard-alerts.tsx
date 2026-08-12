@@ -1,5 +1,6 @@
-import Link from "next/link";
+"use client";
 
+import { LockedLink } from "@/components/navigation/locked-link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -80,7 +81,7 @@ function AlertChip({
   if (count === 0) return null;
 
   return (
-    <Link
+    <LockedLink
       href={href}
       className={cn(
         "hover-lift flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm",
@@ -92,6 +93,6 @@ function AlertChip({
       <Badge className={cn("font-mono tabular-nums", badgeClassName)}>
         {count}
       </Badge>
-    </Link>
+    </LockedLink>
   );
 }

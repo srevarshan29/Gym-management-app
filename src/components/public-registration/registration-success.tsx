@@ -1,7 +1,4 @@
-import Link from "next/link";
-import { Home } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
+import { RegistrationHomeLink } from "@/components/public-registration/registration-home-link";
 
 type RegistrationSuccessProps = {
   message?: string;
@@ -42,12 +39,7 @@ export function RegistrationSuccess({ message }: RegistrationSuccessProps) {
             "Our front desk team will confirm your registration shortly."}
         </p>
 
-        <Button asChild variant="outline" className="mt-8 w-full">
-          <Link href="/">
-            <Home className="h-4 w-4" />
-            Back to Home
-          </Link>
-        </Button>
+        <RegistrationHomeLink />
       </div>
     </main>
   );

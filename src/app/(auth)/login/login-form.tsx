@@ -3,6 +3,8 @@
 import { useFormState, useFormStatus } from "react-dom";
 import { AlertCircle } from "lucide-react";
 
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
+
 import { authenticate } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +20,8 @@ function SubmitButton() {
 }
 
 export function LoginForm() {
-  const [errorMessage, formAction] = useFormState(authenticate, undefined);
+  const guardedAction = useGuardedFormAction(authenticate);
+  const [errorMessage, formAction] = useFormState(guardedAction, undefined);
 
   return (
     <form action={formAction} className="space-y-4">

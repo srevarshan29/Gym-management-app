@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { BarChart3, CreditCard, Package, UserPlus } from "lucide-react";
-
+import { LockedLink } from "@/components/navigation/locked-link";
 import { PackageDialog } from "@/components/package-dialog";
 import { Button } from "@/components/ui/button";
+import { BarChart3, CreditCard, Package, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type DashboardQuickActionsProps = {
@@ -28,10 +27,10 @@ export function DashboardQuickActions({
           key: "add-member",
           node: (
             <Button asChild size="sm" className="gap-1.5 shadow-soft">
-              <Link href="/members/new">
+              <LockedLink href="/members/new">
                 <UserPlus className="h-4 w-4" />
                 Add Member
-              </Link>
+              </LockedLink>
             </Button>
           ),
         }
@@ -41,10 +40,10 @@ export function DashboardQuickActions({
           key: "record-payment",
           node: (
             <Button asChild size="sm" variant="outline" className="gap-1.5 shadow-soft">
-              <Link href="/payments">
+              <LockedLink href="/payments">
                 <CreditCard className="h-4 w-4" />
                 Record Payment
-              </Link>
+              </LockedLink>
             </Button>
           ),
         }
@@ -69,10 +68,10 @@ export function DashboardQuickActions({
           key: "view-reports",
           node: (
             <Button asChild size="sm" variant="outline" className="gap-1.5 shadow-soft">
-              <Link href="/payments">
+              <LockedLink href="/payments">
                 <BarChart3 className="h-4 w-4" />
                 View Reports
-              </Link>
+              </LockedLink>
             </Button>
           ),
         }

@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   ArrowDown,
@@ -12,6 +11,9 @@ import {
 } from "lucide-react";
 
 import { saveWorkoutPlan } from "@/app/actions/workout-plans";
+import { LockedLink } from "@/components/navigation/locked-link";
+import { useSharedNavigationLock } from "@/components/navigation/navigation-lock-provider";
+import { useActionLock } from "@/hooks/use-action-lock";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -82,7 +84,6 @@ export function WorkoutPlanBuilder({
   plan,
   fixedMemberId,
 }: WorkoutPlanBuilderProps) {
-  const router = useRouter();
   const [memberId, setMemberId] = React.useState(
     plan?.memberId ?? fixedMemberId ?? members[0]?.id ?? "",
   );
@@ -96,7 +97,8 @@ export function WorkoutPlanBuilder({
   );
   const [query, setQuery] = React.useState("");
   const [muscleFilter, setMuscleFilter] = React.useState<string>("ALL");
-  const [pending, setPending] = React.useState(false);
+  const { navigate } = useSharedNavigationLock();
+  const { run, isPending: pending } = useActionLock();
 
   const filteredLibrary = React.useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -168,9 +170,9 @@ export function WorkoutPlanBuilder({
       return;
     }
 
-    setPending(true);
-    try {
-      const result = await saveWorkoutPlan({
+    await run(async () => {
+      try {
+        const result = await saveWorkoutPlan({
         memberId,
         title: title.trim(),
         durationWeeks: durationWeeks ? Number(durationWeeks) : null,
@@ -192,18 +194,16 @@ export function WorkoutPlanBuilder({
       }
 
       toast.success(result.message ?? "Workout plan saved.");
-      router.push("/programmes/workout");
-      router.refresh();
-    } catch (error) {
-      console.error("[workout-plan] saveWorkoutPlan failed:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Could not save workout plan. Please try again.",
-      );
-    } finally {
-      setPending(false);
-    }
+      navigate("/programmes/workout", undefined, { refresh: true });
+      } catch (error) {
+        console.error("[workout-plan] saveWorkoutPlan failed:", error);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Could not save workout plan. Please try again.",
+        );
+      }
+    });
   }
 
   return (
@@ -417,8 +417,8 @@ export function WorkoutPlanBuilder({
         </Card>
 
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => router.push("/programmes/workout")}>
-            Cancel
+          <Button type="button" variant="outline" asChild disabled={pending}>
+            <LockedLink href="/programmes/workout">Cancel</LockedLink>
           </Button>
           <Button type="button" onClick={onSave} disabled={pending}>
             {pending ? "Saving..." : "Save workout plan"}

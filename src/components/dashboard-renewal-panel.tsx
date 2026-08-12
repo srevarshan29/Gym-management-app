@@ -1,6 +1,8 @@
-import Link from "next/link";
+"use client";
+
 import { ArrowRight, CalendarClock, CalendarX2 } from "lucide-react";
 
+import { LockedLink } from "@/components/navigation/locked-link";
 import { MemberAvatar } from "@/components/member-avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,12 +57,12 @@ export function DashboardRenewalPanel({
               : "Members with expired subscriptions who need to renew."}
           </CardDescription>
         </div>
-        <Link
+        <LockedLink
           href={viewAllHref}
           className="shrink-0 text-sm font-medium text-primary hover:underline"
         >
           View all →
-        </Link>
+        </LockedLink>
       </CardHeader>
       <CardContent className="p-0 pb-2">
         {preview.length === 0 ? (
@@ -121,10 +123,10 @@ export function DashboardRenewalPanel({
                     </TableCell>
                     <TableCell className="text-right">
                       <Button asChild variant="outline" size="sm" className="gap-1">
-                        <Link href={`/members/${item.id}`}>
+                        <LockedLink href={`/members/${item.id}`}>
                           View Profile
                           <ArrowRight className="h-3.5 w-3.5" />
-                        </Link>
+                        </LockedLink>
                       </Button>
                     </TableCell>
                   </TableRow>

@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 import { MUSCLE_GROUP_OPTIONS } from "@/lib/exercises";
 
@@ -42,8 +43,9 @@ export function AddExerciseDialog() {
   const [open, setOpen] = React.useState(false);
   const [muscleGroup, setMuscleGroup] = React.useState("CHEST");
   const router = useRouter();
+  const guardedAction = useGuardedFormAction(createExercise);
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
-    createExercise,
+    guardedAction,
     undefined,
   );
 

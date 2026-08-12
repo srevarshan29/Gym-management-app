@@ -6,6 +6,7 @@ import { MailX } from "lucide-react";
 import { toast } from "sonner";
 
 import { clearAllMemberEmails } from "@/app/actions/members";
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,8 +40,9 @@ export function ClearAllMemberEmailsSettings({
 }) {
   const [open, setOpen] = React.useState(false);
   const [confirmText, setConfirmText] = React.useState("");
+  const guardedAction = useGuardedFormAction(clearAllMemberEmails);
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
-    clearAllMemberEmails,
+    guardedAction,
     undefined,
   );
 

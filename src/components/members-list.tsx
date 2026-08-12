@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { LockedLink } from "@/components/navigation/locked-link";
 import { Search } from "lucide-react";
 import type { MemberGender } from "@prisma/client";
 
@@ -125,15 +125,15 @@ export function MembersList({ members }: MembersListProps) {
                 {filtered.map((m) => (
                   <TableRow key={m.id} className="cursor-pointer">
                     <TableCell className="px-3 py-3">
-                      <Link
+                      <LockedLink
                         href={`/members/${m.id}`}
                         className="block font-mono text-muted-foreground"
                       >
                         #{String(m.memberNumber).padStart(4, "0")}
-                      </Link>
+                      </LockedLink>
                     </TableCell>
                     <TableCell className="min-w-[140px] max-w-[200px] px-3 py-3">
-                      <Link
+                      <LockedLink
                         href={`/members/${m.id}`}
                         className="flex min-w-0 items-center gap-2"
                       >
@@ -145,54 +145,54 @@ export function MembersList({ members }: MembersListProps) {
                           size="sm"
                         />
                         <span className="truncate font-medium">{m.name}</span>
-                      </Link>
+                      </LockedLink>
                     </TableCell>
                     <TableCell className="whitespace-nowrap px-3 py-3 tabular-nums">
-                      <Link href={`/members/${m.id}`} className="block font-mono">
+                      <LockedLink href={`/members/${m.id}`} className="block font-mono">
                         {m.phone}
-                      </Link>
+                      </LockedLink>
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <Link href={`/members/${m.id}`} className="block">
+                      <LockedLink href={`/members/${m.id}`} className="block">
                         {m.packageName ?? (
                           <span className="text-muted-foreground">No package</span>
                         )}
-                      </Link>
+                      </LockedLink>
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <Link
+                      <LockedLink
                         href={`/members/${m.id}`}
                         className="block text-muted-foreground"
                       >
                         {m.addedByName ?? "—"}
-                      </Link>
+                      </LockedLink>
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <Link href={`/members/${m.id}`} className="block">
+                      <LockedLink href={`/members/${m.id}`} className="block">
                         <div className="flex flex-wrap items-center gap-2">
                           <StatusBadge status={m.status} />
                           {m.isPt ? <PtBadge /> : null}
                           {m.pendingAmount > 0 ? <PendingDuesBadge /> : null}
                         </div>
-                      </Link>
+                      </LockedLink>
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <Link href={`/members/${m.id}`} className="block font-mono">
+                      <LockedLink href={`/members/${m.id}`} className="block font-mono">
                         {m.pendingAmount > 0 ? (
                           formatCurrency(m.pendingAmount)
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
-                      </Link>
+                      </LockedLink>
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <Link href={`/members/${m.id}`} className="block font-mono">
+                      <LockedLink href={`/members/${m.id}`} className="block font-mono">
                         {m.endDate ? (
                           formatDate(new Date(m.endDate))
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
-                      </Link>
+                      </LockedLink>
                     </TableCell>
                   </TableRow>
                 ))}

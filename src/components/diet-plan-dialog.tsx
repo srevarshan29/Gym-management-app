@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { MemberOption } from "@/lib/programme-types";
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 
 export type DietPlanInput = {
@@ -63,8 +64,9 @@ export function DietPlanDialog({
   const router = useRouter();
 
   const action = isEdit ? updateDietPlan : createDietPlan;
+  const guardedAction = useGuardedFormAction(action);
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
-    action,
+    guardedAction,
     undefined,
   );
 

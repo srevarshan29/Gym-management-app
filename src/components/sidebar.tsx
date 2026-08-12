@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Dumbbell, X } from "lucide-react";
 
+import { useSharedNavigationLock } from "@/components/navigation/navigation-lock-provider";
 import { useSidebar } from "@/components/sidebar-provider";
 import {
   SIDEBAR_FOOTER_ITEM,
@@ -20,31 +21,34 @@ function NavLink({
   item,
   activeHref,
   pendingHref,
-  isPending,
+  isLocked,
   onNavigate,
 }: {
   item: SidebarNavItem;
   activeHref: string | null;
   pendingHref: string | null;
-  isPending: boolean;
+  isLocked: boolean;
   onNavigate: (href: string, e: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const active = pendingHref
     ? item.href === pendingHref
     : activeHref === item.href;
   const Icon = item.icon;
+  const isNavigating = isLocked && pendingHref === item.href;
 
   return (
     <Link
       href={item.href}
       onClick={(e) => onNavigate(item.href, e)}
-      aria-busy={pendingHref === item.href && isPending}
+      aria-busy={isNavigating}
+      aria-disabled={isLocked}
+      tabIndex={isLocked && !isNavigating ? -1 : undefined}
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
         active
           ? "hover-lift-glow bg-primary text-primary-foreground shadow-glow"
           : "hover-lift text-muted-foreground hover:bg-accent hover:text-foreground",
-        pendingHref === item.href && isPending ? "opacity-80" : "",
+        isNavigating ? "opacity-80" : "",
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />
@@ -67,13 +71,7 @@ function SidebarNavContent({
   showCloseButton?: boolean;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const [isPending, startTransition] = React.useTransition();
-  const [pendingHref, setPendingHref] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (!isPending) setPendingHref(null);
-  }, [isPending, pathname]);
+  const { navigate, pendingHref, isLocked } = useSharedNavigationLock();
 
   const prevPathname = React.useRef(pathname);
   React.useEffect(() => {
@@ -86,12 +84,7 @@ function SidebarNavContent({
     href: string,
     e: React.MouseEvent<HTMLAnchorElement>,
   ) {
-    if (href === pathname) return;
-    e.preventDefault();
-    setPendingHref(href);
-    startTransition(() => {
-      router.push(href);
-    });
+    navigate(href, e);
   }
 
   const showFooter = isNavItemVisible(
@@ -139,7 +132,13 @@ function SidebarNavContent({
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col">
-        <nav className="flex flex-col gap-1 overflow-y-auto">
+        <nav
+          className={cn(
+            "flex flex-col gap-1 overflow-y-auto",
+            isLocked && "pointer-events-none",
+          )}
+          aria-busy={isLocked}
+        >
           {SIDEBAR_SECTIONS.map((section, sectionIndex) => {
             const visibleItems = section.items.filter((item) =>
               isNavItemVisible(item, isOwner, canLogPayments, isOwnerOrAdmin),
@@ -163,7 +162,7 @@ function SidebarNavContent({
                         item={item}
                         activeHref={activeHref}
                         pendingHref={pendingHref}
-                        isPending={isPending}
+                        isLocked={isLocked}
                         onNavigate={handleNavigate}
                       />
                     ))}
@@ -180,7 +179,7 @@ function SidebarNavContent({
               item={SIDEBAR_FOOTER_ITEM}
               activeHref={activeHref}
               pendingHref={pendingHref}
-              isPending={isPending}
+              isLocked={isLocked}
               onNavigate={handleNavigate}
             />
           </div>

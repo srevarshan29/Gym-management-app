@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { VisitorStatus } from "@prisma/client";
 
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 
 export type VisitorInput = {
@@ -66,8 +67,9 @@ export function VisitorDialog({
   const router = useRouter();
 
   const action = isEdit ? updateVisitor : createVisitor;
+  const guardedAction = useGuardedFormAction(action);
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
-    action,
+    guardedAction,
     undefined,
   );
 

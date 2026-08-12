@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useActionLock } from "@/hooks/use-action-lock";
+
 import { deleteLedgerTransaction } from "@/app/actions/ledger";
 import { LedgerTransactionDialog } from "@/components/ledger-transaction-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -53,11 +55,11 @@ function DeleteLedgerButton({
   label: string;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [pending, startTransition] = React.useTransition();
+  const { run, isPending } = useActionLock();
   const router = useRouter();
 
   function onDelete() {
-    startTransition(async () => {
+    run(async () => {
       const result = await deleteLedgerTransaction(id);
       if (!result.ok) {
         toast.error(result.error);
@@ -87,8 +89,8 @@ function DeleteLedgerButton({
           <DialogClose asChild>
             <Button variant="ghost">Cancel</Button>
           </DialogClose>
-          <Button variant="destructive" onClick={onDelete} disabled={pending}>
-            {pending ? "Deleting..." : "Delete"}
+          <Button variant="destructive" onClick={onDelete} disabled={isPending}>
+            {isPending ? "Deleting..." : "Delete"}
           </Button>
         </DialogFooter>
       </DialogContent>

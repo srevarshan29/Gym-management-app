@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useSharedNavigationLock } from "@/components/navigation/navigation-lock-provider";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -17,9 +18,16 @@ const TABS = [
 
 export function MemberPortalNav() {
   const pathname = usePathname();
+  const { navigate, isLocked } = useSharedNavigationLock();
 
   return (
-    <nav className="flex gap-1 overflow-x-auto border-b border-border pb-px">
+    <nav
+      className={cn(
+        "flex gap-1 overflow-x-auto border-b border-border pb-px",
+        isLocked && "pointer-events-none",
+      )}
+      aria-busy={isLocked}
+    >
       {TABS.map((tab) => {
         const active =
           "exact" in tab && tab.exact
@@ -29,6 +37,8 @@ export function MemberPortalNav() {
           <Link
             key={tab.href}
             href={tab.href}
+            onClick={(e) => navigate(tab.href, e)}
+            aria-disabled={isLocked}
             className={cn(
               "shrink-0 rounded-t-lg px-3 py-2 text-sm font-medium transition-colors",
               active

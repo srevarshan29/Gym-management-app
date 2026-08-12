@@ -1,9 +1,11 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+
+import { LockedLink } from "@/components/navigation/locked-link";
+import { useActionLock } from "@/hooks/use-action-lock";
 
 import { updatePtTrainer } from "@/app/actions/pt-members";
 import type { PtTrainerGroup } from "@/lib/pt-members";
@@ -46,37 +48,37 @@ function TrainerSelect({
   disabled: boolean;
 }) {
   const [value, setValue] = React.useState(trainerId ?? UNASSIGNED_VALUE);
-  const [pending, setPending] = React.useState(false);
+  const { run, isPending } = useActionLock();
 
   React.useEffect(() => {
     setValue(trainerId ?? UNASSIGNED_VALUE);
   }, [trainerId]);
 
   async function onChange(next: string) {
+    if (isPending) return;
     setValue(next);
-    setPending(true);
-    try {
-      const result = await updatePtTrainer(
-        memberId,
-        next === UNASSIGNED_VALUE ? null : next,
-      );
-      if (!result.ok) {
-        toast.error(result.error);
+    await run(async () => {
+      try {
+        const result = await updatePtTrainer(
+          memberId,
+          next === UNASSIGNED_VALUE ? null : next,
+        );
+        if (!result.ok) {
+          toast.error(result.error);
+          setValue(trainerId ?? UNASSIGNED_VALUE);
+          return;
+        }
+        toast.success(result.message ?? "Trainer updated.");
+      } catch (error) {
+        console.error("[pt-members] updatePtTrainer failed:", error);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Could not update trainer. Please try again.",
+        );
         setValue(trainerId ?? UNASSIGNED_VALUE);
-        return;
       }
-      toast.success(result.message ?? "Trainer updated.");
-    } catch (error) {
-      console.error("[pt-members] updatePtTrainer failed:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Could not update trainer. Please try again.",
-      );
-      setValue(trainerId ?? UNASSIGNED_VALUE);
-    } finally {
-      setPending(false);
-    }
+    });
   }
 
   if (disabled) {
@@ -90,7 +92,7 @@ function TrainerSelect({
   }
 
   return (
-    <Select value={value} onValueChange={onChange} disabled={pending}>
+    <Select value={value} onValueChange={onChange} disabled={disabled || isPending}>
       <SelectTrigger className="h-9 w-[180px]">
         <SelectValue placeholder="Assign trainer" />
       </SelectTrigger>
@@ -146,7 +148,7 @@ export function PtMembersPanel({
                 {group.members.map((member) => (
                   <TableRow key={member.id} className="hover-lift-row">
                     <TableCell className="min-w-[140px] max-w-[200px] px-3 py-3">
-                      <Link
+                      <LockedLink
                         href={`/members/${member.id}`}
                         className="flex min-w-0 items-center gap-2"
                       >
@@ -163,7 +165,7 @@ export function PtMembersPanel({
                             #{String(member.memberNumber).padStart(4, "0")}
                           </p>
                         </div>
-                      </Link>
+                      </LockedLink>
                     </TableCell>
                     <TableCell className="whitespace-nowrap px-3 py-3 font-mono tabular-nums">
                       {member.phone}
@@ -188,10 +190,10 @@ export function PtMembersPanel({
                         size="sm"
                         className="gap-1 hover-lift"
                       >
-                        <Link href={`/members/${member.id}`}>
+                        <LockedLink href={`/members/${member.id}`}>
                           View profile
                           <ArrowRight className="h-3.5 w-3.5" />
-                        </Link>
+                        </LockedLink>
                       </Button>
                     </TableCell>
                   </TableRow>

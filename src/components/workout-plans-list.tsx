@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { deleteWorkoutPlan } from "@/app/actions/workout-plans";
+import { LockedLink } from "@/components/navigation/locked-link";
+import { useActionLock } from "@/hooks/use-action-lock";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -49,11 +50,11 @@ function DeleteWorkoutPlanButton({
   memberName: string;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [pending, startTransition] = React.useTransition();
+  const { run, isPending } = useActionLock();
   const router = useRouter();
 
   function onDelete() {
-    startTransition(async () => {
+    run(async () => {
       const result = await deleteWorkoutPlan(id);
       if (!result.ok) {
         toast.error(result.error);
@@ -87,8 +88,8 @@ function DeleteWorkoutPlanButton({
           <DialogClose asChild>
             <Button variant="ghost">Cancel</Button>
           </DialogClose>
-          <Button variant="destructive" onClick={onDelete} disabled={pending}>
-            {pending ? "Deleting..." : "Delete plan"}
+          <Button variant="destructive" onClick={onDelete} disabled={isPending}>
+            {isPending ? "Deleting..." : "Delete plan"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -132,7 +133,7 @@ export function WorkoutPlansList({ plans, canManage }: WorkoutPlansListProps) {
               {canManage ? (
                 <div className="mt-4">
                   <Button asChild>
-                    <Link href="/programmes/workout/new">Add plan</Link>
+                    <LockedLink href="/programmes/workout/new">Add plan</LockedLink>
                   </Button>
                 </div>
               ) : null}
@@ -180,9 +181,9 @@ export function WorkoutPlansList({ plans, canManage }: WorkoutPlansListProps) {
                       <TableCell className="text-right">
                         <div className="flex flex-wrap items-center justify-end gap-2">
                           <Button asChild variant="outline" size="sm">
-                            <Link href={`/programmes/workout/${plan.id}/edit`}>
+                            <LockedLink href={`/programmes/workout/${plan.id}/edit`}>
                               Edit
-                            </Link>
+                            </LockedLink>
                           </Button>
                           <DeleteWorkoutPlanButton
                             id={plan.id}

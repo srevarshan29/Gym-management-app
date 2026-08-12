@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 import type { LedgerTransactionInput } from "@/lib/ledger";
 
@@ -70,8 +71,9 @@ export function LedgerTransactionDialog({
   );
 
   const action = isEdit ? updateLedgerTransaction : createLedgerTransaction;
+  const guardedAction = useGuardedFormAction(action);
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
-    action,
+    guardedAction,
     undefined,
   );
 

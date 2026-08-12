@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 
 import { deleteExercise } from "@/app/actions/exercises";
+import { useActionLock } from "@/hooks/use-action-lock";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { ExerciseListItem } from "@/lib/workout-tracking/types";
@@ -20,28 +21,32 @@ export function ExerciseLibraryList({
   canManage,
 }: ExerciseLibraryListProps) {
   const router = useRouter();
+  const { run, isPending: actionPending } = useActionLock();
   const [pendingId, setPendingId] = React.useState<string | null>(null);
 
   async function onDelete(id: string) {
+    if (actionPending) return;
     setPendingId(id);
-    try {
-      const result = await deleteExercise(id);
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
+    await run(async () => {
+      try {
+        const result = await deleteExercise(id);
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(result.message ?? "Exercise removed.");
+        router.refresh();
+      } catch (error) {
+        console.error("[exercises] deleteExercise failed:", error);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Could not delete exercise. Please try again.",
+        );
+      } finally {
+        setPendingId(null);
       }
-      toast.success(result.message ?? "Exercise removed.");
-      router.refresh();
-    } catch (error) {
-      console.error("[exercises] deleteExercise failed:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Could not delete exercise. Please try again.",
-      );
-    } finally {
-      setPendingId(null);
-    }
+    });
   }
 
   const groups = Object.keys(grouped).sort();

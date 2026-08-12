@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 import { signupBodyMetricsSchema } from "@/lib/fitness-goal";
 import { MEMBER_GENDER_OPTIONS } from "@/lib/member-gender";
@@ -105,8 +106,9 @@ export function PublicRegistrationForm({
   const isFinalStep = step === totalSteps;
 
   const action = submitPublicRegistration.bind(null, token);
+  const guardedAction = useGuardedFormAction(action);
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
-    action,
+    guardedAction,
     undefined,
   );
 

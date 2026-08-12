@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/sidebar";
 import { SidebarToggle } from "@/components/sidebar-toggle";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NavigationLockProvider } from "@/components/navigation/navigation-lock-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { initials } from "@/lib/utils";
@@ -34,7 +35,8 @@ export function AppShell({
 }) {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen bg-background">
+      <NavigationLockProvider>
+        <div className="flex min-h-screen bg-background">
         <Sidebar
           isOwner={isOwner}
           isOwnerOrAdmin={isOwnerOrAdmin}
@@ -71,7 +73,8 @@ export function AppShell({
             {children}
           </main>
         </div>
-      </div>
+        </div>
+      </NavigationLockProvider>
     </SidebarProvider>
   );
 }

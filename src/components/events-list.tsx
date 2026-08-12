@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useActionLock } from "@/hooks/use-action-lock";
+
 import { deleteEvent } from "@/app/actions/events";
 import type { GymEventInput } from "@/components/event-dialog";
 import { EventDialog } from "@/components/event-dialog";
@@ -43,11 +45,11 @@ function matchesSearch(event: GymEventInput, query: string): boolean {
 
 function DeleteEventButton({ id, title }: { id: string; title: string }) {
   const [open, setOpen] = React.useState(false);
-  const [pending, startTransition] = React.useTransition();
+  const { run, isPending } = useActionLock();
   const router = useRouter();
 
   function onDelete() {
-    startTransition(async () => {
+    run(async () => {
       const result = await deleteEvent(id);
       if (!result.ok) {
         toast.error(result.error);
@@ -77,8 +79,8 @@ function DeleteEventButton({ id, title }: { id: string; title: string }) {
           <DialogClose asChild>
             <Button variant="ghost">Cancel</Button>
           </DialogClose>
-          <Button variant="destructive" onClick={onDelete} disabled={pending}>
-            {pending ? "Removing..." : "Remove event"}
+          <Button variant="destructive" onClick={onDelete} disabled={isPending}>
+            {isPending ? "Removing..." : "Remove event"}
           </Button>
         </DialogFooter>
       </DialogContent>

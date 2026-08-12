@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { LockedLink } from "@/components/navigation/locked-link";
 import { ArrowRight, Search } from "lucide-react";
 import type { MemberGender } from "@prisma/client";
 
@@ -124,10 +124,10 @@ export function PendingDuesList({ items, emptyMessage }: PendingDuesListProps) {
                           size="sm"
                           className="gap-1 hover-lift"
                         >
-                          <Link href={`/members/${item.memberId}`}>
+                          <LockedLink href={`/members/${item.memberId}`}>
                             View profile
                             <ArrowRight className="h-3.5 w-3.5" />
-                          </Link>
+                          </LockedLink>
                         </Button>
                       </TableCell>
                     </TableRow>

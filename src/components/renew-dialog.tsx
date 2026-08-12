@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { ReceiptModal } from "@/components/receipt-modal";
 import { formatCurrency } from "@/lib/utils";
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 import type { PackageOption } from "@/components/member-form";
 
@@ -52,10 +53,11 @@ export function RenewDialog({
   );
   const router = useRouter();
 
+  const guardedAction = useGuardedFormAction(renewSubscription);
   const [state, formAction] = useFormState<
     ActionResult<RenewSubscriptionData> | undefined,
     FormData
-  >(renewSubscription, undefined);
+  >(guardedAction, undefined);
 
   React.useEffect(() => {
     if (!state) return;

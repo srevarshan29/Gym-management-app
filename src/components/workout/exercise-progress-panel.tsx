@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import { ExerciseProgressChart } from "@/components/workout/exercise-progress-chart";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ExerciseProgressData } from "@/lib/workout-tracking/progress";
+import { useSharedNavigationLock } from "@/components/navigation/navigation-lock-provider";
 
 type ExerciseProgressPanelProps = {
   exercises: { key: string; label: string }[];
@@ -27,9 +28,9 @@ export function ExerciseProgressPanel({
   initialGrouping = "weekly",
   progress,
 }: ExerciseProgressPanelProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { navigate, isLocked } = useSharedNavigationLock();
 
   const exerciseFromUrl = searchParams.get("exercise");
   const groupingFromUrl = searchParams.get("grouping");
@@ -45,13 +46,14 @@ export function ExerciseProgressPanel({
       : initialGrouping;
 
   function updateParams(patch: Record<string, string>) {
+    if (isLocked) return;
     const params = new URLSearchParams(searchParams.toString());
     for (const [key, value] of Object.entries(patch)) {
       params.set(key, value);
     }
     const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname);
-    router.refresh();
+    const href = query ? `${pathname}?${query}` : pathname;
+    navigate(href, undefined, { replace: true, refresh: true });
   }
 
   if (exercises.length === 0) {
@@ -69,6 +71,7 @@ export function ExerciseProgressPanel({
             <Label>Exercise</Label>
             <Select
               value={exerciseKey}
+              disabled={isLocked}
               onValueChange={(value) => updateParams({ exercise: value })}
             >
               <SelectTrigger>
@@ -87,6 +90,7 @@ export function ExerciseProgressPanel({
             <Label>Grouping</Label>
             <Select
               value={grouping}
+              disabled={isLocked}
               onValueChange={(value) => updateParams({ grouping: value })}
             >
               <SelectTrigger>

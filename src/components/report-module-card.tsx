@@ -1,7 +1,6 @@
-import Link from "next/link";
-import { Download } from "lucide-react";
-
 import type { ReportModuleMeta } from "@/lib/reports-export";
+import { Download } from "lucide-react";
+import { ReportDownloadLink } from "@/components/report-download-link";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -38,11 +37,7 @@ export function ReportModuleCard({
           record{count === 1 ? "" : "s"}
         </p>
         {canDownload ? (
-          <Button asChild className="gap-1 shrink-0">
-            <Link href={downloadHref}>
-              <Download className="h-4 w-4" /> Download CSV
-            </Link>
-          </Button>
+          <ReportDownloadLink href={downloadHref} />
         ) : (
           <div className="text-right">
             <Button disabled className="gap-1 shrink-0">

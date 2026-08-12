@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useActionLock } from "@/hooks/use-action-lock";
+
 import { deleteEmployee } from "@/app/actions/employees";
 import type { EmployeeInput } from "@/components/employee-dialog";
 import { EmployeeDialog } from "@/components/employee-dialog";
@@ -43,11 +45,11 @@ function matchesSearch(employee: EmployeeInput, query: string): boolean {
 
 function DeleteEmployeeButton({ id, name }: { id: string; name: string }) {
   const [open, setOpen] = React.useState(false);
-  const [pending, startTransition] = React.useTransition();
+  const { run, isPending } = useActionLock();
   const router = useRouter();
 
   function onDelete() {
-    startTransition(async () => {
+    run(async () => {
       const result = await deleteEmployee(id);
       if (!result.ok) {
         toast.error(result.error);
@@ -77,8 +79,8 @@ function DeleteEmployeeButton({ id, name }: { id: string; name: string }) {
           <DialogClose asChild>
             <Button variant="ghost">Cancel</Button>
           </DialogClose>
-          <Button variant="destructive" onClick={onDelete} disabled={pending}>
-            {pending ? "Removing..." : "Remove employee"}
+          <Button variant="destructive" onClick={onDelete} disabled={isPending}>
+            {isPending ? "Removing..." : "Remove employee"}
           </Button>
         </DialogFooter>
       </DialogContent>

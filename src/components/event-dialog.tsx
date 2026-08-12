@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 
 export type GymEventInput = {
@@ -63,8 +64,9 @@ export function EventDialog({
   const router = useRouter();
 
   const action = isEdit ? updateEvent : createEvent;
+  const guardedAction = useGuardedFormAction(action);
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
-    action,
+    guardedAction,
     undefined,
   );
 

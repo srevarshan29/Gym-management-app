@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ReceiptModal } from "@/components/receipt-modal";
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 import { formatCurrency } from "@/lib/utils";
 
@@ -57,26 +58,8 @@ export function PaymentDialog({
   const [receiptPaymentId, setReceiptPaymentId] = React.useState<string | null>(
     null,
   );
-  const inFlightRef = React.useRef(false);
   const router = useRouter();
-
-  const guardedLogPayment = React.useCallback(
-    async (
-      prev: ActionResult<LogPaymentData> | undefined,
-      formData: FormData,
-    ): Promise<ActionResult<LogPaymentData> | undefined> => {
-      if (inFlightRef.current) {
-        return prev;
-      }
-      inFlightRef.current = true;
-      try {
-        return await logPayment(prev, formData);
-      } finally {
-        inFlightRef.current = false;
-      }
-    },
-    [],
-  );
+  const guardedLogPayment = useGuardedFormAction(logPayment);
 
   const [state, formAction] = useFormState<
     ActionResult<LogPaymentData> | undefined,

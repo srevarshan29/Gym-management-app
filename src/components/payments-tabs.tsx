@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { LockedLink } from "@/components/navigation/locked-link";
 import { Search } from "lucide-react";
 
 import { PaymentDialog } from "@/components/payment-dialog";
@@ -114,12 +114,12 @@ function PaidPaymentsTable({
                       {formatDate(p.paidAt)}
                     </TableCell>
                     <TableCell>
-                      <Link
+                      <LockedLink
                         href={`/members/${p.member.id}`}
                         className="font-medium hover:underline"
                       >
                         {p.member.name}
-                      </Link>
+                      </LockedLink>
                     </TableCell>
                     <TableCell className="font-mono font-medium">
                       {formatCurrency(Number(p.amount))}
@@ -211,12 +211,12 @@ function PendingDuesCard({ pending }: { pending: PendingMember[] }) {
               {pending.map((m) => (
                 <TableRow key={m.memberId}>
                   <TableCell>
-                    <Link
+                    <LockedLink
                       href={`/members/${m.memberId}`}
                       className="font-medium hover:underline"
                     >
                       {m.memberName}
-                    </Link>
+                    </LockedLink>
                   </TableCell>
                   <TableCell className="font-mono">{m.phone}</TableCell>
                   <TableCell>

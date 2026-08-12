@@ -6,6 +6,7 @@ import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 import { deleteAllGymMembers } from "@/app/actions/members";
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,8 +38,9 @@ export function BulkDeleteMembersSettings({
 }) {
   const [open, setOpen] = React.useState(false);
   const [confirmText, setConfirmText] = React.useState("");
+  const guardedAction = useGuardedFormAction(deleteAllGymMembers);
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
-    deleteAllGymMembers,
+    guardedAction,
     undefined,
   );
 

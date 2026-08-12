@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useActionLock } from "@/hooks/use-action-lock";
 import type { ActiveWorkoutSession } from "@/lib/workout-tracking/sessions";
 import type { WorkoutPlanDetail } from "@/lib/workout-tracking/types";
 
@@ -38,32 +39,32 @@ export function MemberWorkoutPageClient({
   const router = useRouter();
   const [activeSession, setActiveSession] = React.useState(initialSession);
   const [setValues, setSetValues] = React.useState<Record<string, string>>({});
-  const [pending, setPending] = React.useState(false);
+  const { run, isPending: pending } = useActionLock();
 
   React.useEffect(() => {
     setActiveSession(initialSession);
   }, [initialSession]);
 
   async function onStart() {
-    setPending(true);
-    try {
-      const result = await startWorkoutSession();
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
+    if (pending) return;
+    await run(async () => {
+      try {
+        const result = await startWorkoutSession();
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(result.message ?? "Workout started.");
+        router.refresh();
+      } catch (error) {
+        console.error("[workout] startWorkoutSession failed:", error);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Could not start workout. Please try again.",
+        );
       }
-      toast.success(result.message ?? "Workout started.");
-      router.refresh();
-    } catch (error) {
-      console.error("[workout] startWorkoutSession failed:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Could not start workout. Please try again.",
-      );
-    } finally {
-      setPending(false);
-    }
+    });
   }
 
   async function onLogSet(
@@ -71,6 +72,8 @@ export function MemberWorkoutPageClient({
     setNumber: number,
     trackingType: ActiveWorkoutSession["exercises"][number]["trackingType"],
   ) {
+    if (pending) return;
+
     const key = `${sessionExerciseId}-${setNumber}`;
     const rawValue = setValues[key];
 
@@ -97,45 +100,46 @@ export function MemberWorkoutPageClient({
       payload.durationSeconds = durationSeconds;
     }
 
-    try {
-      const result = await logWorkoutSet(payload);
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
+    await run(async () => {
+      try {
+        const result = await logWorkoutSet(payload);
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success("Set saved.");
+        router.refresh();
+      } catch (error) {
+        console.error("[workout] logWorkoutSet failed:", error);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Could not save set. Please try again.",
+        );
       }
-      toast.success("Set saved.");
-      router.refresh();
-    } catch (error) {
-      console.error("[workout] logWorkoutSet failed:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Could not save set. Please try again.",
-      );
-    }
+    });
   }
 
   async function onComplete() {
-    if (!activeSession) return;
-    setPending(true);
-    try {
-      const result = await completeWorkoutSession(activeSession.id);
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
+    if (!activeSession || pending) return;
+    await run(async () => {
+      try {
+        const result = await completeWorkoutSession(activeSession.id);
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(result.message ?? "Workout completed.");
+        router.refresh();
+      } catch (error) {
+        console.error("[workout] completeWorkoutSession failed:", error);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Could not complete workout. Please try again.",
+        );
       }
-      toast.success(result.message ?? "Workout completed.");
-      router.refresh();
-    } catch (error) {
-      console.error("[workout] completeWorkoutSession failed:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Could not complete workout. Please try again.",
-      );
-    } finally {
-      setPending(false);
-    }
+    });
   }
 
   if (!plan || plan.isLegacy) {
@@ -201,6 +205,7 @@ export function MemberWorkoutPageClient({
                       type="button"
                       size="sm"
                       variant={isLogged ? "secondary" : "default"}
+                      disabled={pending}
                       onClick={() =>
                         onLogSet(exercise.id, setNumber, exercise.trackingType)
                       }
@@ -234,6 +239,7 @@ export function MemberWorkoutPageClient({
                   <Button
                     type="button"
                     size="sm"
+                    disabled={pending}
                     onClick={() =>
                       onLogSet(exercise.id, setNumber, exercise.trackingType)
                     }

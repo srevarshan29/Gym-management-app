@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { deleteVisitor } from "@/app/actions/visitors";
+import { LockedLink } from "@/components/navigation/locked-link";
+import { ViewFilterLinks } from "@/components/navigation/view-filter-links";
+import { useActionLock } from "@/hooks/use-action-lock";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -56,11 +58,11 @@ function DeleteRegistrationButton({
   name: string;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [pending, startTransition] = React.useTransition();
+  const { run, isPending } = useActionLock();
   const router = useRouter();
 
   function onDelete() {
-    startTransition(async () => {
+    run(async () => {
       const result = await deleteVisitor(id);
       if (!result.ok) {
         toast.error(result.error);
@@ -94,8 +96,8 @@ function DeleteRegistrationButton({
           <DialogClose asChild>
             <Button variant="ghost">Cancel</Button>
           </DialogClose>
-          <Button variant="destructive" onClick={onDelete} disabled={pending}>
-            {pending ? "Deleting..." : "Delete"}
+          <Button variant="destructive" onClick={onDelete} disabled={isPending}>
+            {isPending ? "Deleting..." : "Delete"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -118,20 +120,7 @@ function ViewFilter({ view }: { view: "pending" | "converted" | "all" }) {
     },
   ];
 
-  return (
-    <div className="flex flex-wrap gap-2">
-      {items.map((item) => (
-        <Button
-          key={item.value}
-          asChild
-          size="sm"
-          variant={view === item.value ? "default" : "outline"}
-        >
-          <Link href={item.href}>{item.label}</Link>
-        </Button>
-      ))}
-    </div>
-  );
+  return <ViewFilterLinks view={view} items={items} />;
 }
 
 export function QrRegistrationsList({
@@ -239,10 +228,10 @@ export function QrRegistrationsList({
                               size="sm"
                               className="gap-1 hover-lift"
                             >
-                              <Link href={convertHref}>
+                              <LockedLink href={convertHref}>
                                 <UserPlus className="h-3.5 w-3.5" />
                                 Convert
-                              </Link>
+                              </LockedLink>
                             </Button>
                           ) : null}
                           {canManage ? (

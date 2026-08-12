@@ -1,9 +1,9 @@
+import { RegisterShell } from "@/components/public-registration/register-shell";
+
 export default function RegisterLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="min-h-screen bg-background text-foreground">{children}</div>
-  );
+  return <RegisterShell>{children}</RegisterShell>;
 }

@@ -29,6 +29,7 @@ import { formatCurrency } from "@/lib/utils";
 import { MEMBER_GENDER_OPTIONS } from "@/lib/member-gender";
 import { MembershipPolicyConsent } from "@/components/membership-policy-consent";
 import { FitnessProfileFields } from "@/components/fitness-profile-fields";
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 import type { FitnessGoal, MemberGender } from "@prisma/client";
 
@@ -94,29 +95,7 @@ function SubmitButton({ label }: { label: string }) {
 
 export function MemberForm(props: Props) {
   const baseAction = props.mode === "create" ? createMember : updateMember;
-  const inFlightRef = React.useRef(false);
-
-  const guardedAction = React.useCallback(
-    async (
-      prev: ActionResult | undefined,
-      formData: FormData,
-    ): Promise<ActionResult | undefined> => {
-      if (props.mode === "create" && inFlightRef.current) {
-        return prev;
-      }
-      if (props.mode === "create") {
-        inFlightRef.current = true;
-      }
-      try {
-        return await baseAction(prev, formData);
-      } finally {
-        if (props.mode === "create") {
-          inFlightRef.current = false;
-        }
-      }
-    },
-    [baseAction, props.mode],
-  );
+  const guardedAction = useGuardedFormAction(baseAction);
 
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
     guardedAction,

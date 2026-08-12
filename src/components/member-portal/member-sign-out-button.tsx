@@ -1,12 +1,26 @@
+"use client";
+
+import { useFormStatus } from "react-dom";
+
 import { memberSignOutAction } from "@/app/actions/member-portal";
 import { Button } from "@/components/ui/button";
+import { useGuardedServerAction } from "@/hooks/use-guarded-form-action";
 
 export function MemberSignOutButton() {
+  const guardedSignOut = useGuardedServerAction(memberSignOutAction);
+
   return (
-    <form action={memberSignOutAction}>
-      <Button type="submit" variant="outline" size="sm">
-        Sign out
-      </Button>
+    <form action={guardedSignOut}>
+      <SubmitButton />
     </form>
+  );
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" variant="outline" size="sm" disabled={pending}>
+      {pending ? "Signing out..." : "Sign out"}
+    </Button>
   );
 }

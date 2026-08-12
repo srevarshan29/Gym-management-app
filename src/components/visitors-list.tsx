@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -9,6 +8,9 @@ import { toast } from "sonner";
 import { deleteVisitor } from "@/app/actions/visitors";
 import type { VisitorInput } from "@/components/visitor-dialog";
 import { VisitorDialog } from "@/components/visitor-dialog";
+import { LockedLink } from "@/components/navigation/locked-link";
+import { ViewFilterLinks } from "@/components/navigation/view-filter-links";
+import { useActionLock } from "@/hooks/use-action-lock";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -67,11 +69,11 @@ function DeleteVisitorButton({
   name: string;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [pending, startTransition] = React.useTransition();
+  const { run, isPending } = useActionLock();
   const router = useRouter();
 
   function onDelete() {
-    startTransition(async () => {
+    run(async () => {
       const result = await deleteVisitor(id);
       if (!result.ok) {
         toast.error(result.error);
@@ -105,8 +107,8 @@ function DeleteVisitorButton({
           <DialogClose asChild>
             <Button variant="ghost">Cancel</Button>
           </DialogClose>
-          <Button variant="destructive" onClick={onDelete} disabled={pending}>
-            {pending ? "Deleting..." : "Delete visitor"}
+          <Button variant="destructive" onClick={onDelete} disabled={isPending}>
+            {isPending ? "Deleting..." : "Delete visitor"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -114,11 +116,7 @@ function DeleteVisitorButton({
   );
 }
 
-function ViewFilter({
-  view,
-}: {
-  view: VisitorStatusFilter;
-}) {
+function ViewFilter({ view }: { view: VisitorStatusFilter }) {
   const items: { value: VisitorStatusFilter; label: string; href: string }[] = [
     { value: "pending", label: "Pending", href: "/members/visitors" },
     {
@@ -129,20 +127,7 @@ function ViewFilter({
     { value: "all", label: "All", href: "/members/visitors?view=all" },
   ];
 
-  return (
-    <div className="flex flex-wrap gap-2">
-      {items.map((item) => (
-        <Button
-          key={item.value}
-          asChild
-          size="sm"
-          variant={view === item.value ? "default" : "outline"}
-        >
-          <Link href={item.href}>{item.label}</Link>
-        </Button>
-      ))}
-    </div>
-  );
+  return <ViewFilterLinks view={view} items={items} />;
 }
 
 export function VisitorsList({ visitors, canManage, view }: VisitorsListProps) {
@@ -251,10 +236,10 @@ export function VisitorsList({ visitors, canManage, view }: VisitorsListProps) {
                               size="sm"
                               className="gap-1 hover-lift"
                             >
-                              <Link href={convertHref}>
+                              <LockedLink href={convertHref}>
                                 <UserPlus className="h-3.5 w-3.5" />
                                 Convert
-                              </Link>
+                              </LockedLink>
                             </Button>
                           ) : null}
                           {canManage ? (

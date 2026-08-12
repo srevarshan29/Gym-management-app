@@ -3,8 +3,9 @@
 import * as React from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { useActionLock } from "@/hooks/use-action-lock";
 import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   createStaff,
@@ -39,6 +40,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 
 type Staff = {
@@ -120,13 +122,14 @@ function RoleSelect({
   canAssignOwner: boolean;
 }) {
   const router = useRouter();
-  const [pending, startTransition] = React.useTransition();
+  const { run, isPending: pending } = useActionLock();
 
   function onChange(value: string) {
+    if (pending) return;
     const fd = new FormData();
     fd.set("id", id);
     fd.set("role", value);
-    startTransition(async () => {
+    run(async () => {
       const res = await updateStaffRole(undefined, fd);
       if (res.ok) {
         toast.success(res.message ?? "Role updated.");
@@ -156,12 +159,13 @@ function RoleSelect({
 function DeleteStaffButton({ id, name }: { id: string; name: string }) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
-  const [pending, startTransition] = React.useTransition();
+  const { run, isPending: pending } = useActionLock();
 
   function onDelete() {
+    if (pending) return;
     const fd = new FormData();
     fd.set("id", id);
-    startTransition(async () => {
+    run(async () => {
       try {
         await deleteStaff(fd);
         toast.success("Staff account deleted.");
@@ -219,8 +223,9 @@ function CreateStaffDialog({ canAssignOwner }: { canAssignOwner: boolean }) {
   const [open, setOpen] = React.useState(false);
   const [role, setRole] = React.useState("STAFF");
   const router = useRouter();
+  const guardedCreateStaff = useGuardedFormAction(createStaff);
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
-    createStaff,
+    guardedCreateStaff,
     undefined,
   );
 

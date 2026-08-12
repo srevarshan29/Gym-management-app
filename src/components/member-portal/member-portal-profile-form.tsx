@@ -11,6 +11,7 @@ import { updateMemberPortalProfile } from "@/app/actions/member-portal";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { memberGenderLabel } from "@/lib/member-gender";
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 import type { FitnessGoal, MemberGender } from "@prisma/client";
 
@@ -35,8 +36,9 @@ function Submit() {
 }
 
 export function MemberPortalProfileForm({ profile }: { profile: Profile }) {
+  const guardedAction = useGuardedFormAction(updateMemberPortalProfile);
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
-    updateMemberPortalProfile,
+    guardedAction,
     undefined,
   );
   const [photoPreview, setPhotoPreview] = React.useState<string | null>(

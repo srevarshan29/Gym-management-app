@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useFormStatus } from "react-dom";
 import { Trash2 } from "lucide-react";
 
 import { deleteMember } from "@/app/actions/members";
@@ -15,6 +16,7 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
+import { useGuardedServerAction } from "@/hooks/use-guarded-form-action";
 
 export function DeleteMemberButton({
   memberId,
@@ -24,6 +26,7 @@ export function DeleteMemberButton({
   memberName: string;
 }) {
   const [open, setOpen] = React.useState(false);
+  const guardedDelete = useGuardedServerAction(deleteMember);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -44,14 +47,21 @@ export function DeleteMemberButton({
           <DialogClose asChild>
             <Button variant="ghost">Cancel</Button>
           </DialogClose>
-          <form action={deleteMember}>
+          <form action={guardedDelete}>
             <input type="hidden" name="id" value={memberId} />
-            <Button type="submit" variant="destructive">
-              Delete permanently
-            </Button>
+            <SubmitButton />
           </form>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" variant="destructive" disabled={pending}>
+      {pending ? "Deleting..." : "Delete permanently"}
+    </Button>
   );
 }

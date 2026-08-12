@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useActionLock } from "@/hooks/use-action-lock";
+
 import { deleteDietPlan } from "@/app/actions/diet-plans";
 import {
   DietPlanDialog,
@@ -53,11 +55,11 @@ function DeleteDietPlanButton({
   memberName: string;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [pending, startTransition] = React.useTransition();
+  const { run, isPending } = useActionLock();
   const router = useRouter();
 
   function onDelete() {
-    startTransition(async () => {
+    run(async () => {
       const result = await deleteDietPlan(id);
       if (!result.ok) {
         toast.error(result.error);
@@ -91,8 +93,8 @@ function DeleteDietPlanButton({
           <DialogClose asChild>
             <Button variant="ghost">Cancel</Button>
           </DialogClose>
-          <Button variant="destructive" onClick={onDelete} disabled={pending}>
-            {pending ? "Deleting..." : "Delete plan"}
+          <Button variant="destructive" onClick={onDelete} disabled={isPending}>
+            {isPending ? "Deleting..." : "Delete plan"}
           </Button>
         </DialogFooter>
       </DialogContent>

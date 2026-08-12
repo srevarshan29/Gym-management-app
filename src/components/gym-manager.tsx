@@ -28,6 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 
 type GymRow = {
@@ -101,8 +102,9 @@ function CreateSubmit() {
 function CreateGymDialog() {
   const [open, setOpen] = React.useState(false);
   const router = useRouter();
+  const guardedAction = useGuardedFormAction(createGym);
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
-    createGym,
+    guardedAction,
     undefined,
   );
 

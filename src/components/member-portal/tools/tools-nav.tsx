@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
+import { LockedLink } from "@/components/navigation/locked-link";
+import { useSharedNavigationLock } from "@/components/navigation/navigation-lock-provider";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -22,33 +26,56 @@ const TOOLS = [
   },
 ] as const;
 
-export function ToolsSubNav({ activeHref }: { activeHref?: string }) {
+function ToolsTabLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  const { navigate, isLocked } = useSharedNavigationLock();
+
   return (
-    <nav className="flex gap-1 overflow-x-auto border-b border-border pb-px">
-      <Link
-        href="/member/tools"
-        className={cn(
-          "shrink-0 rounded-t-lg px-3 py-2 text-sm font-medium transition-colors",
-          activeHref === "/member/tools"
-            ? "bg-primary/15 text-primary"
-            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-        )}
-      >
+    <Link
+      href={href}
+      onClick={(e) => navigate(href, e)}
+      aria-disabled={isLocked}
+      className={cn(
+        "shrink-0 rounded-t-lg px-3 py-2 text-sm font-medium transition-colors",
+        active
+          ? "bg-primary/15 text-primary"
+          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+      )}
+    >
+      {children}
+    </Link>
+  );
+}
+
+export function ToolsSubNav({ activeHref }: { activeHref?: string }) {
+  const { isLocked } = useSharedNavigationLock();
+
+  return (
+    <nav
+      className={cn(
+        "flex gap-1 overflow-x-auto border-b border-border pb-px",
+        isLocked && "pointer-events-none",
+      )}
+      aria-busy={isLocked}
+    >
+      <ToolsTabLink href="/member/tools" active={activeHref === "/member/tools"}>
         All tools
-      </Link>
+      </ToolsTabLink>
       {TOOLS.map((tool) => (
-        <Link
+        <ToolsTabLink
           key={tool.href}
           href={tool.href}
-          className={cn(
-            "shrink-0 rounded-t-lg px-3 py-2 text-sm font-medium transition-colors",
-            activeHref === tool.href
-              ? "bg-primary/15 text-primary"
-              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-          )}
+          active={activeHref === tool.href}
         >
           {tool.title.replace(" Calculator", "")}
-        </Link>
+        </ToolsTabLink>
       ))}
     </nav>
   );
@@ -58,7 +85,7 @@ export function ToolsIndexList() {
   return (
     <div className="space-y-3">
       {TOOLS.map((tool) => (
-        <Link key={tool.href} href={tool.href} className="block">
+        <LockedLink key={tool.href} href={tool.href} className="block">
           <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 transition-colors hover:ring-primary/30">
             <CardContent className="flex items-center justify-between gap-3 p-4">
               <div>
@@ -70,7 +97,7 @@ export function ToolsIndexList() {
               <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
             </CardContent>
           </Card>
-        </Link>
+        </LockedLink>
       ))}
     </div>
   );

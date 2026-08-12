@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LockedLink } from "@/components/navigation/locked-link";
 import { ArrowRight } from "lucide-react";
 
 import { DashboardStatSparkline } from "@/components/dashboard-stat-sparkline";
@@ -194,9 +194,9 @@ export function DashboardStatCard({
 
   if (href) {
     return (
-      <Link href={href} className="group block cursor-pointer">
+      <LockedLink href={href} className="group block cursor-pointer">
         {card}
-      </Link>
+      </LockedLink>
     );
   }
 

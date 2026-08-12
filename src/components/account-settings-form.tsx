@@ -9,6 +9,7 @@ import { updateMyProfile } from "@/app/actions/account";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 
 export function AccountSettingsForm({
@@ -19,8 +20,9 @@ export function AccountSettingsForm({
   email: string;
 }) {
   const router = useRouter();
+  const guardedAction = useGuardedFormAction(updateMyProfile);
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
-    updateMyProfile,
+    guardedAction,
     undefined,
   );
 

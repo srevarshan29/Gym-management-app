@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { withPlatformLookup, withTenant } from "@/lib/db-context";
+import { withTenant } from "@/lib/db-context";
 import { requireGym } from "@/lib/session";
 import { canDeleteMembers, canLogPayments } from "@/lib/permissions";
 import { computeEndDate } from "@/lib/subscription";
@@ -18,6 +18,10 @@ import { prismaNull } from "@/lib/prisma-safe";
 import { getMembershipPolicyForGym } from "@/lib/gym-profile";
 import { isMembershipPolicyRequired } from "@/lib/membership-policy";
 import { normalizeMemberEmail } from "@/lib/member-portal/constants";
+import {
+  DUPLICATE_MEMBER_EMAIL_MESSAGE,
+  findGymMembersByEmail,
+} from "@/lib/member-portal/email";
 import {
   fitnessGoalSchema,
   optionalFitnessGoalSchema,
@@ -140,6 +144,13 @@ export async function createMember(
   );
   if (existingPhone) {
     return actionError("A member with this phone number already exists.");
+  }
+
+  const existingEmail = await withTenant(tenantGymId, (tx) =>
+    findGymMembersByEmail(tx, tenantGymId, data.email),
+  );
+  if (existingEmail.length > 0) {
+    return actionError(DUPLICATE_MEMBER_EMAIL_MESSAGE);
   }
 
   const pkg = await withTenant(tenantGymId, (tx) =>
@@ -331,13 +342,33 @@ export async function updateMember(
   if ("ok" in ptFields) return ptFields;
   const { isPt, trainerId } = ptFields;
 
+  const existingPhone = await withTenant(user.gymId, (tx) =>
+    tx.member.findFirst({
+      where: { gymId: user.gymId, phone, id: { not: id } },
+      select: { id: true },
+    }),
+  );
+  if (existingPhone) {
+    return actionError("A member with this phone number already exists.");
+  }
+
+  const nextEmail = email?.trim() ? normalizeMemberEmail(email) : null;
+  if (nextEmail) {
+    const existingEmail = await withTenant(user.gymId, (tx) =>
+      findGymMembersByEmail(tx, user.gymId, nextEmail, { excludeMemberId: id }),
+    );
+    if (existingEmail.length > 0) {
+      return actionError(DUPLICATE_MEMBER_EMAIL_MESSAGE);
+    }
+  }
+
   const result = await withTenant(user.gymId, (tx) =>
     tx.member.updateMany({
       where: { id, gymId: user.gymId },
       data: {
         name,
         phone,
-        email: email?.trim() ? normalizeMemberEmail(email) : null,
+        email: nextEmail,
         gender,
         notes: notes || null,
         isPt,

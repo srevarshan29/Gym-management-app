@@ -5,11 +5,16 @@ import { z } from "zod";
 
 import { withTenant } from "@/lib/db-context";
 import { requireGym } from "@/lib/session";
-import { canLogPayments } from "@/lib/permissions";
+import { canLogPayments, canWriteOffDues } from "@/lib/permissions";
 import { computeEndDate } from "@/lib/subscription";
 import { createReceiptForPayment } from "@/lib/receipts";
 import { notifyPaymentLogged } from "@/lib/notifications";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
+import {
+  computeSubscriptionBalance,
+  sumPaymentAmounts,
+} from "@/lib/subscription-balance";
+import { Prisma } from "@prisma/client";
 
 const renewSchema = z.object({
   memberId: z.string().min(1),
@@ -111,6 +116,7 @@ export async function renewSubscription(
   revalidatePath("/members");
   revalidatePath("/");
   revalidatePath("/payments");
+  revalidatePath("/finance/pending-dues");
 
   if (paymentId) {
     notifyPaymentLogged(tenantGymId, paymentId).catch((err) =>
@@ -119,4 +125,67 @@ export async function renewSubscription(
   }
 
   return actionOk("Subscription renewed.", { paymentId });
+}
+
+/** Owner-only: forgive remaining dues on one subscription cycle. Does not create or delete payments. */
+export async function writeOffSubscriptionDues(
+  subscriptionId: string,
+): Promise<ActionResult> {
+  const user = await requireGym();
+  if (!canWriteOffDues(user.role)) {
+    return actionError("Only the gym owner can write off outstanding dues.");
+  }
+  const tenantGymId = user.gymId;
+  const id = subscriptionId.trim();
+  if (!id) return actionError("Missing subscription id.");
+
+  const result = await withTenant(tenantGymId, async (tx) => {
+    const subscription = await tx.subscription.findFirst({
+      where: { id, gymId: tenantGymId },
+      select: {
+        id: true,
+        memberId: true,
+        priceAtPurchase: true,
+        writtenOffAmount: true,
+        payments: { select: { amount: true } },
+      },
+    });
+    if (!subscription) {
+      return { ok: false as const, error: "Subscription not found." };
+    }
+
+    const balance = computeSubscriptionBalance(
+      Number(subscription.priceAtPurchase),
+      sumPaymentAmounts(subscription.payments),
+      Number(subscription.writtenOffAmount),
+    );
+    if (balance.pendingAmount <= 0) {
+      return {
+        ok: false as const,
+        error: "This subscription has no outstanding balance.",
+      };
+    }
+
+    const nextWrittenOff = balance.writtenOffAmount + balance.pendingAmount;
+    await tx.subscription.updateMany({
+      where: { id: subscription.id, gymId: tenantGymId },
+      data: {
+        writtenOffAmount: new Prisma.Decimal(nextWrittenOff),
+        writtenOffAt: new Date(),
+        writtenOffById: user.id,
+      },
+    });
+    return { ok: true as const, memberId: subscription.memberId };
+  });
+
+  if (!result.ok) {
+    return actionError(result.error);
+  }
+
+  revalidatePath(`/members/${result.memberId}`);
+  revalidatePath("/members");
+  revalidatePath("/");
+  revalidatePath("/payments");
+  revalidatePath("/finance/pending-dues");
+  return actionOk("Outstanding balance written off. Payment history is unchanged.");
 }

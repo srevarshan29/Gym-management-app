@@ -4,7 +4,11 @@ import { redirect } from "next/navigation";
 import { requireGym } from "@/lib/session";
 import { canLogPayments, canViewFinancials } from "@/lib/permissions";
 import { withTenant } from "@/lib/db-context";
-import { getPendingMembers } from "@/lib/queries";
+import {
+  getPendingDuesPage,
+  getPendingDuesSummary,
+  PENDING_DUES_PAGE_SIZE,
+} from "@/lib/pending-dues-queries";
 import { PageHeader } from "@/components/page-header";
 import { PaymentsTabs, PendingDuesOnly } from "@/components/payments-tabs";
 import {
@@ -16,14 +20,18 @@ import {
 export default async function PaymentsPage({
   searchParams,
 }: {
-  searchParams?: { tab?: string };
+  searchParams?: { tab?: string; page?: string; q?: string };
 }) {
   const user = await requireGym();
   if (!canLogPayments(user.role)) redirect("/");
 
   const showFinancialReports = canViewFinancials(user.role);
   const defaultTab =
-    searchParams?.tab === "pending" ? ("pending" as const) : ("paid" as const);
+    searchParams?.tab === "pending" || !showFinancialReports
+      ? ("pending" as const)
+      : ("paid" as const);
+  const page = Number(searchParams?.page ?? "1");
+  const q = searchParams?.q ?? "";
 
   return (
     <div>
@@ -32,7 +40,7 @@ export default async function PaymentsPage({
         description={
           showFinancialReports
             ? "Track completed payments and members with dues."
-            : "Members with outstanding balances on their current subscription."
+            : "Members with outstanding balances on any subscription cycle, including prior periods after renewal."
         }
       />
 
@@ -45,6 +53,8 @@ export default async function PaymentsPage({
           gymId={user.gymId}
           showFinancialReports={showFinancialReports}
           defaultTab={defaultTab}
+          page={page}
+          q={q}
         />
       </Suspense>
     </div>
@@ -79,37 +89,90 @@ async function PaymentsBody({
   gymId: tenantGymId,
   showFinancialReports,
   defaultTab,
+  page,
+  q,
 }: {
   gymId: string;
   showFinancialReports: boolean;
   defaultTab: "paid" | "pending";
+  page: number;
+  q: string;
 }) {
-  const pending = await getPendingMembers(tenantGymId);
+  const loadPending = defaultTab === "pending" || !showFinancialReports;
 
   if (!showFinancialReports) {
-    return <PendingDuesOnly pending={pending} />;
+    const pendingResult = await getPendingDuesPage(tenantGymId, {
+      page,
+      pageSize: PENDING_DUES_PAGE_SIZE,
+      q,
+    });
+    return (
+      <PendingDuesOnly
+        pending={pendingResult.rows}
+        page={pendingResult.page}
+        pageSize={pendingResult.pageSize}
+        matchingCount={pendingResult.matchingCount}
+        query={q}
+      />
+    );
   }
 
-  const payments = await withTenant(tenantGymId, (tx) =>
-    tx.payment.findMany({
-      where: { gymId: tenantGymId },
-      orderBy: { paidAt: "desc" },
-      include: {
-        member: { select: { id: true, name: true } },
-        subscription: { include: { package: { select: { name: true } } } },
-        recordedBy: { select: { name: true } },
-      },
-    }),
-  );
+  if (loadPending) {
+    const [pendingResult, paymentCount] = await Promise.all([
+      getPendingDuesPage(tenantGymId, {
+        page,
+        pageSize: PENDING_DUES_PAGE_SIZE,
+        q,
+      }),
+      withTenant(tenantGymId, (tx) =>
+        tx.payment.count({ where: { gymId: tenantGymId } }),
+      ),
+    ]);
+    return (
+      <PaymentsTabs
+        defaultTab="pending"
+        payments={[]}
+        pending={pendingResult.rows}
+        pendingCount={pendingResult.unpaidCycleCount}
+        paymentCount={paymentCount}
+        totalCollected={0}
+        page={pendingResult.page}
+        pageSize={pendingResult.pageSize}
+        matchingCount={pendingResult.matchingCount}
+        query={q}
+      />
+    );
+  }
+
+  const [payments, pendingSummary] = await Promise.all([
+    withTenant(tenantGymId, (tx) =>
+      tx.payment.findMany({
+        where: { gymId: tenantGymId },
+        orderBy: { paidAt: "desc" },
+        include: {
+          member: { select: { id: true, name: true } },
+          subscription: { include: { package: { select: { name: true } } } },
+          recordedBy: { select: { name: true } },
+        },
+      }),
+    ),
+    getPendingDuesSummary(tenantGymId),
+  ]);
 
   const totalCollected = payments.reduce((sum, p) => sum + Number(p.amount), 0);
 
   return (
     <PaymentsTabs
-      defaultTab={defaultTab}
+      defaultTab="paid"
       payments={payments}
-      pending={pending}
+      pending={[]}
+      pendingCount={pendingSummary.unpaidCycleCount}
+      paymentCount={payments.length}
       totalCollected={totalCollected}
+      page={1}
+      pageSize={PENDING_DUES_PAGE_SIZE}
+      matchingCount={0}
+      query=""
     />
   );
 }

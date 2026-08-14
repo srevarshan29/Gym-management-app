@@ -24,7 +24,7 @@ function SubmitButton() {
       variant="ghost"
       size="sm"
       type="submit"
-      className="gap-2 px-2 sm:px-3"
+      className="h-8 gap-2 px-1.5 sm:h-9 sm:px-3"
       disabled={pending}
     >
       <LogOut className="h-4 w-4" />

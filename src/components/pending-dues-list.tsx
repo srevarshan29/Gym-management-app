@@ -1,7 +1,7 @@
 "use client";
 
-import * as React from "react";
 import { LockedLink } from "@/components/navigation/locked-link";
+import { PaginationBar } from "@/components/pagination-bar";
 import { ArrowRight, Search } from "lucide-react";
 import type { MemberGender } from "@prisma/client";
 
@@ -29,49 +29,56 @@ export type PendingDuesListItem = {
   packageName: string;
   amountDue: number;
   endDate: string;
+  subscriptionId: string;
 };
 
 type PendingDuesListProps = {
   items: PendingDuesListItem[];
   emptyMessage: string;
+  query: string;
+  page: number;
+  pageSize: number;
+  matchingCount: number;
+  makeHref: (page: number, q: string) => string;
+  searchAction: string;
+  extraSearchFields?: Record<string, string>;
 };
 
-function matchesSearch(item: PendingDuesListItem, query: string): boolean {
-  const q = query.trim().toLowerCase();
-  if (!q) return true;
-  return item.memberName.toLowerCase().includes(q);
-}
-
-export function PendingDuesList({ items, emptyMessage }: PendingDuesListProps) {
-  const [query, setQuery] = React.useState("");
-  const filtered = React.useMemo(
-    () => items.filter((item) => matchesSearch(item, query)),
-    [items, query],
-  );
-
+export function PendingDuesList({
+  items,
+  emptyMessage,
+  query,
+  page,
+  pageSize,
+  matchingCount,
+  makeHref,
+  searchAction,
+  extraSearchFields,
+}: PendingDuesListProps) {
   return (
     <div className="space-y-4">
-      <div className="relative max-w-md">
+      <form action={searchAction} className="relative max-w-md">
+        {extraSearchFields
+          ? Object.entries(extraSearchFields).map(([name, value]) => (
+              <input key={name} type="hidden" name={name} value={value} />
+            ))
+          : null}
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          name="q"
+          defaultValue={query}
           placeholder="Search by member name…"
           className="pl-9"
           aria-label="Search members by name"
         />
-      </div>
+      </form>
 
       <Card>
         <CardContent className="p-0">
-          {items.length === 0 ? (
+          {matchingCount === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">
-              {emptyMessage}
-            </p>
-          ) : filtered.length === 0 ? (
-            <p className="py-12 text-center text-sm text-muted-foreground">
-              No members match your search.
+              {query.trim() ? "No members match your search." : emptyMessage}
             </p>
           ) : (
             <Table>
@@ -86,10 +93,10 @@ export function PendingDuesList({ items, emptyMessage }: PendingDuesListProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((item) => {
+                {items.map((item) => {
                   const endDate = new Date(item.endDate);
                   return (
-                    <TableRow key={item.memberId} className="hover-lift-row">
+                    <TableRow key={item.subscriptionId} className="hover-lift-row">
                       <TableCell className="min-w-[140px] max-w-[200px] px-3 py-3">
                         <div className="flex min-w-0 items-center gap-2">
                           <MemberAvatar
@@ -138,6 +145,13 @@ export function PendingDuesList({ items, emptyMessage }: PendingDuesListProps) {
           )}
         </CardContent>
       </Card>
+
+      <PaginationBar
+        page={page}
+        pageSize={pageSize}
+        total={matchingCount}
+        makeHref={(nextPage) => makeHref(nextPage, query)}
+      />
     </div>
   );
 }

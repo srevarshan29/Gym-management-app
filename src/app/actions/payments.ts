@@ -101,6 +101,7 @@ export async function logPayment(
   revalidatePath(`/members/${data.memberId}`);
   revalidatePath("/members");
   revalidatePath("/");
+  revalidatePath("/finance/pending-dues");
 
   if (!payment.isDuplicate) {
     notifyPaymentLogged(tenantGymId, payment.id).catch((err) =>

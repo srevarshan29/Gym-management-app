@@ -88,7 +88,7 @@ export function DashboardQuickActions({
       )}
     >
       {actions.map((action) => (
-        <div key={action.key} className="min-w-0">
+        <div key={action.key} className="min-w-0 last:odd:col-span-2 sm:last:odd:col-span-1">
           {action.node}
         </div>
       ))}

@@ -2,6 +2,8 @@
 
 import { ArrowRight, CalendarClock, CalendarX2 } from "lucide-react";
 
+import { useMediaQuery } from "@/hooks/use-media-query";
+
 import { LockedLink } from "@/components/navigation/locked-link";
 import { MemberAvatar } from "@/components/member-avatar";
 import { Button } from "@/components/ui/button";
@@ -36,6 +38,7 @@ export function DashboardRenewalPanel({
   limit = 5,
 }: DashboardRenewalPanelProps) {
   const isUpcoming = variant === "upcoming";
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const preview = items.slice(0, limit);
   const viewAllHref = isUpcoming ? "/renewals" : "/expired";
   const Icon = isUpcoming ? CalendarClock : CalendarX2;
@@ -74,51 +77,8 @@ export function DashboardRenewalPanel({
               : "No expired memberships."}
           </p>
         ) : (
-          <>
-            <ul className="divide-y md:hidden">
-              {preview.map((item) => {
-                const days = daysUntil(item.endDate);
-                return (
-                  <li key={item.id} className="px-4 py-3">
-                    <div className="flex items-start gap-3">
-                      <MemberAvatar
-                        name={item.name}
-                        photoUrl={item.photoUrl}
-                        gender={item.gender}
-                        seed={item.id}
-                        size="sm"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium">{item.name}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {item.packageName} · {formatDate(item.endDate)}
-                        </p>
-                        <div className="mt-1.5">
-                          {isUpcoming ? (
-                            <span className="inline-flex rounded-full bg-[hsl(var(--status-expiring)/0.15)] px-2.5 py-0.5 text-xs font-medium text-[hsl(var(--status-expiring))]">
-                              {days <= 0
-                                ? "Today"
-                                : `${days} day${days === 1 ? "" : "s"} left`}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-[hsl(var(--status-expired))]">
-                              {expiredDaysAgoLabel(item.endDate)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <Button asChild variant="outline" size="sm" className="shrink-0">
-                        <LockedLink href={`/members/${item.id}`}>
-                          View
-                        </LockedLink>
-                      </Button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-            <div className="hidden md:block">
-          <Table>
+          isDesktop ? (
+          <Table className="min-w-[36rem]">
             <TableHeader>
               <TableRow>
                 <TableHead>Member</TableHead>
@@ -180,8 +140,50 @@ export function DashboardRenewalPanel({
               })}
             </TableBody>
           </Table>
-            </div>
-          </>
+          ) : (
+            <ul className="divide-y">
+              {preview.map((item) => {
+                const days = daysUntil(item.endDate);
+                return (
+                  <li key={item.id} className="px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      <MemberAvatar
+                        name={item.name}
+                        photoUrl={item.photoUrl}
+                        gender={item.gender}
+                        seed={item.id}
+                        size="sm"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{item.name}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {item.packageName} · {formatDate(item.endDate)}
+                        </p>
+                        <div className="mt-1.5">
+                          {isUpcoming ? (
+                            <span className="inline-flex rounded-full bg-[hsl(var(--status-expiring)/0.15)] px-2.5 py-0.5 text-xs font-medium text-[hsl(var(--status-expiring))]">
+                              {days <= 0
+                                ? "Today"
+                                : `${days} day${days === 1 ? "" : "s"} left`}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-[hsl(var(--status-expired))]">
+                              {expiredDaysAgoLabel(item.endDate)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Button asChild variant="outline" size="sm" className="shrink-0">
+                        <LockedLink href={`/members/${item.id}`}>
+                          View
+                        </LockedLink>
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )
         )}
       </CardContent>
     </Card>

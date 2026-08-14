@@ -24,11 +24,6 @@ import {
   getFinancialSparklines,
   formatTrendLabel,
 } from "@/lib/dashboard-metrics";
-import {
-  filterExpiredMemberships,
-  filterUpcomingRenewals,
-  getMembersWithStatus,
-} from "@/lib/queries";
 import { getMonthlyRevenueTrend } from "@/lib/revenue";
 import { formatCurrency } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
@@ -88,10 +83,7 @@ async function DashboardBody({
   canManageMembers: boolean;
   canManagePackages: boolean;
 }) {
-  const members = await getMembersWithStatus(tenantGymId);
-  const metrics = await getDashboardMetrics(tenantGymId, members);
-  const upcoming = filterUpcomingRenewals(members);
-  const expired = filterExpiredMemberships(members);
+  const metrics = await getDashboardMetrics(tenantGymId);
 
   let monthRevenue = 0;
   let revenueTrend: Awaited<ReturnType<typeof getMonthlyRevenueTrend>> = [];
@@ -118,6 +110,7 @@ async function DashboardBody({
         tenantGymId,
         metrics.collectionExpected,
         metrics.pendingTotal,
+        trendResult.map((point) => point.revenue),
       );
       return [aggResult, trendResult, finResult] as const;
     })();
@@ -133,6 +126,7 @@ async function DashboardBody({
       tenantGymId,
       metrics.collectionExpected,
       metrics.pendingTotal,
+      [],
     );
   }
 
@@ -248,10 +242,10 @@ async function DashboardBody({
 
       <div className="mb-6 grid min-w-0 gap-6 lg:grid-cols-2">
         <div className="min-w-0">
-          <DashboardRenewalPanel variant="upcoming" items={upcoming} />
+          <DashboardRenewalPanel variant="upcoming" items={metrics.upcomingPreview} />
         </div>
         <div className="min-w-0">
-          <DashboardRenewalPanel variant="expired" items={expired} />
+          <DashboardRenewalPanel variant="expired" items={metrics.expiredPreview} />
         </div>
       </div>
 

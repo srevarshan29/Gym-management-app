@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { LockedLink } from "@/components/navigation/locked-link";
+import { useSharedNavigationLock } from "@/components/navigation/navigation-lock-provider";
 import { Search } from "lucide-react";
 import type { MemberGender } from "@prisma/client";
 
@@ -129,6 +130,8 @@ function MemberCard({ member }: { member: MembersListItem }) {
 }
 
 function MembersTable({ members }: { members: MembersListItem[] }) {
+  const { navigate } = useSharedNavigationLock();
+
   return (
     <Table className="min-w-[36rem]">
       <TableHeader>
@@ -145,16 +148,21 @@ function MembersTable({ members }: { members: MembersListItem[] }) {
       </TableHeader>
       <TableBody>
         {members.map((m) => (
-          <TableRow key={m.id} className="cursor-pointer">
+          <TableRow
+            key={m.id}
+            className="cursor-pointer"
+            onClick={() => {
+              navigate(`/members/${m.id}`);
+            }}
+          >
             <TableCell className="whitespace-nowrap px-3 py-3 font-mono text-muted-foreground">
-              <LockedLink href={`/members/${m.id}`} className="block">
-                #{formatMemberNumberDisplay(m.memberNumber)}
-              </LockedLink>
+              #{formatMemberNumberDisplay(m.memberNumber)}
             </TableCell>
             <TableCell className="min-w-0 max-w-[220px] px-3 py-3">
               <LockedLink
                 href={`/members/${m.id}`}
                 className="flex min-w-0 items-center gap-2"
+                onClick={(e) => e.stopPropagation()}
               >
                 <MemberAvatar
                   name={m.name}
@@ -208,7 +216,7 @@ function MembersTable({ members }: { members: MembersListItem[] }) {
 
 export function MembersList({ members }: MembersListProps) {
   const [query, setQuery] = React.useState("");
-  const isDesktop = useMediaQuery("(min-width: 768px)", true);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const filtered = React.useMemo(
     () => members.filter((member) => matchesSearch(member, query)),
     [members, query],

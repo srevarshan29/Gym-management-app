@@ -56,6 +56,7 @@ export function buildMonthlyRevenueTrendFromPayments(
 /**
  * Sum of Payment.amount per calendar month for the last N months,
  * scoped to a single gym. Months with no payments return revenue 0.
+ * Month keys use the Node process timezone so they match Date#getMonth().
  */
 export async function getMonthlyRevenueTrend(
   tenantGymId: string,
@@ -68,12 +69,25 @@ export async function getMonthlyRevenueTrend(
       now.getMonth() - (monthCount - 1),
       1,
     );
+    const nodeTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    const payments = await tx.payment.findMany({
-      where: { gymId: tenantGymId, paidAt: { gte: startMonth } },
-      select: { amount: true, paidAt: true },
-    });
+    const grouped = await tx.$queryRaw<{ month_key: string; revenue: number }[]>`
+      SELECT to_char("paidAt" AT TIME ZONE ${nodeTz}, 'YYYY-MM') AS month_key,
+             SUM(amount)::float AS revenue
+      FROM "Payment"
+      WHERE "gymId" = ${tenantGymId}
+        AND "paidAt" >= ${startMonth}
+      GROUP BY 1
+    `;
 
-    return buildMonthlyRevenueTrendFromPayments(payments, monthCount, now);
+    const buckets = buildMonthlyRevenueBuckets(monthCount, now);
+    const indexByKey = new Map(buckets.map((b, i) => [b.monthKey, i]));
+    for (const row of grouped) {
+      const idx = indexByKey.get(row.month_key);
+      if (idx !== undefined) {
+        buckets[idx].revenue += Number(row.revenue);
+      }
+    }
+    return buckets;
   });
 }

@@ -85,6 +85,19 @@ function createPrismaClient(): PrismaClient {
   });
 }
 
+function subscriptionHasWrittenOffAmount(client: PrismaClient): boolean {
+  const models = (
+    client as unknown as {
+      _runtimeDataModel?: {
+        models?: Record<string, { fields?: Record<string, unknown> }>;
+      };
+    }
+  )._runtimeDataModel?.models;
+  const fields = models?.Subscription?.fields;
+  if (!fields) return true;
+  return Object.prototype.hasOwnProperty.call(fields, "writtenOffAmount");
+}
+
 /** Drop a dev singleton created before the generated client included new models. */
 function isStaleDevPrismaClient(client: PrismaClient): boolean {
   if (process.env.NODE_ENV === "production") return false;
@@ -93,12 +106,15 @@ function isStaleDevPrismaClient(client: PrismaClient): boolean {
     gymEvent?: unknown;
     ledgerTransaction?: unknown;
     exercise?: { findFirst?: unknown };
+    staffLoginThrottle?: unknown;
   };
   return (
     typeof c.employee === "undefined" ||
     typeof c.gymEvent === "undefined" ||
     typeof c.ledgerTransaction === "undefined" ||
-    typeof c.exercise?.findFirst === "undefined"
+    typeof c.exercise?.findFirst === "undefined" ||
+    typeof c.staffLoginThrottle === "undefined" ||
+    !subscriptionHasWrittenOffAmount(client)
   );
 }
 

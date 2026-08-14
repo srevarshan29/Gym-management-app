@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { expiredDaysAgoLabel } from "@/lib/subscription";
 import { formatDate } from "@/lib/utils";
 
@@ -57,6 +58,7 @@ export function MembershipRenewalList({
   searchPlaceholder,
 }: MembershipRenewalListProps) {
   const [query, setQuery] = React.useState("");
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const filtered = React.useMemo(
     () => items.filter((item) => matchesSearch(item, query)),
     [items, query],
@@ -87,41 +89,8 @@ export function MembershipRenewalList({
               No members match your search.
             </p>
           ) : (
-            <>
-              <ul className="divide-y md:hidden">
-                {filtered.map((item) => {
-                  const endDate = new Date(item.endDate);
-                  return (
-                    <li key={item.id} className="px-4 py-3">
-                      <div className="flex items-start gap-3">
-                        <MemberAvatar
-                          name={item.name}
-                          photoUrl={item.photoUrl}
-                          gender={item.gender}
-                          seed={item.id}
-                          size="sm"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-medium">{item.name}</p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {item.packageName} · {formatDate(endDate)}
-                          </p>
-                          {variant === "expired" ? (
-                            <p className="mt-1 text-xs text-status-expired">
-                              {expiredDaysAgoLabel(endDate)}
-                            </p>
-                          ) : null}
-                        </div>
-                        <Button asChild variant="outline" size="sm" className="shrink-0">
-                          <LockedLink href={`/members/${item.id}`}>View</LockedLink>
-                        </Button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-              <div className="hidden md:block">
-            <Table>
+            isDesktop ? (
+            <Table className="min-w-[40rem]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Member</TableHead>
@@ -186,8 +155,40 @@ export function MembershipRenewalList({
                 })}
               </TableBody>
             </Table>
-              </div>
-            </>
+            ) : (
+              <ul className="divide-y">
+                {filtered.map((item) => {
+                  const endDate = new Date(item.endDate);
+                  return (
+                    <li key={item.id} className="px-4 py-3">
+                      <div className="flex items-start gap-3">
+                        <MemberAvatar
+                          name={item.name}
+                          photoUrl={item.photoUrl}
+                          gender={item.gender}
+                          seed={item.id}
+                          size="sm"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium">{item.name}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {item.packageName} · {formatDate(endDate)}
+                          </p>
+                          {variant === "expired" ? (
+                            <p className="mt-1 text-xs text-status-expired">
+                              {expiredDaysAgoLabel(endDate)}
+                            </p>
+                          ) : null}
+                        </div>
+                        <Button asChild variant="outline" size="sm" className="shrink-0">
+                          <LockedLink href={`/members/${item.id}`}>View</LockedLink>
+                        </Button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )
           )}
         </CardContent>
       </Card>

@@ -103,8 +103,9 @@ export async function createReceiptForPayment(
       _sum: { amount: true },
     });
     const paidTotal = Number(paidAgg._sum.amount ?? 0);
+    const writtenOff = Number(payment.subscription.writtenOffAmount ?? 0);
     amountOwed = new Prisma.Decimal(owed);
-    balanceAfter = new Prisma.Decimal(pendingAmount(owed, paidTotal));
+    balanceAfter = new Prisma.Decimal(pendingAmount(owed, paidTotal, writtenOff));
   }
 
   return tx.receipt.create({

@@ -43,11 +43,11 @@ export async function getMemberPortalOverview(
       memberNumber: true,
       subscriptions: {
         orderBy: { endDate: "desc" },
-        take: 1,
         select: {
           endDate: true,
           startDate: true,
           priceAtPurchase: true,
+          writtenOffAmount: true,
           package: { select: { name: true } },
           payments: { select: { amount: true } },
         },
@@ -78,10 +78,21 @@ export async function getMemberPortalOverview(
   );
   const planTotalDays = inclusiveDayCount(current.startDate, current.endDate);
 
-  const balance = computeSubscriptionBalance(
+  const currentBalance = computeSubscriptionBalance(
     Number(current.priceAtPurchase),
     sumPaymentAmounts(current.payments),
+    Number(current.writtenOffAmount),
   );
+  const pendingAmount = member.subscriptions.reduce((sum, sub) => {
+    return (
+      sum +
+      computeSubscriptionBalance(
+        Number(sub.priceAtPurchase),
+        sumPaymentAmounts(sub.payments),
+        Number(sub.writtenOffAmount),
+      ).pendingAmount
+    );
+  }, 0);
 
   return {
     memberName: member.name,
@@ -90,8 +101,8 @@ export async function getMemberPortalOverview(
     status: statusFromEndDate(current.endDate),
     daysRemaining,
     planTotalDays,
-    paidAmount: balance.paidAmount,
-    pendingAmount: balance.pendingAmount,
+    paidAmount: currentBalance.paidAmount,
+    pendingAmount,
     endDate: current.endDate,
   };
 }

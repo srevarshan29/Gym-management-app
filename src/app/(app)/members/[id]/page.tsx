@@ -3,7 +3,12 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Download, Pencil, Phone } from "lucide-react";
 
 import { requireGym } from "@/lib/session";
-import { canViewFinancials, canDeleteMembers, canLogPayments } from "@/lib/permissions";
+import {
+  canViewFinancials,
+  canDeleteMembers,
+  canLogPayments,
+  canWriteOffDues,
+} from "@/lib/permissions";
 import { withTenant } from "@/lib/db-context";
 import { getMemberDetail } from "@/lib/queries";
 import { durationLabel, statusFromEndDate } from "@/lib/subscription";
@@ -20,6 +25,7 @@ import { PendingDuesBadge, StatusBadge } from "@/components/status-badge";
 import { PtBadge } from "@/components/pt-badge";
 import { RenewDialog } from "@/components/renew-dialog";
 import { PaymentDialog } from "@/components/payment-dialog";
+import { WriteOffDuesButton } from "@/components/write-off-dues-button";
 import { DeleteMemberButton } from "@/components/delete-member-button";
 import { MemberPolicyConsentSection } from "@/components/member-policy-consent-section";
 import { MemberPortalStaffCard } from "@/components/member-portal/member-portal-staff-card";
@@ -63,6 +69,7 @@ export default async function MemberProfilePage({
   const showFinancials = canViewFinancials(user.role);
   const canLog = canLogPayments(user.role);
   const canDelete = canDeleteMembers(user.role);
+  const canWriteOff = canWriteOffDues(user.role);
 
   const member = await getMemberDetail(user.gymId, params.id);
   if (!member) notFound();
@@ -83,12 +90,21 @@ export default async function MemberProfilePage({
     (a, b) => b.endDate.getTime() - a.endDate.getTime(),
   )[0];
   const status = statusFromEndDate(current?.endDate);
-  const currentBalance = current
-    ? computeSubscriptionBalance(
-        Number(current.priceAtPurchase),
-        sumPaymentAmounts(current.payments),
-      )
-    : null;
+  const balancesBySubId = new Map(
+    member.subscriptions.map((s) => [
+      s.id,
+      computeSubscriptionBalance(
+        Number(s.priceAtPurchase),
+        sumPaymentAmounts(s.payments),
+        Number(s.writtenOffAmount),
+      ),
+    ]),
+  );
+  const currentBalance = current ? balancesBySubId.get(current.id) ?? null : null;
+  const totalPending = [...balancesBySubId.values()].reduce(
+    (sum, b) => sum + b.pendingAmount,
+    0,
+  );
   const firstSubscription = [...member.subscriptions].sort(
     (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
   )[0];
@@ -143,7 +159,7 @@ export default async function MemberProfilePage({
               </h1>
               <StatusBadge status={status} />
               {member.isPt ? <PtBadge /> : null}
-              {currentBalance && currentBalance.pendingAmount > 0 ? (
+              {totalPending > 0 ? (
                 <PendingDuesBadge />
               ) : null}
             </div>
@@ -223,8 +239,8 @@ export default async function MemberProfilePage({
                   mono
                 />
                 <Detail
-                  label="Pending"
-                  value={formatCurrency(currentBalance.pendingAmount)}
+                  label="Pending (all cycles)"
+                  value={formatCurrency(totalPending)}
                   mono
                 />
               </>
@@ -282,10 +298,16 @@ export default async function MemberProfilePage({
                     <TableHead>Status</TableHead>
                     <TableHead>Added by</TableHead>
                     {showFinancials ? <TableHead>Price</TableHead> : null}
+                    {canLog ? <TableHead>Pending</TableHead> : null}
+                    {canLog || canWriteOff ? (
+                      <TableHead className="text-right">Dues</TableHead>
+                    ) : null}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {member.subscriptions.map((s) => (
+                  {member.subscriptions.map((s) => {
+                    const cycleBalance = balancesBySubId.get(s.id)!;
+                    return (
                     <TableRow key={s.id}>
                       <TableCell className="font-medium">
                         {s.package.name}
@@ -303,8 +325,44 @@ export default async function MemberProfilePage({
                           {formatCurrency(Number(s.priceAtPurchase))}
                         </TableCell>
                       ) : null}
+                      {canLog ? (
+                        <TableCell className="whitespace-nowrap font-mono">
+                          {cycleBalance.pendingAmount > 0
+                            ? formatCurrency(cycleBalance.pendingAmount)
+                            : cycleBalance.writtenOffAmount > 0
+                              ? "Written off"
+                              : "—"}
+                        </TableCell>
+                      ) : null}
+                      {canLog || canWriteOff ? (
+                        <TableCell className="text-right">
+                          {cycleBalance.pendingAmount > 0 ? (
+                            <div className="flex flex-wrap justify-end gap-2">
+                              {canLog ? (
+                                <PaymentDialog
+                                  memberId={member.id}
+                                  memberName={member.name}
+                                  subscriptionId={s.id}
+                                  defaultAmount={cycleBalance.pendingAmount}
+                                  balanceInfo={cycleBalance}
+                                  triggerVariant="outline"
+                                  triggerLabel="Collect"
+                                />
+                              ) : null}
+                              {canWriteOff ? (
+                                <WriteOffDuesButton
+                                  subscriptionId={s.id}
+                                  amountDue={cycleBalance.pendingAmount}
+                                  packageName={s.package.name}
+                                />
+                              ) : null}
+                            </div>
+                          ) : null}
+                        </TableCell>
+                      ) : null}
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}

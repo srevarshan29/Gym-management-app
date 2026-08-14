@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 
 import { requireGym } from "@/lib/session";
 import { canViewMemberBalances } from "@/lib/permissions";
-import { getPendingMembers } from "@/lib/queries";
+import {
+  getPendingDuesPage,
+  PENDING_DUES_PAGE_SIZE,
+} from "@/lib/pending-dues-queries";
 import { formatCurrency } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { PendingDuesList } from "@/components/pending-dues-list";
@@ -13,13 +16,20 @@ import {
   PageHeaderSkeleton,
 } from "@/components/page-loading-skeletons";
 
-export default async function PendingDuesPage() {
+export default async function PendingDuesPage({
+  searchParams,
+}: {
+  searchParams?: { page?: string; q?: string };
+}) {
   const user = await requireGym();
   if (!canViewMemberBalances(user.role)) redirect("/");
 
+  const page = Number(searchParams?.page ?? "1");
+  const q = searchParams?.q ?? "";
+
   return (
     <Suspense fallback={<PendingDuesPageSkeleton />}>
-      <PendingDuesPageContent gymId={user.gymId} />
+      <PendingDuesPageContent gymId={user.gymId} page={page} q={q} />
     </Suspense>
   );
 }
@@ -33,10 +43,30 @@ function PendingDuesPageSkeleton() {
   );
 }
 
-async function PendingDuesPageContent({ gymId }: { gymId: string }) {
-  const pending = await getPendingMembers(gymId);
+function pendingDuesHref(page: number, q: string): string {
+  const params = new URLSearchParams();
+  if (page > 1) params.set("page", String(page));
+  if (q.trim()) params.set("q", q.trim());
+  const qs = params.toString();
+  return qs ? `/finance/pending-dues?${qs}` : "/finance/pending-dues";
+}
 
-  const items = pending.map((m) => ({
+async function PendingDuesPageContent({
+  gymId,
+  page,
+  q,
+}: {
+  gymId: string;
+  page: number;
+  q: string;
+}) {
+  const result = await getPendingDuesPage(gymId, {
+    page,
+    pageSize: PENDING_DUES_PAGE_SIZE,
+    q,
+  });
+
+  const items = result.rows.map((m) => ({
     memberId: m.memberId,
     memberNumber: m.memberNumber,
     memberName: m.memberName,
@@ -46,18 +76,17 @@ async function PendingDuesPageContent({ gymId }: { gymId: string }) {
     packageName: m.packageName,
     amountDue: m.amountDue,
     endDate: m.endDate.toISOString(),
+    subscriptionId: m.subscriptionId,
   }));
-
-  const totalDue = pending.reduce((sum, m) => sum + m.amountDue, 0);
 
   return (
     <div>
       <PageHeader
         title="Pending Dues"
         description={
-          pending.length === 0
-            ? "No outstanding balances on current subscriptions."
-            : `${pending.length} member${pending.length === 1 ? "" : "s"} owe ${formatCurrency(totalDue)} total. Sorted by highest balance first.`
+          result.unpaidCycleCount === 0
+            ? "No outstanding subscription balances."
+            : `${result.unpaidCycleCount} unpaid cycle${result.unpaidCycleCount === 1 ? "" : "s"} totaling ${formatCurrency(result.totalDue)}. Includes prior periods after renewal.`
         }
       />
 
@@ -71,7 +100,13 @@ async function PendingDuesPageContent({ gymId }: { gymId: string }) {
 
       <PendingDuesList
         items={items}
-        emptyMessage="Everyone is paid up. No pending dues on current subscriptions."
+        emptyMessage="Everyone is paid up. No pending dues."
+        query={q}
+        page={result.page}
+        pageSize={result.pageSize}
+        matchingCount={result.matchingCount}
+        makeHref={pendingDuesHref}
+        searchAction="/finance/pending-dues"
       />
     </div>
   );

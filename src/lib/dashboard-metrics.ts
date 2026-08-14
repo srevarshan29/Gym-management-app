@@ -1,6 +1,18 @@
 import { withTenant } from "@/lib/db-context";
-import { getMembersWithStatus, type MemberListItem } from "@/lib/queries";
+import type { MembershipRenewalRow } from "@/lib/queries";
 import { formatCurrency } from "@/lib/utils";
+import {
+  queryAllCyclePendingTotals,
+  queryCurrentCycleCollection,
+  queryDashboardStatusCounts,
+  queryExpiredMembershipPreview,
+  queryMemberSparklines,
+  queryPackageDistribution,
+  queryUpcomingRenewalPreview,
+  queryWeeklyPaymentCounts,
+  statusCutoffs,
+  type WeekBucket,
+} from "@/lib/dashboard-queries";
 
 export type PackageDistributionPoint = {
   name: string;
@@ -26,7 +38,8 @@ export type DashboardMetrics = {
   activeMembersTrendLabel: string | undefined;
   expiringSoonCount: number;
   expiredCount: number;
-  expiringSoon: MemberListItem[];
+  upcomingPreview: MembershipRenewalRow[];
+  expiredPreview: MembershipRenewalRow[];
   newMembersThisMonth: number;
   newMembersLastMonth: number;
   newMembersHint: string;
@@ -44,8 +57,6 @@ export type DashboardMetrics = {
 
 const SPARKLINE_WEEKS = 6;
 
-type WeekBucket = { start: Date; end: Date };
-
 function lastNWeekBuckets(count: number, reference = new Date()): WeekBucket[] {
   const buckets: WeekBucket[] = [];
   for (let i = count - 1; i >= 0; i--) {
@@ -58,62 +69,6 @@ function lastNWeekBuckets(count: number, reference = new Date()): WeekBucket[] {
     buckets.push({ start, end });
   }
   return buckets;
-}
-
-function inRange(date: Date, start: Date, end: Date): boolean {
-  const t = date.getTime();
-  return t >= start.getTime() && t <= end.getTime();
-}
-
-function computeSparklines(
-  members: MemberListItem[],
-  reference = new Date(),
-): DashboardSparklines {
-  const buckets = lastNWeekBuckets(SPARKLINE_WEEKS, reference);
-  const now = reference.getTime();
-
-  const newMembers: number[] = [];
-  const activeMembers: number[] = [];
-  const expiringSoon: number[] = [];
-  const expired: number[] = [];
-
-  for (const bucket of buckets) {
-    let newCount = 0;
-    let activeCount = 0;
-    let expiringCount = 0;
-    let expiredCount = 0;
-    const expiringWindowEnd = new Date(bucket.end);
-    expiringWindowEnd.setDate(expiringWindowEnd.getDate() + 7);
-
-    for (const m of members) {
-      if (inRange(m.createdAt, bucket.start, bucket.end)) {
-        newCount++;
-      }
-
-      const endDate = m.endDate;
-      if (endDate) {
-        if (endDate.getTime() >= bucket.end.getTime()) {
-          activeCount++;
-        }
-        if (
-          endDate.getTime() > bucket.end.getTime() &&
-          endDate.getTime() <= expiringWindowEnd.getTime()
-        ) {
-          expiringCount++;
-        }
-        if (inRange(endDate, bucket.start, bucket.end) && endDate.getTime() < now) {
-          expiredCount++;
-        }
-      }
-    }
-
-    newMembers.push(newCount);
-    activeMembers.push(activeCount);
-    expiringSoon.push(expiringCount);
-    expired.push(expiredCount);
-  }
-
-  return { activeMembers, newMembers, expiringSoon, expired };
 }
 
 function monthBounds(reference: Date) {
@@ -143,23 +98,12 @@ export function formatTrendLabel(
   return `${arrow} ${Math.abs(pct)}% from ${periodLabel}`;
 }
 
-function sparklineTrendLabel(values: number[], periodLabel = "last week"): string | undefined {
+function sparklineTrendLabel(
+  values: number[],
+  periodLabel = "last week",
+): string | undefined {
   if (values.length < 2) return undefined;
   return formatTrendLabel(values[values.length - 1], values[values.length - 2], periodLabel);
-}
-
-function computePackageDistribution(
-  members: MemberListItem[],
-): PackageDistributionPoint[] {
-  const counts = new Map<string, number>();
-  for (const m of members) {
-    if (m.status !== "ACTIVE" && m.status !== "EXPIRING_SOON") continue;
-    const name = m.packageName ?? "No package";
-    counts.set(name, (counts.get(name) ?? 0) + 1);
-  }
-  return [...counts.entries()]
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count);
 }
 
 /** Visual trend series for financial KPI cards (approximate for pending). */
@@ -167,46 +111,19 @@ export async function getFinancialSparklines(
   tenantGymId: string,
   collectionExpected: number,
   pendingTotal: number,
+  monthlyRevenue: number[],
   monthCount = 6,
 ): Promise<FinancialSparklines> {
-  const now = new Date();
-  const startMonth = new Date(
-    now.getFullYear(),
-    now.getMonth() - (monthCount - 1),
-    1,
+  const weekBuckets = lastNWeekBuckets(SPARKLINE_WEEKS);
+
+  const weeklyPaymentCounts = await withTenant(tenantGymId, (tx) =>
+    queryWeeklyPaymentCounts(tx, tenantGymId, weekBuckets),
   );
 
-  const monthBuckets: { key: string; start: Date; end: Date }[] = [];
-  for (let i = monthCount - 1; i >= 0; i--) {
-    const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-    monthBuckets.push({
-      key: `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}`,
-      start,
-      end,
-    });
-  }
-
-  const weekBuckets = lastNWeekBuckets(SPARKLINE_WEEKS, now);
-
-  const payments = await withTenant(tenantGymId, (tx) =>
-    tx.payment.findMany({
-      where: { gymId: tenantGymId, paidAt: { gte: startMonth } },
-      select: { amount: true, paidAt: true },
-    }),
-  );
-
-  const revenue = monthBuckets.map(() => 0);
-  const monthIndex = new Map(monthBuckets.map((b, i) => [b.key, i]));
-
-  for (const payment of payments) {
-    const d = new Date(payment.paidAt);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const idx = monthIndex.get(key);
-    if (idx !== undefined) {
-      revenue[idx] += Number(payment.amount);
-    }
-  }
+  const revenue =
+    monthlyRevenue.length > 0
+      ? monthlyRevenue
+      : Array.from({ length: monthCount }, () => 0);
 
   const monthlyExpected =
     collectionExpected > 0 ? collectionExpected / monthCount : 0;
@@ -219,16 +136,6 @@ export async function getFinancialSparklines(
         : 0,
   );
 
-  const weeklyPaymentCounts = weekBuckets.map((bucket) => {
-    let count = 0;
-    for (const payment of payments) {
-      if (inRange(new Date(payment.paidAt), bucket.start, bucket.end)) {
-        count++;
-      }
-    }
-    return count;
-  });
-
   const maxWeekly = Math.max(...weeklyPaymentCounts, 1);
   const pending = weeklyPaymentCounts.map((count) => {
     const factor = 0.55 + 0.45 * (1 - count / maxWeekly);
@@ -240,65 +147,86 @@ export async function getFinancialSparklines(
 
 export async function getDashboardMetrics(
   tenantGymId: string,
-  membersPreloaded?: MemberListItem[],
 ): Promise<DashboardMetrics> {
   const now = new Date();
   const { startThisMonth, startLastMonth } = monthBounds(now);
+  const cutoffs = statusCutoffs(now);
+  const weekBuckets = lastNWeekBuckets(SPARKLINE_WEEKS, now);
 
-  const members = membersPreloaded ?? (await getMembersWithStatus(tenantGymId));
+  const {
+    status,
+    pending,
+    collection,
+    packageDistribution,
+    upcomingPreview,
+    expiredPreview,
+    sparkRows,
+    newMembersThisMonth,
+    newMembersLastMonth,
+  } = await withTenant(tenantGymId, async (tx) => {
+    const [
+      statusCounts,
+      pendingTotals,
+      collectionTotals,
+      packages,
+      upcoming,
+      expired,
+      sparks,
+      thisMonth,
+      lastMonth,
+    ] = await Promise.all([
+      queryDashboardStatusCounts(tx, tenantGymId, cutoffs),
+      queryAllCyclePendingTotals(tx, tenantGymId),
+      queryCurrentCycleCollection(tx, tenantGymId),
+      queryPackageDistribution(tx, tenantGymId, cutoffs),
+      queryUpcomingRenewalPreview(tx, tenantGymId, cutoffs),
+      queryExpiredMembershipPreview(tx, tenantGymId, cutoffs),
+      queryMemberSparklines(tx, tenantGymId, weekBuckets, now),
+      tx.member.count({
+        where: { gymId: tenantGymId, createdAt: { gte: startThisMonth } },
+      }),
+      tx.member.count({
+        where: {
+          gymId: tenantGymId,
+          createdAt: { gte: startLastMonth, lt: startThisMonth },
+        },
+      }),
+    ]);
+    return {
+      status: statusCounts,
+      pending: pendingTotals,
+      collection: collectionTotals,
+      packageDistribution: packages,
+      upcomingPreview: upcoming,
+      expiredPreview: expired,
+      sparkRows: sparks,
+      newMembersThisMonth: thisMonth,
+      newMembersLastMonth: lastMonth,
+    };
+  });
 
-  const [newMembersThisMonth, newMembersLastMonth] = await withTenant(
-    tenantGymId,
-    async (tx) => {
-      const [thisMonth, lastMonth] = await Promise.all([
-        tx.member.count({
-          where: { gymId: tenantGymId, createdAt: { gte: startThisMonth } },
-        }),
-        tx.member.count({
-          where: {
-            gymId: tenantGymId,
-            createdAt: { gte: startLastMonth, lt: startThisMonth },
-          },
-        }),
-      ]);
-      return [thisMonth, lastMonth] as const;
-    },
-  );
-
-  const activeCount = members.filter(
-    (m) => m.status === "ACTIVE" || m.status === "EXPIRING_SOON",
-  ).length;
-
-  const expiringSoon = members
-    .filter((m) => m.status === "EXPIRING_SOON")
-    .sort((a, b) => (a.endDate?.getTime() ?? 0) - (b.endDate?.getTime() ?? 0));
-
-  const expiredCount = members.filter((m) => m.status === "EXPIRED").length;
-
-  let collectionCollected = 0;
-  let collectionExpected = 0;
-  for (const m of members) {
-    if (m.subsAmount == null) continue;
-    collectionExpected += m.subsAmount;
-    collectionCollected += m.paidAmount ?? 0;
-  }
   const collectionRatePercent =
-    collectionExpected > 0
-      ? Math.round((collectionCollected / collectionExpected) * 100)
+    collection.collectionExpected > 0
+      ? Math.round(
+          (collection.collectionCollected / collection.collectionExpected) * 100,
+        )
       : 100;
 
-  const pendingMembers = members.filter((m) => m.pendingAmount > 0);
-  const pendingTotal = pendingMembers.reduce((sum, m) => sum + m.pendingAmount, 0);
-
-  const sparklines = computeSparklines(members, now);
+  const sparklines: DashboardSparklines = {
+    newMembers: sparkRows.map((r) => r.newCount),
+    activeMembers: sparkRows.map((r) => r.activeCount),
+    expiringSoon: sparkRows.map((r) => r.expiringCount),
+    expired: sparkRows.map((r) => r.expiredCount),
+  };
 
   return {
-    totalMembers: members.length,
-    activeCount,
+    totalMembers: status.totalMembers,
+    activeCount: status.activeOrExpiringCount,
     activeMembersTrendLabel: sparklineTrendLabel(sparklines.activeMembers),
-    expiringSoonCount: expiringSoon.length,
-    expiredCount,
-    expiringSoon,
+    expiringSoonCount: status.expiringSoonCount,
+    expiredCount: status.expiredCount,
+    upcomingPreview,
+    expiredPreview,
     newMembersThisMonth,
     newMembersLastMonth,
     newMembersHint: formatNewMembersHint(newMembersThisMonth, newMembersLastMonth),
@@ -307,13 +235,13 @@ export async function getDashboardMetrics(
       newMembersLastMonth,
     ),
     collectionRatePercent,
-    collectionCollected,
-    collectionExpected,
-    collectionHint: `${formatCurrency(collectionCollected)} / ${formatCurrency(collectionExpected)} expected`,
-    pendingTotal,
-    pendingMemberCount: pendingMembers.length,
-    pendingHint: `${formatCurrency(pendingTotal)} • ${pendingMembers.length} member${pendingMembers.length === 1 ? "" : "s"}`,
-    packageDistribution: computePackageDistribution(members),
+    collectionCollected: collection.collectionCollected,
+    collectionExpected: collection.collectionExpected,
+    collectionHint: `${formatCurrency(collection.collectionCollected)} / ${formatCurrency(collection.collectionExpected)} expected`,
+    pendingTotal: pending.pendingTotal,
+    pendingMemberCount: pending.pendingMemberCount,
+    pendingHint: `${formatCurrency(pending.pendingTotal)} • ${pending.pendingMemberCount} member${pending.pendingMemberCount === 1 ? "" : "s"}`,
+    packageDistribution,
     sparklines,
   };
 }

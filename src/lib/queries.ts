@@ -38,6 +38,7 @@ type SubscriptionRow = {
   endDate: Date;
   createdAt: Date;
   priceAtPurchase: Prisma.Decimal;
+  writtenOffAmount: Prisma.Decimal;
   package: { name: string };
   createdBy: { name: string } | null;
 };
@@ -56,6 +57,7 @@ const subscriptionSelect = {
   endDate: true,
   createdAt: true,
   priceAtPurchase: true,
+  writtenOffAmount: true,
   package: { select: { name: true } },
   createdBy: { select: { name: true } },
 } as const;
@@ -105,23 +107,41 @@ async function fetchMembersWithStatus(
   const firstIds = firstIdRows.map((row) => row.id);
   const uniqueIds = [...new Set([...currentIds, ...firstIds])];
 
-  const [subscriptions, paymentGroups] = await Promise.all([
+  const [subscriptions, paymentGroups, allSubsForBalance] = await Promise.all([
     uniqueIds.length === 0
       ? Promise.resolve([] as SubscriptionRow[])
       : tx.subscription.findMany({
           where: { gymId: tenantGymId, id: { in: uniqueIds } },
           select: subscriptionSelect,
         }),
-    includeBalance && currentIds.length > 0
+    includeBalance
       ? tx.payment.groupBy({
           by: ["subscriptionId"],
           where: {
             gymId: tenantGymId,
-            subscriptionId: { in: currentIds },
+            subscriptionId: { not: null },
           },
           _sum: { amount: true },
         })
       : Promise.resolve([]),
+    includeBalance
+      ? tx.subscription.findMany({
+          where: { gymId: tenantGymId },
+          select: {
+            id: true,
+            memberId: true,
+            priceAtPurchase: true,
+            writtenOffAmount: true,
+          },
+        })
+      : Promise.resolve(
+          [] as {
+            id: string;
+            memberId: string;
+            priceAtPurchase: Prisma.Decimal;
+            writtenOffAmount: Prisma.Decimal;
+          }[],
+        ),
   ]);
 
   const byId = new Map(subscriptions.map((row) => [row.id, row]));
@@ -143,6 +163,20 @@ async function fetchMembersWithStatus(
     }
   }
 
+  const pendingByMember = new Map<string, number>();
+  for (const sub of allSubsForBalance) {
+    const cycle = computeSubscriptionBalance(
+      Number(sub.priceAtPurchase),
+      paidBySubId.get(sub.id) ?? 0,
+      Number(sub.writtenOffAmount),
+    );
+    if (cycle.pendingAmount <= 0) continue;
+    pendingByMember.set(
+      sub.memberId,
+      (pendingByMember.get(sub.memberId) ?? 0) + cycle.pendingAmount,
+    );
+  }
+
   return members.map((m) => {
     const current = currentSubByMember.get(m.id);
     const balance =
@@ -150,6 +184,7 @@ async function fetchMembersWithStatus(
         ? computeSubscriptionBalance(
             Number(current.priceAtPurchase),
             paidBySubId.get(current.id) ?? 0,
+            Number(current.writtenOffAmount),
           )
         : null;
     const trainer =
@@ -172,7 +207,7 @@ async function fetchMembersWithStatus(
       status: statusFromEndDate(current?.endDate),
       subsAmount: balance?.subsAmount ?? null,
       paidAmount: balance?.paidAmount ?? null,
-      pendingAmount: balance?.pendingAmount ?? 0,
+      pendingAmount: includeBalance ? (pendingByMember.get(m.id) ?? 0) : 0,
       addedByName: addedByNameByMember.get(m.id) ?? null,
       isPt: m.isPt,
       trainerId: m.trainerId,
@@ -205,6 +240,10 @@ export async function getMembersDirectory(
   );
 }
 
+/**
+ * One unpaid subscription cycle. Loaded via getPendingDuesPage
+ * (SQL + pagination; includes prior cycles after renewal).
+ */
 export type PendingMember = {
   memberId: string;
   memberNumber: number;
@@ -220,38 +259,6 @@ export type PendingMember = {
   endDate: Date;
   status: SubscriptionStatus;
 };
-
-/**
- * Members whose current subscription has an outstanding balance
- * (priceAtPurchase minus linked payments, floored at 0).
- */
-export async function getPendingMembers(
-  tenantGymId: string,
-): Promise<PendingMember[]> {
-  const members = await getMembersWithStatus(tenantGymId);
-
-  return members
-    .filter(
-      (m): m is MemberListItem & { currentSubscriptionId: string } =>
-        m.pendingAmount > 0 && m.currentSubscriptionId != null,
-    )
-    .map((m) => ({
-      memberId: m.id,
-      memberNumber: m.memberNumber,
-      memberName: m.name,
-      phone: m.phone,
-      photoUrl: m.photoUrl,
-      gender: m.gender,
-      subscriptionId: m.currentSubscriptionId,
-      packageName: m.packageName ?? "—",
-      subsAmount: m.subsAmount ?? 0,
-      paidAmount: m.paidAmount ?? 0,
-      amountDue: m.pendingAmount,
-      endDate: m.endDate!,
-      status: m.status,
-    }))
-    .sort((a, b) => b.amountDue - a.amountDue);
-}
 
 export type SubscriptionSummaryCounts = {
   active: number;

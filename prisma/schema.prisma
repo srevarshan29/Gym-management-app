@@ -98,8 +98,17 @@ model User {
   recordedPayments     Payment[]      @relation("PaymentRecordedBy")
   trainedMembers       Member[]       @relation("MemberTrainer")
   ledgerTransactions   LedgerTransaction[] @relation("LedgerCreatedBy")
+  writtenOffSubscriptions Subscription[] @relation("SubscriptionWrittenOffBy")
 
   @@index([gymId])
+}
+
+// Failed staff Credentials attempts (IP + email buckets). Platform-scoped, not gym data.
+model StaffLoginThrottle {
+  key          String   @id
+  failCount    Int      @default(0)
+  windowEndsAt DateTime
+  updatedAt    DateTime @updatedAt
 }
 
 // Membership packages (name, price, duration).
@@ -126,6 +135,7 @@ model Member {
   memberNumber Int
   name         String
   phone        String
+  /// Optional; stored lowercased. Uniqueness is per-gym and case-insensitive in app code (create/update/portal enable + login fail-closed). Multiple NULLs are allowed. Not unique across gyms.
   email        String?
   photoUrl     String?
   gender       MemberGender @default(PREFER_NOT_TO_SAY)
@@ -426,6 +436,9 @@ model Subscription {
   startDate       DateTime
   endDate         DateTime
   priceAtPurchase Decimal  @db.Decimal(10, 2)
+  writtenOffAmount Decimal  @default(0) @db.Decimal(10, 2)
+  writtenOffAt    DateTime?
+  writtenOffById  String?
   createdById     String?
   createdAt       DateTime @default(now())
 
@@ -433,12 +446,14 @@ model Subscription {
   member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
   package   Package  @relation(fields: [packageId], references: [id], onDelete: Restrict)
   createdBy User?    @relation("SubscriptionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  writtenOffBy User? @relation("SubscriptionWrittenOffBy", fields: [writtenOffById], references: [id], onDelete: SetNull)
   payments  Payment[]
 
   @@index([gymId])
   @@index([memberId])
   @@index([packageId])
   @@index([createdById])
+  @@index([writtenOffById])
   @@index([endDate])
 }
 

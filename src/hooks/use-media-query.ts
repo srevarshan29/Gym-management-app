@@ -2,17 +2,15 @@
 
 import * as React from "react";
 
-/** Subscribes to a CSS media query. `defaultValue` is used for SSR. */
+/** Subscribes to a CSS media query. `defaultValue` is the SSR / first-hydration snapshot. */
 export function useMediaQuery(query: string, defaultValue = false): boolean {
-  const [matches, setMatches] = React.useState(defaultValue);
-
-  React.useEffect(() => {
-    const mql = window.matchMedia(query);
-    const update = () => setMatches(mql.matches);
-    update();
-    mql.addEventListener("change", update);
-    return () => mql.removeEventListener("change", update);
-  }, [query]);
-
-  return matches;
+  return React.useSyncExternalStore(
+    (onChange) => {
+      const mql = window.matchMedia(query);
+      mql.addEventListener("change", onChange);
+      return () => mql.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia(query).matches,
+    () => defaultValue,
+  );
 }

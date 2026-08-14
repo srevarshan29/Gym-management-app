@@ -7,6 +7,7 @@ import {
   MEMBER_PORTAL_GYM_TOKEN_COOKIE,
   normalizeMemberEmail,
 } from "@/lib/member-portal/constants";
+import { findGymMembersByEmail } from "@/lib/member-portal/email";
 import { memberAuthConfig } from "@/member-auth.config";
 
 const MEMBER_AUTH_ERROR_PATH = "/member/auth-error";
@@ -73,25 +74,17 @@ export const {
           return MEMBER_AUTH_ERROR_PATH;
         }
 
-        const member = await withPlatformLookup((tx) =>
-          tx.member.findFirst({
-            where: {
-              gymId: gym.id,
-              email: { equals: normalizedEmail, mode: "insensitive" },
-              portalEnabledAt: { not: null },
-            },
-            select: {
-              id: true,
-              gymId: true,
-              name: true,
-              memberNumber: true,
-            },
+        const matches = await withPlatformLookup((tx) =>
+          findGymMembersByEmail(tx, gym.id, normalizedEmail, {
+            portalEnabledOnly: true,
           }),
         );
 
-        if (!member) {
+        if (matches.length !== 1) {
           return MEMBER_AUTH_ERROR_PATH;
         }
+
+        const member = matches[0];
 
         const u = user as {
           memberId?: string;

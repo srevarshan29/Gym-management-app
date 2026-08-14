@@ -5,6 +5,12 @@ import { z } from "zod";
 
 import { withPlatformLookup } from "@/lib/db-context";
 import { authConfig } from "@/auth.config";
+import {
+  checkStaffLoginThrottle,
+  clearStaffLoginFailures,
+  getStaffLoginClientIp,
+  recordStaffLoginFailure,
+} from "@/lib/staff-login-throttle";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -24,13 +30,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
+        const ip = await getStaffLoginClientIp();
+        const throttle = await checkStaffLoginThrottle(email, ip);
+        if (!throttle.ok) {
+          return null;
+        }
+
         const user = await withPlatformLookup((tx) =>
           tx.user.findUnique({ where: { email } }),
         );
-        if (!user) return null;
+        if (!user) {
+          await recordStaffLoginFailure(email, ip);
+          return null;
+        }
 
         const passwordMatches = await bcrypt.compare(password, user.passwordHash);
-        if (!passwordMatches) return null;
+        if (!passwordMatches) {
+          await recordStaffLoginFailure(email, ip);
+          return null;
+        }
+
+        await clearStaffLoginFailures(email, ip);
 
         return {
           id: user.id,

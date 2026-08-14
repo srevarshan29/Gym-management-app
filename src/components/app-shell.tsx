@@ -44,14 +44,14 @@ export function AppShell({
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b bg-card px-3 sm:h-16 sm:gap-3 sm:px-6">
-            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <header className="flex h-14 shrink-0 items-center justify-between gap-1.5 border-b bg-card px-2 sm:h-16 sm:gap-3 sm:px-6">
+            <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
               <SidebarToggle />
               <div className="truncate font-display text-base font-bold sm:text-lg md:hidden">
                 GymDesk
               </div>
             </div>
-            <div className="flex shrink-0 items-center gap-1 sm:gap-2 lg:gap-3">
+            <div className="flex shrink-0 items-center gap-0.5 sm:gap-2 lg:gap-3">
               <div className="hidden min-w-0 text-right xl:block">
                 <div className="truncate text-sm font-medium leading-tight">
                   {user.name ?? user.email}
@@ -60,7 +60,7 @@ export function AppShell({
                   {user.email}
                 </div>
               </div>
-              <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
+              <Avatar className="hidden h-8 w-8 sm:flex sm:h-10 sm:w-10">
                 <AvatarFallback>{initials(user.name ?? "?")}</AvatarFallback>
               </Avatar>
               <Badge variant="secondary" className="hidden sm:inline-flex">

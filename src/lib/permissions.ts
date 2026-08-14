@@ -28,6 +28,11 @@ export function canViewMemberBalances(role: Role | undefined | null): boolean {
   return canLogPayments(role);
 }
 
+/** Forgive remaining subscription dues without recording a payment. Owner only. */
+export function canWriteOffDues(role: Role | undefined | null): boolean {
+  return canViewFinancials(role);
+}
+
 export function canDeleteMembers(role: Role | undefined | null): boolean {
   return role === "OWNER";
 }

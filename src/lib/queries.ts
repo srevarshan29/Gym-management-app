@@ -45,7 +45,20 @@ type SubscriptionRow = {
 type FetchMembersOptions = {
   /** When false, skips payment aggregation (renewals/expired lists). */
   includeBalance?: boolean;
+  /** When false, skips the trainer join (members directory). */
+  includeTrainer?: boolean;
 };
+
+const subscriptionSelect = {
+  id: true,
+  memberId: true,
+  startDate: true,
+  endDate: true,
+  createdAt: true,
+  priceAtPurchase: true,
+  package: { select: { name: true } },
+  createdBy: { select: { name: true } },
+} as const;
 
 async function fetchMembersWithStatus(
   tx: Prisma.TransactionClient,
@@ -53,8 +66,9 @@ async function fetchMembersWithStatus(
   options: FetchMembersOptions = {},
 ): Promise<MemberListItem[]> {
   const includeBalance = options.includeBalance ?? true;
+  const includeTrainer = options.includeTrainer ?? true;
 
-  const [members, subscriptions] = await Promise.all([
+  const [members, currentIdRows, firstIdRows] = await Promise.all([
     tx.member.findMany({
       where: { gymId: tenantGymId },
       orderBy: { createdAt: "desc" },
@@ -68,63 +82,64 @@ async function fetchMembersWithStatus(
         createdAt: true,
         isPt: true,
         trainerId: true,
-        trainer: { select: { id: true, name: true } },
+        ...(includeTrainer
+          ? { trainer: { select: { id: true, name: true } } }
+          : {}),
       },
     }),
-    tx.subscription.findMany({
-      where: { gymId: tenantGymId },
-      select: {
-        id: true,
-        memberId: true,
-        startDate: true,
-        endDate: true,
-        createdAt: true,
-        priceAtPurchase: true,
-        package: { select: { name: true } },
-        createdBy: { select: { name: true } },
-      },
-    }),
+    tx.$queryRaw<{ id: string }[]>`
+      SELECT DISTINCT ON ("memberId") id
+      FROM "Subscription"
+      WHERE "gymId" = ${tenantGymId}
+      ORDER BY "memberId", "endDate" DESC, "createdAt" DESC
+    `,
+    tx.$queryRaw<{ id: string }[]>`
+      SELECT DISTINCT ON ("memberId") id
+      FROM "Subscription"
+      WHERE "gymId" = ${tenantGymId}
+      ORDER BY "memberId", "createdAt" ASC
+    `,
   ]);
 
-  const subsByMember = new Map<string, SubscriptionRow[]>();
-  for (const sub of subscriptions) {
-    const list = subsByMember.get(sub.memberId) ?? [];
-    list.push(sub);
-    subsByMember.set(sub.memberId, list);
-  }
+  const currentIds = currentIdRows.map((row) => row.id);
+  const firstIds = firstIdRows.map((row) => row.id);
+  const uniqueIds = [...new Set([...currentIds, ...firstIds])];
 
+  const [subscriptions, paymentGroups] = await Promise.all([
+    uniqueIds.length === 0
+      ? Promise.resolve([] as SubscriptionRow[])
+      : tx.subscription.findMany({
+          where: { gymId: tenantGymId, id: { in: uniqueIds } },
+          select: subscriptionSelect,
+        }),
+    includeBalance && currentIds.length > 0
+      ? tx.payment.groupBy({
+          by: ["subscriptionId"],
+          where: {
+            gymId: tenantGymId,
+            subscriptionId: { in: currentIds },
+          },
+          _sum: { amount: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const byId = new Map(subscriptions.map((row) => [row.id, row]));
   const currentSubByMember = new Map<string, SubscriptionRow>();
   const addedByNameByMember = new Map<string, string | null>();
-
-  for (const [memberId, subs] of subsByMember) {
-    const current = [...subs].sort(
-      (a, b) => b.endDate.getTime() - a.endDate.getTime(),
-    )[0]!;
-    currentSubByMember.set(memberId, current);
-
-    const firstByCreated = [...subs].sort(
-      (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
-    )[0];
-    addedByNameByMember.set(memberId, firstByCreated?.createdBy?.name ?? null);
+  for (const id of currentIds) {
+    const row = byId.get(id);
+    if (row) currentSubByMember.set(row.memberId, row);
+  }
+  for (const id of firstIds) {
+    const row = byId.get(id);
+    if (row) addedByNameByMember.set(row.memberId, row.createdBy?.name ?? null);
   }
 
   const paidBySubId = new Map<string, number>();
-  if (includeBalance) {
-    const currentIds = [...currentSubByMember.values()].map((s) => s.id);
-    if (currentIds.length > 0) {
-      const groups = await tx.payment.groupBy({
-        by: ["subscriptionId"],
-        where: {
-          gymId: tenantGymId,
-          subscriptionId: { in: currentIds },
-        },
-        _sum: { amount: true },
-      });
-      for (const row of groups) {
-        if (row.subscriptionId) {
-          paidBySubId.set(row.subscriptionId, Number(row._sum.amount ?? 0));
-        }
-      }
+  for (const row of paymentGroups) {
+    if (row.subscriptionId) {
+      paidBySubId.set(row.subscriptionId, Number(row._sum.amount ?? 0));
     }
   }
 
@@ -136,6 +151,10 @@ async function fetchMembersWithStatus(
             Number(current.priceAtPurchase),
             paidBySubId.get(current.id) ?? 0,
           )
+        : null;
+    const trainer =
+      includeTrainer && "trainer" in m
+        ? (m.trainer as { id: string; name: string } | null)
         : null;
 
     return {
@@ -157,7 +176,7 @@ async function fetchMembersWithStatus(
       addedByName: addedByNameByMember.get(m.id) ?? null,
       isPt: m.isPt,
       trainerId: m.trainerId,
-      trainerName: m.trainer?.name ?? null,
+      trainerName: trainer?.name ?? null,
     };
   });
 }
@@ -171,6 +190,18 @@ export async function getMembersWithStatus(
 ): Promise<MemberListItem[]> {
   return withTenant(tenantGymId, (tx) =>
     fetchMembersWithStatus(tx, tenantGymId, { includeBalance: true }),
+  );
+}
+
+/** Members directory: current package/status/dues only — no trainer join. */
+export async function getMembersDirectory(
+  tenantGymId: string,
+): Promise<MemberListItem[]> {
+  return withTenant(tenantGymId, (tx) =>
+    fetchMembersWithStatus(tx, tenantGymId, {
+      includeBalance: true,
+      includeTrainer: false,
+    }),
   );
 }
 

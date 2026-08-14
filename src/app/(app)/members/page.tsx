@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Plus } from "lucide-react";
 
 import { requireGym } from "@/lib/session";
-import { getMembersWithStatus } from "@/lib/queries";
+import { getMembersDirectory } from "@/lib/queries";
 import { PageHeader } from "@/components/page-header";
 import { MembersList } from "@/components/members-list";
 import { MembersPageSkeleton } from "@/components/page-loading-skeletons";
@@ -20,7 +20,7 @@ export default async function MembersPage() {
 }
 
 async function MembersPageContent({ gymId }: { gymId: string }) {
-  const members = await getMembersWithStatus(gymId);
+  const members = await getMembersDirectory(gymId);
 
   const items = members.map((m) => ({
     id: m.id,
@@ -43,7 +43,7 @@ async function MembersPageContent({ gymId }: { gymId: string }) {
         title="Members"
         description={`${members.length} member${members.length === 1 ? "" : "s"} total.`}
       >
-        <Button asChild className="gap-1">
+        <Button asChild className="w-full gap-1 sm:w-auto">
           <Link href="/members/new">
             <Plus className="h-4 w-4" /> Add member
           </Link>

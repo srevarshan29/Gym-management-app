@@ -146,7 +146,7 @@ async function DashboardBody({
           />
         </div>
         <DashboardQuickActions
-          className="w-full min-w-0 justify-start sm:justify-end"
+          className="w-full min-w-0 justify-start lg:w-auto"
           canManageMembers={canManageMembers}
           canLogPayments={canLogPayments}
           canManagePackages={canManagePackages}
@@ -156,7 +156,7 @@ async function DashboardBody({
 
       <section
         aria-label="Key metrics"
-        className="relative z-10 -mt-1 mb-3 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        className="relative z-10 -mt-1 mb-3 grid min-w-0 auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-4"
       >
         <DashboardStatCard
           title="Active members"
@@ -207,7 +207,7 @@ async function DashboardBody({
 
       <section
         aria-label="Additional metrics"
-        className="relative z-10 mb-8 grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        className="relative z-10 mb-8 grid min-w-0 auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-3"
       >
         <DashboardStatCard
           title="New members this month"
@@ -258,8 +258,8 @@ async function DashboardBody({
       {showFinancials ? (
         <div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-2">
           <Card className="min-w-0 rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="min-w-0 space-y-1.5 p-4 sm:p-6">
+              <CardTitle className="flex min-w-0 items-center gap-2 text-base sm:text-lg">
                 <LineChart className="h-5 w-5 text-primary" />
                 Revenue trend
               </CardTitle>
@@ -267,14 +267,14 @@ async function DashboardBody({
                 Monthly payments collected over the last 6 months.
               </CardDescription>
             </CardHeader>
-            <CardContent className="min-w-0">
+            <CardContent className="min-w-0 p-4 pt-0 sm:p-6 sm:pt-0">
               <RevenueTrendChart data={revenueTrend} />
             </CardContent>
           </Card>
 
           <Card className="min-w-0 rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="min-w-0 space-y-1.5 p-4 sm:p-6">
+              <CardTitle className="flex min-w-0 items-center gap-2 text-base sm:text-lg">
                 <PieChart className="h-5 w-5 text-primary" />
                 Membership distribution
               </CardTitle>
@@ -282,7 +282,7 @@ async function DashboardBody({
                 Active members by package type.
               </CardDescription>
             </CardHeader>
-            <CardContent className="min-w-0">
+            <CardContent className="min-w-0 p-4 pt-0 sm:p-6 sm:pt-0">
               <PackageDistributionChart data={metrics.packageDistribution} />
             </CardContent>
           </Card>

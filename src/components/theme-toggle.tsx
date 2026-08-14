@@ -24,7 +24,7 @@ export function ThemeToggle() {
       size="icon"
       onClick={toggle}
       aria-label="Toggle dark/light theme"
-      className="text-muted-foreground hover:text-foreground"
+      className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground sm:h-10 sm:w-10"
     >
       {mounted && resolvedTheme === "light" ? (
         <Sun className="h-4 w-4" />

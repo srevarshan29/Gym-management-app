@@ -26,7 +26,7 @@ export function DashboardQuickActions({
       ? {
           key: "add-member",
           node: (
-            <Button asChild size="sm" className="gap-1.5 shadow-soft">
+            <Button asChild size="sm" className="h-9 w-full gap-1.5 shadow-soft sm:w-auto">
               <LockedLink href="/members/new">
                 <UserPlus className="h-4 w-4" />
                 Add Member
@@ -39,7 +39,7 @@ export function DashboardQuickActions({
       ? {
           key: "record-payment",
           node: (
-            <Button asChild size="sm" variant="outline" className="gap-1.5 shadow-soft">
+            <Button asChild size="sm" variant="outline" className="h-9 w-full gap-1.5 shadow-soft sm:w-auto">
               <LockedLink href="/payments">
                 <CreditCard className="h-4 w-4" />
                 Record Payment
@@ -54,7 +54,7 @@ export function DashboardQuickActions({
           node: (
             <PackageDialog
               trigger={
-                <Button size="sm" variant="outline" className="gap-1.5 shadow-soft">
+                <Button size="sm" variant="outline" className="h-9 w-full gap-1.5 shadow-soft sm:w-auto">
                   <Package className="h-4 w-4" />
                   Create Package
                 </Button>
@@ -67,7 +67,7 @@ export function DashboardQuickActions({
       ? {
           key: "view-reports",
           node: (
-            <Button asChild size="sm" variant="outline" className="gap-1.5 shadow-soft">
+            <Button asChild size="sm" variant="outline" className="h-9 w-full gap-1.5 shadow-soft sm:w-auto">
               <LockedLink href="/payments">
                 <BarChart3 className="h-4 w-4" />
                 View Reports
@@ -83,12 +83,14 @@ export function DashboardQuickActions({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-end gap-2",
+        "grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end",
         className,
       )}
     >
       {actions.map((action) => (
-        <div key={action.key}>{action.node}</div>
+        <div key={action.key} className="min-w-0">
+          {action.node}
+        </div>
       ))}
     </div>
   );

@@ -108,6 +108,52 @@ export function MembersList({ members }: MembersListProps) {
               No members match your search.
             </p>
           ) : (
+            <>
+              <ul className="divide-y md:hidden">
+                {filtered.map((m) => (
+                  <li key={m.id}>
+                    <LockedLink
+                      href={`/members/${m.id}`}
+                      className="flex items-start gap-3 px-4 py-3"
+                    >
+                      <MemberAvatar
+                        name={m.name}
+                        photoUrl={m.photoUrl}
+                        gender={m.gender}
+                        seed={m.id}
+                        size="sm"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">{m.name}</p>
+                            <p className="font-mono text-xs text-muted-foreground">
+                              #{String(m.memberNumber).padStart(4, "0")} · {m.phone}
+                            </p>
+                          </div>
+                          {m.pendingAmount > 0 ? (
+                            <span className="shrink-0 font-mono text-xs font-medium">
+                              {formatCurrency(m.pendingAmount)}
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-1 truncate text-xs text-muted-foreground">
+                          {m.packageName ?? "No package"}
+                          {m.endDate
+                            ? ` · ${formatDate(new Date(m.endDate))}`
+                            : ""}
+                        </p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <StatusBadge status={m.status} />
+                          {m.isPt ? <PtBadge /> : null}
+                          {m.pendingAmount > 0 ? <PendingDuesBadge /> : null}
+                        </div>
+                      </div>
+                    </LockedLink>
+                  </li>
+                ))}
+              </ul>
+              <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -198,6 +244,8 @@ export function MembersList({ members }: MembersListProps) {
                 ))}
               </TableBody>
             </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

@@ -98,9 +98,14 @@
   * {
     @apply border-border;
   }
+  html {
+    overflow-x: clip;
+  }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: clip;
+    min-width: 0;
   }
   ::selection {
     background-color: hsl(var(--primary) / 0.25);
@@ -129,5 +134,9 @@
   .chart-shell svg {
     max-width: 100%;
     overflow: visible;
+  }
+
+  .table-scroll {
+    -webkit-overflow-scrolling: touch;
   }
 }

@@ -36,7 +36,7 @@ export function AppShell({
   return (
     <SidebarProvider>
       <NavigationLockProvider>
-        <div className="flex min-h-screen bg-background">
+        <div className="flex min-h-dvh min-w-0 bg-background">
         <Sidebar
           isOwner={isOwner}
           isOwnerOrAdmin={isOwnerOrAdmin}
@@ -44,24 +44,26 @@ export function AppShell({
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b bg-card px-4 sm:h-16 sm:gap-3 sm:px-6">
+          <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b bg-card px-3 sm:h-16 sm:gap-3 sm:px-6">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <SidebarToggle />
-              <div className="truncate font-display text-lg font-bold md:hidden">
+              <div className="truncate font-display text-base font-bold sm:text-lg md:hidden">
                 GymDesk
               </div>
             </div>
-            <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-              <div className="hidden text-right lg:block">
-                <div className="text-sm font-medium leading-tight">
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2 lg:gap-3">
+              <div className="hidden min-w-0 text-right xl:block">
+                <div className="truncate text-sm font-medium leading-tight">
                   {user.name ?? user.email}
                 </div>
-                <div className="text-xs text-muted-foreground">{user.email}</div>
+                <div className="truncate text-xs text-muted-foreground">
+                  {user.email}
+                </div>
               </div>
-              <Avatar>
+              <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                 <AvatarFallback>{initials(user.name ?? "?")}</AvatarFallback>
               </Avatar>
-              <Badge variant="secondary">
+              <Badge variant="secondary" className="hidden sm:inline-flex">
                 {ROLE_LABEL[user.role] ?? user.role}
               </Badge>
               <ThemeToggle />
@@ -69,7 +71,7 @@ export function AppShell({
             </div>
           </header>
 
-          <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6">
+          <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-6">
             {children}
           </main>
         </div>

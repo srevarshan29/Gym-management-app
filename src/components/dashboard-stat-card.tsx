@@ -112,7 +112,7 @@ export function DashboardStatCard({
   const card = (
     <Card
       className={cn(
-        "relative overflow-hidden rounded-2xl border-0 bg-card/90 shadow-soft backdrop-blur-sm",
+        "relative h-full overflow-hidden rounded-2xl border-0 bg-card/90 shadow-soft backdrop-blur-sm",
         "ring-1 transition-[transform,box-shadow,ring-color] duration-150 ease-out",
         isInteractive && "hover:-translate-y-0.5",
         styles.ring,
@@ -126,18 +126,18 @@ export function DashboardStatCard({
         )}
         aria-hidden
       />
-      <CardContent className="relative space-y-3 p-5">
+      <CardContent className="relative flex h-full flex-col space-y-3 p-4 sm:p-5">
         <div
           className={cn(
             sparkline
-              ? "grid grid-cols-[minmax(0,1fr)_5rem] items-center gap-x-3"
+              ? "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 sm:gap-x-3"
               : "flex min-w-0 items-center gap-2.5",
           )}
         >
           <div className="flex min-w-0 items-center gap-2.5">
             <div
               className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl [&_svg]:size-5",
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-10 sm:w-10 [&_svg]:size-5",
                 styles.icon,
               )}
             >
@@ -149,7 +149,7 @@ export function DashboardStatCard({
           </div>
           {sparkline ? (
             <div
-              className="flex h-8 w-20 shrink-0 items-center justify-end overflow-hidden"
+              className="hidden h-8 w-20 shrink-0 items-center justify-end overflow-hidden sm:flex"
               aria-hidden
             >
               <DashboardStatSparkline
@@ -160,12 +160,12 @@ export function DashboardStatCard({
           ) : null}
         </div>
 
-        <div className="min-w-0 space-y-1">
-          <p className="font-mono text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+        <div className="min-w-0 flex-1 space-y-1">
+          <p className="break-words font-mono text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
             {value}
           </p>
           {hint ? (
-            <p className="truncate text-xs text-muted-foreground">{hint}</p>
+            <p className="line-clamp-2 text-xs text-muted-foreground">{hint}</p>
           ) : null}
         </div>
 
@@ -194,11 +194,11 @@ export function DashboardStatCard({
 
   if (href) {
     return (
-      <LockedLink href={href} className="group block cursor-pointer">
+      <LockedLink href={href} className="group block h-full min-w-0 cursor-pointer">
         {card}
       </LockedLink>
     );
   }
 
-  return <div className="block">{card}</div>;
+  return <div className="block h-full min-w-0">{card}</div>;
 }

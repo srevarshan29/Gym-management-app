@@ -19,7 +19,13 @@ export function MemberSignOutButton() {
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" variant="outline" size="sm" disabled={pending}>
+    <Button
+      type="submit"
+      variant="outline"
+      size="sm"
+      className="shrink-0 px-2 sm:px-3"
+      disabled={pending}
+    >
       {pending ? "Signing out..." : "Sign out"}
     </Button>
   );

@@ -175,7 +175,7 @@ export function MemberForm(props: Props) {
           <CardDescription>Basic contact information.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
+          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
             <MemberAvatar
               name={displayName}
               photoUrl={photoPreview}

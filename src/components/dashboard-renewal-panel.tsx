@@ -44,12 +44,14 @@ export function DashboardRenewalPanel({
     : "text-[hsl(var(--status-expired))]";
 
   return (
-    <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
-      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 pb-4">
-        <div className="space-y-1">
+    <Card className="flex h-full min-w-0 flex-col rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
+      <CardHeader className="flex flex-col items-stretch gap-3 space-y-0 pb-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0 space-y-1">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Icon className={`h-5 w-5 ${iconClass}`} />
-            {isUpcoming ? "Upcoming Renewals" : "Expired Memberships"}
+            <Icon className={`h-5 w-5 shrink-0 ${iconClass}`} />
+            <span className="leading-tight">
+              {isUpcoming ? "Upcoming Renewals" : "Expired Memberships"}
+            </span>
           </CardTitle>
           <CardDescription>
             {isUpcoming
@@ -59,12 +61,12 @@ export function DashboardRenewalPanel({
         </div>
         <LockedLink
           href={viewAllHref}
-          className="shrink-0 text-sm font-medium text-primary hover:underline"
+          className="shrink-0 self-start text-sm font-medium text-primary hover:underline"
         >
           View all →
         </LockedLink>
       </CardHeader>
-      <CardContent className="p-0 pb-2">
+      <CardContent className="flex-1 p-0 pb-2">
         {preview.length === 0 ? (
           <p className="px-6 py-8 text-center text-sm text-muted-foreground">
             {isUpcoming
@@ -72,6 +74,50 @@ export function DashboardRenewalPanel({
               : "No expired memberships."}
           </p>
         ) : (
+          <>
+            <ul className="divide-y md:hidden">
+              {preview.map((item) => {
+                const days = daysUntil(item.endDate);
+                return (
+                  <li key={item.id} className="px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      <MemberAvatar
+                        name={item.name}
+                        photoUrl={item.photoUrl}
+                        gender={item.gender}
+                        seed={item.id}
+                        size="sm"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{item.name}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {item.packageName} · {formatDate(item.endDate)}
+                        </p>
+                        <div className="mt-1.5">
+                          {isUpcoming ? (
+                            <span className="inline-flex rounded-full bg-[hsl(var(--status-expiring)/0.15)] px-2.5 py-0.5 text-xs font-medium text-[hsl(var(--status-expiring))]">
+                              {days <= 0
+                                ? "Today"
+                                : `${days} day${days === 1 ? "" : "s"} left`}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-[hsl(var(--status-expired))]">
+                              {expiredDaysAgoLabel(item.endDate)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Button asChild variant="outline" size="sm" className="shrink-0">
+                        <LockedLink href={`/members/${item.id}`}>
+                          View
+                        </LockedLink>
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -134,6 +180,8 @@ export function DashboardRenewalPanel({
               })}
             </TableBody>
           </Table>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

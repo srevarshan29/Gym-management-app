@@ -228,18 +228,6 @@ export async function getMembersWithStatus(
   );
 }
 
-/** Members directory: current package/status/dues only — no trainer join. */
-export async function getMembersDirectory(
-  tenantGymId: string,
-): Promise<MemberListItem[]> {
-  return withTenant(tenantGymId, (tx) =>
-    fetchMembersWithStatus(tx, tenantGymId, {
-      includeBalance: true,
-      includeTrainer: false,
-    }),
-  );
-}
-
 /**
  * One unpaid subscription cycle. Loaded via getPendingDuesPage
  * (SQL + pagination; includes prior cycles after renewal).
@@ -329,15 +317,6 @@ export function filterExpiredMemberships(
     .map(toMembershipRenewalRow);
 }
 
-export async function getExpiredMemberships(
-  tenantGymId: string,
-): Promise<MembershipRenewalRow[]> {
-  const members = await withTenant(tenantGymId, (tx) =>
-    fetchMembersWithStatus(tx, tenantGymId, { includeBalance: false }),
-  );
-  return filterExpiredMemberships(members);
-}
-
 /** Members expiring within EXPIRING_SOON_DAYS, soonest expiry first. */
 export function filterUpcomingRenewals(
   members: MemberListItem[],
@@ -349,15 +328,6 @@ export function filterUpcomingRenewals(
     )
     .sort((a, b) => a.endDate.getTime() - b.endDate.getTime())
     .map(toMembershipRenewalRow);
-}
-
-export async function getUpcomingRenewals(
-  tenantGymId: string,
-): Promise<MembershipRenewalRow[]> {
-  const members = await withTenant(tenantGymId, (tx) =>
-    fetchMembersWithStatus(tx, tenantGymId, { includeBalance: false }),
-  );
-  return filterUpcomingRenewals(members);
 }
 
 /**

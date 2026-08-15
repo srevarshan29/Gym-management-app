@@ -1,18 +1,35 @@
 import { Suspense } from "react";
 
 import { requireGym } from "@/lib/session";
-import { getUpcomingRenewals } from "@/lib/queries";
+import {
+  getUpcomingRenewalsPage,
+  MEMBERSHIP_RENEWAL_PAGE_SIZE,
+} from "@/lib/membership-renewal-queries";
 import { EXPIRING_SOON_DAYS } from "@/lib/subscription";
 import { PageHeader } from "@/components/page-header";
 import { RenewalListPageSkeleton } from "@/components/page-loading-skeletons";
 import { MembershipRenewalList } from "@/components/membership-renewal-list";
 
-export default async function UpcomingRenewalsPage() {
+function renewalsHref(page: number, q: string): string {
+  const params = new URLSearchParams();
+  if (page > 1) params.set("page", String(page));
+  if (q.trim()) params.set("q", q.trim());
+  const qs = params.toString();
+  return qs ? `/renewals?${qs}` : "/renewals";
+}
+
+export default async function UpcomingRenewalsPage({
+  searchParams,
+}: {
+  searchParams?: { page?: string; q?: string };
+}) {
   const user = await requireGym();
+  const page = Number(searchParams?.page ?? "1");
+  const q = searchParams?.q ?? "";
 
   return (
     <Suspense fallback={<UpcomingRenewalsPageSkeleton />}>
-      <UpcomingRenewalsPageContent gymId={user.gymId} />
+      <UpcomingRenewalsPageContent gymId={user.gymId} page={page} q={q} />
     </Suspense>
   );
 }
@@ -29,10 +46,22 @@ function UpcomingRenewalsPageSkeleton() {
   );
 }
 
-async function UpcomingRenewalsPageContent({ gymId }: { gymId: string }) {
-  const rows = await getUpcomingRenewals(gymId);
+async function UpcomingRenewalsPageContent({
+  gymId,
+  page,
+  q,
+}: {
+  gymId: string;
+  page: number;
+  q: string;
+}) {
+  const result = await getUpcomingRenewalsPage(gymId, {
+    page,
+    pageSize: MEMBERSHIP_RENEWAL_PAGE_SIZE,
+    q,
+  });
 
-  const items = rows.map((row) => ({
+  const items = result.rows.map((row) => ({
     ...row,
     endDate: row.endDate.toISOString(),
   }));
@@ -42,9 +71,9 @@ async function UpcomingRenewalsPageContent({ gymId }: { gymId: string }) {
       <PageHeader
         title="Upcoming Renewals"
         description={
-          rows.length === 0
+          result.bucketCount === 0
             ? `No subscriptions expiring in the next ${EXPIRING_SOON_DAYS} days.`
-            : `${rows.length} member${rows.length === 1 ? "" : "s"} expiring within ${EXPIRING_SOON_DAYS} days.`
+            : `${result.bucketCount} member${result.bucketCount === 1 ? "" : "s"} expiring within ${EXPIRING_SOON_DAYS} days.`
         }
       />
 
@@ -53,6 +82,13 @@ async function UpcomingRenewalsPageContent({ gymId }: { gymId: string }) {
         variant="upcoming"
         emptyMessage={`No upcoming renewals. No subscriptions expire in the next ${EXPIRING_SOON_DAYS} days.`}
         searchPlaceholder="Search by member name or plan…"
+        query={q}
+        page={result.page}
+        pageSize={result.pageSize}
+        matchingCount={result.matchingCount}
+        bucketCount={result.bucketCount}
+        makeHref={renewalsHref}
+        searchAction="/renewals"
       />
     </div>
   );

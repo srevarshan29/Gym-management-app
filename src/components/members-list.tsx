@@ -1,12 +1,12 @@
 "use client";
 
-import * as React from "react";
 import { LockedLink } from "@/components/navigation/locked-link";
 import { useSharedNavigationLock } from "@/components/navigation/navigation-lock-provider";
 import { Search } from "lucide-react";
 import type { MemberGender } from "@prisma/client";
 
 import { MemberAvatar } from "@/components/member-avatar";
+import { PaginationBar } from "@/components/pagination-bar";
 import { PendingDuesBadge, StatusBadge } from "@/components/status-badge";
 import { PtBadge } from "@/components/pt-badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import type { SubscriptionStatus } from "@/lib/subscription";
-import { formatCurrency, formatDate, phoneDigits } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 export type MembersListItem = {
   id: string;
@@ -40,42 +40,17 @@ export type MembersListItem = {
 
 type MembersListProps = {
   members: MembersListItem[];
+  query: string;
+  page: number;
+  pageSize: number;
+  matchingCount: number;
+  totalMembers: number;
+  makeHref: (page: number, q: string) => string;
+  searchAction: string;
 };
 
 function formatMemberNumberDisplay(memberNumber: number): string {
   return String(memberNumber).padStart(4, "0");
-}
-
-function matchesMemberNumber(memberNumber: number, query: string): boolean {
-  let q = query.trim().toLowerCase();
-  if (q.startsWith("#")) q = q.slice(1).trim();
-  if (!q) return false;
-
-  const padded = formatMemberNumberDisplay(memberNumber);
-  const raw = String(memberNumber);
-
-  if (padded.includes(q) || raw.includes(q)) return true;
-
-  const qDigits = phoneDigits(q);
-  if (qDigits.length > 0 && padded.includes(qDigits)) return true;
-
-  return false;
-}
-
-function matchesSearch(member: MembersListItem, query: string): boolean {
-  const q = query.trim().toLowerCase();
-  if (!q) return true;
-  if (member.name.toLowerCase().includes(q)) return true;
-
-  if (matchesMemberNumber(member.memberNumber, query)) return true;
-
-  const phone = member.phone.trim();
-  if (phone.toLowerCase().includes(q)) return true;
-
-  const qDigits = phoneDigits(query);
-  if (qDigits.length > 0 && phoneDigits(phone).includes(qDigits)) return true;
-
-  return false;
 }
 
 function MemberBadges({ member }: { member: MembersListItem }) {
@@ -214,49 +189,60 @@ function MembersTable({ members }: { members: MembersListItem[] }) {
   );
 }
 
-export function MembersList({ members }: MembersListProps) {
-  const [query, setQuery] = React.useState("");
+export function MembersList({
+  members,
+  query,
+  page,
+  pageSize,
+  matchingCount,
+  totalMembers,
+  makeHref,
+  searchAction,
+}: MembersListProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
-  const filtered = React.useMemo(
-    () => members.filter((member) => matchesSearch(member, query)),
-    [members, query],
-  );
 
   return (
     <div className="min-w-0 space-y-4">
-      <div className="relative w-full max-w-md">
+      <form action={searchAction} className="relative w-full max-w-md">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          name="q"
+          defaultValue={query}
           placeholder="Search by name, phone, or member #…"
           className="pl-9"
           aria-label="Search members"
         />
-      </div>
+      </form>
 
       <Card className="min-w-0 overflow-hidden">
         <CardContent className="p-0">
-          {members.length === 0 ? (
+          {totalMembers === 0 ? (
             <p className="px-4 py-12 text-center text-sm text-muted-foreground">
               No members yet. Click &quot;Add member&quot; to get started.
             </p>
-          ) : filtered.length === 0 ? (
+          ) : matchingCount === 0 ? (
             <p className="px-4 py-12 text-center text-sm text-muted-foreground">
               No members match your search.
             </p>
           ) : isDesktop ? (
-            <MembersTable members={filtered} />
+            <MembersTable members={members} />
           ) : (
             <ul className="divide-y">
-              {filtered.map((member) => (
+              {members.map((member) => (
                 <MemberCard key={member.id} member={member} />
               ))}
             </ul>
           )}
         </CardContent>
       </Card>
+
+      <PaginationBar
+        page={page}
+        pageSize={pageSize}
+        total={matchingCount}
+        makeHref={(nextPage) => makeHref(nextPage, query)}
+      />
     </div>
   );
 }

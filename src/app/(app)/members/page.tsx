@@ -3,26 +3,55 @@ import { Suspense } from "react";
 import { Plus } from "lucide-react";
 
 import { requireGym } from "@/lib/session";
-import { getMembersDirectory } from "@/lib/queries";
+import {
+  getMembersDirectoryPage,
+  MEMBERS_DIRECTORY_PAGE_SIZE,
+} from "@/lib/members-directory-queries";
 import { PageHeader } from "@/components/page-header";
 import { MembersList } from "@/components/members-list";
 import { MembersPageSkeleton } from "@/components/page-loading-skeletons";
 import { Button } from "@/components/ui/button";
 
-export default async function MembersPage() {
+function membersHref(page: number, q: string): string {
+  const params = new URLSearchParams();
+  if (page > 1) params.set("page", String(page));
+  if (q.trim()) params.set("q", q.trim());
+  const qs = params.toString();
+  return qs ? `/members?${qs}` : "/members";
+}
+
+export default async function MembersPage({
+  searchParams,
+}: {
+  searchParams?: { page?: string; q?: string };
+}) {
   const user = await requireGym();
+  const page = Number(searchParams?.page ?? "1");
+  const q = searchParams?.q ?? "";
 
   return (
     <Suspense fallback={<MembersPageSkeleton />}>
-      <MembersPageContent gymId={user.gymId} />
+      <MembersPageContent gymId={user.gymId} page={page} q={q} />
     </Suspense>
   );
 }
 
-async function MembersPageContent({ gymId }: { gymId: string }) {
-  const members = await getMembersDirectory(gymId);
+async function MembersPageContent({
+  gymId,
+  page,
+  q,
+}: {
+  gymId: string;
+  page: number;
+  q: string;
+}) {
+  const result = await getMembersDirectoryPage(gymId, {
+    page,
+    pageSize: MEMBERS_DIRECTORY_PAGE_SIZE,
+    q,
+  });
 
-  const items = members.map((m) => ({
+  const items = result.rows.map((m) => ({
     id: m.id,
     memberNumber: m.memberNumber,
     name: m.name,
@@ -41,7 +70,7 @@ async function MembersPageContent({ gymId }: { gymId: string }) {
     <div>
       <PageHeader
         title="Members"
-        description={`${members.length} member${members.length === 1 ? "" : "s"} total.`}
+        description={`${result.totalMembers} member${result.totalMembers === 1 ? "" : "s"} total.`}
       >
         <Button asChild className="w-full gap-1 sm:w-auto">
           <Link href="/members/new">
@@ -50,7 +79,16 @@ async function MembersPageContent({ gymId }: { gymId: string }) {
         </Button>
       </PageHeader>
 
-      <MembersList members={items} />
+      <MembersList
+        members={items}
+        query={q}
+        page={result.page}
+        pageSize={result.pageSize}
+        matchingCount={result.matchingCount}
+        totalMembers={result.totalMembers}
+        makeHref={membersHref}
+        searchAction="/members"
+      />
     </div>
   );
 }

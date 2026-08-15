@@ -8,10 +8,15 @@ export function escapeCsvCell(value: string | number | null | undefined): string
   return s;
 }
 
-export function rowsToCsv(headers: string[], rows: (string | number)[][]): string {
-  const lines = [
-    headers.map(escapeCsvCell).join(","),
-    ...rows.map((row) => row.map(escapeCsvCell).join(",")),
-  ];
-  return `\uFEFF${lines.join("\r\n")}`;
+export function csvHeaderLine(headers: string[]): string {
+  return `\uFEFF${headers.map(escapeCsvCell).join(",")}`;
 }
+
+export function csvDataLine(row: (string | number)[]): string {
+  return `\r\n${row.map(escapeCsvCell).join(",")}`;
+}
+
+export function rowsToCsv(headers: string[], rows: (string | number)[][]): string {
+  return csvHeaderLine(headers) + rows.map((row) => csvDataLine(row)).join("");
+}
+

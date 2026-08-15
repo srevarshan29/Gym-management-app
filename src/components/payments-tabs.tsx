@@ -46,55 +46,52 @@ type PaymentRow = {
   recordedBy: { name: string } | null;
 };
 
-function matchesPaymentSearch(payment: PaymentRow, query: string): boolean {
-  const q = query.trim().toLowerCase();
-  if (!q) return true;
-  return payment.member.name.toLowerCase().includes(q);
-}
-
 function PaidPaymentsTable({
   payments,
   totalCollected,
+  paymentCount,
+  matchingCount,
+  page,
+  pageSize,
+  query,
 }: {
   payments: PaymentRow[];
   totalCollected: number;
+  paymentCount: number;
+  matchingCount: number;
+  page: number;
+  pageSize: number;
+  query: string;
 }) {
-  const [query, setQuery] = React.useState("");
-  const filtered = React.useMemo(
-    () => payments.filter((p) => matchesPaymentSearch(p, query)),
-    [payments, query],
-  );
-
   return (
     <div className="space-y-4">
-      <div className="relative max-w-md">
+      <form action="/payments" className="relative max-w-md">
+        <input type="hidden" name="tab" value="paid" />
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          name="q"
+          defaultValue={query}
           placeholder="Search by member name…"
           className="pl-9"
           aria-label="Search payments by member name"
         />
-      </div>
+      </form>
 
       <Card>
         <CardHeader>
           <CardTitle>Completed payments</CardTitle>
           <CardDescription>
             {formatCurrency(totalCollected)} collected across{" "}
-            {payments.length} payment{payments.length === 1 ? "" : "s"}.
+            {paymentCount} payment{paymentCount === 1 ? "" : "s"}.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {payments.length === 0 ? (
+          {matchingCount === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No payments recorded yet.
-            </p>
-          ) : filtered.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              No payments match your search.
+              {query.trim()
+                ? "No payments match your search."
+                : "No payments recorded yet."}
             </p>
           ) : (
             <Table className="min-w-[40rem]">
@@ -109,7 +106,7 @@ function PaidPaymentsTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((p) => (
+                {payments.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-mono">
                       {formatDate(p.paidAt)}
@@ -143,6 +140,17 @@ function PaidPaymentsTable({
           )}
         </CardContent>
       </Card>
+      <PaginationBar
+        page={page}
+        pageSize={pageSize}
+        total={matchingCount}
+        makeHref={(nextPage) => {
+          const params = new URLSearchParams({ tab: "paid" });
+          if (nextPage > 1) params.set("page", String(nextPage));
+          if (query.trim()) params.set("q", query.trim());
+          return `/payments?${params.toString()}`;
+        }}
+      />
     </div>
   );
 }
@@ -185,7 +193,15 @@ export function PaymentsTabs({
 
       {defaultTab === "paid" ? (
         <TabsContent value="paid">
-          <PaidPaymentsTable payments={payments} totalCollected={totalCollected} />
+          <PaidPaymentsTable
+            payments={payments}
+            totalCollected={totalCollected}
+            paymentCount={paymentCount}
+            matchingCount={matchingCount}
+            page={page}
+            pageSize={pageSize}
+            query={query}
+          />
         </TabsContent>
       ) : (
         <TabsContent value="pending">

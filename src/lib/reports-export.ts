@@ -10,7 +10,6 @@ import {
   canExportReports,
   canViewFinancials,
 } from "@/lib/permissions";
-import { getMembersWithStatus } from "@/lib/queries";
 import { getWorkoutPlansPageData } from "@/lib/workout-plans";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -146,8 +145,12 @@ export async function getReportModuleCounts(
   };
 }
 
-function formatPaymentMethod(method: string): string {
-  return method.replace(/_/g, " ");
+export const STREAMED_REPORT_MODULES = ["members", "payments"] as const;
+
+export function isStreamedReportModule(
+  moduleId: ReportModuleId,
+): moduleId is (typeof STREAMED_REPORT_MODULES)[number] {
+  return (STREAMED_REPORT_MODULES as readonly string[]).includes(moduleId);
 }
 
 export async function buildReportCsv(
@@ -157,72 +160,9 @@ export async function buildReportCsv(
   const stamp = new Date().toISOString().slice(0, 10);
 
   switch (moduleId) {
-    case "members": {
-      const members = await getMembersWithStatus(tenantGymId);
-      const headers = [
-        "Member #",
-        "Name",
-        "Phone",
-        "Package",
-        "Status",
-        "Start date",
-        "Expiry",
-        "Pending",
-        "PT",
-        "Trainer",
-        "Added by",
-      ];
-      const rows = members.map((m) => [
-        String(m.memberNumber).padStart(4, "0"),
-        m.name,
-        m.phone,
-        m.packageName ?? "",
-        m.status,
-        m.startDate ? formatDate(m.startDate) : "",
-        m.endDate ? formatDate(m.endDate) : "",
-        m.pendingAmount > 0 ? formatCurrency(m.pendingAmount) : "",
-        m.isPt ? "Yes" : "No",
-        m.trainerName ?? "",
-        m.addedByName ?? "",
-      ]);
-      return {
-        filename: `members-${stamp}.csv`,
-        body: rowsToCsv(headers, rows),
-      };
-    }
-    case "payments": {
-      const payments = await withTenant(tenantGymId, (tx) =>
-        tx.payment.findMany({
-          where: { gymId: tenantGymId },
-          orderBy: { paidAt: "desc" },
-          include: {
-            member: { select: { name: true } },
-            subscription: { include: { package: { select: { name: true } } } },
-            recordedBy: { select: { name: true } },
-          },
-        }),
-      );
-      const headers = [
-        "Paid date",
-        "Member",
-        "Package",
-        "Amount",
-        "Method",
-        "Recorded by",
-      ];
-      const rows = payments.map((p) => [
-        formatDate(p.paidAt),
-        p.member.name,
-        p.subscription?.package.name ?? "",
-        formatCurrency(Number(p.amount)),
-        formatPaymentMethod(p.method),
-        p.recordedBy?.name ?? "",
-      ]);
-      return {
-        filename: `payments-${stamp}.csv`,
-        body: rowsToCsv(headers, rows),
-      };
-    }
+    case "members":
+    case "payments":
+      throw new Error("Streamed report modules must use iterateReportCsvChunks.");
     case "employees": {
       const employees = await getEmployees(tenantGymId);
       const headers = [

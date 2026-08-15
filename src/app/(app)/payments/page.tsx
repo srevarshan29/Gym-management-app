@@ -9,6 +9,10 @@ import {
   getPendingDuesSummary,
   PENDING_DUES_PAGE_SIZE,
 } from "@/lib/pending-dues-queries";
+import {
+  getPaidPaymentsPage,
+  PAYMENTS_PAGE_SIZE,
+} from "@/lib/payments-queries";
 import { PageHeader } from "@/components/page-header";
 import { PaymentsTabs, PendingDuesOnly } from "@/components/payments-tabs";
 import {
@@ -144,35 +148,27 @@ async function PaymentsBody({
     );
   }
 
-  const [payments, pendingSummary] = await Promise.all([
-    withTenant(tenantGymId, (tx) =>
-      tx.payment.findMany({
-        where: { gymId: tenantGymId },
-        orderBy: { paidAt: "desc" },
-        include: {
-          member: { select: { id: true, name: true } },
-          subscription: { include: { package: { select: { name: true } } } },
-          recordedBy: { select: { name: true } },
-        },
-      }),
-    ),
+  const [paid, pendingSummary] = await Promise.all([
+    getPaidPaymentsPage(tenantGymId, {
+      page,
+      pageSize: PAYMENTS_PAGE_SIZE,
+      q,
+    }),
     getPendingDuesSummary(tenantGymId),
   ]);
-
-  const totalCollected = payments.reduce((sum, p) => sum + Number(p.amount), 0);
 
   return (
     <PaymentsTabs
       defaultTab="paid"
-      payments={payments}
+      payments={paid.rows}
       pending={[]}
       pendingCount={pendingSummary.unpaidCycleCount}
-      paymentCount={payments.length}
-      totalCollected={totalCollected}
-      page={1}
-      pageSize={PENDING_DUES_PAGE_SIZE}
-      matchingCount={0}
-      query=""
+      paymentCount={paid.paymentCount}
+      totalCollected={paid.totalCollected}
+      page={paid.page}
+      pageSize={paid.pageSize}
+      matchingCount={paid.matchingCount}
+      query={q}
     />
   );
 }

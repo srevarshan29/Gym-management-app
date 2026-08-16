@@ -43,14 +43,6 @@ function PendingDuesPageSkeleton() {
   );
 }
 
-function pendingDuesHref(page: number, q: string): string {
-  const params = new URLSearchParams();
-  if (page > 1) params.set("page", String(page));
-  if (q.trim()) params.set("q", q.trim());
-  const qs = params.toString();
-  return qs ? `/finance/pending-dues?${qs}` : "/finance/pending-dues";
-}
-
 async function PendingDuesPageContent({
   gymId,
   page,
@@ -105,7 +97,6 @@ async function PendingDuesPageContent({
         page={result.page}
         pageSize={result.pageSize}
         matchingCount={result.matchingCount}
-        makeHref={pendingDuesHref}
         searchAction="/finance/pending-dues"
       />
     </div>

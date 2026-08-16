@@ -42,9 +42,16 @@ type MembershipRenewalListProps = {
   pageSize: number;
   matchingCount: number;
   bucketCount: number;
-  makeHref: (page: number, q: string) => string;
   searchAction: string;
 };
+
+function pageSearchHref(basePath: string, page: number, q: string): string {
+  const params = new URLSearchParams();
+  if (page > 1) params.set("page", String(page));
+  if (q.trim()) params.set("q", q.trim());
+  const qs = params.toString();
+  return qs ? `${basePath}?${qs}` : basePath;
+}
 
 export function MembershipRenewalList({
   items,
@@ -56,10 +63,12 @@ export function MembershipRenewalList({
   pageSize,
   matchingCount,
   bucketCount,
-  makeHref,
   searchAction,
 }: MembershipRenewalListProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  // #region agent log
+  fetch('http://127.0.0.1:7469/ingest/49c9d7e5-cf6e-48b1-912f-8ac4d15f6801',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2d918d'},body:JSON.stringify({sessionId:'2d918d',runId:'post-fix',hypothesisId:'B',location:'membership-renewal-list.tsx:MembershipRenewalList',message:'Renewal list rendered without server function props',data:{variant,rowCount:items.length,matchingCount,bucketCount,page,searchAction},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
 
   return (
     <div className="space-y-4">
@@ -192,7 +201,7 @@ export function MembershipRenewalList({
         page={page}
         pageSize={pageSize}
         total={matchingCount}
-        makeHref={(nextPage) => makeHref(nextPage, query)}
+        makeHref={(nextPage) => pageSearchHref(searchAction, nextPage, query)}
       />
     </div>
   );

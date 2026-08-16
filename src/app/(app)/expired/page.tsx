@@ -9,14 +9,6 @@ import { PageHeader } from "@/components/page-header";
 import { RenewalListPageSkeleton } from "@/components/page-loading-skeletons";
 import { MembershipRenewalList } from "@/components/membership-renewal-list";
 
-function expiredHref(page: number, q: string): string {
-  const params = new URLSearchParams();
-  if (page > 1) params.set("page", String(page));
-  if (q.trim()) params.set("q", q.trim());
-  const qs = params.toString();
-  return qs ? `/expired?${qs}` : "/expired";
-}
-
 export default async function ExpiredMembershipsPage({
   searchParams,
 }: {
@@ -86,7 +78,6 @@ async function ExpiredMembershipsPageContent({
         pageSize={result.pageSize}
         matchingCount={result.matchingCount}
         bucketCount={result.bucketCount}
-        makeHref={expiredHref}
         searchAction="/expired"
       />
     </div>

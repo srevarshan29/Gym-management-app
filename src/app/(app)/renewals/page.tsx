@@ -10,14 +10,6 @@ import { PageHeader } from "@/components/page-header";
 import { RenewalListPageSkeleton } from "@/components/page-loading-skeletons";
 import { MembershipRenewalList } from "@/components/membership-renewal-list";
 
-function renewalsHref(page: number, q: string): string {
-  const params = new URLSearchParams();
-  if (page > 1) params.set("page", String(page));
-  if (q.trim()) params.set("q", q.trim());
-  const qs = params.toString();
-  return qs ? `/renewals?${qs}` : "/renewals";
-}
-
 export default async function UpcomingRenewalsPage({
   searchParams,
 }: {
@@ -87,7 +79,6 @@ async function UpcomingRenewalsPageContent({
         pageSize={result.pageSize}
         matchingCount={result.matchingCount}
         bucketCount={result.bucketCount}
-        makeHref={renewalsHref}
         searchAction="/renewals"
       />
     </div>

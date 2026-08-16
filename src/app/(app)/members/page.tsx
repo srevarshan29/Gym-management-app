@@ -12,14 +12,6 @@ import { MembersList } from "@/components/members-list";
 import { MembersPageSkeleton } from "@/components/page-loading-skeletons";
 import { Button } from "@/components/ui/button";
 
-function membersHref(page: number, q: string): string {
-  const params = new URLSearchParams();
-  if (page > 1) params.set("page", String(page));
-  if (q.trim()) params.set("q", q.trim());
-  const qs = params.toString();
-  return qs ? `/members?${qs}` : "/members";
-}
-
 export default async function MembersPage({
   searchParams,
 }: {
@@ -86,7 +78,6 @@ async function MembersPageContent({
         pageSize={result.pageSize}
         matchingCount={result.matchingCount}
         totalMembers={result.totalMembers}
-        makeHref={membersHref}
         searchAction="/members"
       />
     </div>

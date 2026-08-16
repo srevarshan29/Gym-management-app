@@ -45,9 +45,16 @@ type MembersListProps = {
   pageSize: number;
   matchingCount: number;
   totalMembers: number;
-  makeHref: (page: number, q: string) => string;
   searchAction: string;
 };
+
+function pageSearchHref(basePath: string, page: number, q: string): string {
+  const params = new URLSearchParams();
+  if (page > 1) params.set("page", String(page));
+  if (q.trim()) params.set("q", q.trim());
+  const qs = params.toString();
+  return qs ? `${basePath}?${qs}` : basePath;
+}
 
 function formatMemberNumberDisplay(memberNumber: number): string {
   return String(memberNumber).padStart(4, "0");
@@ -196,10 +203,12 @@ export function MembersList({
   pageSize,
   matchingCount,
   totalMembers,
-  makeHref,
   searchAction,
 }: MembersListProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  // #region agent log
+  fetch('http://127.0.0.1:7469/ingest/49c9d7e5-cf6e-48b1-912f-8ac4d15f6801',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2d918d'},body:JSON.stringify({sessionId:'2d918d',runId:'post-fix',hypothesisId:'A',location:'members-list.tsx:MembersList',message:'MembersList rendered without server function props',data:{rowCount:members.length,matchingCount,totalMembers,page,pageSize,searchAction},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
 
   return (
     <div className="min-w-0 space-y-4">
@@ -241,7 +250,7 @@ export function MembersList({
         page={page}
         pageSize={pageSize}
         total={matchingCount}
-        makeHref={(nextPage) => makeHref(nextPage, query)}
+        makeHref={(nextPage) => pageSearchHref(searchAction, nextPage, query)}
       />
     </div>
   );

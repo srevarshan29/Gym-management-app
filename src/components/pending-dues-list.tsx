@@ -39,10 +39,22 @@ type PendingDuesListProps = {
   page: number;
   pageSize: number;
   matchingCount: number;
-  makeHref: (page: number, q: string) => string;
   searchAction: string;
   extraSearchFields?: Record<string, string>;
 };
+
+function pageSearchHref(
+  basePath: string,
+  page: number,
+  q: string,
+  extra?: Record<string, string>,
+): string {
+  const params = new URLSearchParams(extra);
+  if (page > 1) params.set("page", String(page));
+  if (q.trim()) params.set("q", q.trim());
+  const qs = params.toString();
+  return qs ? `${basePath}?${qs}` : basePath;
+}
 
 export function PendingDuesList({
   items,
@@ -51,7 +63,6 @@ export function PendingDuesList({
   page,
   pageSize,
   matchingCount,
-  makeHref,
   searchAction,
   extraSearchFields,
 }: PendingDuesListProps) {
@@ -150,7 +161,9 @@ export function PendingDuesList({
         page={page}
         pageSize={pageSize}
         total={matchingCount}
-        makeHref={(nextPage) => makeHref(nextPage, query)}
+        makeHref={(nextPage) =>
+          pageSearchHref(searchAction, nextPage, query, extraSearchFields)
+        }
       />
     </div>
   );

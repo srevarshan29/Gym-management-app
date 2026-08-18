@@ -18,6 +18,8 @@ export type ActiveWorkoutSession = {
     displayName: string;
     muscleGroup: string | null;
     trackingType: ExerciseTrackingType;
+    exerciseId: string | null;
+    customName: string | null;
     targetSets: number;
     targetReps: string;
     targetWeightKg: number | null;
@@ -64,6 +66,7 @@ export async function getActiveWorkoutSession(
               targetWeightKg: true,
               restSeconds: true,
               customName: true,
+              exerciseId: true,
               trackingTypeOverride: true,
               exercise: {
                 select: { name: true, muscleGroup: true, trackingType: true },
@@ -95,6 +98,8 @@ export async function getActiveWorkoutSession(
         ? muscleGroupLabel(row.planExercise.exercise.muscleGroup as MuscleGroup)
         : null,
       trackingType: resolveTrackingType(row.planExercise),
+      exerciseId: row.planExercise.exerciseId,
+      customName: row.planExercise.customName,
       targetSets: row.planExercise.targetSets,
       targetReps: row.planExercise.targetReps,
       targetWeightKg:

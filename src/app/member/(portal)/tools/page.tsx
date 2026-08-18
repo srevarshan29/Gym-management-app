@@ -6,7 +6,7 @@ export default function MemberToolsPage() {
       <div>
         <h1 className="font-display text-xl font-bold">Tools</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Self-service calculators using your profile stats.
+          Calculators, payments, diet, and gym events.
         </p>
       </div>
       <ToolsSubNav activeHref="/member/tools" />

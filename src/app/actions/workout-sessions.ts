@@ -239,6 +239,7 @@ export async function completeWorkoutSession(
     });
 
     revalidatePath("/member/workout");
+    revalidatePath("/member");
     return actionOk("Workout completed. Great job!");
   } catch (error) {
     return actionErrorFromUnknown(

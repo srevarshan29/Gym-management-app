@@ -1,11 +1,6 @@
-import { Suspense } from "react";
-import Link from "next/link";
-
 import { requireMember } from "@/lib/member-session";
 import { getMemberExerciseOptions, getExerciseProgressData } from "@/lib/workout-tracking/progress";
-import { ExerciseProgressPanel } from "@/components/workout/exercise-progress-panel";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { MemberProgressPanel } from "@/components/member-portal/workout/member-progress-panel";
 
 export default async function MemberWorkoutProgressPage({
   searchParams,
@@ -36,37 +31,11 @@ export default async function MemberWorkoutProgressPage({
     : null;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-xl font-bold">Workout progress</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Track strength gains over time.
-          </p>
-        </div>
-        <Button asChild variant="outline" size="sm">
-          <Link href="/member/workout">Back to workout</Link>
-        </Button>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Exercise progress</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Suspense
-            fallback={
-              <p className="text-sm text-muted-foreground">Loading progress…</p>
-            }
-          >
-            <ExerciseProgressPanel
-              exercises={exercises}
-              initialExerciseKey={exerciseKey}
-              initialGrouping={grouping}
-              progress={progress}
-            />
-          </Suspense>
-        </CardContent>
-      </Card>
-    </div>
+    <MemberProgressPanel
+      exercises={exercises}
+      initialExerciseKey={exerciseKey}
+      initialGrouping={grouping}
+      progress={progress}
+    />
   );
 }

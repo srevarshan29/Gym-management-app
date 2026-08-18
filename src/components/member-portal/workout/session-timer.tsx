@@ -9,7 +9,13 @@ function formatElapsed(totalSeconds: number): string {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-export function SessionTimer({ startedAt }: { startedAt: string }) {
+export function SessionTimer({
+  startedAt,
+  compact = false,
+}: {
+  startedAt: string;
+  compact?: boolean;
+}) {
   const [elapsed, setElapsed] = React.useState(0);
 
   React.useEffect(() => {
@@ -21,6 +27,14 @@ export function SessionTimer({ startedAt }: { startedAt: string }) {
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
   }, [startedAt]);
+
+  if (compact) {
+    return (
+      <p className="font-mono text-lg font-semibold tabular-nums text-primary">
+        {formatElapsed(elapsed)}
+      </p>
+    );
+  }
 
   return (
     <div className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3">

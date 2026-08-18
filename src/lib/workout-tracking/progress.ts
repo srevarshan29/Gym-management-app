@@ -225,26 +225,40 @@ export async function getMemberExerciseOptions(
   const plan = await prisma.workoutPlan.findFirst({
     where: { gymId: tenantGymId, memberId: memberId },
     select: {
-      exercises: {
+      days: {
         orderBy: { sortOrder: "asc" },
         select: {
-          exerciseId: true,
-          customName: true,
-          exercise: { select: { name: true } },
+          exercises: {
+            orderBy: { sortOrder: "asc" },
+            select: {
+              exerciseId: true,
+              customName: true,
+              exercise: { select: { name: true } },
+            },
+          },
         },
       },
     },
   });
   if (!plan) return [];
 
-  return plan.exercises.map((row) => {
-    if (row.exerciseId) {
-      return {
-        key: row.exerciseId,
-        label: row.exercise?.name ?? "Exercise",
-      };
+  const seen = new Set<string>();
+  const options: { key: string; label: string }[] = [];
+  for (const day of plan.days) {
+    for (const row of day.exercises) {
+      const option = row.exerciseId
+        ? {
+            key: row.exerciseId,
+            label: row.exercise?.name ?? "Exercise",
+          }
+        : {
+            key: `custom:${row.customName ?? "Custom exercise"}`,
+            label: row.customName ?? "Custom exercise",
+          };
+      if (seen.has(option.key)) continue;
+      seen.add(option.key);
+      options.push(option);
     }
-    const name = row.customName ?? "Custom exercise";
-    return { key: `custom:${name}`, label: name };
-  });
+  }
+  return options;
 }

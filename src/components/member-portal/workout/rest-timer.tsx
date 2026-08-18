@@ -9,9 +9,10 @@ const PRESETS = [60, 90, 120] as const;
 
 type RestTimerProps = {
   defaultSeconds?: number | null;
+  compact?: boolean;
 };
 
-export function RestTimer({ defaultSeconds }: RestTimerProps) {
+export function RestTimer({ defaultSeconds, compact = false }: RestTimerProps) {
   const [secondsLeft, setSecondsLeft] = React.useState<number | null>(null);
 
   React.useEffect(() => {
@@ -30,6 +31,43 @@ export function RestTimer({ defaultSeconds }: RestTimerProps) {
 
   function start(seconds: number) {
     setSecondsLeft(seconds);
+  }
+
+  const planSeconds = defaultSeconds && defaultSeconds > 0 ? defaultSeconds : 90;
+  const pillLabel =
+    secondsLeft == null
+      ? `Rest timer: ${planSeconds}s`
+      : secondsLeft > 0
+        ? `Rest timer: ${secondsLeft}s`
+        : "Rest complete";
+
+  if (compact) {
+    return (
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={() => start(planSeconds)}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-muted/80 px-4 py-2.5 text-sm font-medium text-foreground ring-1 ring-border/70"
+        >
+          <Timer className="h-4 w-4 text-muted-foreground" />
+          {pillLabel}
+        </button>
+        <div className="flex flex-wrap justify-center gap-1.5">
+          {PRESETS.map((seconds) => (
+            <Button
+              key={seconds}
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs text-muted-foreground"
+              onClick={() => start(seconds)}
+            >
+              {seconds}s
+            </Button>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

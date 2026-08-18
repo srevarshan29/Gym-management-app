@@ -38,18 +38,16 @@ export function MemberPortalShell({
             </div>
             <MemberSignOutButton />
           </div>
-          <div className="mx-auto mt-3 max-w-2xl sm:mt-4">
-            <MemberPortalNav />
-          </div>
         </header>
         <main className="mx-auto w-full min-w-0 max-w-2xl flex-1 p-3 sm:p-4">
           {children}
         </main>
-        <footer className="border-t py-3 text-center text-xs text-muted-foreground">
+        <footer className="border-t py-3 pb-24 text-center text-xs text-muted-foreground">
           <LockedLink href="/member/profile" className="hover:text-foreground">
             {memberName}
           </LockedLink>
         </footer>
+        <MemberPortalNav />
       </div>
     </NavigationLockProvider>
   );

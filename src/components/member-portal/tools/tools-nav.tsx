@@ -26,6 +26,24 @@ const TOOLS = [
   },
 ] as const;
 
+const HUB_LINKS = [
+  {
+    href: "/member/payments",
+    title: "Payments",
+    description: "Your payment history.",
+  },
+  {
+    href: "/member/diet",
+    title: "Diet",
+    description: "Your assigned diet plan.",
+  },
+  {
+    href: "/member/events",
+    title: "Events",
+    description: "Upcoming gym events.",
+  },
+] as const;
+
 function ToolsTabLink({
   href,
   active,
@@ -81,24 +99,54 @@ export function ToolsSubNav({ activeHref }: { activeHref?: string }) {
   );
 }
 
+function HubCard({
+  href,
+  title,
+  description,
+}: {
+  href: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <LockedLink href={href} className="block">
+      <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 transition-colors hover:ring-primary/30">
+        <CardContent className="flex items-center justify-between gap-3 p-4">
+          <div>
+            <p className="font-medium">{title}</p>
+            <p className="text-sm text-muted-foreground">{description}</p>
+          </div>
+          <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+        </CardContent>
+      </Card>
+    </LockedLink>
+  );
+}
+
 export function ToolsIndexList() {
   return (
-    <div className="space-y-3">
-      {TOOLS.map((tool) => (
-        <LockedLink key={tool.href} href={tool.href} className="block">
-          <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 transition-colors hover:ring-primary/30">
-            <CardContent className="flex items-center justify-between gap-3 p-4">
-              <div>
-                <p className="font-medium">{tool.title}</p>
-                <p className="text-sm text-muted-foreground">
-                  {tool.description}
-                </p>
-              </div>
-              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-            </CardContent>
-          </Card>
-        </LockedLink>
-      ))}
+    <div className="space-y-6">
+      <div className="space-y-3">
+        {TOOLS.map((tool) => (
+          <HubCard
+            key={tool.href}
+            href={tool.href}
+            title={tool.title}
+            description={tool.description}
+          />
+        ))}
+      </div>
+      <div className="space-y-3">
+        <h2 className="text-sm font-semibold text-muted-foreground">More</h2>
+        {HUB_LINKS.map((item) => (
+          <HubCard
+            key={item.href}
+            href={item.href}
+            title={item.title}
+            description={item.description}
+          />
+        ))}
+      </div>
     </div>
   );
 }

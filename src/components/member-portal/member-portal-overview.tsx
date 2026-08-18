@@ -1,19 +1,119 @@
+import { Dumbbell, Salad, TrendingUp } from "lucide-react";
+
+import { LockedLink } from "@/components/navigation/locked-link";
 import { MembershipProgressRing } from "@/components/member-portal/membership-progress-ring";
 import { MemberPortalStatCard } from "@/components/member-portal/member-portal-stat-card";
+import { TodaysWorkoutStartButton } from "@/components/member-portal/todays-workout-start-button";
 import { StatusBadge } from "@/components/status-badge";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import type { MemberPortalOverview } from "@/lib/member-portal/queries";
+import type { SuggestedWorkoutDay } from "@/lib/workout-tracking/suggested-day";
 import { formatCurrency, formatDate } from "@/lib/utils";
+
+const CARD_CLASS =
+  "rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm";
+
+const QUICK_ACTIONS = [
+  { href: "/member/workout", label: "Workouts", icon: Dumbbell },
+  { href: "/member/workout/progress", label: "Progress", icon: TrendingUp },
+  { href: "/member/diet", label: "Diet", icon: Salad },
+] as const;
+
+function TodaysWorkoutCard({ suggestion }: { suggestion: SuggestedWorkoutDay }) {
+  const emptyCopy = "No workout assigned today — check with your trainer";
+
+  if (suggestion.kind === "none" || suggestion.kind === "legacy") {
+    return (
+      <Card className={CARD_CLASS}>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold">Today&apos;s workout</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">{emptyCopy}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (suggestion.kind === "resume") {
+    return (
+      <Card className={CARD_CLASS}>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold">Today&apos;s workout</CardTitle>
+          <CardDescription>
+            {suggestion.label ? `${suggestion.label} in progress` : "Workout in progress"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            {suggestion.exerciseCount} exercise
+            {suggestion.exerciseCount === 1 ? "" : "s"}
+            {suggestion.estimatedMinutes != null
+              ? ` · ~${suggestion.estimatedMinutes} min`
+              : ""}
+          </p>
+          <TodaysWorkoutStartButton
+            dayId={suggestion.dayId}
+            label="Resume workout"
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className={CARD_CLASS}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-semibold">Today&apos;s workout</CardTitle>
+        <CardDescription>{suggestion.label}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          {suggestion.exerciseCount} exercise
+          {suggestion.exerciseCount === 1 ? "" : "s"}
+          {` · ~${suggestion.estimatedMinutes} min`}
+        </p>
+        <TodaysWorkoutStartButton dayId={suggestion.dayId} label="Start workout" />
+        <LockedLink
+          href="/member/workout"
+          className="block text-center text-sm text-primary hover:underline"
+        >
+          See all days
+        </LockedLink>
+      </CardContent>
+    </Card>
+  );
+}
+
+function QuickActionsGrid() {
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      {QUICK_ACTIONS.map((action) => (
+        <LockedLink key={action.href} href={action.href} className="min-w-0">
+          <Card className={CARD_CLASS}>
+            <CardContent className="flex flex-col items-center gap-2 p-4 text-center">
+              <action.icon className="h-5 w-5 text-primary" />
+              <span className="text-xs font-medium">{action.label}</span>
+            </CardContent>
+          </Card>
+        </LockedLink>
+      ))}
+    </div>
+  );
+}
 
 export function MemberPortalOverviewPanel({
   overview,
+  suggestion,
 }: {
   overview: MemberPortalOverview;
+  suggestion: SuggestedWorkoutDay;
 }) {
   const hasSubscription = overview.packageName != null;
 
@@ -30,6 +130,8 @@ export function MemberPortalOverviewPanel({
             </p>
           </CardContent>
         </Card>
+        <TodaysWorkoutCard suggestion={suggestion} />
+        <QuickActionsGrid />
       </div>
     );
   }
@@ -54,7 +156,7 @@ export function MemberPortalOverviewPanel({
         <StatusBadge status={overview.status} className="shrink-0" />
       </div>
 
-      <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">
+      <Card className={CARD_CLASS}>
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold">
             {overview.packageName}
@@ -97,6 +199,9 @@ export function MemberPortalOverviewPanel({
           }
         />
       </div>
+
+      <TodaysWorkoutCard suggestion={suggestion} />
+      <QuickActionsGrid />
     </div>
   );
 }

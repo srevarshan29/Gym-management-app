@@ -106,6 +106,7 @@ export async function startWorkoutSession(
     });
 
     revalidatePath("/member/workout");
+    revalidatePath("/member");
     return { ...actionOk("Workout started."), sessionId: session.id };
   } catch (error) {
     return actionErrorFromUnknown(

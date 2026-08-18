@@ -78,6 +78,7 @@ model Gym {
   employees     Employee[]
   gymEvents     GymEvent[]
   ledgerTransactions LedgerTransaction[]
+  workoutPlanDays WorkoutPlanDay[]
 }
 
 // Gym staff accounts. gymId is null only for SUPER_ADMIN (platform-level,
@@ -323,10 +324,30 @@ model WorkoutPlan {
 
   gym       Gym                   @relation(fields: [gymId], references: [id], onDelete: Cascade)
   member    Member                @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  days      WorkoutPlanDay[]
   exercises WorkoutPlanExercise[]
   sessions  WorkoutSession[]
 
   @@unique([gymId, memberId])
+  @@index([gymId])
+}
+
+// One training day/session within a member's workout plan (e.g. Push, Pull).
+model WorkoutPlanDay {
+  id            String   @id @default(cuid())
+  gymId         String
+  workoutPlanId String
+  label         String
+  sortOrder     Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  gym         Gym                   @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  workoutPlan WorkoutPlan           @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  exercises   WorkoutPlanExercise[]
+  sessions    WorkoutSession[]
+
+  @@index([workoutPlanId, sortOrder])
   @@index([gymId])
 }
 
@@ -335,6 +356,7 @@ model WorkoutPlanExercise {
   id              String   @id @default(cuid())
   gymId           String
   workoutPlanId   String
+  workoutPlanDayId String
   exerciseId      String?
   customName      String?
   sortOrder       Int
@@ -347,11 +369,13 @@ model WorkoutPlanExercise {
   createdAt           DateTime              @default(now())
   updatedAt       DateTime @updatedAt
 
-  workoutPlan WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
-  exercise    Exercise?   @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  workoutPlan WorkoutPlan     @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  day         WorkoutPlanDay  @relation(fields: [workoutPlanDayId], references: [id], onDelete: Cascade)
+  exercise    Exercise?       @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
   sessionExercises WorkoutSessionExercise[]
 
   @@index([workoutPlanId, sortOrder])
+  @@index([workoutPlanDayId, sortOrder])
   @@index([gymId])
   @@index([exerciseId])
 }
@@ -362,16 +386,19 @@ model WorkoutSession {
   gymId           String
   memberId        String
   workoutPlanId   String
+  workoutPlanDayId String?
   status          WorkoutSessionStatus   @default(IN_PROGRESS)
   startedAt       DateTime             @default(now())
   completedAt     DateTime?
   durationSeconds Int?
 
-  workoutPlan WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  workoutPlan WorkoutPlan     @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  day         WorkoutPlanDay? @relation(fields: [workoutPlanDayId], references: [id], onDelete: SetNull)
   exercises   WorkoutSessionExercise[]
 
   @@index([gymId, memberId, status])
   @@index([workoutPlanId])
+  @@index([workoutPlanDayId])
 }
 
 // An exercise performed during a session.

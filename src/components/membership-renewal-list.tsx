@@ -66,9 +66,6 @@ export function MembershipRenewalList({
   searchAction,
 }: MembershipRenewalListProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
-  // #region agent log
-  fetch('http://127.0.0.1:7469/ingest/49c9d7e5-cf6e-48b1-912f-8ac4d15f6801',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2d918d'},body:JSON.stringify({sessionId:'2d918d',runId:'post-fix',hypothesisId:'B',location:'membership-renewal-list.tsx:MembershipRenewalList',message:'Renewal list rendered without server function props',data:{variant,rowCount:items.length,matchingCount,bucketCount,page,searchAction},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
 
   return (
     <div className="space-y-4">

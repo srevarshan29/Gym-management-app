@@ -15,19 +15,28 @@ export const workoutPlanExerciseInputSchema = z
     { message: "Each exercise must be from the library or a custom name." },
   );
 
+export const workoutPlanDayInputSchema = z.object({
+  label: z.string().trim().min(1, "Enter a day label.").max(80),
+  exercises: z
+    .array(workoutPlanExerciseInputSchema)
+    .min(1, "Each day needs at least one exercise."),
+});
+
 export const workoutPlanPayloadSchema = z.object({
   memberId: z.string().trim().min(1),
   title: z.string().trim().min(1).max(120),
   durationWeeks: z.coerce.number().int().min(1).max(52).optional().nullable(),
   focusGoal: z.string().trim().max(2000).optional().or(z.literal("")),
-  exercises: z
-    .array(workoutPlanExerciseInputSchema)
-    .min(1, "Add at least one exercise."),
+  days: z
+    .array(workoutPlanDayInputSchema)
+    .min(1, "Add at least one training day."),
 });
 
 export type WorkoutPlanExerciseInput = z.infer<
   typeof workoutPlanExerciseInputSchema
 >;
+
+export type WorkoutPlanDayInput = z.infer<typeof workoutPlanDayInputSchema>;
 
 export type WorkoutPlanPayload = z.infer<typeof workoutPlanPayloadSchema>;
 
@@ -45,6 +54,13 @@ export type WorkoutPlanExerciseView = {
   targetWeightKg: number | null;
 };
 
+export type WorkoutPlanDayView = {
+  id: string;
+  label: string;
+  sortOrder: number;
+  exercises: WorkoutPlanExerciseView[];
+};
+
 export type WorkoutPlanDetail = {
   id: string;
   memberId: string;
@@ -55,7 +71,7 @@ export type WorkoutPlanDetail = {
   level: string | null;
   weeklySchedule: string | null;
   isLegacy: boolean;
-  exercises: WorkoutPlanExerciseView[];
+  days: WorkoutPlanDayView[];
 };
 
 export type ExerciseListItem = {

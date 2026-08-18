@@ -45,11 +45,11 @@ export function MemberWorkoutPageClient({
     setActiveSession(initialSession);
   }, [initialSession]);
 
-  async function onStart() {
+  async function onStart(dayId?: string) {
     if (pending) return;
     await run(async () => {
       try {
-        const result = await startWorkoutSession();
+        const result = await startWorkoutSession(dayId);
         if (!result.ok) {
           toast.error(result.error);
           return;
@@ -147,13 +147,38 @@ export function MemberWorkoutPageClient({
   }
 
   if (!activeSession) {
+    const startableDays = plan.days.filter((day) => day.exercises.length > 0);
+    const showDayPicker = startableDays.length > 1;
+
     return (
       <div className="space-y-4">
         <MemberWorkoutPlanView plan={plan} />
-        {canStart ? (
-          <Button className="w-full" onClick={onStart} disabled={pending}>
+        {canStart && !showDayPicker ? (
+          <Button
+            className="w-full"
+            onClick={() => onStart(startableDays[0]?.id)}
+            disabled={pending}
+          >
             {pending ? "Starting..." : "Start workout"}
           </Button>
+        ) : null}
+        {canStart && showDayPicker ? (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Choose which day to train.
+            </p>
+            {startableDays.map((day) => (
+              <Button
+                key={day.id}
+                className="w-full"
+                variant="outline"
+                onClick={() => onStart(day.id)}
+                disabled={pending}
+              >
+                {pending ? "Starting..." : `Start ${day.label}`}
+              </Button>
+            ))}
+          </div>
         ) : null}
       </div>
     );

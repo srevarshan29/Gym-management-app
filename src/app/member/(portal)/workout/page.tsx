@@ -13,7 +13,11 @@ export default async function MemberWorkoutPage() {
     getActiveWorkoutSession(session.gymId, session.memberId),
   ]);
 
-  const canStart = Boolean(plan && !plan.isLegacy && plan.exercises.length > 0);
+  const canStart = Boolean(
+    plan &&
+      !plan.isLegacy &&
+      plan.days.some((day) => day.exercises.length > 0),
+  );
 
   return (
     <div className="space-y-4">

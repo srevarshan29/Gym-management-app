@@ -4,6 +4,7 @@ import { withTenant } from "@/lib/db-context";
 import { muscleGroupLabel } from "@/lib/exercises";
 import type { MemberOption } from "@/lib/programme-types";
 import type {
+  WorkoutPlanDayView,
   WorkoutPlanDetail,
   WorkoutPlanExerciseView,
 } from "@/lib/workout-tracking/types";
@@ -25,6 +26,19 @@ export type WorkoutPlansPageData = {
   plans: WorkoutPlanListItem[];
   members: MemberOption[];
 };
+
+const exerciseSelect = {
+  id: true,
+  exerciseId: true,
+  customName: true,
+  sortOrder: true,
+  targetSets: true,
+  targetReps: true,
+  tempo: true,
+  restSeconds: true,
+  targetWeightKg: true,
+  exercise: { select: { name: true, muscleGroup: true } },
+} as const;
 
 function mapExerciseRow(
   row: {
@@ -55,6 +69,50 @@ function mapExerciseRow(
     restSeconds: row.restSeconds,
     targetWeightKg:
       row.targetWeightKg != null ? Number(row.targetWeightKg) : null,
+  };
+}
+
+function mapDays(
+  days: {
+    id: string;
+    label: string;
+    sortOrder: number;
+    exercises: Parameters<typeof mapExerciseRow>[0][];
+  }[],
+): WorkoutPlanDayView[] {
+  return days.map((day) => ({
+    id: day.id,
+    label: day.label,
+    sortOrder: day.sortOrder,
+    exercises: [...day.exercises]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map(mapExerciseRow),
+  }));
+}
+
+function toPlanDetail(plan: {
+  id: string;
+  memberId: string;
+  memberName: string;
+  title: string;
+  durationWeeks: number | null;
+  focusGoal: string | null;
+  level: WorkoutPlanDetail["level"];
+  weeklySchedule: string | null;
+  days: Parameters<typeof mapDays>[0];
+  exerciseCount: number;
+}): WorkoutPlanDetail {
+  return {
+    id: plan.id,
+    memberId: plan.memberId,
+    memberName: plan.memberName,
+    title: plan.title,
+    durationWeeks: plan.durationWeeks,
+    focusGoal: plan.focusGoal,
+    level: plan.level,
+    weeklySchedule: plan.weeklySchedule,
+    isLegacy: plan.exerciseCount === 0 && Boolean(plan.weeklySchedule?.trim()),
+    days: mapDays(plan.days),
   };
 }
 
@@ -117,38 +175,28 @@ export async function getWorkoutPlanDetail(
         level: true,
         weeklySchedule: true,
         member: { select: { name: true } },
-        exercises: {
+        days: {
           orderBy: { sortOrder: "asc" },
           select: {
             id: true,
-            exerciseId: true,
-            customName: true,
+            label: true,
             sortOrder: true,
-            targetSets: true,
-            targetReps: true,
-            tempo: true,
-            restSeconds: true,
-            targetWeightKg: true,
-            exercise: { select: { name: true, muscleGroup: true } },
+            exercises: {
+              orderBy: { sortOrder: "asc" },
+              select: exerciseSelect,
+            },
           },
         },
+        _count: { select: { exercises: true } },
       },
     });
     if (!plan) return null;
 
-    return {
-      id: plan.id,
-      memberId: plan.memberId,
+    return toPlanDetail({
+      ...plan,
       memberName: plan.member.name,
-      title: plan.title,
-      durationWeeks: plan.durationWeeks,
-      focusGoal: plan.focusGoal,
-      level: plan.level,
-      weeklySchedule: plan.weeklySchedule,
-      isLegacy:
-        plan.exercises.length === 0 && Boolean(plan.weeklySchedule?.trim()),
-      exercises: plan.exercises.map(mapExerciseRow),
-    };
+      exerciseCount: plan._count.exercises,
+    });
   });
 }
 
@@ -168,37 +216,27 @@ export async function getMemberWorkoutPlanDetail(
         level: true,
         weeklySchedule: true,
         member: { select: { name: true } },
-        exercises: {
+        days: {
           orderBy: { sortOrder: "asc" },
           select: {
             id: true,
-            exerciseId: true,
-            customName: true,
+            label: true,
             sortOrder: true,
-            targetSets: true,
-            targetReps: true,
-            tempo: true,
-            restSeconds: true,
-            targetWeightKg: true,
-            exercise: { select: { name: true, muscleGroup: true } },
+            exercises: {
+              orderBy: { sortOrder: "asc" },
+              select: exerciseSelect,
+            },
           },
         },
+        _count: { select: { exercises: true } },
       },
     });
     if (!plan) return null;
 
-    return {
-      id: plan.id,
-      memberId: plan.memberId,
+    return toPlanDetail({
+      ...plan,
       memberName: plan.member.name,
-      title: plan.title,
-      durationWeeks: plan.durationWeeks,
-      focusGoal: plan.focusGoal,
-      level: plan.level,
-      weeklySchedule: plan.weeklySchedule,
-      isLegacy:
-        plan.exercises.length === 0 && Boolean(plan.weeklySchedule?.trim()),
-      exercises: plan.exercises.map(mapExerciseRow),
-    };
+      exerciseCount: plan._count.exercises,
+    });
   });
 }

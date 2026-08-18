@@ -45,16 +45,6 @@ export function MemberWorkoutPlanView({ plan }: MemberWorkoutPlanViewProps) {
     );
   }
 
-  const grouped = plan.exercises.reduce<Record<string, typeof plan.exercises>>(
-    (acc, exercise) => {
-      const key = exercise.muscleGroup ?? "Custom";
-      if (!acc[key]) acc[key] = [];
-      acc[key]!.push(exercise);
-      return acc;
-    },
-    {},
-  );
-
   return (
     <div className="space-y-4">
       <Card>
@@ -67,39 +57,48 @@ export function MemberWorkoutPlanView({ plan }: MemberWorkoutPlanViewProps) {
         </CardHeader>
       </Card>
 
-      {Object.keys(grouped)
-        .sort()
-        .map((group) => (
-          <Card key={group}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold text-primary">
-                {group}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {grouped[group]!.map((exercise) => (
-                <div
-                  key={exercise.id}
-                  className="rounded-xl border border-border bg-muted/20 p-4"
-                >
-                  <p className="font-medium">{exercise.displayName}</p>
-                  <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-muted-foreground">
-                    <span>{exercise.targetSets} sets × {exercise.targetReps} reps</span>
-                    {exercise.targetWeightKg != null ? (
-                      <span>Target: {exercise.targetWeightKg} kg</span>
-                    ) : (
-                      <span>Target weight: —</span>
-                    )}
-                    {exercise.tempo ? <span>Tempo: {exercise.tempo}</span> : null}
-                    {exercise.restSeconds != null ? (
-                      <span>Rest: {exercise.restSeconds}s</span>
-                    ) : null}
-                  </div>
+      {plan.days.map((day) => (
+        <Card key={day.id}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-primary">
+              {day.label}
+            </CardTitle>
+            <CardDescription>
+              {day.exercises.length} exercise
+              {day.exercises.length === 1 ? "" : "s"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {day.exercises.map((exercise) => (
+              <div
+                key={exercise.id}
+                className="rounded-xl border border-border bg-muted/20 p-4"
+              >
+                <p className="font-medium">{exercise.displayName}</p>
+                {exercise.muscleGroup ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {exercise.muscleGroup}
+                  </p>
+                ) : null}
+                <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                  <span>
+                    {exercise.targetSets} sets × {exercise.targetReps} reps
+                  </span>
+                  {exercise.targetWeightKg != null ? (
+                    <span>Target: {exercise.targetWeightKg} kg</span>
+                  ) : (
+                    <span>Target weight: —</span>
+                  )}
+                  {exercise.tempo ? <span>Tempo: {exercise.tempo}</span> : null}
+                  {exercise.restSeconds != null ? (
+                    <span>Rest: {exercise.restSeconds}s</span>
+                  ) : null}
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

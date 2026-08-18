@@ -107,6 +107,7 @@ function isStaleDevPrismaClient(client: PrismaClient): boolean {
     ledgerTransaction?: unknown;
     exercise?: { findFirst?: unknown };
     staffLoginThrottle?: unknown;
+    workoutPlanDay?: unknown;
   };
   return (
     typeof c.employee === "undefined" ||
@@ -114,6 +115,7 @@ function isStaleDevPrismaClient(client: PrismaClient): boolean {
     typeof c.ledgerTransaction === "undefined" ||
     typeof c.exercise?.findFirst === "undefined" ||
     typeof c.staffLoginThrottle === "undefined" ||
+    typeof c.workoutPlanDay === "undefined" ||
     !subscriptionHasWrittenOffAmount(client)
   );
 }

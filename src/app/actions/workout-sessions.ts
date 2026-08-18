@@ -34,9 +34,9 @@ function resolveTrackingType(planExercise: {
   );
 }
 
-export async function startWorkoutSession(): Promise<
-  ActionResult & { sessionId?: string }
-> {
+export async function startWorkoutSession(
+  workoutPlanDayId?: string | null,
+): Promise<ActionResult & { sessionId?: string }> {
   try {
     const member = await requireMember();
 
@@ -44,15 +44,23 @@ export async function startWorkoutSession(): Promise<
       where: { gymId: member.gymId, memberId: member.memberId },
       select: {
         id: true,
-        exercises: {
+        days: {
           orderBy: { sortOrder: "asc" },
-          select: { id: true, sortOrder: true },
+          select: {
+            id: true,
+            exercises: {
+              orderBy: { sortOrder: "asc" },
+              select: { id: true, sortOrder: true },
+            },
+          },
         },
-        _count: { select: { exercises: true } },
       },
     });
 
-    if (!plan || plan._count.exercises === 0) {
+    const daysWithExercises = (plan?.days ?? []).filter(
+      (day) => day.exercises.length > 0,
+    );
+    if (!plan || daysWithExercises.length === 0) {
       return actionError("No structured workout plan assigned yet.");
     }
 
@@ -68,13 +76,26 @@ export async function startWorkoutSession(): Promise<
       return { ...actionOk("Resuming your workout."), sessionId: existing.id };
     }
 
+    const requestedDayId = workoutPlanDayId?.trim() || "";
+    let day = daysWithExercises.find((row) => row.id === requestedDayId);
+    if (!day && daysWithExercises.length === 1) {
+      day = daysWithExercises[0];
+    }
+    if (!day && daysWithExercises.length > 1 && !requestedDayId) {
+      return actionError("Select which day to train.");
+    }
+    if (!day) {
+      return actionError("That training day is not on your plan.");
+    }
+
     const session = await prisma.workoutSession.create({
       data: {
         gymId: member.gymId,
         memberId: member.memberId,
         workoutPlanId: plan.id,
+        workoutPlanDayId: day.id,
         exercises: {
-          create: plan.exercises.map((row) => ({
+          create: day.exercises.map((row) => ({
             gymId: member.gymId,
             workoutPlanExerciseId: row.id,
             sortOrder: row.sortOrder,

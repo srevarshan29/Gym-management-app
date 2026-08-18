@@ -19,18 +19,22 @@ async function assertMemberInGym(tenantGymId: string, memberId: string) {
   return Boolean(member);
 }
 
-function normalizeExercises(
-  exercises: z.infer<typeof workoutPlanPayloadSchema>["exercises"],
+function normalizeDays(
+  days: z.infer<typeof workoutPlanPayloadSchema>["days"],
 ) {
-  return exercises.map((row, index) => ({
-    exerciseId: row.exerciseId?.trim() || null,
-    customName: row.customName?.trim() || null,
-    sortOrder: index,
-    targetSets: row.targetSets,
-    targetReps: row.targetReps.trim(),
-    tempo: row.tempo?.trim() || null,
-    restSeconds: row.restSeconds ?? null,
-    targetWeightKg: row.targetWeightKg ?? null,
+  return days.map((day, dayIndex) => ({
+    label: day.label.trim(),
+    sortOrder: dayIndex,
+    exercises: day.exercises.map((row, exerciseIndex) => ({
+      exerciseId: row.exerciseId?.trim() || null,
+      customName: row.customName?.trim() || null,
+      sortOrder: exerciseIndex,
+      targetSets: row.targetSets,
+      targetReps: row.targetReps.trim(),
+      tempo: row.tempo?.trim() || null,
+      restSeconds: row.restSeconds ?? null,
+      targetWeightKg: row.targetWeightKg ?? null,
+    })),
   }));
 }
 
@@ -52,13 +56,28 @@ export async function saveWorkoutPlan(
     return actionError("Member not found.");
   }
 
-  const exerciseRows = normalizeExercises(parsed.data.exercises);
+  const dayRows = normalizeDays(parsed.data.days);
 
   const planId = await withTenant(user.gymId, async (tx) => {
     const existing = await tx.workoutPlan.findFirst({
       where: { gymId: user.gymId, memberId: memberId },
       select: { id: true },
     });
+
+    const planIdToUse = existing
+      ? existing.id
+      : (
+          await tx.workoutPlan.create({
+            data: {
+              gymId: user.gymId,
+              memberId,
+              title,
+              durationWeeks: durationWeeks ?? null,
+              focusGoal: focusGoal?.trim() || null,
+            },
+            select: { id: true },
+          })
+        ).id;
 
     if (existing) {
       await tx.workoutPlan.update({
@@ -71,36 +90,36 @@ export async function saveWorkoutPlan(
           weeklySchedule: null,
         },
       });
-      await tx.workoutPlanExercise.deleteMany({
-        where: { workoutPlanId: existing.id },
+    }
+
+    await tx.workoutPlanExercise.deleteMany({
+      where: { workoutPlanId: planIdToUse, gymId: user.gymId },
+    });
+    await tx.workoutPlanDay.deleteMany({
+      where: { workoutPlanId: planIdToUse, gymId: user.gymId },
+    });
+
+    for (const day of dayRows) {
+      const createdDay = await tx.workoutPlanDay.create({
+        data: {
+          gymId: user.gymId,
+          workoutPlanId: planIdToUse,
+          label: day.label,
+          sortOrder: day.sortOrder,
+        },
+        select: { id: true },
       });
       await tx.workoutPlanExercise.createMany({
-        data: exerciseRows.map((row) => ({
+        data: day.exercises.map((row) => ({
           gymId: user.gymId,
-          workoutPlanId: existing.id,
+          workoutPlanId: planIdToUse,
+          workoutPlanDayId: createdDay.id,
           ...row,
         })),
       });
-      return existing.id;
     }
 
-    const created = await tx.workoutPlan.create({
-      data: {
-        gymId: user.gymId,
-        memberId,
-        title,
-        durationWeeks: durationWeeks ?? null,
-        focusGoal: focusGoal?.trim() || null,
-        exercises: {
-          create: exerciseRows.map((row) => ({
-            gymId: user.gymId,
-            ...row,
-          })),
-        },
-      },
-      select: { id: true },
-    });
-    return created.id;
+    return planIdToUse;
   });
 
   revalidatePath("/programmes/workout");

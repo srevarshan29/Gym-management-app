@@ -206,9 +206,6 @@ export function MembersList({
   searchAction,
 }: MembersListProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
-  // #region agent log
-  fetch('http://127.0.0.1:7469/ingest/49c9d7e5-cf6e-48b1-912f-8ac4d15f6801',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2d918d'},body:JSON.stringify({sessionId:'2d918d',runId:'post-fix',hypothesisId:'A',location:'members-list.tsx:MembersList',message:'MembersList rendered without server function props',data:{rowCount:members.length,matchingCount,totalMembers,page,pageSize,searchAction},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
 
   return (
     <div className="min-w-0 space-y-4">

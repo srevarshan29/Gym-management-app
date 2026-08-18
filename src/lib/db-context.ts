@@ -29,7 +29,9 @@ function isPoolExhaustionError(error: unknown): boolean {
   const msg = error.message;
   return (
     msg.includes("Unable to start a transaction") ||
-    msg.includes("Timed out fetching a new connection from the connection pool")
+    msg.includes("Timed out fetching a new connection from the connection pool") ||
+    msg.includes("EMAXCONNSESSION") ||
+    msg.includes("max clients reached")
   );
 }
 

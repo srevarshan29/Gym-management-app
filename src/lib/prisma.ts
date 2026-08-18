@@ -27,8 +27,16 @@ function normalizeSupabasePoolerUrl(url: string): string {
 
 function withPoolParams(url: string): string {
   const parsed = new URL(url.replace(/^postgresql:/, "postgres:"));
+  const isSupabaseSessionPooler =
+    parsed.hostname.includes("pooler.supabase.com") && parsed.port === "5432";
+  // Session pooler caps clients at pool_size (often 15). Each Next/Prisma
+  // process opens up to connection_limit sockets, so 5 × a few processes
+  // hits EMAXCONNSESSION. Keep this tiny; Prisma will queue locally.
   if (!parsed.searchParams.has("connection_limit")) {
-    parsed.searchParams.set("connection_limit", "5");
+    parsed.searchParams.set(
+      "connection_limit",
+      isSupabaseSessionPooler ? "1" : "5",
+    );
   }
   if (!parsed.searchParams.has("pool_timeout")) {
     parsed.searchParams.set("pool_timeout", "45");
@@ -129,9 +137,7 @@ function initPrisma(): PrismaClient {
   }
   if (!client) {
     client = createPrismaClient();
-    if (process.env.NODE_ENV !== "production") {
-      globalForPrisma.prisma = client;
-    }
+    globalForPrisma.prisma = client;
   }
   return client;
 }

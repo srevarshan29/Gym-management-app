@@ -9,7 +9,7 @@ import {
   canLogPayments,
   canWriteOffDues,
 } from "@/lib/permissions";
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
 import { getMemberDetail } from "@/lib/queries";
 import { durationLabel, statusFromEndDate } from "@/lib/subscription";
 import { memberGenderLabel } from "@/lib/member-gender";
@@ -74,17 +74,8 @@ export default async function MemberProfilePage({
   const member = await getMemberDetail(user.gymId, params.id);
   if (!member) notFound();
 
-  const portalMeta = await withTenant(user.gymId, (tx) =>
-    tx.member.findFirst({
-      where: { id: params.id, gymId: user.gymId },
-      select: {
-        portalEnabledAt: true,
-        email: true,
-      },
-    }),
-  );
-  const portalActive = !!portalMeta?.portalEnabledAt;
-  const hasEmail = !!portalMeta?.email?.trim();
+  const portalActive = !!member.portalEnabledAt;
+  const hasEmail = !!member.email?.trim();
 
   const current = [...member.subscriptions].sort(
     (a, b) => b.endDate.getTime() - a.endDate.getTime(),
@@ -110,21 +101,17 @@ export default async function MemberProfilePage({
   )[0];
   const addedByName = firstSubscription?.createdBy?.name ?? null;
 
-  const packages = await withTenant(user.gymId, (tx) =>
-    tx.package.findMany({
-      where: { gymId: user.gymId, isActive: true },
-      orderBy: { name: "asc" },
-    }),
-  );
+  const { packages: packagesRepo } = getRepositories();
+  const packages = await packagesRepo.listActive(platformContext, user.gymId);
   const options: PackageOption[] = packages.map((p) => ({
     id: p.id,
     name: p.name,
-    price: Number(p.price),
+    price: p.price,
     durationLabel: durationLabel(p.durationValue, p.durationUnit),
   }));
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto min-w-0 max-w-4xl">
       {showFinancials ? <AutoOpenReceipt /> : null}
       <div className="mb-4">
         <Button asChild variant="ghost" size="sm" className="gap-1">
@@ -152,8 +139,8 @@ export default async function MemberProfilePage({
               size="lg"
               className="hidden sm:flex"
             />
-          <div>
-            <div className="flex items-center gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <h1 className="font-display text-2xl font-bold tracking-tight">
                 {member.name}
               </h1>
@@ -163,7 +150,7 @@ export default async function MemberProfilePage({
                 <PendingDuesBadge />
               ) : null}
             </div>
-            <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
               <span className="font-mono">#{String(member.memberNumber).padStart(4, "0")}</span>
               <span className="flex items-center gap-1 font-mono">
                 <Phone className="h-3.5 w-3.5" /> {member.phone}

@@ -8,7 +8,7 @@ import { LockedLink } from "@/components/navigation/locked-link";
 import { useActionLock } from "@/hooks/use-action-lock";
 
 import { updatePtTrainer } from "@/app/actions/pt-members";
-import type { PtTrainerGroup } from "@/lib/pt-members";
+import type { PtTrainerGroup } from "@/lib/pt-member-types";
 import { MemberAvatar } from "@/components/member-avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

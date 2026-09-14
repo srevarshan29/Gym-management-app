@@ -54,6 +54,11 @@ next-env.d.ts
 # supabase local CLI state (can include linked project refs)
 .supabase/
 
+# firebase emulator debug logs
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
 # IDE / editor (optional local settings)
 .idea/
 *.swp

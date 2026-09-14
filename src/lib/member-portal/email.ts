@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 
+import { getRepositories, platformContext } from "@/lib/firestore";
 import { normalizeMemberEmail } from "@/lib/member-portal/constants";
 
 export const DUPLICATE_MEMBER_EMAIL_MESSAGE =
@@ -42,4 +43,17 @@ export async function findGymMembersByEmail(
       memberNumber: true,
     },
   });
+}
+
+/** Firestore lookup for member portal auth (Phase 1+). */
+export async function findGymMembersByEmailFirestore(
+  tenantGymId: string,
+  email: string,
+  options?: {
+    excludeMemberId?: string;
+    portalEnabledOnly?: boolean;
+  },
+) {
+  const { members } = getRepositories();
+  return members.findByEmail(platformContext, tenantGymId, email, options);
 }

@@ -16,7 +16,7 @@ import {
   xAxisInterval,
   yAxisWidth,
 } from "@/hooks/use-chart-layout";
-import type { MonthlyRevenuePoint } from "@/lib/revenue";
+import type { MonthlyRevenuePoint } from "@/lib/chart-types";
 import { formatCurrency } from "@/lib/utils";
 
 /** Volt green — positive revenue trend accent. */

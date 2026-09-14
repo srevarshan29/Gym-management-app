@@ -4,18 +4,23 @@ import { Plus } from "lucide-react";
 
 import { requireGym } from "@/lib/session";
 import { canManageEmployees } from "@/lib/permissions";
-import { getEmployees } from "@/lib/employees";
+import { getEmployeesPage } from "@/lib/employees";
 import { PageHeader } from "@/components/page-header";
 import { EmployeeDialog } from "@/components/employee-dialog";
 import { EmployeesList } from "@/components/employees-list";
 import { ProgrammePlansPageSkeleton } from "@/components/page-loading-skeletons";
 import { Button } from "@/components/ui/button";
 
-export default async function EmployeesPage() {
+export default async function EmployeesPage({
+  searchParams,
+}: {
+  searchParams?: { page?: string };
+}) {
   const user = await requireGym();
   if (!canManageEmployees(user.role)) {
     redirect("/");
   }
+  const page = Number(searchParams?.page ?? "1");
 
   return (
     <div className="space-y-6">
@@ -32,17 +37,23 @@ export default async function EmployeesPage() {
         />
       </PageHeader>
 
-      <Suspense fallback={<ProgrammePlansPageSkeleton />}>
-        <EmployeesPageContent gymId={user.gymId} />
+      <Suspense key={page} fallback={<ProgrammePlansPageSkeleton />}>
+        <EmployeesPageContent gymId={user.gymId} page={page} />
       </Suspense>
     </div>
   );
 }
 
-async function EmployeesPageContent({ gymId }: { gymId: string }) {
-  const rows = await getEmployees(gymId);
+async function EmployeesPageContent({
+  gymId,
+  page,
+}: {
+  gymId: string;
+  page: number;
+}) {
+  const result = await getEmployeesPage(gymId, page);
 
-  const employees = rows.map((row) => ({
+  const employees = result.employees.map((row) => ({
     id: row.id,
     name: row.name,
     phone: row.phone,
@@ -52,5 +63,12 @@ async function EmployeesPageContent({ gymId }: { gymId: string }) {
     notes: row.notes,
   }));
 
-  return <EmployeesList employees={employees} />;
+  return (
+    <EmployeesList
+      employees={employees}
+      page={result.page}
+      pageSize={result.pageSize}
+      total={result.total}
+    />
+  );
 }

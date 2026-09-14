@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
-import { MUSCLE_GROUP_OPTIONS } from "@/lib/exercises";
+import { MUSCLE_GROUP_OPTIONS } from "@/lib/muscle-groups";
 
 function SubmitButton() {
   const { pending } = useFormStatus();

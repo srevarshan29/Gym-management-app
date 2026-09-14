@@ -9,6 +9,7 @@ import { deleteVisitor } from "@/app/actions/visitors";
 import type { VisitorInput } from "@/components/visitor-dialog";
 import { VisitorDialog } from "@/components/visitor-dialog";
 import { LockedLink } from "@/components/navigation/locked-link";
+import { PaginationBar } from "@/components/pagination-bar";
 import { ViewFilterLinks } from "@/components/navigation/view-filter-links";
 import { useActionLock } from "@/hooks/use-action-lock";
 import { Button } from "@/components/ui/button";
@@ -32,13 +33,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { VisitorStatusFilter } from "@/lib/visitors";
+import type { VisitorStatusFilter } from "@/lib/visitor-types";
 import { formatDate } from "@/lib/utils";
 
 type VisitorsListProps = {
   visitors: VisitorInput[];
   canManage: boolean;
   view: VisitorStatusFilter;
+  page: number;
+  pageSize: number;
+  total: number;
 };
 
 function matchesSearch(visitor: VisitorInput, query: string): boolean {
@@ -130,7 +134,14 @@ function ViewFilter({ view }: { view: VisitorStatusFilter }) {
   return <ViewFilterLinks view={view} items={items} />;
 }
 
-export function VisitorsList({ visitors, canManage, view }: VisitorsListProps) {
+export function VisitorsList({
+  visitors,
+  canManage,
+  view,
+  page,
+  pageSize,
+  total,
+}: VisitorsListProps) {
   const [query, setQuery] = React.useState("");
   const filtered = React.useMemo(
     () => visitors.filter((visitor) => matchesSearch(visitor, query)),
@@ -258,6 +269,19 @@ export function VisitorsList({ visitors, canManage, view }: VisitorsListProps) {
           )}
         </CardContent>
       </Card>
+
+      <PaginationBar
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        makeHref={(nextPage) => {
+          const params = new URLSearchParams();
+          if (view !== "pending") params.set("view", view);
+          if (nextPage > 1) params.set("page", String(nextPage));
+          const qs = params.toString();
+          return qs ? `/members/visitors?${qs}` : "/members/visitors";
+        }}
+      />
     </div>
   );
 }

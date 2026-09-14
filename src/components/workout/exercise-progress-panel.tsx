@@ -12,7 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { ExerciseProgressData } from "@/lib/workout-tracking/progress";
+import type { ExerciseProgressData } from "@/lib/workout-tracking/types";
+import { progressMetricLabel } from "@/lib/workout-tracking/progress-format";
 import { useSharedNavigationLock } from "@/components/navigation/navigation-lock-provider";
 
 type ExerciseProgressPanelProps = {
@@ -107,9 +108,7 @@ export function ExerciseProgressPanel({
         {progress ? (
           <>
             <p className="text-sm text-muted-foreground">
-              {progress.trackingType === "TIME"
-                ? `Max duration per ${grouping === "weekly" ? "week" : "month"} for`
-                : `Max weight per ${grouping === "weekly" ? "week" : "month"} for`}{" "}
+              {progressMetricLabel(progress.trackingType, grouping)} for{" "}
               <span className="font-medium text-foreground">
                 {progress.exerciseName}
               </span>

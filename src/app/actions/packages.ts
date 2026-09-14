@@ -3,10 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { withTenant } from "@/lib/db-context";
-import { requireGym } from "@/lib/session";
-import { canManagePackages } from "@/lib/permissions";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
+import { getRepositories } from "@/lib/firestore";
+import { staffContextFromUser } from "@/lib/firestore/session-context";
+import { canManagePackages } from "@/lib/permissions";
+import { requireGym } from "@/lib/session";
 
 const packageSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
@@ -36,9 +37,10 @@ export async function createPackage(
     return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
   }
 
-  await withTenant(user.gymId, (tx) =>
-    tx.package.create({ data: { ...parsed.data, gymId: user.gymId } }),
-  );
+  const ctx = staffContextFromUser(user);
+  const { packages } = getRepositories();
+  await packages.create(ctx, user.gymId, parsed.data);
+
   revalidatePath("/packages");
   return actionOk("Package created.");
 }
@@ -60,13 +62,10 @@ export async function updatePackage(
     return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
   }
 
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.package.updateMany({
-      where: { id, gymId: user.gymId },
-      data: parsed.data,
-    }),
-  );
-  if (result.count === 0) return actionError("Package not found.");
+  const ctx = staffContextFromUser(user);
+  const { packages } = getRepositories();
+  const updated = await packages.update(ctx, user.gymId, id, parsed.data);
+  if (!updated) return actionError("Package not found.");
 
   revalidatePath("/packages");
   return actionOk("Package updated.");
@@ -80,13 +79,11 @@ export async function setPackageActive(
   if (!canManagePackages(user.role)) {
     return actionError("You do not have permission to manage packages.");
   }
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.package.updateMany({
-      where: { id, gymId: user.gymId },
-      data: { isActive },
-    }),
-  );
-  if (result.count === 0) return actionError("Package not found.");
+
+  const ctx = staffContextFromUser(user);
+  const { packages } = getRepositories();
+  const updated = await packages.setActive(ctx, user.gymId, id, isActive);
+  if (!updated) return actionError("Package not found.");
 
   revalidatePath("/packages");
   return actionOk();

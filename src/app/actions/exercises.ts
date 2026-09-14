@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, newDocId, platformContext } from "@/lib/firestore";
 import { MUSCLE_GROUP_VALUES } from "@/lib/exercises";
 import { requireGym } from "@/lib/session";
 import { canManageMembers } from "@/lib/permissions";
@@ -25,6 +25,11 @@ function assertCanManage(role: Parameters<typeof canManageMembers>[0]) {
   return null;
 }
 
+function revalidateExercisePaths() {
+  revalidatePath("/programmes/workout");
+  revalidatePath("/programmes/exercises");
+}
+
 export async function createExercise(
   _prev: ActionResult | undefined,
   formData: FormData,
@@ -40,34 +45,33 @@ export async function createExercise(
 
   const data = parsed.data;
   const name = data.name.trim();
+  const { customExercises } = getRepositories();
 
-  const duplicate = await withTenant(user.gymId, (tx) =>
-    tx.exercise.findFirst({
-      where: { gymId: user.gymId, name: { equals: name, mode: "insensitive" } },
-      select: { id: true },
-    }),
+  const duplicate = await customExercises.findByNameLower(
+    platformContext,
+    user.gymId,
+    name.toLowerCase(),
   );
   if (duplicate) {
     return actionError("An exercise with this name already exists.");
   }
 
-  await withTenant(user.gymId, (tx) =>
-    tx.exercise.create({
-      data: {
-        gymId: user.gymId,
-        name,
-        muscleGroup: data.muscleGroup,
-        defaultSets: data.defaultSets ?? null,
-        defaultReps: data.defaultReps?.trim() || null,
-        defaultTempo: data.defaultTempo?.trim() || null,
-        defaultRestSeconds: data.defaultRestSeconds ?? null,
-        isSeeded: false,
-      },
-    }),
+  await customExercises.createExercise(
+    platformContext,
+    user.gymId,
+    newDocId(),
+    {
+      name,
+      muscleGroup: data.muscleGroup,
+      defaultSets: data.defaultSets ?? null,
+      defaultReps: data.defaultReps?.trim() || null,
+      defaultTempo: data.defaultTempo?.trim() || null,
+      defaultRestSeconds: data.defaultRestSeconds ?? null,
+      isSeeded: false,
+    },
   );
 
-  revalidatePath("/programmes/workout");
-  revalidatePath("/programmes/exercises");
+  revalidateExercisePaths();
   return actionOk("Exercise added to library.");
 }
 
@@ -76,11 +80,12 @@ export async function deleteExercise(id: string): Promise<ActionResult> {
   const denied = assertCanManage(user.role);
   if (denied) return denied;
 
-  const inUse = await withTenant(user.gymId, (tx) =>
-    tx.workoutPlanExercise.findFirst({
-      where: { gymId: user.gymId, exerciseId: id },
-      select: { id: true },
-    }),
+  const { customExercises, workoutPlans } = getRepositories();
+
+  const inUse = await workoutPlans.isExerciseReferenced(
+    platformContext,
+    user.gymId,
+    id,
   );
   if (inUse) {
     return actionError(
@@ -88,14 +93,15 @@ export async function deleteExercise(id: string): Promise<ActionResult> {
     );
   }
 
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.exercise.deleteMany({ where: { id, gymId: user.gymId, isSeeded: false } }),
+  const deleted = await customExercises.deleteCustomExercise(
+    platformContext,
+    user.gymId,
+    id,
   );
-  if (result.count === 0) {
+  if (!deleted) {
     return actionError("Custom exercise not found or cannot delete seeded exercises.");
   }
 
-  revalidatePath("/programmes/workout");
-  revalidatePath("/programmes/exercises");
+  revalidateExercisePaths();
   return actionOk("Exercise removed.");
 }

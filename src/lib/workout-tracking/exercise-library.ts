@@ -1,56 +1,50 @@
-import type { MuscleGroup } from "@prisma/client";
-
-import { withTenant } from "@/lib/db-context";
-import { muscleGroupLabel } from "@/lib/exercises";
+import type { MuscleGroup } from "@/lib/firestore/types";
+import { getRepositories, platformContext } from "@/lib/firestore";
+import { seedExercisesForGym } from "@/lib/exercises";
 import type { ExerciseListItem } from "@/lib/workout-tracking/types";
+
+function toListItem(doc: {
+  id: string;
+  name: string;
+  muscleGroup: MuscleGroup;
+  defaultSets: number | null;
+  defaultReps: string | null;
+  defaultTempo: string | null;
+  defaultRestSeconds: number | null;
+  isSeeded: boolean;
+}): ExerciseListItem {
+  return {
+    id: doc.id,
+    name: doc.name,
+    muscleGroup: doc.muscleGroup,
+    defaultSets: doc.defaultSets,
+    defaultReps: doc.defaultReps,
+    defaultTempo: doc.defaultTempo,
+    defaultRestSeconds: doc.defaultRestSeconds,
+    isSeeded: doc.isSeeded,
+  };
+}
 
 export async function getExerciseLibrary(
   tenantGymId: string,
   muscleGroup?: MuscleGroup | null,
 ): Promise<ExerciseListItem[]> {
-  return withTenant(tenantGymId, async (tx) => {
-    const rows = await tx.exercise.findMany({
-      where: {
-        gymId: tenantGymId,
-        ...(muscleGroup ? { muscleGroup } : {}),
-      },
-      orderBy: [{ muscleGroup: "asc" }, { name: "asc" }],
-      select: {
-        id: true,
-        name: true,
-        muscleGroup: true,
-        defaultSets: true,
-        defaultReps: true,
-        defaultTempo: true,
-        defaultRestSeconds: true,
-        isSeeded: true,
-      },
-    });
+  const { customExercises } = getRepositories();
 
-    return rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      muscleGroup: row.muscleGroup,
-      defaultSets: row.defaultSets,
-      defaultReps: row.defaultReps,
-      defaultTempo: row.defaultTempo,
-      defaultRestSeconds: row.defaultRestSeconds,
-      isSeeded: row.isSeeded,
-    }));
-  });
+  let rows = muscleGroup
+    ? await customExercises.listByMuscleGroup(
+        platformContext,
+        tenantGymId,
+        muscleGroup,
+      )
+    : await customExercises.listLibrary(platformContext, tenantGymId);
+
+  if (rows.length === 0 && !muscleGroup) {
+    await seedExercisesForGym(tenantGymId);
+    rows = await customExercises.listLibrary(platformContext, tenantGymId);
+  }
+
+  return rows.map(toListItem);
 }
 
-export function groupExercisesByMuscle<T extends { muscleGroup: string; name: string }>(
-  exercises: T[],
-): Record<string, T[]> {
-  const groups: Record<string, T[]> = {};
-  for (const exercise of exercises) {
-    const key = muscleGroupLabel(exercise.muscleGroup as Parameters<typeof muscleGroupLabel>[0]);
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(exercise);
-  }
-  for (const key of Object.keys(groups)) {
-    groups[key]!.sort((a, b) => a.name.localeCompare(b.name));
-  }
-  return groups;
-}
+export { groupExercisesByMuscle } from "@/lib/workout-tracking/exercise-library-grouping";

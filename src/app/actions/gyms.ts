@@ -4,11 +4,15 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
-import { withPlatformLookup, withSuperAdmin } from "@/lib/db-context";
-import { requireSuperAdmin } from "@/lib/session";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
+import {
+  getRepositories,
+  newDocId,
+  platformContext,
+} from "@/lib/firestore";
 import { DEFAULT_MEMBERSHIP_POLICY_TEXT } from "@/lib/membership-policy";
 import { seedExercisesForGym } from "@/lib/exercises";
+import { requireSuperAdmin } from "@/lib/session";
 
 const createGymSchema = z.object({
   gymName: z.string().trim().min(1, "Gym name is required").max(120),
@@ -21,9 +25,8 @@ const createGymSchema = z.object({
 });
 
 /**
- * Provisions a brand-new tenant: a Gym row, its first OWNER account, and an
- * empty GymProfile — all in one transaction so a new gym never ends up
- * without an owner (or vice versa). Only reachable by SUPER_ADMIN accounts.
+ * Provisions a brand-new tenant: gym, first OWNER account, and gym profile.
+ * Only reachable by SUPER_ADMIN accounts.
  */
 export async function createGym(
   _prev: ActionResult | undefined,
@@ -37,35 +40,38 @@ export async function createGym(
   }
   const { gymName, ownerName, ownerEmail, ownerPassword } = parsed.data;
 
-  const existing = await withPlatformLookup((tx) =>
-    tx.user.findUnique({ where: { email: ownerEmail } }),
-  );
+  const { users, gyms, gymProfiles } = getRepositories();
+
+  const existing = await users.findByEmail(platformContext, ownerEmail);
   if (existing) {
     return actionError("An account with that email already exists.");
   }
 
   const passwordHash = await bcrypt.hash(ownerPassword, 10);
+  const gymId = newDocId();
+  const registrationToken = newDocId();
 
-  await withSuperAdmin(async (tx) => {
-    const gym = await tx.gym.create({ data: { name: gymName } });
-    await tx.user.create({
-      data: {
-        gymId: gym.id,
-        name: ownerName,
-        email: ownerEmail,
-        passwordHash,
-        role: "OWNER",
-      },
-    });
-    await tx.gymProfile.create({
-      data: {
-        gymId: gym.id,
-        name: gymName,
-        membershipPolicyText: DEFAULT_MEMBERSHIP_POLICY_TEXT,
-      },
-    });
-    await seedExercisesForGym(tx, gym.id);
+  await gyms.create(platformContext, {
+    id: gymId,
+    name: gymName,
+    registrationToken,
   });
+
+  await users.create(platformContext, {
+    id: newDocId(),
+    gymId,
+    name: ownerName,
+    email: ownerEmail,
+    passwordHash,
+    role: "OWNER",
+  });
+
+  await gymProfiles.create(platformContext, gymId, {
+    name: gymName,
+    membershipPolicyText: DEFAULT_MEMBERSHIP_POLICY_TEXT,
+  });
+
+  await seedExercisesForGym(gymId);
 
   revalidatePath("/admin");
   return actionOk("Gym created.");

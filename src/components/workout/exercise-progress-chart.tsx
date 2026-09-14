@@ -17,8 +17,13 @@ import {
   xAxisInterval,
   yAxisWidth,
 } from "@/hooks/use-chart-layout";
-import type { ExerciseProgressPoint } from "@/lib/workout-tracking/progress";
-import type { ExerciseTrackingType } from "@prisma/client";
+import {
+  formatProgressValue,
+  progressChartValue,
+  progressPointValue,
+  progressUsesIntegerAxis,
+} from "@/lib/workout-tracking/progress-format";
+import type { ExerciseProgressPoint, ExerciseTrackingType } from "@/lib/workout-tracking/types";
 
 const LINE_COLOR = "hsl(var(--primary))";
 const GRID_COLOR = "hsl(var(--border))";
@@ -39,14 +44,13 @@ function ProgressTooltip({
 }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
-  const valueLabel =
-    trackingType === "TIME"
-      ? `${row.maxDurationSeconds ?? 0}s`
-      : `${row.maxWeightKg ?? 0} kg`;
+  const value = progressPointValue(row, trackingType) ?? 0;
   return (
     <div className="rounded-lg border bg-card px-3 py-2 shadow-soft">
       <p className="text-xs text-muted-foreground">{row.label}</p>
-      <p className="font-mono text-sm font-semibold">{valueLabel}</p>
+      <p className="font-mono text-sm font-semibold">
+        {formatProgressValue(value, trackingType)}
+      </p>
     </div>
   );
 }
@@ -64,10 +68,7 @@ export function ExerciseProgressChart({
   const tickSize = compact ? 10 : 12;
   const chartData: ChartRow[] = data.map((point) => ({
     ...point,
-    chartValue:
-      trackingType === "TIME"
-        ? point.maxDurationSeconds ?? 0
-        : point.maxWeightKg ?? 0,
+    chartValue: progressChartValue(point, trackingType),
   }));
 
   if (data.length === 0) {
@@ -95,7 +96,7 @@ export function ExerciseProgressChart({
           tickLine={false}
           axisLine={false}
           domain={[0, "auto"]}
-          allowDecimals={trackingType !== "TIME"}
+          allowDecimals={!progressUsesIntegerAxis(trackingType)}
         />
         <Tooltip
           content={<ProgressTooltip trackingType={trackingType} />}
@@ -106,7 +107,7 @@ export function ExerciseProgressChart({
             stroke="hsl(var(--muted-foreground))"
             strokeDasharray="6 4"
             label={{
-              value: `Target ${targetWeightKg} kg`,
+              value: `Target ${formatProgressValue(targetWeightKg, trackingType)}`,
               fill: AXIS_COLOR,
               fontSize: tickSize,
             }}

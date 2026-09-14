@@ -1,4 +1,5 @@
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
+import { DIET_PLANS_PAGE_SIZE } from "@/lib/firestore/repositories/diet-plans";
 import type { MemberOption } from "@/lib/programme-types";
 
 export type { MemberOption };
@@ -15,42 +16,60 @@ export type DietPlanListItem = {
 export type DietPlansPageData = {
   plans: DietPlanListItem[];
   members: MemberOption[];
+  assignedMemberIds: string[];
+  total: number;
+  page: number;
+  pageSize: number;
 };
+
+function toListItem(doc: {
+  id: string;
+  memberId: string;
+  memberName: string;
+  title: string;
+  caloriesPerDay: number;
+  mealPlan: string;
+}): DietPlanListItem {
+  return {
+    id: doc.id,
+    memberId: doc.memberId,
+    memberName: doc.memberName,
+    title: doc.title,
+    caloriesPerDay: doc.caloriesPerDay,
+    mealPlan: doc.mealPlan,
+  };
+}
 
 export async function getDietPlansPageData(
   tenantGymId: string,
+  page = 1,
 ): Promise<DietPlansPageData> {
-  return withTenant(tenantGymId, async (tx) => {
-    const [plans, members] = await Promise.all([
-      tx.dietPlan.findMany({
-        where: { gymId: tenantGymId },
-        orderBy: [{ member: { name: "asc" } }],
-        select: {
-          id: true,
-          memberId: true,
-          title: true,
-          caloriesPerDay: true,
-          mealPlan: true,
-          member: { select: { name: true } },
-        },
-      }),
-      tx.member.findMany({
-        where: { gymId: tenantGymId },
-        orderBy: { name: "asc" },
-        select: { id: true, name: true },
-      }),
-    ]);
+  const { dietPlans, members } = getRepositories();
 
-    return {
-      plans: plans.map((plan) => ({
-        id: plan.id,
-        memberId: plan.memberId,
-        memberName: plan.member?.name ?? "",
-        title: plan.title,
-        caloriesPerDay: plan.caloriesPerDay,
-        mealPlan: plan.mealPlan,
-      })),
-      members,
-    };
-  });
+  const [planPage, memberOptions, allPlans] = await Promise.all([
+    dietPlans.listDietPlanPage(platformContext, tenantGymId, {
+      page,
+      pageSize: DIET_PLANS_PAGE_SIZE,
+    }),
+    members.listMemberOptions(platformContext, tenantGymId),
+    dietPlans.listAllForExport(platformContext, tenantGymId),
+  ]);
+
+  return {
+    plans: planPage.items.map(toListItem),
+    members: memberOptions,
+    assignedMemberIds: allPlans.map((plan) => plan.memberId),
+    total: planPage.total,
+    page: planPage.page,
+    pageSize: planPage.pageSize,
+  };
+}
+
+/** Full list for CSV export (cursor-paged, capped at 1000 rows). */
+export async function getAllDietPlansForExport(
+  tenantGymId: string,
+): Promise<DietPlanListItem[]> {
+  const { dietPlans } = getRepositories();
+  const rows = await dietPlans.listAllForExport(platformContext, tenantGymId);
+  return rows.map(toListItem);
 }

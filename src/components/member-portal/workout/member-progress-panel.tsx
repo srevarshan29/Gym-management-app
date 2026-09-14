@@ -19,11 +19,16 @@ import {
 } from "@/components/ui/select";
 import { useSharedNavigationLock } from "@/components/navigation/navigation-lock-provider";
 import { cn } from "@/lib/utils";
+import {
+  formatProgressValue,
+  progressMetricLabel,
+  progressPointValue,
+} from "@/lib/workout-tracking/progress-format";
 import type {
   ExerciseProgressData,
   ExerciseProgressPoint,
   ProgressGrouping,
-} from "@/lib/workout-tracking/progress";
+} from "@/lib/workout-tracking/types";
 
 const CARD_CLASS =
   "rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70";
@@ -32,17 +37,14 @@ function pointValue(
   point: ExerciseProgressPoint,
   trackingType: ExerciseProgressData["trackingType"],
 ): number | null {
-  if (trackingType === "TIME") return point.maxDurationSeconds;
-  return point.maxWeightKg;
+  return progressPointValue(point, trackingType);
 }
 
 function formatValue(
   value: number,
   trackingType: ExerciseProgressData["trackingType"],
 ): string {
-  if (trackingType === "TIME") return `${value}s`;
-  const rounded = Number.isInteger(value) ? String(value) : String(value);
-  return `${rounded}kg`;
+  return formatProgressValue(value, trackingType);
 }
 
 function deriveSummary(
@@ -125,13 +127,7 @@ export function MemberProgressPanel({
       ? deriveSummary(progress.points, progress.trackingType, grouping)
       : null;
 
-  const chartPoints =
-    progress && grouping === "weekly"
-      ? progress.points.map((point, index) => ({
-          ...point,
-          label: `W${index + 1}`,
-        }))
-      : (progress?.points ?? []);
+  const chartPoints = progress?.points ?? [];
 
   return (
     <div className="space-y-4">
@@ -174,12 +170,12 @@ export function MemberProgressPanel({
 
           <Card className={CARD_CLASS}>
             <CardContent className="space-y-4 p-4">
-              {summary ? (
+              {summary && progress ? (
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs text-muted-foreground">Current max</p>
                     <p className="font-display text-3xl font-bold">
-                      {formatValue(summary.currentMax, progress?.trackingType ?? "WEIGHTED")}
+                      {formatValue(summary.currentMax, progress.trackingType)}
                     </p>
                   </div>
                   {summary.gain != null ? (
@@ -193,7 +189,7 @@ export function MemberProgressPanel({
                         <TrendingUp className="h-4 w-4" />
                       ) : null}
                       {summary.gain >= 0 ? "+" : ""}
-                      {formatValue(summary.gain, progress?.trackingType ?? "WEIGHTED")}
+                      {formatValue(summary.gain, progress.trackingType)}
                       {summary.spanLabel ? ` (${summary.spanLabel})` : ""}
                     </p>
                   ) : null}

@@ -6,6 +6,7 @@ import { Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { deleteWorkoutPlan } from "@/app/actions/workout-plans";
+import { PaginationBar } from "@/components/pagination-bar";
 import { LockedLink } from "@/components/navigation/locked-link";
 import { useActionLock } from "@/hooks/use-action-lock";
 import { Button } from "@/components/ui/button";
@@ -29,11 +30,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { WorkoutPlanListItem } from "@/lib/workout-plans";
+import type { WorkoutPlanListItem } from "@/lib/programme-types";
 
 type WorkoutPlansListProps = {
   plans: WorkoutPlanListItem[];
   canManage: boolean;
+  page: number;
+  pageSize: number;
+  total: number;
 };
 
 function matchesSearch(plan: WorkoutPlanListItem, query: string): boolean {
@@ -97,7 +101,13 @@ function DeleteWorkoutPlanButton({
   );
 }
 
-export function WorkoutPlansList({ plans, canManage }: WorkoutPlansListProps) {
+export function WorkoutPlansList({
+  plans,
+  canManage,
+  page,
+  pageSize,
+  total,
+}: WorkoutPlansListProps) {
   const [query, setQuery] = React.useState("");
   const filtered = React.useMemo(
     () => plans.filter((plan) => matchesSearch(plan, query)),
@@ -199,6 +209,19 @@ export function WorkoutPlansList({ plans, canManage }: WorkoutPlansListProps) {
           )}
         </CardContent>
       </Card>
+
+      {total > pageSize ? (
+        <PaginationBar
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          makeHref={(nextPage) =>
+            nextPage > 1
+              ? `/programmes/workout?page=${nextPage}`
+              : "/programmes/workout"
+          }
+        />
+      ) : null}
     </div>
   );
 }

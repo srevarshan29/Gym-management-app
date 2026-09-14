@@ -1,4 +1,4 @@
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
 
 export type StaffOption = {
   id: string;
@@ -9,13 +9,8 @@ export type StaffOption = {
 export async function getGymStaffOptions(
   tenantGymId: string,
 ): Promise<StaffOption[]> {
-  return withTenant(tenantGymId, (tx) =>
-    tx.user.findMany({
-      where: { gymId: tenantGymId, role: { not: "SUPER_ADMIN" } },
-      orderBy: [{ name: "asc" }],
-      select: { id: true, name: true },
-    }),
-  );
+  const { users } = getRepositories();
+  return users.getStaffOptions(platformContext, tenantGymId);
 }
 
 /** Returns true when trainerId is a staff user in the same gym. */
@@ -23,15 +18,6 @@ export async function validateTrainerForGym(
   tenantGymId: string,
   trainerId: string,
 ): Promise<boolean> {
-  const trainer = await withTenant(tenantGymId, (tx) =>
-    tx.user.findFirst({
-      where: {
-        id: trainerId,
-        gymId: tenantGymId,
-        role: { not: "SUPER_ADMIN" },
-      },
-      select: { id: true },
-    }),
-  );
-  return trainer != null;
+  const { users } = getRepositories();
+  return users.validateTrainerForGym(platformContext, tenantGymId, trainerId);
 }

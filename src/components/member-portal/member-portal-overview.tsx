@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { MemberPortalOverview } from "@/lib/member-portal/queries";
-import type { SuggestedWorkoutDay } from "@/lib/workout-tracking/suggested-day";
+import type { SuggestedWorkoutDay } from "@/lib/workout-tracking/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 const CARD_CLASS =
@@ -25,7 +25,11 @@ const QUICK_ACTIONS = [
   { href: "/member/diet", label: "Diet", icon: Salad },
 ] as const;
 
-function TodaysWorkoutCard({ suggestion }: { suggestion: SuggestedWorkoutDay }) {
+function TodaysWorkoutCard({
+  suggestion,
+}: {
+  suggestion: SuggestedWorkoutDay;
+}) {
   const emptyCopy = "No workout assigned today — check with your trainer";
 
   if (suggestion.kind === "none" || suggestion.kind === "legacy") {

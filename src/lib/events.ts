@@ -1,4 +1,5 @@
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
+import { EVENTS_PORTAL_LIMIT } from "@/lib/firestore/repositories/events";
 
 export type GymEventListItem = {
   id: string;
@@ -8,46 +9,38 @@ export type GymEventListItem = {
   description: string | null;
 };
 
-function startOfTodayLocal(): Date {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+function toListItem(doc: {
+  id: string;
+  title: string;
+  eventDate: { toDate(): Date };
+  location: string;
+  description: string | null;
+}): GymEventListItem {
+  return {
+    id: doc.id,
+    title: doc.title,
+    eventDate: doc.eventDate.toDate(),
+    location: doc.location,
+    description: doc.description,
+  };
 }
 
-function sortEventsUpcomingThenPast(
-  rows: GymEventListItem[],
-): GymEventListItem[] {
-  const today = startOfTodayLocal();
-  const upcoming: GymEventListItem[] = [];
-  const past: GymEventListItem[] = [];
-
-  for (const row of rows) {
-    const d = new Date(row.eventDate);
-    if (d >= today) {
-      upcoming.push(row);
-    } else {
-      past.push(row);
-    }
-  }
-
-  upcoming.sort((a, b) => a.eventDate.getTime() - b.eventDate.getTime());
-  past.sort((a, b) => b.eventDate.getTime() - a.eventDate.getTime());
-
-  return [...upcoming, ...past];
-}
-
+/** Staff events page — upcoming first, then past (max 50 rows). */
 export async function getEvents(tenantGymId: string): Promise<GymEventListItem[]> {
-  const rows = await withTenant(tenantGymId, (tx) =>
-    tx.gymEvent.findMany({
-      where: { gymId: tenantGymId },
-      select: {
-        id: true,
-        title: true,
-        eventDate: true,
-        location: true,
-        description: true,
-      },
-    }),
+  const { events } = getRepositories();
+  const rows = await events.listForPortal(
+    platformContext,
+    tenantGymId,
+    EVENTS_PORTAL_LIMIT,
   );
+  return rows.map(toListItem);
+}
 
-  return sortEventsUpcomingThenPast(rows);
+/** Full list for CSV export (cursor-paged, capped at 1000 rows). */
+export async function getAllEventsForExport(
+  tenantGymId: string,
+): Promise<GymEventListItem[]> {
+  const { events } = getRepositories();
+  const rows = await events.listAllForExport(platformContext, tenantGymId);
+  return rows.map(toListItem);
 }

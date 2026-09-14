@@ -1,14 +1,15 @@
-import Link from "next/link";
-
 import { requireMember } from "@/lib/member-session";
 import { getMemberWorkoutPlanDetail } from "@/lib/workout-plans";
 import { getPreviousSetsForSessionExercises } from "@/lib/workout-tracking/previous-sets";
 import { getActiveWorkoutSession } from "@/lib/workout-tracking/sessions";
 import { MemberWorkoutPageClient } from "@/components/member-portal/workout/member-workout-page-client";
-import { Button } from "@/components/ui/button";
+import { LockedLink } from "@/components/navigation/locked-link";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default async function MemberWorkoutPage() {
   const session = await requireMember();
+
   const [plan, activeSession] = await Promise.all([
     getMemberWorkoutPlanDetail(session.gymId, session.memberId),
     getActiveWorkoutSession(session.gymId, session.memberId),
@@ -42,11 +43,15 @@ export default async function MemberWorkoutPage() {
               View your plan and log sets during your session.
             </p>
           </div>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/member/workout/progress">Progress</Link>
-          </Button>
+          <LockedLink
+            href="/member/workout/progress"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            Progress
+          </LockedLink>
         </div>
       )}
+
       <MemberWorkoutPageClient
         plan={plan}
         activeSession={activeSession}

@@ -1,10 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
+import {
+  createEmployeeRecord,
+  deleteEmployeeRecord,
+} from "@/lib/firestore/employee-operations";
 import { requireGym } from "@/lib/session";
 import { canManageEmployees } from "@/lib/permissions";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
@@ -24,12 +27,12 @@ function parseJoiningDate(value: string): Date | null {
   return date;
 }
 
-function parseSalary(value: string | undefined): Prisma.Decimal | null {
+function parseSalary(value: string | undefined): number | null {
   const raw = (value ?? "").trim();
   if (!raw) return null;
   const num = Number(raw);
   if (Number.isNaN(num) || num < 0) return null;
-  return new Prisma.Decimal(num);
+  return num;
 }
 
 function revalidateEmployeesPath() {
@@ -57,27 +60,20 @@ export async function createEmployee(
 
   const salaryRaw = parsed.data.salary;
   if (salaryRaw && salaryRaw.trim() !== "") {
-    const salary = parseSalary(salaryRaw);
-    if (salary === null) {
+    const salaryCheck = parseSalary(salaryRaw);
+    if (salaryCheck === null) {
       return actionError("Enter a valid salary amount or leave it blank.");
     }
   }
 
-  const salary = parseSalary(parsed.data.salary);
-
-  await withTenant(user.gymId, (tx) =>
-    tx.employee.create({
-      data: {
-        gymId: user.gymId,
-        name: parsed.data.name,
-        phone: parsed.data.phone,
-        position: parsed.data.position,
-        joiningDate,
-        salary,
-        notes: parsed.data.notes || null,
-      },
-    }),
-  );
+  await createEmployeeRecord(user.gymId, {
+    name: parsed.data.name,
+    phone: parsed.data.phone,
+    position: parsed.data.position,
+    joiningDate,
+    salary: parseSalary(parsed.data.salary),
+    notes: parsed.data.notes || null,
+  });
 
   revalidateEmployeesPath();
   return actionOk("Employee added.");
@@ -113,24 +109,20 @@ export async function updateEmployee(
     }
   }
 
-  const salary = parseSalary(parsed.data.salary);
-
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.employee.updateMany({
-      where: { id, gymId: user.gymId },
-      data: {
-        name: parsed.data.name,
-        phone: parsed.data.phone,
-        position: parsed.data.position,
-        joiningDate,
-        salary,
-        notes: parsed.data.notes || null,
-      },
-    }),
-  );
-  if (result.count === 0) {
+  const { employees } = getRepositories();
+  const existing = await employees.getById(platformContext, user.gymId, id);
+  if (!existing) {
     return actionError("Employee not found.");
   }
+
+  await employees.updateEmployee(platformContext, user.gymId, id, {
+    name: parsed.data.name,
+    phone: parsed.data.phone,
+    position: parsed.data.position,
+    joiningDate,
+    salary: parseSalary(parsed.data.salary),
+    notes: parsed.data.notes || null,
+  });
 
   revalidateEmployeesPath();
   return actionOk("Employee updated.");
@@ -143,10 +135,8 @@ export async function deleteEmployee(id: string): Promise<ActionResult> {
   }
   if (!id) return actionError("Missing employee id.");
 
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.employee.deleteMany({ where: { id, gymId: user.gymId } }),
-  );
-  if (result.count === 0) {
+  const deleted = await deleteEmployeeRecord(user.gymId, id);
+  if (!deleted) {
     return actionError("Employee not found.");
   }
 

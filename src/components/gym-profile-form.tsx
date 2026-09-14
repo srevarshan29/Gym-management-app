@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
-import type { GymProfileData } from "@/lib/gym-profile";
+import type { GymProfileData } from "@/lib/gym-profile-types";
 
 export function GymProfileForm({ profile }: { profile: GymProfileData }) {
   const guardedAction = useGuardedFormAction(updateGymProfile);

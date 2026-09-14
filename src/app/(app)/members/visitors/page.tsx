@@ -3,7 +3,10 @@ import { Plus } from "lucide-react";
 
 import { requireGym } from "@/lib/session";
 import { canManageMembers } from "@/lib/permissions";
-import { getVisitors, type VisitorStatusFilter } from "@/lib/visitors";
+import {
+  getVisitorsPage,
+  type VisitorStatusFilter,
+} from "@/lib/visitors";
 import { PageHeader } from "@/components/page-header";
 import { VisitorsPageSkeleton } from "@/components/page-loading-skeletons";
 import { VisitorDialog } from "@/components/visitor-dialog";
@@ -18,11 +21,12 @@ function parseView(raw?: string): VisitorStatusFilter {
 export default async function VisitorsPage({
   searchParams,
 }: {
-  searchParams?: { view?: string };
+  searchParams?: { view?: string; page?: string };
 }) {
   const user = await requireGym();
   const canManage = canManageMembers(user.role);
   const view = parseView(searchParams?.view);
+  const page = Number(searchParams?.page ?? "1");
 
   return (
     <div>
@@ -42,10 +46,15 @@ export default async function VisitorsPage({
       </PageHeader>
 
       <Suspense
-        key={view}
+        key={`${view}-${page}`}
         fallback={<VisitorsPageSkeleton />}
       >
-        <VisitorsPageContent gymId={user.gymId} canManage={canManage} view={view} />
+        <VisitorsPageContent
+          gymId={user.gymId}
+          canManage={canManage}
+          view={view}
+          page={page}
+        />
       </Suspense>
     </div>
   );
@@ -55,14 +64,16 @@ async function VisitorsPageContent({
   gymId,
   canManage,
   view,
+  page,
 }: {
   gymId: string;
   canManage: boolean;
   view: VisitorStatusFilter;
+  page: number;
 }) {
-  const visitors = await getVisitors(gymId, view);
+  const result = await getVisitorsPage(gymId, { status: view, page });
 
-  const rows = visitors.map((visitor) => ({
+  const rows = result.visitors.map((visitor) => ({
     id: visitor.id,
     name: visitor.name,
     phone: visitor.phone,
@@ -71,5 +82,14 @@ async function VisitorsPageContent({
     status: visitor.status,
   }));
 
-  return <VisitorsList visitors={rows} canManage={canManage} view={view} />;
+  return (
+    <VisitorsList
+      visitors={rows}
+      canManage={canManage}
+      view={view}
+      page={result.page}
+      pageSize={result.pageSize}
+      total={result.total}
+    />
+  );
 }

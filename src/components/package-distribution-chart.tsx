@@ -4,7 +4,7 @@ import { Cell, Pie, PieChart, Tooltip } from "recharts";
 
 import { ResponsiveChartShell } from "@/components/charts/responsive-chart-shell";
 import { useChartLayout } from "@/hooks/use-chart-layout";
-import type { PackageDistributionPoint } from "@/lib/dashboard-metrics";
+import type { PackageDistributionPoint } from "@/lib/chart-types";
 
 const SLICE_COLORS = [
   "hsl(var(--primary))",

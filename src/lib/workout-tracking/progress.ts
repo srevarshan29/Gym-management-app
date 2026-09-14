@@ -1,39 +1,49 @@
-import { prisma } from "@/lib/prisma";
-import type { ExerciseTrackingType } from "@prisma/client";
+import { getRepositories } from "@/lib/firestore";
+import type { MemberContext } from "@/lib/firestore/context";
+import { platformContext } from "@/lib/firestore/helpers";
+import type { WorkoutPlanDoc, WorkoutPlanExerciseEmbedded } from "@/lib/firestore/types";
+import {
+  buildPlanExerciseMap,
+  findPlanExercisesByIdentity,
+  matchesPlanExerciseIdentity,
+  planExerciseDisplayName,
+  resolvePlanExerciseTrackingType,
+  resolveProgressTrackingType,
+  type ExerciseLibraryMap,
+} from "@/lib/workout-tracking/session-plan";
+import { parseTargetReps } from "@/lib/workout-tracking/progress-format";
+import type {
+  ExerciseProgressData,
+  ExerciseProgressOption,
+  ExerciseProgressPoint,
+  ExerciseTrackingType,
+  ProgressGrouping,
+} from "@/lib/workout-tracking/types";
 
-export type ProgressGrouping = "weekly" | "monthly";
+export type {
+  ExerciseProgressData,
+  ExerciseProgressOption,
+  ExerciseProgressPoint,
+  ProgressGrouping,
+} from "@/lib/workout-tracking/types";
 
-export type ExerciseProgressPoint = {
-  label: string;
-  maxWeightKg: number | null;
-  maxDurationSeconds: number | null;
-  sessionDate: Date;
-};
-
-export type ExerciseProgressData = {
-  exerciseName: string;
-  trackingType: ExerciseTrackingType;
-  targetWeightKg: number | null;
-  points: ExerciseProgressPoint[];
-};
-
-function planExerciseFilter(
-  exerciseId: string | null,
-  customName: string | null,
-): { exerciseId: string } | { customName: string } | null {
-  if (exerciseId) return { exerciseId };
-  if (customName != null && customName !== "") return { customName };
-  return null;
+function memberContext(gymId: string, memberId: string): MemberContext {
+  return { kind: "member", gymId, memberId };
 }
 
-function resolveTrackingType(planExercise: {
-  trackingTypeOverride: ExerciseTrackingType | null;
-  exercise: { trackingType: ExerciseTrackingType } | null;
-}): ExerciseTrackingType {
-  return (
-    planExercise.trackingTypeOverride ??
-    planExercise.exercise?.trackingType ??
-    "WEIGHTED"
+async function loadExerciseLibraryMap(gymId: string): Promise<ExerciseLibraryMap> {
+  const { customExercises } = getRepositories();
+  const rows = await customExercises.listLibrary(platformContext, gymId);
+  return new Map(
+    rows.map((row) => [
+      row.id,
+      {
+        name: row.name,
+        muscleGroup: row.muscleGroup,
+        trackingType: row.trackingType,
+        isSeeded: row.isSeeded,
+      },
+    ]),
   );
 }
 
@@ -65,18 +75,25 @@ function bucketLabel(key: string, grouping: ProgressGrouping): string {
   );
 }
 
+function parseExerciseKey(exerciseKey: string): {
+  exerciseId: string | null;
+  customName: string | null;
+} {
+  const isCustom = exerciseKey.startsWith("custom:");
+  return {
+    exerciseId: isCustom ? null : exerciseKey,
+    customName: isCustom ? exerciseKey.slice("custom:".length) : null,
+  };
+}
+
 export async function getExerciseProgressData(
   tenantGymId: string,
   memberId: string,
   exerciseKey: string,
   grouping: ProgressGrouping = "weekly",
 ): Promise<ExerciseProgressData | null> {
-  const isCustom = exerciseKey.startsWith("custom:");
-  const exerciseId = isCustom ? null : exerciseKey;
-  const customName = isCustom ? exerciseKey.slice("custom:".length) : null;
-
-  const exerciseMatch = planExerciseFilter(exerciseId, customName);
-  if (!exerciseMatch) {
+  const { exerciseId, customName } = parseExerciseKey(exerciseKey);
+  if (!exerciseId && (customName == null || customName === "")) {
     return {
       exerciseName: customName ?? "Exercise",
       trackingType: "WEIGHTED",
@@ -85,135 +102,180 @@ export async function getExerciseProgressData(
     };
   }
 
-  const planExercise = await prisma.workoutPlanExercise.findFirst({
-    where: {
-      gymId: tenantGymId,
-      workoutPlan: { memberId: memberId },
-      ...exerciseMatch,
-    },
-    select: {
-      targetWeightKg: true,
-      trackingTypeOverride: true,
-      exercise: { select: { name: true, trackingType: true } },
-      customName: true,
-    },
-  });
+  const ctx = memberContext(tenantGymId, memberId);
+  const { workoutPlans, workoutSessions } = getRepositories();
 
-  const exerciseName =
-    planExercise?.exercise?.name ?? planExercise?.customName ?? customName ?? "Exercise";
-  const trackingType = planExercise
-    ? resolveTrackingType(planExercise)
-    : "WEIGHTED";
+  const [plan, completedSessions, library] = await Promise.all([
+    workoutPlans.findByMemberId(ctx, tenantGymId, memberId),
+    workoutSessions.listCompletedForMember(ctx, tenantGymId, memberId),
+    loadExerciseLibraryMap(tenantGymId),
+  ]);
 
-  const setLogs = await prisma.workoutSetLog.findMany({
-    where: {
-      gymId: tenantGymId,
-      sessionExercise: {
-        session: {
-          memberId: memberId,
-          gymId: tenantGymId,
-          status: "COMPLETED",
-        },
-        planExercise: exerciseMatch,
-      },
-    },
-    select: {
-      weightKg: true,
-      durationSeconds: true,
-      sessionExercise: {
-        select: {
-          workoutSessionId: true,
-          session: { select: { completedAt: true, startedAt: true } },
-        },
-      },
-    },
-    orderBy: { loggedAt: "asc" },
-  });
+  const planMatches = plan
+    ? findPlanExercisesByIdentity(plan, exerciseId, customName)
+    : [];
+  const planExercise = planMatches[0] ?? null;
 
-  if (setLogs.length === 0) {
+  const exerciseName = planExercise
+    ? planExerciseDisplayName(planExercise, library)
+    : (customName ?? "Exercise");
+  const trackingType: ExerciseTrackingType = resolveProgressTrackingType(
+    planMatches,
+    library,
+    exerciseId,
+  );
+
+  if (!plan || completedSessions.length === 0) {
     return {
       exerciseName,
       trackingType,
-      targetWeightKg:
-        planExercise?.targetWeightKg != null
-          ? Number(planExercise.targetWeightKg)
-          : null,
+      targetWeightKg: planExercise?.targetWeightKg ?? null,
       points: [],
     };
   }
 
+  const planExerciseMap = buildPlanExerciseMap(plan);
+  const observedSessionTypes: ExerciseTrackingType[] = [];
   const sessionMax = new Map<
     string,
     { date: Date; maxWeightKg: number | null; maxDurationSeconds: number | null }
   >();
 
-  for (const log of setLogs) {
-    const sessionId = log.sessionExercise.workoutSessionId;
-    const session = log.sessionExercise.session;
-    const date = session.completedAt ?? session.startedAt;
-    const weight =
-      log.weightKg != null ? Number(log.weightKg) : null;
-    const duration = log.durationSeconds;
-    const existing = sessionMax.get(sessionId);
+  for (const session of completedSessions) {
+    const sessionDate =
+      session.completedAt?.toDate() ?? session.startedAt.toDate();
 
-    if (trackingType === "TIME") {
-      if (duration == null) continue;
-      if (!existing || duration > (existing.maxDurationSeconds ?? 0)) {
-        sessionMax.set(sessionId, {
-          date,
-          maxWeightKg: null,
-          maxDurationSeconds: duration,
-        });
+    for (const sessionExercise of session.exercises) {
+      const matchedPlanExercise = planExerciseMap.get(
+        sessionExercise.workoutPlanExerciseId,
+      );
+      if (!matchedPlanExercise) continue;
+      if (
+        !matchesPlanExerciseIdentity(
+          matchedPlanExercise,
+          exerciseId,
+          customName,
+        )
+      ) {
+        continue;
       }
-      continue;
-    }
 
-    if (weight == null) continue;
-    if (!existing || weight > (existing.maxWeightKg ?? 0)) {
-      sessionMax.set(sessionId, {
-        date,
-        maxWeightKg: weight,
-        maxDurationSeconds: null,
-      });
+      let maxWeightKg: number | null = null;
+      let maxDurationSeconds: number | null = null;
+      const sessionTrackingType = resolvePlanExerciseTrackingType(
+        matchedPlanExercise,
+        library,
+      );
+
+      for (const set of sessionExercise.sets) {
+        if (sessionTrackingType === "TIME") {
+          if (set.durationSeconds == null) continue;
+          maxDurationSeconds =
+            maxDurationSeconds == null
+              ? set.durationSeconds
+              : Math.max(maxDurationSeconds, set.durationSeconds);
+          continue;
+        }
+
+        if (sessionTrackingType === "BODYWEIGHT") {
+          const reps =
+            set.weightKg ?? parseTargetReps(matchedPlanExercise.targetReps);
+          if (reps == null) continue;
+          maxWeightKg =
+            maxWeightKg == null ? reps : Math.max(maxWeightKg, reps);
+          continue;
+        }
+
+        if (set.weightKg == null) continue;
+        maxWeightKg =
+          maxWeightKg == null
+            ? set.weightKg
+            : Math.max(maxWeightKg, set.weightKg);
+      }
+
+      if (sessionTrackingType === "TIME") {
+        if (maxDurationSeconds == null) continue;
+      } else if (maxWeightKg == null) {
+        continue;
+      }
+
+      const existing = sessionMax.get(session.id);
+      if (sessionTrackingType === "TIME") {
+        if (
+          !existing ||
+          maxDurationSeconds! > (existing.maxDurationSeconds ?? 0)
+        ) {
+          sessionMax.set(session.id, {
+            date: sessionDate,
+            maxWeightKg: null,
+            maxDurationSeconds,
+          });
+          observedSessionTypes.push(sessionTrackingType);
+        }
+        continue;
+      }
+
+      if (!existing || maxWeightKg! > (existing.maxWeightKg ?? 0)) {
+        sessionMax.set(session.id, {
+          date: sessionDate,
+          maxWeightKg,
+          maxDurationSeconds: null,
+        });
+        observedSessionTypes.push(sessionTrackingType);
+      }
     }
+  }
+
+  const displayTrackingType = resolveProgressTrackingType(
+    planMatches,
+    library,
+    exerciseId,
+    observedSessionTypes,
+  );
+
+  if (sessionMax.size === 0) {
+    return {
+      exerciseName,
+      trackingType: displayTrackingType,
+      targetWeightKg: planExercise?.targetWeightKg ?? null,
+      points: [],
+    };
   }
 
   const bucketed = new Map<
     string,
     { date: Date; maxWeightKg: number | null; maxDurationSeconds: number | null }
   >();
+
   for (const entry of sessionMax.values()) {
     const key = bucketKey(entry.date, grouping);
     const current = bucketed.get(key);
     const entryValue =
-      trackingType === "TIME"
-        ? entry.maxDurationSeconds ?? 0
-        : entry.maxWeightKg ?? 0;
+      displayTrackingType === "TIME"
+        ? (entry.maxDurationSeconds ?? 0)
+        : (entry.maxWeightKg ?? 0);
     const currentValue =
-      trackingType === "TIME"
-        ? current?.maxDurationSeconds ?? 0
-        : current?.maxWeightKg ?? 0;
+      displayTrackingType === "TIME"
+        ? (current?.maxDurationSeconds ?? 0)
+        : (current?.maxWeightKg ?? 0);
     if (!current || entryValue > currentValue) {
       bucketed.set(key, entry);
     }
   }
 
-  const points = [...bucketed.entries()]
+  const points: ExerciseProgressPoint[] = [...bucketed.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, value]) => ({
       label: bucketLabel(key, grouping),
       maxWeightKg: value.maxWeightKg,
       maxDurationSeconds: value.maxDurationSeconds,
-      sessionDate: value.date,
+      sessionDate: value.date.toISOString(),
     }));
 
   return {
     exerciseName,
-    trackingType,
-    targetWeightKg:
-      planExercise?.targetWeightKg != null
-        ? Number(planExercise.targetWeightKg)
-        : null,
+    trackingType: displayTrackingType,
+    targetWeightKg: planExercise?.targetWeightKg ?? null,
     points,
   };
 }
@@ -221,35 +283,28 @@ export async function getExerciseProgressData(
 export async function getMemberExerciseOptions(
   tenantGymId: string,
   memberId: string,
-): Promise<{ key: string; label: string }[]> {
-  const plan = await prisma.workoutPlan.findFirst({
-    where: { gymId: tenantGymId, memberId: memberId },
-    select: {
-      days: {
-        orderBy: { sortOrder: "asc" },
-        select: {
-          exercises: {
-            orderBy: { sortOrder: "asc" },
-            select: {
-              exerciseId: true,
-              customName: true,
-              exercise: { select: { name: true } },
-            },
-          },
-        },
-      },
-    },
-  });
+): Promise<ExerciseProgressOption[]> {
+  const ctx = memberContext(tenantGymId, memberId);
+  const { workoutPlans } = getRepositories();
+
+  const [plan, library] = await Promise.all([
+    workoutPlans.findByMemberId(ctx, tenantGymId, memberId),
+    loadExerciseLibraryMap(tenantGymId),
+  ]);
+
   if (!plan) return [];
 
   const seen = new Set<string>();
-  const options: { key: string; label: string }[] = [];
-  for (const day of plan.days) {
-    for (const row of day.exercises) {
+  const options: ExerciseProgressOption[] = [];
+  const days = [...(plan.days ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+
+  for (const day of days) {
+    const exercises = [...day.exercises].sort((a, b) => a.sortOrder - b.sortOrder);
+    for (const row of exercises) {
       const option = row.exerciseId
         ? {
             key: row.exerciseId,
-            label: row.exercise?.name ?? "Exercise",
+            label: planExerciseDisplayName(row, library),
           }
         : {
             key: `custom:${row.customName ?? "Custom exercise"}`,
@@ -260,5 +315,6 @@ export async function getMemberExerciseOptions(
       options.push(option);
     }
   }
+
   return options;
 }

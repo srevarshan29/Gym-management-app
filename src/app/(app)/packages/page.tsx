@@ -1,6 +1,6 @@
 import { requireGym } from "@/lib/session";
 import { canManagePackages } from "@/lib/permissions";
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { PackageDialog } from "@/components/package-dialog";
@@ -30,12 +30,17 @@ export default async function PackagesPage() {
   const user = await requireGym();
   const canManage = canManagePackages(user.role);
 
-  const packages = await withTenant(user.gymId, (tx) =>
-    tx.package.findMany({
-      where: { gymId: user.gymId },
-      orderBy: [{ isActive: "desc" }, { createdAt: "asc" }],
-      include: { _count: { select: { subscriptions: true } } },
-    }),
+  const { packages } = getRepositories();
+  const rows = await packages.listByGym(platformContext, user.gymId);
+  const packagesWithCounts = await Promise.all(
+    rows.map(async (pkg) => ({
+      ...pkg,
+      subscriptionCount: await packages.countSubscriptions(
+        platformContext,
+        user.gymId,
+        pkg.id,
+      ),
+    })),
   );
 
   return (
@@ -51,11 +56,12 @@ export default async function PackagesPage() {
         <CardHeader>
           <CardTitle>All packages</CardTitle>
           <CardDescription>
-            {packages.length} package{packages.length === 1 ? "" : "s"} defined.
+            {packagesWithCounts.length} package
+            {packagesWithCounts.length === 1 ? "" : "s"} defined.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {packages.length === 0 ? (
+          {packagesWithCounts.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               No packages yet.
               {canManage ? " Create your first package to get started." : ""}
@@ -75,14 +81,18 @@ export default async function PackagesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {packages.map((pkg) => (
+                {packagesWithCounts.map((pkg) => (
                   <TableRow key={pkg.id}>
                     <TableCell className="font-medium">{pkg.name}</TableCell>
-                    <TableCell className="font-mono">{formatCurrency(Number(pkg.price))}</TableCell>
+                    <TableCell className="font-mono">
+                      {formatCurrency(pkg.price)}
+                    </TableCell>
                     <TableCell className="font-mono">
                       {durationLabel(pkg.durationValue, pkg.durationUnit)}
                     </TableCell>
-                    <TableCell className="font-mono">{pkg._count.subscriptions}</TableCell>
+                    <TableCell className="font-mono">
+                      {pkg.subscriptionCount}
+                    </TableCell>
                     <TableCell>
                       {pkg.isActive ? (
                         <Badge variant="active">Active</Badge>
@@ -96,7 +106,7 @@ export default async function PackagesPage() {
                           pkg={{
                             id: pkg.id,
                             name: pkg.name,
-                            price: Number(pkg.price),
+                            price: pkg.price,
                             durationValue: pkg.durationValue,
                             durationUnit: pkg.durationUnit,
                             isActive: pkg.isActive,

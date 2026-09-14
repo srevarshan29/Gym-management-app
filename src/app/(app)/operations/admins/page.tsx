@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 
-import { requireGym } from "@/lib/session";
+import { getRepositories, type StaffContext } from "@/lib/firestore";
 import { canManageStaff } from "@/lib/permissions";
-import { withTenant } from "@/lib/db-context";
+import { requireGym } from "@/lib/session";
 import { PageHeader } from "@/components/page-header";
 import { StaffRolesReference } from "@/components/staff-roles-reference";
 import { StaffManager } from "@/components/staff-manager";
@@ -20,17 +20,15 @@ export default async function AdminsPage() {
     redirect("/");
   }
 
-  const staffRows = await withTenant(user.gymId, (tx) =>
-    tx.user.findMany({
-      where: { gymId: user.gymId, role: { not: "SUPER_ADMIN" } },
-      orderBy: [{ role: "asc" }, { createdAt: "asc" }],
-      select: { id: true, name: true, email: true, role: true },
-    }),
-  );
-  const staff = staffRows.map((s) => ({
-    ...s,
-    role: s.role as "OWNER" | "ADMIN" | "STAFF",
-  }));
+  const ctx: StaffContext = {
+    kind: "staff",
+    userId: user.id,
+    gymId: user.gymId,
+    role: user.role,
+  };
+
+  const { users } = getRepositories();
+  const staff = await users.listStaffByGym(ctx, user.gymId);
 
   return (
     <div>

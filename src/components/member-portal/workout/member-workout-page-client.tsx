@@ -8,9 +8,11 @@ import { MemberWorkoutPlanView } from "@/components/member-portal/member-workout
 import { WorkoutSessionView } from "@/components/member-portal/workout/workout-session-view";
 import { Button } from "@/components/ui/button";
 import { useActionLock } from "@/hooks/use-action-lock";
-import type { PreviousSetLog } from "@/lib/workout-tracking/previous-sets";
-import type { ActiveWorkoutSession } from "@/lib/workout-tracking/sessions";
-import type { WorkoutPlanDetail } from "@/lib/workout-tracking/types";
+import type {
+  ActiveWorkoutSession,
+  PreviousSetLog,
+  WorkoutPlanDetail,
+} from "@/lib/workout-tracking/types";
 
 type MemberWorkoutPageClientProps = {
   plan: WorkoutPlanDetail | null;

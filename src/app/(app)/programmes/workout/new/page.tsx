@@ -23,12 +23,12 @@ export default async function NewWorkoutPlanPage({
     );
   }
 
-  const [{ members, plans }, library] = await Promise.all([
+  const [{ members, assignedMemberIds }, library] = await Promise.all([
     getWorkoutPlansPageData(user.gymId),
     getExerciseLibrary(user.gymId),
   ]);
 
-  const assigned = new Set(plans.map((plan) => plan.memberId));
+  const assigned = new Set(assignedMemberIds);
   const eligibleMembers = members.filter((member) => !assigned.has(member.id));
 
   if (eligibleMembers.length === 0) {

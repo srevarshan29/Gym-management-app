@@ -25,7 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import type { PendingMember } from "@/lib/queries";
+import type { PendingMember } from "@/lib/member-list-types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 const METHOD_LABEL: Record<string, string> = {

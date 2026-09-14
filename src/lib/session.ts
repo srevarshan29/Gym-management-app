@@ -1,16 +1,16 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
-import type { Role } from "@prisma/client";
 
 import { auth } from "@/auth";
-import { withPlatformLookup } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
+import type { StaffRole } from "@/lib/firestore/types";
 
 export type SessionUser = {
   id: string;
   name?: string | null;
   email?: string | null;
-  role: Role;
+  role: StaffRole;
   gymId: string | null;
 };
 
@@ -25,12 +25,8 @@ const resolveCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const session = await auth();
   if (!session?.user?.id) return null;
 
-  const dbUser = await withPlatformLookup((tx) =>
-    tx.user.findUnique({
-      where: { id: session.user.id },
-      select: { id: true, name: true, email: true, role: true, gymId: true },
-    }),
-  );
+  const { users } = getRepositories();
+  const dbUser = await users.findById(platformContext, session.user.id);
 
   if (!dbUser) {
     // Cannot call signOut() here — cookie writes are forbidden during RSC

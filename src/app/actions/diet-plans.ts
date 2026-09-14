@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
+import {
+  createDietPlanRecord,
+  deleteDietPlanRecord,
+} from "@/lib/firestore/diet-plan-operations";
 import { requireGym } from "@/lib/session";
 import { canManageMembers } from "@/lib/permissions";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
@@ -23,14 +27,9 @@ const dietPlanSchema = z.object({
     .max(10000, "Meal plan is too long"),
 });
 
-async function assertMemberInGym(tenantGymId: string, memberId: string) {
-  const member = await withTenant(tenantGymId, (tx) =>
-    tx.member.findFirst({
-      where: { id: memberId, gymId: tenantGymId },
-      select: { id: true },
-    }),
-  );
-  return Boolean(member);
+function revalidateDietPlanPaths() {
+  revalidatePath("/programmes/diet");
+  revalidatePath("/member/diet");
 }
 
 export async function createDietPlan(
@@ -48,36 +47,31 @@ export async function createDietPlan(
   }
 
   const { memberId, title, caloriesPerDay, mealPlan } = parsed.data;
-
-  if (!(await assertMemberInGym(user.gymId, memberId))) {
+  const { members } = getRepositories();
+  const member = await members.findByIdAndGym(
+    platformContext,
+    memberId,
+    user.gymId,
+  );
+  if (!member) {
     return actionError("Member not found.");
   }
 
-  const existing = await withTenant(user.gymId, (tx) =>
-    tx.dietPlan.findFirst({
-      where: { gymId: user.gymId, memberId: memberId },
-      select: { id: true },
-    }),
-  );
-  if (existing) {
+  const result = await createDietPlanRecord(user.gymId, {
+    memberId,
+    memberName: member.name,
+    title,
+    caloriesPerDay,
+    mealPlan,
+  });
+
+  if (!result.created) {
     return actionError(
       "This member already has a diet plan. Edit or delete it first.",
     );
   }
 
-  await withTenant(user.gymId, (tx) =>
-    tx.dietPlan.create({
-      data: {
-        gymId: user.gymId,
-        memberId,
-        title,
-        caloriesPerDay,
-        mealPlan,
-      },
-    }),
-  );
-
-  revalidatePath("/programmes/diet");
+  revalidateDietPlanPaths();
   return actionOk("Diet plan created.");
 }
 
@@ -99,18 +93,19 @@ export async function updateDietPlan(
   }
 
   const { memberId, title, caloriesPerDay, mealPlan } = parsed.data;
-
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.dietPlan.updateMany({
-      where: { id: id, gymId: user.gymId, memberId: memberId },
-      data: { title, caloriesPerDay, mealPlan },
-    }),
-  );
-  if (result.count === 0) {
+  const { dietPlans } = getRepositories();
+  const existing = await dietPlans.getById(platformContext, user.gymId, id);
+  if (!existing || existing.memberId !== memberId) {
     return actionError("Diet plan not found.");
   }
 
-  revalidatePath("/programmes/diet");
+  await dietPlans.update(platformContext, user.gymId, id, {
+    title,
+    caloriesPerDay,
+    mealPlan,
+  });
+
+  revalidateDietPlanPaths();
   return actionOk("Diet plan updated.");
 }
 
@@ -120,13 +115,11 @@ export async function deleteDietPlan(id: string): Promise<ActionResult> {
     return actionError("You do not have permission to manage diet plans.");
   }
 
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.dietPlan.deleteMany({ where: { id, gymId: user.gymId } }),
-  );
-  if (result.count === 0) {
+  const deleted = await deleteDietPlanRecord(user.gymId, id);
+  if (!deleted) {
     return actionError("Diet plan not found.");
   }
 
-  revalidatePath("/programmes/diet");
+  revalidateDietPlanPaths();
   return actionOk("Diet plan deleted.");
 }

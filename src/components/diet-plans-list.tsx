@@ -12,6 +12,7 @@ import {
   DietPlanDialog,
   type DietPlanInput,
 } from "@/components/diet-plan-dialog";
+import { PaginationBar } from "@/components/pagination-bar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -39,6 +40,9 @@ type DietPlansListProps = {
   plans: DietPlanInput[];
   members: MemberOption[];
   canManage: boolean;
+  page: number;
+  pageSize: number;
+  total: number;
 };
 
 function matchesSearch(plan: DietPlanInput, query: string): boolean {
@@ -102,7 +106,14 @@ function DeleteDietPlanButton({
   );
 }
 
-export function DietPlansList({ plans, members, canManage }: DietPlansListProps) {
+export function DietPlansList({
+  plans,
+  members,
+  canManage,
+  page,
+  pageSize,
+  total,
+}: DietPlansListProps) {
   const [query, setQuery] = React.useState("");
   const filtered = React.useMemo(
     () => plans.filter((plan) => matchesSearch(plan, query)),
@@ -202,6 +213,17 @@ export function DietPlansList({ plans, members, canManage }: DietPlansListProps)
           )}
         </CardContent>
       </Card>
+
+      <PaginationBar
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        makeHref={(nextPage) =>
+          nextPage > 1
+            ? `/programmes/diet?page=${nextPage}`
+            : "/programmes/diet"
+        }
+      />
     </div>
   );
 }

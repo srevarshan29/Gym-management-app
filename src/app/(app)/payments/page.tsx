@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { requireGym } from "@/lib/session";
 import { canLogPayments, canViewFinancials } from "@/lib/permissions";
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
 import {
   getPendingDuesPage,
   getPendingDuesSummary,
@@ -128,9 +128,7 @@ async function PaymentsBody({
         pageSize: PENDING_DUES_PAGE_SIZE,
         q,
       }),
-      withTenant(tenantGymId, (tx) =>
-        tx.payment.count({ where: { gymId: tenantGymId } }),
-      ),
+      getRepositories().payments.countByGym(platformContext, tenantGymId),
     ]);
     return (
       <PaymentsTabs

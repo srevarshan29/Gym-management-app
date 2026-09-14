@@ -1,11 +1,7 @@
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
+import type { MonthlyRevenuePoint } from "@/lib/chart-types";
 
-export type MonthlyRevenuePoint = {
-  monthKey: string;
-  monthLabel: string;
-  monthTooltip: string;
-  revenue: number;
-};
+export type { MonthlyRevenuePoint } from "@/lib/chart-types";
 
 type RevenuePaymentRow = {
   amount: { toString(): string } | number;
@@ -56,38 +52,28 @@ export function buildMonthlyRevenueTrendFromPayments(
 /**
  * Sum of Payment.amount per calendar month for the last N months,
  * scoped to a single gym. Months with no payments return revenue 0.
- * Month keys use the Node process timezone so they match Date#getMonth().
  */
 export async function getMonthlyRevenueTrend(
   tenantGymId: string,
   monthCount = 6,
 ): Promise<MonthlyRevenuePoint[]> {
-  return withTenant(tenantGymId, async (tx) => {
-    const now = new Date();
-    const startMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() - (monthCount - 1),
-      1,
-    );
-    const nodeTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const { payments } = getRepositories();
+  const now = new Date();
+  const startMonth = new Date(
+    now.getFullYear(),
+    now.getMonth() - (monthCount - 1),
+    1,
+  );
 
-    const grouped = await tx.$queryRaw<{ month_key: string; revenue: number }[]>`
-      SELECT to_char("paidAt" AT TIME ZONE ${nodeTz}, 'YYYY-MM') AS month_key,
-             SUM(amount)::float AS revenue
-      FROM "Payment"
-      WHERE "gymId" = ${tenantGymId}
-        AND "paidAt" >= ${startMonth}
-      GROUP BY 1
-    `;
+  const rows = await payments.listSince(
+    platformContext,
+    tenantGymId,
+    startMonth,
+  );
 
-    const buckets = buildMonthlyRevenueBuckets(monthCount, now);
-    const indexByKey = new Map(buckets.map((b, i) => [b.monthKey, i]));
-    for (const row of grouped) {
-      const idx = indexByKey.get(row.month_key);
-      if (idx !== undefined) {
-        buckets[idx].revenue += Number(row.revenue);
-      }
-    }
-    return buckets;
-  });
+  return buildMonthlyRevenueTrendFromPayments(
+    rows.map((p) => ({ amount: p.amount, paidAt: p.paidAt.toDate() })),
+    monthCount,
+    now,
+  );
 }

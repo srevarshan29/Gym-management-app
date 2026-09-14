@@ -10,14 +10,18 @@ import {
   logWorkoutSet,
 } from "@/app/actions/workout-sessions";
 import { RestTimer } from "@/components/member-portal/workout/rest-timer";
+import { clearRestTimersForSession } from "@/lib/workout-tracking/rest-timer-storage";
 import { SessionTimer } from "@/components/member-portal/workout/session-timer";
 import { LockedLink } from "@/components/navigation/locked-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useActionLock } from "@/hooks/use-action-lock";
+import { parseTargetReps } from "@/lib/workout-tracking/progress-format";
 import { cn } from "@/lib/utils";
-import type { PreviousSetLog } from "@/lib/workout-tracking/previous-sets";
-import type { ActiveWorkoutSession } from "@/lib/workout-tracking/sessions";
+import type {
+  ActiveWorkoutSession,
+  PreviousSetLog,
+} from "@/lib/workout-tracking/types";
 
 const MAX_SETS = 20;
 
@@ -163,6 +167,11 @@ export function WorkoutSessionView({
         return;
       }
       payload.durationSeconds = durationSeconds;
+    } else if (exercise.trackingType === "BODYWEIGHT") {
+      const reps = parseTargetReps(exercise.targetReps);
+      if (reps != null) {
+        payload.weightKg = reps;
+      }
     }
 
     await run(async () => {
@@ -195,6 +204,7 @@ export function WorkoutSessionView({
           return;
         }
         toast.success(result.message ?? "Workout completed.");
+        clearRestTimersForSession(session.id);
         router.refresh();
       } catch (error) {
         console.error("[workout] completeWorkoutSession failed:", error);
@@ -275,6 +285,8 @@ export function WorkoutSessionView({
         </h2>
         <RestTimer
           key={exercise.id}
+          sessionId={session.id}
+          exerciseId={exercise.id}
           defaultSeconds={exercise.restSeconds}
           compact
         />

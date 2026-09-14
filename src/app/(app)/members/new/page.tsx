@@ -3,14 +3,15 @@ import { ArrowLeft } from "lucide-react";
 
 import { requireGym } from "@/lib/session";
 import { canLogPayments } from "@/lib/permissions";
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
 import { getGymStaffOptions } from "@/lib/staff";
+import { getVisitorPrefill } from "@/lib/visitors";
 import { PageHeader } from "@/components/page-header";
 import { MemberForm, type PackageOption } from "@/components/member-form";
 import { Button } from "@/components/ui/button";
 import { getMembershipPolicyForGym } from "@/lib/gym-profile";
 import { durationLabel } from "@/lib/subscription";
-import type { MemberGender } from "@prisma/client";
+import type { MemberGender } from "@/lib/firestore/types";
 
 const GENDER_VALUES: MemberGender[] = [
   "MALE",
@@ -50,43 +51,24 @@ export default async function NewMemberPage({
   const tenantGymId = user.gymId;
   const visitorId = firstSearchParam(searchParams?.visitorId);
 
-  const [packages, staffOptions, membershipPolicyText, visitor] =
-    await Promise.all([
-      withTenant(tenantGymId, (tx) =>
-        tx.package.findMany({
-          where: { gymId: tenantGymId, isActive: true },
-          orderBy: { name: "asc" },
-        }),
-      ),
-      getGymStaffOptions(tenantGymId),
-      getMembershipPolicyForGym(tenantGymId),
-      visitorId
-        ? withTenant(tenantGymId, (tx) =>
-            tx.visitor.findFirst({
-              where: {
-                id: visitorId,
-                gymId: tenantGymId,
-                status: "pending",
-              },
-              select: {
-                name: true,
-                phone: true,
-                email: true,
-                gender: true,
-                fitnessGoal: true,
-                ageYears: true,
-                heightCm: true,
-                weightKg: true,
-              },
-            }),
-          )
-        : Promise.resolve(null),
-    ]);
+  const { packages: packagesRepo } = getRepositories();
+
+  const [packages, staffOptions, membershipPolicyText] = await Promise.all([
+    packagesRepo.listActive(platformContext, tenantGymId),
+    getGymStaffOptions(tenantGymId),
+    getMembershipPolicyForGym(tenantGymId),
+  ]);
+
+  let visitor = null;
+
+  if (visitorId) {
+    visitor = await getVisitorPrefill(tenantGymId, visitorId);
+  }
 
   const options: PackageOption[] = packages.map((p) => ({
     id: p.id,
     name: p.name,
-    price: Number(p.price),
+    price: p.price,
     durationLabel: durationLabel(p.durationValue, p.durationUnit),
   }));
 
@@ -114,9 +96,7 @@ export default async function NewMemberPage({
         initialFitnessGoal={visitor?.fitnessGoal ?? undefined}
         initialAgeYears={visitor?.ageYears ?? undefined}
         initialHeightCm={visitor?.heightCm ?? undefined}
-        initialWeightKg={
-          visitor?.weightKg != null ? Number(visitor.weightKg) : undefined
-        }
+        initialWeightKg={visitor?.weightKg ?? undefined}
         visitorId={visitorId}
         membershipPolicyText={membershipPolicyText}
       />

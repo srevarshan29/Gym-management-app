@@ -4,11 +4,16 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
-import { withPlatformLookup, withTenant } from "@/lib/db-context";
-import { requireGym } from "@/lib/session";
-import { canManageStaff } from "@/lib/permissions";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
-import { isDisplayNameTakenInGym, normalizeDisplayName } from "@/lib/user-display-name";
+import {
+  getRepositories,
+  newDocId,
+  platformContext,
+  type StaffContext,
+} from "@/lib/firestore";
+import { canManageStaff } from "@/lib/permissions";
+import { requireGym } from "@/lib/session";
+import { normalizeDisplayName } from "@/lib/user-display-name";
 
 const createStaffSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
@@ -19,6 +24,19 @@ const createStaffSchema = z.object({
     .max(72, "Password must be at most 72 characters"),
   role: z.enum(["OWNER", "ADMIN", "STAFF"]),
 });
+
+function toStaffContext(user: {
+  id: string;
+  gymId: string;
+  role: StaffContext["role"];
+}): StaffContext {
+  return {
+    kind: "staff",
+    userId: user.id,
+    gymId: user.gymId,
+    role: user.role,
+  };
+}
 
 export async function createStaff(
   _prev: ActionResult | undefined,
@@ -38,33 +56,32 @@ export async function createStaff(
     return actionError("Only an owner can assign the owner role.");
   }
   const displayName = normalizeDisplayName(name);
+  const ctx = toStaffContext(user);
+  const { users } = getRepositories();
 
-  const existing = await withPlatformLookup((tx) =>
-    tx.user.findUnique({ where: { email } }),
-  );
+  const existing = await users.findByEmail(platformContext, email);
   if (existing) {
     return actionError("An account with that email already exists.");
   }
 
-  const nameTaken = await withTenant(user.gymId, (tx) =>
-    isDisplayNameTakenInGym(tx, user.gymId, displayName),
+  const nameTaken = await users.isDisplayNameTakenInGym(
+    ctx,
+    user.gymId,
+    displayName,
   );
   if (nameTaken) {
     return actionError("This name is already in use");
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  await withTenant(user.gymId, (tx) =>
-    tx.user.create({
-      data: {
-        name: displayName,
-        email,
-        passwordHash,
-        role,
-        gymId: user.gymId,
-      },
-    }),
-  );
+  await users.create(platformContext, {
+    id: newDocId(),
+    gymId: user.gymId,
+    name: displayName,
+    email,
+    passwordHash,
+    role,
+  });
 
   revalidatePath("/operations/admins");
   return actionOk("Staff account created.");
@@ -93,13 +110,15 @@ export async function updateStaffRole(
     return actionError("You cannot remove your own owner access.");
   }
 
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.user.updateMany({
-      where: { id, gymId: user.gymId },
-      data: { role: role as "OWNER" | "ADMIN" | "STAFF" },
-    }),
+  const ctx = toStaffContext(user);
+  const { users } = getRepositories();
+  const updated = await users.updateRole(
+    ctx,
+    user.gymId,
+    id,
+    role as "OWNER" | "ADMIN" | "STAFF",
   );
-  if (result.count === 0) {
+  if (!updated) {
     return actionError("Staff account not found.");
   }
 
@@ -118,10 +137,10 @@ export async function deleteStaff(formData: FormData): Promise<void> {
     throw new Error("You cannot delete your own account.");
   }
 
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.user.deleteMany({ where: { id, gymId: user.gymId } }),
-  );
-  if (result.count === 0) {
+  const ctx = toStaffContext(user);
+  const { users } = getRepositories();
+  const deleted = await users.delete(ctx, user.gymId, id);
+  if (!deleted) {
     throw new Error("Staff account not found.");
   }
   revalidatePath("/operations/admins");

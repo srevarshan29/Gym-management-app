@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
 import { headers } from "next/headers";
 
-import { withPlatformLookup } from "@/lib/db-context";
+import { getRepositories } from "@/lib/firestore";
 import { getClientIp } from "@/lib/rate-limit";
 
 /** Per-account: enough for typos, not enough for a password spray. */
@@ -53,22 +53,6 @@ export function staffLoginRetryMessage(retryAfterMs: number): string {
   return `Too many sign-in attempts. Please try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`;
 }
 
-async function readBucket(
-  key: string,
-): Promise<{ failCount: number; windowEndsAt: Date } | null> {
-  try {
-    return await withPlatformLookup((tx) =>
-      tx.staffLoginThrottle.findUnique({
-        where: { key },
-        select: { failCount: true, windowEndsAt: true },
-      }),
-    );
-  } catch (error) {
-    console.error("[staff-login-throttle] read failed; allowing attempt", error);
-    return null;
-  }
-}
-
 function isBlocked(
   row: { failCount: number; windowEndsAt: Date } | null,
   limit: number,
@@ -87,11 +71,19 @@ export async function checkStaffLoginThrottle(
   const now = new Date();
   const emailKey = emailThrottleKey(email);
   const ipKey = ipThrottleKey(ip);
+  const { staffLoginThrottles } = getRepositories();
 
-  const [emailRow, ipRow] = await Promise.all([
-    readBucket(emailKey),
-    readBucket(ipKey),
-  ]);
+  let emailRow: Awaited<ReturnType<typeof staffLoginThrottles.readBucket>> = null;
+  let ipRow: Awaited<ReturnType<typeof staffLoginThrottles.readBucket>> = null;
+
+  try {
+    [emailRow, ipRow] = await Promise.all([
+      staffLoginThrottles.readBucket(emailKey),
+      staffLoginThrottles.readBucket(ipKey),
+    ]);
+  } catch (error) {
+    console.error("[staff-login-throttle] read failed; allowing attempt", error);
+  }
 
   const emailRetry = isBlocked(emailRow, EMAIL_FAIL_LIMIT, now);
   const ipRetry = isBlocked(ipRow, IP_FAIL_LIMIT, now);
@@ -103,52 +95,15 @@ export async function checkStaffLoginThrottle(
   return { ok: true };
 }
 
-async function bumpBucket(
-  key: string,
-  windowMs: number,
-  now: Date,
-): Promise<void> {
-  const existing = await withPlatformLookup((tx) =>
-    tx.staffLoginThrottle.findUnique({
-      where: { key },
-      select: { failCount: true, windowEndsAt: true },
-    }),
-  );
-
-  if (!existing || existing.windowEndsAt.getTime() <= now.getTime()) {
-    await withPlatformLookup((tx) =>
-      tx.staffLoginThrottle.upsert({
-        where: { key },
-        create: {
-          key,
-          failCount: 1,
-          windowEndsAt: new Date(now.getTime() + windowMs),
-        },
-        update: {
-          failCount: 1,
-          windowEndsAt: new Date(now.getTime() + windowMs),
-        },
-      }),
-    );
-    return;
-  }
-
-  await withPlatformLookup((tx) =>
-    tx.staffLoginThrottle.update({
-      where: { key },
-      data: { failCount: { increment: 1 } },
-    }),
-  );
-}
-
 export async function recordStaffLoginFailure(
   email: string,
   ip: string,
 ): Promise<void> {
   const now = new Date();
+  const { staffLoginThrottles } = getRepositories();
   try {
-    await bumpBucket(emailThrottleKey(email), EMAIL_WINDOW_MS, now);
-    await bumpBucket(ipThrottleKey(ip), IP_WINDOW_MS, now);
+    await staffLoginThrottles.bumpBucket(emailThrottleKey(email), EMAIL_WINDOW_MS, now);
+    await staffLoginThrottles.bumpBucket(ipThrottleKey(ip), IP_WINDOW_MS, now);
   } catch (error) {
     console.error("[staff-login-throttle] record failure failed", error);
   }
@@ -158,14 +113,12 @@ export async function clearStaffLoginFailures(
   email: string,
   ip: string,
 ): Promise<void> {
+  const { staffLoginThrottles } = getRepositories();
   try {
-    await withPlatformLookup((tx) =>
-      tx.staffLoginThrottle.deleteMany({
-        where: {
-          key: { in: [emailThrottleKey(email), ipThrottleKey(ip)] },
-        },
-      }),
-    );
+    await staffLoginThrottles.clearBuckets([
+      emailThrottleKey(email),
+      ipThrottleKey(ip),
+    ]);
   } catch (error) {
     console.error("[staff-login-throttle] clear failed", error);
   }

@@ -8,14 +8,19 @@ import { ProgrammePlansPageSkeleton } from "@/components/page-loading-skeletons"
 import { DietPlanDialog } from "@/components/diet-plan-dialog";
 import { DietPlansList } from "@/components/diet-plans-list";
 
-export default async function DietPlansPage() {
+export default async function DietPlansPage({
+  searchParams,
+}: {
+  searchParams?: { page?: string };
+}) {
   const user = await requireGym();
   const canManage = canManageMembers(user.role);
+  const page = Number(searchParams?.page ?? "1");
 
   return (
     <div className="space-y-6">
-      <Suspense fallback={<DietPlansPageShell />}>
-        <DietPlansPageContent gymId={user.gymId} canManage={canManage} />
+      <Suspense key={page} fallback={<DietPlansPageShell />}>
+        <DietPlansPageContent gymId={user.gymId} canManage={canManage} page={page} />
       </Suspense>
     </div>
   );
@@ -36,15 +41,18 @@ function DietPlansPageShell() {
 async function DietPlansPageContent({
   gymId,
   canManage,
+  page,
 }: {
   gymId: string;
   canManage: boolean;
+  page: number;
 }) {
-  const { plans, members } = await getDietPlansPageData(gymId);
+  const { plans, members, assignedMemberIds, total, pageSize } =
+    await getDietPlansPageData(gymId, page);
 
-  const assignedMemberIds = new Set(plans.map((plan) => plan.memberId));
+  const assignedSet = new Set(assignedMemberIds);
   const eligibleMembers = members.filter(
-    (member) => !assignedMemberIds.has(member.id),
+    (member) => !assignedSet.has(member.id),
   );
 
   const rows = plans.map((plan) => ({
@@ -67,7 +75,14 @@ async function DietPlansPageContent({
         ) : null}
       </PageHeader>
 
-      <DietPlansList plans={rows} members={members} canManage={canManage} />
+      <DietPlansList
+        plans={rows}
+        members={members}
+        canManage={canManage}
+        page={page}
+        pageSize={pageSize}
+        total={total}
+      />
     </>
   );
 }

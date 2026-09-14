@@ -9,6 +9,7 @@ export default async function MemberOverviewPage() {
     getMemberPortalOverview(session.gymId, session.memberId),
     getSuggestedWorkoutDay(session.gymId, session.memberId),
   ]);
+
   if (!overview) {
     return <p className="text-muted-foreground">Unable to load your account.</p>;
   }

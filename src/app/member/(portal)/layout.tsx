@@ -1,4 +1,5 @@
-import { prisma } from "@/lib/prisma";import { requireMember } from "@/lib/member-session";
+import { getRepositories, platformContext } from "@/lib/firestore";
+import { requireMember } from "@/lib/member-session";
 import { MemberPortalShell } from "@/components/member-portal/member-portal-shell";
 
 export default async function MemberPortalLayout({
@@ -7,10 +8,8 @@ export default async function MemberPortalLayout({
   children: React.ReactNode;
 }) {
   const session = await requireMember();
-  const gym = await prisma.gym.findUnique({
-    where: { id: session.gymId },
-    select: { name: true },
-  });
+  const { gyms } = getRepositories();
+  const gym = await gyms.getById(platformContext, session.gymId);
 
   return (
     <MemberPortalShell

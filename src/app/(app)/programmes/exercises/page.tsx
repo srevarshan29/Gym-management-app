@@ -5,7 +5,7 @@ import { muscleGroupLabel } from "@/lib/exercises";
 import { PageHeader } from "@/components/page-header";
 import { AddExerciseDialog } from "@/components/workout/add-exercise-dialog";
 import { ExerciseLibraryList } from "@/components/workout/exercise-library-list";
-import type { MuscleGroup } from "@prisma/client";
+import type { MuscleGroup } from "@/lib/firestore/types";
 
 export default async function ExerciseLibraryPage() {
   const user = await requireGym();

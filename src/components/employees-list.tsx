@@ -10,6 +10,7 @@ import { useActionLock } from "@/hooks/use-action-lock";
 import { deleteEmployee } from "@/app/actions/employees";
 import type { EmployeeInput } from "@/components/employee-dialog";
 import { EmployeeDialog } from "@/components/employee-dialog";
+import { PaginationBar } from "@/components/pagination-bar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -35,6 +36,9 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 
 type EmployeesListProps = {
   employees: EmployeeInput[];
+  page: number;
+  pageSize: number;
+  total: number;
 };
 
 function matchesSearch(employee: EmployeeInput, query: string): boolean {
@@ -88,7 +92,12 @@ function DeleteEmployeeButton({ id, name }: { id: string; name: string }) {
   );
 }
 
-export function EmployeesList({ employees }: EmployeesListProps) {
+export function EmployeesList({
+  employees,
+  page,
+  pageSize,
+  total,
+}: EmployeesListProps) {
   const [query, setQuery] = React.useState("");
   const filtered = React.useMemo(
     () => employees.filter((employee) => matchesSearch(employee, query)),
@@ -175,6 +184,17 @@ export function EmployeesList({ employees }: EmployeesListProps) {
           )}
         </CardContent>
       </Card>
+
+      <PaginationBar
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        makeHref={(nextPage) =>
+          nextPage > 1
+            ? `/operations/employees?page=${nextPage}`
+            : "/operations/employees"
+        }
+      />
     </div>
   );
 }

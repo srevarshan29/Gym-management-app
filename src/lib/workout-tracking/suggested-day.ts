@@ -1,26 +1,16 @@
-import { withTenant } from "@/lib/db-context";
+import { getRepositories } from "@/lib/firestore";
+import type { MemberContext } from "@/lib/firestore/context";
+import type { WorkoutPlanDoc } from "@/lib/firestore/types";
+import {
+  findDayIdForPlanExercise,
+  isLegacyWorkoutPlan,
+} from "@/lib/workout-tracking/session-plan";
+import type { SuggestedWorkoutDay } from "@/lib/workout-tracking/types";
+
+export type { SuggestedWorkoutDay } from "@/lib/workout-tracking/types";
 
 const WORK_SECONDS_PER_SET = 40;
 const DEFAULT_REST_SECONDS = 60;
-
-export type SuggestedWorkoutDay =
-  | { kind: "none" }
-  | { kind: "legacy" }
-  | {
-      kind: "suggested";
-      dayId: string;
-      label: string;
-      exerciseCount: number;
-      estimatedMinutes: number;
-    }
-  | {
-      kind: "resume";
-      dayId: string | null;
-      label: string | null;
-      exerciseCount: number;
-      estimatedMinutes: number | null;
-      sessionId: string;
-    };
 
 type StartableDay = {
   id: string;
@@ -54,14 +44,16 @@ function nextStartableDay(
 
 function inferDayId(
   workoutPlanDayId: string | null,
-  exerciseDayIds: (string | null)[],
+  exercisePlanIds: string[],
+  plan: WorkoutPlanDoc,
   startableIds: Set<string>,
 ): string | null {
   if (workoutPlanDayId && startableIds.has(workoutPlanDayId)) {
     return workoutPlanDayId;
   }
-  for (const id of exerciseDayIds) {
-    if (id && startableIds.has(id)) return id;
+  for (const planExerciseId of exercisePlanIds) {
+    const dayId = findDayIdForPlanExercise(plan, planExerciseId);
+    if (dayId && startableIds.has(dayId)) return dayId;
   }
   return null;
 }
@@ -78,105 +70,71 @@ function toSuggested(
   };
 }
 
+function memberContext(gymId: string, memberId: string): MemberContext {
+  return { kind: "member", gymId, memberId };
+}
+
 export async function getSuggestedWorkoutDay(
   tenantGymId: string,
   memberId: string,
 ): Promise<SuggestedWorkoutDay> {
-  return withTenant(tenantGymId, async (tx) => {
-    const plan = await tx.workoutPlan.findFirst({
-      where: { gymId: tenantGymId, memberId },
-      select: {
-        weeklySchedule: true,
-        days: {
-          orderBy: { sortOrder: "asc" },
-          select: {
-            id: true,
-            label: true,
-            sortOrder: true,
-            exercises: {
-              orderBy: { sortOrder: "asc" },
-              select: { targetSets: true, restSeconds: true },
-            },
-          },
-        },
-        _count: { select: { exercises: true } },
-      },
-    });
+  const ctx = memberContext(tenantGymId, memberId);
+  const { workoutPlans, workoutSessions } = getRepositories();
 
-    if (!plan) return { kind: "none" };
+  const plan = await workoutPlans.findByMemberId(ctx, tenantGymId, memberId);
+  if (!plan) return { kind: "none" };
+  if (isLegacyWorkoutPlan(plan)) return { kind: "legacy" };
 
-    const isLegacy =
-      plan._count.exercises === 0 && Boolean(plan.weeklySchedule?.trim());
-    if (isLegacy) return { kind: "legacy" };
+  const startable = [...(plan.days ?? [])]
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .filter((day) => day.exercises.length > 0)
+    .map((day) => ({
+      id: day.id,
+      label: day.label,
+      sortOrder: day.sortOrder,
+      exercises: day.exercises.map((exercise) => ({
+        targetSets: exercise.targetSets,
+        restSeconds: exercise.restSeconds,
+      })),
+    }));
 
-    const startable = plan.days.filter((day) => day.exercises.length > 0);
-    if (startable.length === 0) return { kind: "none" };
+  if (startable.length === 0) return { kind: "none" };
 
-    const startableIds = new Set(startable.map((day) => day.id));
+  const startableIds = new Set(startable.map((day) => day.id));
 
-    const [active, lastCompleted] = await Promise.all([
-      tx.workoutSession.findFirst({
-        where: {
-          gymId: tenantGymId,
-          memberId,
-          status: "IN_PROGRESS",
-        },
-        orderBy: { startedAt: "desc" },
-        select: {
-          id: true,
-          workoutPlanDayId: true,
-          exercises: {
-            select: {
-              planExercise: { select: { workoutPlanDayId: true } },
-            },
-          },
-        },
-      }),
-      tx.workoutSession.findFirst({
-        where: {
-          gymId: tenantGymId,
-          memberId,
-          status: "COMPLETED",
-        },
-        orderBy: { completedAt: "desc" },
-        select: {
-          workoutPlanDayId: true,
-          exercises: {
-            select: {
-              planExercise: { select: { workoutPlanDayId: true } },
-            },
-          },
-        },
-      }),
-    ]);
+  const [active, lastCompleted] = await Promise.all([
+    workoutSessions.findActiveSession(ctx, tenantGymId, memberId),
+    workoutSessions.findLastCompletedSession(ctx, tenantGymId, memberId),
+  ]);
 
-    if (active) {
-      const dayId = inferDayId(
-        active.workoutPlanDayId,
-        active.exercises.map((row) => row.planExercise.workoutPlanDayId),
+  if (active) {
+    const dayId = inferDayId(
+      active.workoutPlanDayId,
+      active.exercises.map((row) => row.workoutPlanExerciseId),
+      plan,
+      startableIds,
+    );
+    const day = startable.find((row) => row.id === dayId) ?? null;
+    return {
+      kind: "resume",
+      dayId: day?.id ?? null,
+      label: day?.label ?? null,
+      exerciseCount: day?.exercises.length ?? active.exercises.length,
+      estimatedMinutes: day ? estimateDayMinutes(day.exercises) : null,
+      sessionId: active.id,
+    };
+  }
+
+  const lastDayId = lastCompleted
+    ? inferDayId(
+        lastCompleted.workoutPlanDayId,
+        lastCompleted.exercises.map((row) => row.workoutPlanExerciseId),
+        plan,
         startableIds,
-      );
-      const day = startable.find((row) => row.id === dayId) ?? null;
-      return {
-        kind: "resume",
-        dayId: day?.id ?? null,
-        label: day?.label ?? null,
-        exerciseCount: day?.exercises.length ?? active.exercises.length,
-        estimatedMinutes: day ? estimateDayMinutes(day.exercises) : null,
-        sessionId: active.id,
-      };
-    }
+      )
+    : null;
 
-    const lastDayId = lastCompleted
-      ? inferDayId(
-          lastCompleted.workoutPlanDayId,
-          lastCompleted.exercises.map((row) => row.planExercise.workoutPlanDayId),
-          startableIds,
-        )
-      : null;
-
-    const suggested = nextStartableDay(startable, lastDayId);
-    if (!suggested) return { kind: "none" };
-    return toSuggested(suggested);
-  });
+  const suggested = nextStartableDay(startable, lastDayId);
+  if (!suggested) return { kind: "none" };
+  return toSuggested(suggested);
 }

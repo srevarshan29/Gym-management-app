@@ -1,25 +1,10 @@
-import type { MemberGender } from "@prisma/client";
+import type { MemberGender } from "@/lib/firestore/types";
 
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
 import { getGymStaffOptions } from "@/lib/staff";
+import type { PtMemberRow, PtTrainerGroup } from "@/lib/pt-member-types";
 
-export type PtMemberRow = {
-  id: string;
-  memberNumber: number;
-  name: string;
-  phone: string;
-  photoUrl: string | null;
-  gender: MemberGender;
-  packageName: string | null;
-  trainerId: string | null;
-  trainerName: string | null;
-};
-
-export type PtTrainerGroup = {
-  trainerId: string | null;
-  trainerName: string;
-  members: PtMemberRow[];
-};
+export type { PtMemberRow, PtTrainerGroup } from "@/lib/pt-member-types";
 
 export type PtMembersPageData = {
   totalPtMembers: number;
@@ -28,27 +13,19 @@ export type PtMembersPageData = {
   staffOptions: { id: string; name: string }[];
 };
 
-function toPtMemberRow(member: {
-  id: string;
-  memberNumber: number;
-  name: string;
-  phone: string;
-  photoUrl: string | null;
-  gender: MemberGender;
-  trainerId: string | null;
-  trainer: { name: string } | null;
-  subscriptions: {
-    endDate: Date;
-    package: { name: string };
-  }[];
-}): PtMemberRow {
-  const current =
-    member.subscriptions.length > 0
-      ? [...member.subscriptions].sort(
-          (a, b) => b.endDate.getTime() - a.endDate.getTime(),
-        )[0]
-      : undefined;
-
+function toPtMemberRow(
+  member: {
+    id: string;
+    memberNumber: number;
+    name: string;
+    phone: string;
+    photoUrl: string | null;
+    gender: MemberGender;
+    currentPackageName: string | null;
+    trainerId: string | null;
+  },
+  trainerName: string | null,
+): PtMemberRow {
   return {
     id: member.id,
     memberNumber: member.memberNumber,
@@ -56,34 +33,45 @@ function toPtMemberRow(member: {
     phone: member.phone,
     photoUrl: member.photoUrl,
     gender: member.gender,
-    packageName: current?.package.name ?? null,
+    packageName: member.currentPackageName,
     trainerId: member.trainerId,
-    trainerName: member.trainer?.name ?? null,
+    trainerName,
   };
 }
 
 export async function getPtMembersPageData(
   tenantGymId: string,
 ): Promise<PtMembersPageData> {
-  const [ptMembers, staffOptions] = await Promise.all([
-    withTenant(tenantGymId, (tx) =>
-      tx.member.findMany({
-        where: { gymId: tenantGymId, isPt: true },
-        orderBy: { name: "asc" },
-        include: {
-          trainer: { select: { id: true, name: true } },
-          subscriptions: {
-            orderBy: { endDate: "desc" },
-            take: 1,
-            include: { package: { select: { name: true } } },
-          },
-        },
-      }),
-    ),
+  const { members, users } = getRepositories();
+  const [staffOptions, ptMemberDocs] = await Promise.all([
     getGymStaffOptions(tenantGymId),
+    members.listAllPtMembers(platformContext, tenantGymId),
   ]);
 
-  const rows = ptMembers.map(toPtMemberRow);
+  const trainerIds = [
+    ...new Set(
+      ptMemberDocs
+        .map((m) => m.trainerId)
+        .filter((id): id is string => id != null),
+    ),
+  ];
+
+  const trainerNameById = new Map<string, string>();
+  await Promise.all(
+    trainerIds.map(async (trainerId) => {
+      const user = await users.findById(platformContext, trainerId);
+      if (user) trainerNameById.set(trainerId, user.name);
+    }),
+  );
+
+  const rows = ptMemberDocs.map((member) =>
+    toPtMemberRow(
+      member,
+      member.trainerId
+        ? (trainerNameById.get(member.trainerId) ?? null)
+        : null,
+    ),
+  );
 
   const groupMap = new Map<string | null, PtMemberRow[]>();
   for (const row of rows) {
@@ -93,16 +81,11 @@ export async function getPtMembersPageData(
     groupMap.set(key, list);
   }
 
-  const trainerIds = [...groupMap.keys()].filter(
+  const assignedTrainerIds = [...groupMap.keys()].filter(
     (id): id is string => id != null,
   );
-  const trainerNameById = new Map(
-    ptMembers
-      .filter((m) => m.trainer)
-      .map((m) => [m.trainerId!, m.trainer!.name]),
-  );
 
-  const assignedGroups: PtTrainerGroup[] = trainerIds
+  const assignedGroups: PtTrainerGroup[] = assignedTrainerIds
     .map((trainerId) => ({
       trainerId,
       trainerName: trainerNameById.get(trainerId) ?? "Unknown trainer",
@@ -124,7 +107,7 @@ export async function getPtMembersPageData(
 
   return {
     totalPtMembers: rows.length,
-    trainersEngaged: trainerIds.length,
+    trainersEngaged: assignedTrainerIds.length,
     groups,
     staffOptions,
   };

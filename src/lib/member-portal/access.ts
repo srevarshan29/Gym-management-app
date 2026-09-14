@@ -1,33 +1,33 @@
-import { prisma } from "@/lib/prisma";
+import { getRepositories, platformContext } from "@/lib/firestore";
 
-/** Direct prisma for portal reads scoped by session memberId (not withTenant). */
+/** Direct Firestore read scoped by session memberId (not tenant middleware). */
 export async function getMemberPortalRow(
   tenantGymId: string,
   memberId: string,
 ) {
-  return prisma.member.findFirst({
-    where: { id: memberId, gymId: tenantGymId },
-    select: {
-      id: true,
-      gymId: true,
-      name: true,
-      phone: true,
-      email: true,
-      photoUrl: true,
-      gender: true,
-      memberNumber: true,
-      fitnessGoal: true,
-      ageYears: true,
-      heightCm: true,
-      weightKg: true,
-      portalEnabledAt: true,
-    },
-  });
+  const { members } = getRepositories();
+  const member = await members.findByIdAndGym(
+    { kind: "member", memberId, gymId: tenantGymId },
+    memberId,
+    tenantGymId,
+  );
+  if (!member) return null;
+
+  return {
+    id: member.id,
+    gymId: member.gymId,
+    name: member.name,
+    phone: member.phone,
+    email: member.email,
+    photoUrl: member.photoUrl,
+    gender: member.gender,
+    memberNumber: member.memberNumber,
+    fitnessGoal: member.fitnessGoal,
+    ageYears: member.ageYears,
+    heightCm: member.heightCm,
+    weightKg: member.weightKg,
+    portalEnabledAt: member.portalEnabledAt,
+  };
 }
 
-export async function getGymByRegistrationToken(token: string) {
-  return prisma.gym.findUnique({
-    where: { registrationToken: token },
-    select: { id: true, name: true, registrationToken: true },
-  });
-}
+export { getGymByRegistrationToken } from "@/lib/registration";

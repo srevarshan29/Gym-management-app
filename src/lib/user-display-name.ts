@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { getRepositories, platformContext } from "@/lib/firestore";
 
 /** Trim whitespace from a display name before persist/compare. */
 export function normalizeDisplayName(name: string): string {
@@ -7,19 +7,15 @@ export function normalizeDisplayName(name: string): string {
 
 /** True if another user in the same gym already has this display name. */
 export async function isDisplayNameTakenInGym(
-  tx: Prisma.TransactionClient,
   tenantGymId: string,
   name: string,
   excludeUserId?: string,
 ): Promise<boolean> {
-  const normalized = normalizeDisplayName(name);
-  const existing = await tx.user.findFirst({
-    where: {
-      gymId: tenantGymId,
-      ...(excludeUserId ? { id: { not: excludeUserId } } : {}),
-      name: { equals: normalized, mode: "insensitive" },
-    },
-    select: { id: true },
-  });
-  return existing !== null;
+  const { users } = getRepositories();
+  return users.isDisplayNameTakenInGym(
+    platformContext,
+    tenantGymId,
+    normalizeDisplayName(name),
+    excludeUserId,
+  );
 }

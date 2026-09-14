@@ -84,3 +84,79 @@ export type ExerciseListItem = {
   defaultRestSeconds: number | null;
   isSeeded: boolean;
 };
+
+export type ExerciseTrackingType = "WEIGHTED" | "TIME" | "BODYWEIGHT";
+
+export type ActiveWorkoutSetLog = {
+  setNumber: number;
+  weightKg: number | null;
+  durationSeconds: number | null;
+};
+
+export type ActiveWorkoutSession = {
+  id: string;
+  startedAt: string;
+  durationSeconds: number | null;
+  exercises: {
+    id: string;
+    sortOrder: number;
+    displayName: string;
+    muscleGroup: string | null;
+    trackingType: ExerciseTrackingType;
+    exerciseId: string | null;
+    customName: string | null;
+    targetSets: number;
+    targetReps: string;
+    targetWeightKg: number | null;
+    restSeconds: number | null;
+    sets: ActiveWorkoutSetLog[];
+  }[];
+};
+
+export type PreviousSetLog = {
+  setNumber: number;
+  weightKg: number | null;
+  durationSeconds: number | null;
+};
+
+export type PreviousSetsBySessionExerciseId = Record<string, PreviousSetLog[]>;
+
+export type SuggestedWorkoutDay =
+  | { kind: "none" }
+  | { kind: "legacy" }
+  | {
+      kind: "suggested";
+      dayId: string;
+      label: string;
+      exerciseCount: number;
+      estimatedMinutes: number;
+    }
+  | {
+      kind: "resume";
+      dayId: string | null;
+      label: string | null;
+      exerciseCount: number;
+      estimatedMinutes: number | null;
+      sessionId: string;
+    };
+
+export type ProgressGrouping = "weekly" | "monthly";
+
+export type ExerciseProgressPoint = {
+  label: string;
+  maxWeightKg: number | null;
+  maxDurationSeconds: number | null;
+  sessionDate: string;
+};
+
+export type ExerciseProgressData = {
+  exerciseName: string;
+  trackingType: ExerciseTrackingType;
+  targetWeightKg: number | null;
+  points: ExerciseProgressPoint[];
+};
+
+export type ExerciseProgressOption = {
+  key: string;
+  label: string;
+};

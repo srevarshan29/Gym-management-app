@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { requireGym } from "@/lib/session";
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
 import { getGymStaffOptions } from "@/lib/staff";
 import { PageHeader } from "@/components/page-header";
 import { MemberForm } from "@/components/member-form";
@@ -16,12 +16,9 @@ export default async function EditMemberPage({
 }) {
   const user = await requireGym();
 
+  const { members } = getRepositories();
   const [member, staffOptions] = await Promise.all([
-    withTenant(user.gymId, (tx) =>
-      tx.member.findFirst({
-        where: { id: params.id, gymId: user.gymId },
-      }),
-    ),
+    members.findByIdAndGym(platformContext, params.id, user.gymId),
     getGymStaffOptions(user.gymId),
   ]);
   if (!member) notFound();
@@ -51,7 +48,7 @@ export default async function EditMemberPage({
           fitnessGoal: member.fitnessGoal,
           ageYears: member.ageYears,
           heightCm: member.heightCm,
-          weightKg: member.weightKg != null ? Number(member.weightKg) : null,
+          weightKg: member.weightKg,
         }}
         staffOptions={staffOptions}
       />

@@ -22,6 +22,12 @@ const nextConfig = {
           },
         ],
       },
+      // Receipt PDF is embedded in an iframe on member profile / payment modals.
+      // Override DENY for this route only (same-origin framing).
+      {
+        source: "/payments/:paymentId/receipt",
+        headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }],
+      },
     ];
   },
 };

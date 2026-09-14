@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { deleteVisitor } from "@/app/actions/visitors";
 import { LockedLink } from "@/components/navigation/locked-link";
+import { PaginationBar } from "@/components/pagination-bar";
 import { ViewFilterLinks } from "@/components/navigation/view-filter-links";
 import { useActionLock } from "@/hooks/use-action-lock";
 import { Button } from "@/components/ui/button";
@@ -31,13 +32,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { memberGenderLabel } from "@/lib/member-gender";
-import type { QrRegistrationRow } from "@/lib/registration";
+import type { QrRegistrationRow } from "@/lib/registration-types";
 import { formatDate } from "@/lib/utils";
 
 type QrRegistrationsListProps = {
   registrations: QrRegistrationRow[];
   canManage: boolean;
   view: "pending" | "converted" | "all";
+  page: number;
+  pageSize: number;
+  total: number;
 };
 
 function matchesSearch(item: QrRegistrationRow, query: string): boolean {
@@ -127,6 +131,9 @@ export function QrRegistrationsList({
   registrations,
   canManage,
   view,
+  page,
+  pageSize,
+  total,
 }: QrRegistrationsListProps) {
   const [query, setQuery] = React.useState("");
   const filtered = React.useMemo(
@@ -250,6 +257,19 @@ export function QrRegistrationsList({
           )}
         </CardContent>
       </Card>
+
+      <PaginationBar
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        makeHref={(nextPage) => {
+          const params = new URLSearchParams();
+          if (view !== "pending") params.set("view", view);
+          if (nextPage > 1) params.set("page", String(nextPage));
+          const qs = params.toString();
+          return qs ? `/members/register-qr?${qs}` : "/members/register-qr";
+        }}
+      />
     </div>
   );
 }

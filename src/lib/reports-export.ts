@@ -1,16 +1,16 @@
 import type { Role } from "@prisma/client";
 
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
 import { rowsToCsv } from "@/lib/csv";
-import { getDietPlansPageData } from "@/lib/diet-plans";
+import { getAllDietPlansForExport } from "@/lib/diet-plans";
 import { getEmployees } from "@/lib/employees";
-import { getEvents } from "@/lib/events";
+import { getAllEventsForExport } from "@/lib/events";
 import { getPtMembersPageData } from "@/lib/pt-members";
+import { getAllWorkoutPlansForExport } from "@/lib/workout-plans";
 import {
   canExportReports,
   canViewFinancials,
 } from "@/lib/permissions";
-import { getWorkoutPlansPageData } from "@/lib/workout-plans";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 export const REPORT_MODULE_IDS = [
@@ -111,6 +111,17 @@ export function visibleReportModules(role: Role): ReportModuleMeta[] {
 export async function getReportModuleCounts(
   tenantGymId: string,
 ): Promise<ReportModuleCounts> {
+  const ctx = platformContext;
+  const {
+    members,
+    payments,
+    employees,
+    visitors,
+    events,
+    dietPlans,
+    workoutPlans,
+  } = getRepositories();
+
   const [
     memberCount,
     paymentCount,
@@ -120,18 +131,16 @@ export async function getReportModuleCounts(
     dietPlanCount,
     workoutPlanCount,
     ptMemberCount,
-  ] = await withTenant(tenantGymId, (tx) =>
-    Promise.all([
-      tx.member.count({ where: { gymId: tenantGymId } }),
-      tx.payment.count({ where: { gymId: tenantGymId } }),
-      tx.employee.count({ where: { gymId: tenantGymId } }),
-      tx.visitor.count({ where: { gymId: tenantGymId } }),
-      tx.gymEvent.count({ where: { gymId: tenantGymId } }),
-      tx.dietPlan.count({ where: { gymId: tenantGymId } }),
-      tx.workoutPlan.count({ where: { gymId: tenantGymId } }),
-      tx.member.count({ where: { gymId: tenantGymId, isPt: true } }),
-    ]),
-  );
+  ] = await Promise.all([
+    members.countByGym(ctx, tenantGymId),
+    payments.countByGym(ctx, tenantGymId),
+    employees.countByGym(ctx, tenantGymId),
+    visitors.countByGym(ctx, tenantGymId),
+    events.countByGym(ctx, tenantGymId),
+    dietPlans.countByGym(ctx, tenantGymId),
+    workoutPlans.countByGym(ctx, tenantGymId),
+    members.countPtMembers(ctx, tenantGymId),
+  ]);
 
   return {
     members: memberCount,
@@ -158,6 +167,8 @@ export async function buildReportCsv(
   moduleId: ReportModuleId,
 ): Promise<{ filename: string; body: string }> {
   const stamp = new Date().toISOString().slice(0, 10);
+  const ctx = platformContext;
+  const { visitors } = getRepositories();
 
   switch (moduleId) {
     case "members":
@@ -187,25 +198,12 @@ export async function buildReportCsv(
       };
     }
     case "visitors": {
-      const visitors = await withTenant(tenantGymId, (tx) =>
-        tx.visitor.findMany({
-          where: { gymId: tenantGymId },
-          orderBy: [{ visitDate: "desc" }, { createdAt: "desc" }],
-          select: {
-            name: true,
-            phone: true,
-            visitDate: true,
-            status: true,
-            source: true,
-            notes: true,
-          },
-        }),
-      );
+      const visitorRows = await visitors.listAllForExport(ctx, tenantGymId);
       const headers = ["Name", "Phone", "Visit date", "Status", "Source", "Notes"];
-      const rows = visitors.map((v) => [
+      const rows = visitorRows.map((v) => [
         v.name,
         v.phone,
-        formatDate(v.visitDate),
+        formatDate(v.visitDate.toDate()),
         v.status,
         v.source.replace(/_/g, " "),
         v.notes ?? "",
@@ -216,7 +214,7 @@ export async function buildReportCsv(
       };
     }
     case "events": {
-      const events = await getEvents(tenantGymId);
+      const events = await getAllEventsForExport(tenantGymId);
       const headers = ["Title", "Date", "Location", "Description"];
       const rows = events.map((e) => [
         e.title,
@@ -230,7 +228,7 @@ export async function buildReportCsv(
       };
     }
     case "diet-plans": {
-      const { plans } = await getDietPlansPageData(tenantGymId);
+      const plans = await getAllDietPlansForExport(tenantGymId);
       const headers = ["Member", "Title", "Calories per day", "Meal plan"];
       const rows = plans.map((p) => [
         p.memberName,
@@ -244,7 +242,7 @@ export async function buildReportCsv(
       };
     }
     case "workout-plans": {
-      const { plans } = await getWorkoutPlansPageData(tenantGymId);
+      const plans = await getAllWorkoutPlansForExport(tenantGymId);
       const headers = ["Member", "Title", "Duration (weeks)", "Focus goal", "Exercises", "Legacy"];
       const rows = plans.map((p) => [
         p.memberName,

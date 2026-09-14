@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
 import { requireGym } from "@/lib/session";
 import { canManageMembers } from "@/lib/permissions";
 import { validateTrainerForGym } from "@/lib/staff";
@@ -24,14 +24,15 @@ export async function updatePtTrainer(
     }
   }
 
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.member.updateMany({
-      where: { id: memberId, gymId: user.gymId, isPt: true },
-      data: { trainerId },
-    }),
+  const { members } = getRepositories();
+  const updated = await members.updatePtTrainer(
+    platformContext,
+    user.gymId,
+    memberId,
+    trainerId,
   );
 
-  if (result.count === 0) {
+  if (!updated) {
     return actionError("PT member not found.");
   }
 

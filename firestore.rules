@@ -1,0 +1,300 @@
+rules_version = '2';
+
+// GymDesk Firestore security rules.
+//
+// Production server writes use the Firebase Admin SDK (bypasses rules).
+// These rules are the database-level backstop against direct client SDK access.
+//
+// Auth model: custom JWT claims mirrored from Auth.js / member Google sessions:
+//   Staff:  { role: 'OWNER'|'ADMIN'|'STAFF'|'SUPER_ADMIN', gymId?: string }
+//   Member: { role: 'MEMBER', gymId: string, memberId: string }
+//
+// Platform-only collections (staffLoginThrottles) deny all client access.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function authRole() {
+      return request.auth.token.role;
+    }
+
+    function authGymId() {
+      return request.auth.token.gymId;
+    }
+
+    function authMemberId() {
+      return request.auth.token.memberId;
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && authRole() == 'SUPER_ADMIN';
+    }
+
+    function isStaff() {
+      return isAuthenticated()
+        && authRole() in ['OWNER', 'ADMIN', 'STAFF'];
+    }
+
+    function isMember() {
+      return isAuthenticated() && authRole() == 'MEMBER';
+    }
+
+    function staffOwnsGym(gymId) {
+      return isStaff() && authGymId() == gymId;
+    }
+
+    function memberOwnsGym(gymId) {
+      return isMember() && authGymId() == gymId;
+    }
+
+    function memberOwnsDoc(memberDocId) {
+      return isMember() && authMemberId() == memberDocId;
+    }
+
+    function gymIdUnchanged() {
+      return request.resource.data.gymId == resource.data.gymId;
+    }
+
+    function hasRequiredGymId() {
+      return request.resource.data.gymId is string
+        && request.resource.data.gymId.size() > 0;
+    }
+
+    // Member self-service profile edits only (portal).
+    function memberProfileFieldsOnly() {
+      let allowed = [
+        'ageYears', 'heightCm', 'weightKg', 'fitnessGoal',
+        'photoUrl', 'updatedAt',
+      ];
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return changed.hasOnly(allowed);
+    }
+
+    // Staff read/write on tenant-scoped docs.
+    function staffTenantRead(gymId) {
+      return isSuperAdmin() || staffOwnsGym(gymId);
+    }
+
+    function staffTenantCreate() {
+      return isSuperAdmin() || staffOwnsGym(request.resource.data.gymId);
+    }
+
+    function staffTenantUpdate(gymId) {
+      return isSuperAdmin()
+        || (staffOwnsGym(gymId) && gymIdUnchanged());
+    }
+
+    function staffTenantDelete(gymId) {
+      return isSuperAdmin() || staffOwnsGym(gymId);
+    }
+
+    // ── Platform ─────────────────────────────────────────────────────────
+
+    match /staffLoginThrottles/{key} {
+      allow read, write: if false;
+    }
+
+    // ── Gyms & profile ───────────────────────────────────────────────────
+
+    match /gyms/{gymId} {
+      allow read: if staffTenantRead(gymId)
+        || memberOwnsGym(gymId);
+      allow create: if isSuperAdmin();
+      allow update: if isSuperAdmin()
+        || (staffOwnsGym(gymId) && authRole() == 'OWNER');
+      allow delete: if isSuperAdmin();
+    }
+
+    match /gymProfiles/{gymId} {
+      allow read: if staffTenantRead(gymId)
+        || memberOwnsGym(gymId);
+      allow create, update: if staffTenantCreate()
+        && hasRequiredGymId()
+        && request.resource.data.gymId == gymId;
+      allow delete: if staffTenantDelete(gymId);
+    }
+
+    // ── Staff users ──────────────────────────────────────────────────────
+
+    match /users/{userId} {
+      allow read: if isSuperAdmin()
+        || (isStaff() && resource.data.gymId == authGymId())
+        || (isStaff() && resource.data.gymId == null && authRole() == 'SUPER_ADMIN');
+      allow create: if isSuperAdmin()
+        || (isStaff() && authRole() in ['OWNER', 'ADMIN']
+            && staffOwnsGym(request.resource.data.gymId));
+      allow update: if isSuperAdmin()
+        || (isStaff() && authRole() in ['OWNER', 'ADMIN']
+            && staffOwnsGym(resource.data.gymId)
+            && gymIdUnchanged());
+      allow delete: if isSuperAdmin()
+        || (isStaff() && authRole() == 'OWNER'
+            && staffOwnsGym(resource.data.gymId));
+    }
+
+    // ── Core tenant collections (same staff/member pattern) ────────────────
+
+    match /members/{memberDocId} {
+      allow read: if staffTenantRead(resource.data.gymId)
+        || (memberOwnsGym(resource.data.gymId) && memberOwnsDoc(memberDocId));
+      allow create: if staffTenantCreate() && hasRequiredGymId();
+      allow update: if staffTenantUpdate(resource.data.gymId)
+        || (memberOwnsGym(resource.data.gymId)
+            && memberOwnsDoc(memberDocId)
+            && memberProfileFieldsOnly()
+            && gymIdUnchanged());
+      allow delete: if staffTenantDelete(resource.data.gymId);
+    }
+
+    match /packages/{packageId} {
+      allow read: if staffTenantRead(resource.data.gymId);
+      allow create: if staffTenantCreate() && hasRequiredGymId();
+      allow update: if staffTenantUpdate(resource.data.gymId);
+      allow delete: if staffTenantDelete(resource.data.gymId);
+    }
+
+    match /subscriptions/{subscriptionId} {
+      allow read: if staffTenantRead(resource.data.gymId)
+        || (memberOwnsGym(resource.data.gymId)
+            && resource.data.memberId == authMemberId());
+      allow create: if staffTenantCreate() && hasRequiredGymId();
+      allow update: if staffTenantUpdate(resource.data.gymId);
+      allow delete: if staffTenantDelete(resource.data.gymId);
+    }
+
+    match /payments/{paymentId} {
+      allow read: if staffTenantRead(resource.data.gymId)
+        || (memberOwnsGym(resource.data.gymId)
+            && resource.data.memberId == authMemberId());
+      allow create: if staffTenantCreate() && hasRequiredGymId();
+      allow update: if staffTenantUpdate(resource.data.gymId);
+      allow delete: if staffTenantDelete(resource.data.gymId);
+    }
+
+    match /receipts/{receiptId} {
+      allow read: if staffTenantRead(resource.data.gymId)
+        || (memberOwnsGym(resource.data.gymId)
+            && resource.data.memberId == authMemberId());
+      allow create: if staffTenantCreate() && hasRequiredGymId();
+      allow update, delete: if false;
+    }
+
+    match /visitors/{visitorId} {
+      allow read: if staffTenantRead(resource.data.gymId);
+      allow create: if staffTenantCreate() && hasRequiredGymId();
+      allow update: if staffTenantUpdate(resource.data.gymId);
+      allow delete: if staffTenantDelete(resource.data.gymId);
+    }
+
+    match /employees/{employeeId} {
+      allow read: if staffTenantRead(resource.data.gymId);
+      allow create: if staffTenantCreate() && hasRequiredGymId();
+      allow update: if staffTenantUpdate(resource.data.gymId);
+      allow delete: if staffTenantDelete(resource.data.gymId);
+    }
+
+    match /events/{eventId} {
+      allow read: if staffTenantRead(resource.data.gymId)
+        || memberOwnsGym(resource.data.gymId);
+      allow create: if staffTenantCreate() && hasRequiredGymId();
+      allow update: if staffTenantUpdate(resource.data.gymId);
+      allow delete: if staffTenantDelete(resource.data.gymId);
+    }
+
+    match /ledgerTransactions/{transactionId} {
+      allow read: if staffTenantRead(resource.data.gymId)
+        && authRole() == 'OWNER';
+      allow create: if staffTenantCreate()
+        && hasRequiredGymId()
+        && authRole() == 'OWNER';
+      allow update: if staffTenantUpdate(resource.data.gymId)
+        && authRole() == 'OWNER';
+      allow delete: if staffTenantDelete(resource.data.gymId)
+        && authRole() == 'OWNER';
+    }
+
+    match /customExercises/{exerciseId} {
+      allow read: if staffTenantRead(resource.data.gymId)
+        || memberOwnsGym(resource.data.gymId);
+      allow create: if staffTenantCreate() && hasRequiredGymId();
+      allow update: if staffTenantUpdate(resource.data.gymId);
+      allow delete: if staffTenantDelete(resource.data.gymId);
+    }
+
+    match /workoutPlans/{planId} {
+      allow read: if staffTenantRead(resource.data.gymId)
+        || (memberOwnsGym(resource.data.gymId)
+            && resource.data.memberId == authMemberId());
+      allow create: if staffTenantCreate() && hasRequiredGymId();
+      allow update: if staffTenantUpdate(resource.data.gymId);
+      allow delete: if staffTenantDelete(resource.data.gymId);
+    }
+
+    match /workoutSessions/{sessionId} {
+      allow read: if staffTenantRead(resource.data.gymId)
+        || (memberOwnsGym(resource.data.gymId)
+            && resource.data.memberId == authMemberId());
+      allow create: if (staffTenantCreate() && hasRequiredGymId())
+        || (memberOwnsGym(request.resource.data.gymId)
+            && request.resource.data.memberId == authMemberId());
+      allow update: if staffTenantUpdate(resource.data.gymId)
+        || (memberOwnsGym(resource.data.gymId)
+            && resource.data.memberId == authMemberId()
+            && gymIdUnchanged());
+      allow delete: if staffTenantDelete(resource.data.gymId);
+    }
+
+    match /dietPlans/{planId} {
+      allow read: if staffTenantRead(resource.data.gymId)
+        || (memberOwnsGym(resource.data.gymId)
+            && resource.data.memberId == authMemberId());
+      allow create: if staffTenantCreate() && hasRequiredGymId();
+      allow update: if staffTenantUpdate(resource.data.gymId);
+      allow delete: if staffTenantDelete(resource.data.gymId);
+    }
+
+    // ── New features (Phase 5+) ──────────────────────────────────────────
+
+    match /nutritionLogs/{logId} {
+      allow read: if staffTenantRead(resource.data.gymId)
+        || (memberOwnsGym(resource.data.gymId)
+            && resource.data.memberId == authMemberId());
+      allow create, update: if memberOwnsGym(request.resource.data.gymId)
+        && request.resource.data.memberId == authMemberId();
+      allow delete: if memberOwnsGym(resource.data.gymId)
+        && resource.data.memberId == authMemberId();
+    }
+
+    match /cardioSessions/{sessionId} {
+      allow read: if staffTenantRead(resource.data.gymId)
+        || (memberOwnsGym(resource.data.gymId)
+            && resource.data.memberId == authMemberId());
+      allow create, update: if memberOwnsGym(request.resource.data.gymId)
+        && request.resource.data.memberId == authMemberId();
+      allow delete: if memberOwnsGym(resource.data.gymId)
+        && resource.data.memberId == authMemberId();
+    }
+
+    match /memberGoals/{goalId} {
+      allow read: if staffTenantRead(resource.data.gymId)
+        || (memberOwnsGym(resource.data.gymId)
+            && resource.data.memberId == authMemberId());
+      allow create, update: if memberOwnsGym(request.resource.data.gymId)
+        && request.resource.data.memberId == authMemberId();
+      allow delete: if memberOwnsGym(resource.data.gymId)
+        && resource.data.memberId == authMemberId();
+    }
+
+    // ── Default deny ─────────────────────────────────────────────────────
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

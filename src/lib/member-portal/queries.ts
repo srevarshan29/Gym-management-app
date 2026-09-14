@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getRepositories, platformContext } from "@/lib/firestore";
 import {
   computeSubscriptionBalance,
   sumPaymentAmounts,
@@ -36,27 +36,30 @@ export async function getMemberPortalOverview(
   tenantGymId: string,
   memberId: string,
 ): Promise<MemberPortalOverview | null> {
-  const member = await prisma.member.findFirst({
-    where: { id: memberId, gymId: tenantGymId },
-    select: {
-      name: true,
-      memberNumber: true,
-      subscriptions: {
-        orderBy: { endDate: "desc" },
-        select: {
-          endDate: true,
-          startDate: true,
-          priceAtPurchase: true,
-          writtenOffAmount: true,
-          package: { select: { name: true } },
-          payments: { select: { amount: true } },
-        },
-      },
-    },
-  });
+  const { members, subscriptions, payments } = getRepositories();
+
+  const member = await members.findByIdAndGym(
+    platformContext,
+    memberId,
+    tenantGymId,
+  );
   if (!member) return null;
 
-  const current = member.subscriptions[0];
+  const subs = await subscriptions.listByMember(
+    platformContext,
+    tenantGymId,
+    memberId,
+  );
+  const pays = await payments.listByMember(
+    platformContext,
+    tenantGymId,
+    memberId,
+  );
+
+  const sorted = [...subs].sort(
+    (a, b) => b.endDate.toMillis() - a.endDate.toMillis(),
+  );
+  const current = sorted[0];
   if (!current) {
     return {
       memberName: member.name,
@@ -71,25 +74,31 @@ export async function getMemberPortalOverview(
     };
   }
 
-  const endDay = normalizeDay(current.endDate);
+  const endDay = normalizeDay(current.endDate.toDate());
   const today = normalizeDay(new Date());
   const daysRemaining = Math.ceil(
     (endDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
   );
-  const planTotalDays = inclusiveDayCount(current.startDate, current.endDate);
-
-  const currentBalance = computeSubscriptionBalance(
-    Number(current.priceAtPurchase),
-    sumPaymentAmounts(current.payments),
-    Number(current.writtenOffAmount),
+  const planTotalDays = inclusiveDayCount(
+    current.startDate.toDate(),
+    current.endDate.toDate(),
   );
-  const pendingAmount = member.subscriptions.reduce((sum, sub) => {
+
+  const currentPayments = pays.filter((p) => p.subscriptionId === current.id);
+  const currentBalance = computeSubscriptionBalance(
+    current.priceAtPurchase,
+    sumPaymentAmounts(currentPayments.map((p) => ({ amount: p.amount }))),
+    current.writtenOffAmount,
+  );
+
+  const pendingAmount = subs.reduce((sum, sub) => {
+    const subPayments = pays.filter((p) => p.subscriptionId === sub.id);
     return (
       sum +
       computeSubscriptionBalance(
-        Number(sub.priceAtPurchase),
-        sumPaymentAmounts(sub.payments),
-        Number(sub.writtenOffAmount),
+        sub.priceAtPurchase,
+        sumPaymentAmounts(subPayments.map((p) => ({ amount: p.amount }))),
+        sub.writtenOffAmount,
       ).pendingAmount
     );
   }, 0);
@@ -97,13 +106,13 @@ export async function getMemberPortalOverview(
   return {
     memberName: member.name,
     memberNumber: member.memberNumber,
-    packageName: current.package.name,
-    status: statusFromEndDate(current.endDate),
+    packageName: current.packageName,
+    status: statusFromEndDate(current.endDate.toDate()),
     daysRemaining,
     planTotalDays,
     paidAmount: currentBalance.paidAmount,
     pendingAmount,
-    endDate: current.endDate,
+    endDate: current.endDate.toDate(),
   };
 }
 
@@ -111,68 +120,80 @@ export async function getMemberPortalPayments(
   tenantGymId: string,
   memberId: string,
 ) {
-  return prisma.payment.findMany({
-    where: { gymId: tenantGymId, memberId: memberId },
-    orderBy: { paidAt: "desc" },
-    select: {
-      id: true,
-      amount: true,
-      method: true,
-      paidAt: true,
-      subscription: {
-        select: { package: { select: { name: true } } },
-      },
-    },
-  });
+  const { payments, subscriptions } = getRepositories();
+  const pays = await payments.listByMember(
+    platformContext,
+    tenantGymId,
+    memberId,
+  );
+  const subs = await subscriptions.listByMember(
+    platformContext,
+    tenantGymId,
+    memberId,
+  );
+  const subById = new Map(subs.map((s) => [s.id, s]));
+
+  return pays.map((p) => ({
+    id: p.id,
+    amount: p.amount,
+    method: p.method,
+    paidAt: p.paidAt.toDate(),
+    subscription: p.subscriptionId
+      ? {
+          package: {
+            name: subById.get(p.subscriptionId)?.packageName ?? "—",
+          },
+        }
+      : null,
+  }));
 }
 
 export async function getMemberPortalDietPlan(
   tenantGymId: string,
   memberId: string,
 ) {
-  return prisma.dietPlan.findFirst({
-    where: { gymId: tenantGymId, memberId: memberId },
-    select: {
-      title: true,
-      caloriesPerDay: true,
-      mealPlan: true,
-      updatedAt: true,
-    },
-  });
+  const { dietPlans } = getRepositories();
+  const plan = await dietPlans.findByMemberId(
+    platformContext,
+    tenantGymId,
+    memberId,
+  );
+  if (!plan) return null;
+  return {
+    title: plan.title,
+    caloriesPerDay: plan.caloriesPerDay,
+    mealPlan: plan.mealPlan,
+    updatedAt: plan.updatedAt.toDate(),
+  };
 }
 
 export async function getMemberPortalWorkoutPlan(
   tenantGymId: string,
   memberId: string,
 ) {
-  return prisma.workoutPlan.findFirst({
-    where: { gymId: tenantGymId, memberId: memberId },
-    select: {
-      title: true,
-      level: true,
-      weeklySchedule: true,
-      updatedAt: true,
-    },
-  });
+  const { workoutPlans } = getRepositories();
+  const plan = await workoutPlans.findByMemberId(
+    platformContext,
+    tenantGymId,
+    memberId,
+  );
+  if (!plan) return null;
+  return {
+    title: plan.title,
+    level: plan.level,
+    weeklySchedule: plan.weeklySchedule,
+    updatedAt: plan.updatedAt.toDate(),
+  };
 }
 
 export async function getMemberPortalEvents(tenantGymId: string) {
-  const rows = await prisma.gymEvent.findMany({
-    where: { gymId: tenantGymId },
-    orderBy: { eventDate: "asc" },
-    select: {
-      id: true,
-      title: true,
-      eventDate: true,
-      location: true,
-      description: true,
-    },
-  });
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const upcoming = rows.filter((r) => new Date(r.eventDate) >= today);
-  const past = rows
-    .filter((r) => new Date(r.eventDate) < today)
-    .reverse();
-  return [...upcoming, ...past];
+  const { events } = getRepositories();
+  const rows = await events.listForPortal(platformContext, tenantGymId);
+  return rows.map((event) => ({
+    id: event.id,
+    title: event.title,
+    eventDate: event.eventDate.toDate(),
+    location: event.location,
+    description: event.description,
+  }));
 }

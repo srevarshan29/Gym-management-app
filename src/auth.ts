@@ -3,8 +3,8 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
-import { withPlatformLookup } from "@/lib/db-context";
 import { authConfig } from "@/auth.config";
+import { getRepositories, platformContext } from "@/lib/firestore";
 import {
   checkStaffLoginThrottle,
   clearStaffLoginFailures,
@@ -36,9 +36,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const user = await withPlatformLookup((tx) =>
-          tx.user.findUnique({ where: { email } }),
-        );
+        const { users } = getRepositories();
+        const user = await users.findByEmail(platformContext, email);
         if (!user) {
           await recordStaffLoginFailure(email, ip);
           return null;

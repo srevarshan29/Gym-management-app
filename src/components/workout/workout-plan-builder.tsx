@@ -26,14 +26,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { MUSCLE_GROUP_OPTIONS, muscleGroupLabel } from "@/lib/exercises";
+import { MUSCLE_GROUP_OPTIONS, muscleGroupLabel } from "@/lib/muscle-groups";
+import type { MuscleGroup } from "@/lib/muscle-groups";
 import type { MemberOption } from "@/lib/programme-types";
 import type {
   ExerciseListItem,
   WorkoutPlanDetail,
   WorkoutPlanExerciseInput,
 } from "@/lib/workout-tracking/types";
-import type { MuscleGroup } from "@prisma/client";
 
 type DraftExercise = WorkoutPlanExerciseInput & {
   key: string;

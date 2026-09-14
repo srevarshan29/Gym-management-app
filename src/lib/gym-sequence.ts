@@ -1,34 +1,21 @@
-import type { Prisma } from "@prisma/client";
+import { getRepositories } from "@/lib/firestore";
 
-/**
- * Atomically increments a per-gym counter (Gym.memberSeq / Gym.receiptSeq)
- * and returns the new value via a single UPDATE ... RETURNING, so concurrent
- * requests for the same gym never hand out the same sequential number.
- * Must be called inside the same transaction that creates the row using
- * the returned number, so a rollback also rolls back the counter bump.
- */
+/** @deprecated Use runBillingTransaction + bumpMemberSeq — Prisma shim removed in Phase 2. */
 export async function nextMemberNumber(
-  tx: Prisma.TransactionClient,
+  _tx: unknown,
   gymId: string,
 ): Promise<number> {
-  const rows = await tx.$queryRaw<{ memberSeq: number }[]>`
-    UPDATE "Gym" SET "memberSeq" = "memberSeq" + 1, "updatedAt" = NOW()
-    WHERE "id" = ${gymId}
-    RETURNING "memberSeq"
-  `;
-  if (rows.length === 0) throw new Error("Gym not found.");
-  return rows[0].memberSeq;
+  void _tx;
+  const { gyms } = getRepositories();
+  return gyms.nextMemberNumber(gymId);
 }
 
+/** @deprecated Use runBillingTransaction + bumpReceiptSeq — Prisma shim removed in Phase 2. */
 export async function nextReceiptNumber(
-  tx: Prisma.TransactionClient,
+  _tx: unknown,
   gymId: string,
 ): Promise<number> {
-  const rows = await tx.$queryRaw<{ receiptSeq: number }[]>`
-    UPDATE "Gym" SET "receiptSeq" = "receiptSeq" + 1, "updatedAt" = NOW()
-    WHERE "id" = ${gymId}
-    RETURNING "receiptSeq"
-  `;
-  if (rows.length === 0) throw new Error("Gym not found.");
-  return rows[0].receiptSeq;
+  void _tx;
+  const { gyms } = getRepositories();
+  return gyms.nextReceiptNumber(gymId);
 }

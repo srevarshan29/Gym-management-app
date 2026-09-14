@@ -2,101 +2,52 @@ import { cache } from "react";
 
 import { redirect } from "next/navigation";
 
-
-
 import { memberAuth } from "@/member-auth";
-
-import { withPlatformLookup } from "@/lib/db-context";
-
-
+import {
+  getRepositories,
+  platformContext,
+  type MemberContext,
+} from "@/lib/firestore";
 
 export type MemberSession = {
-
   memberId: string;
-
   gymId: string;
-
   name: string;
-
   memberNumber: number;
-
 };
 
-
-
 const resolveCurrentMember = cache(async (): Promise<MemberSession | null> => {
-
   const session = await memberAuth();
-
   if (session?.user?.kind !== "member" || !session.user.memberId || !session.user.gymId) {
-
     return null;
-
   }
-
-
 
   const tenantGymId = session.user.gymId;
   const memberId = session.user.memberId;
-
-  const dbMember = await withPlatformLookup((tx) =>
-    tx.member.findFirst({
-      where: {
-        id: memberId,
-        gymId: tenantGymId,
-      },
-
-      select: {
-
-        id: true,
-
-        gymId: true,
-
-        name: true,
-
-        memberNumber: true,
-
-        portalEnabledAt: true,
-
-      },
-
-    }),
-
-  );
-
-
-
-  if (!dbMember?.portalEnabledAt) {
-
-    redirect("/member/logout");
-
-  }
-
-
-
-  return {
-
-    memberId: dbMember.id,
-
-    gymId: dbMember.gymId,
-
-    name: dbMember.name,
-
-    memberNumber: dbMember.memberNumber,
-
+  const ctx: MemberContext = {
+    kind: "member",
+    memberId,
+    gymId: tenantGymId,
   };
 
+  const { members } = getRepositories();
+  const dbMember = await members.findPortalMember(ctx, memberId, tenantGymId);
+
+  if (!dbMember) {
+    redirect("/member/logout");
+  }
+
+  return {
+    memberId: dbMember.id,
+    gymId: dbMember.gymId,
+    name: dbMember.name,
+    memberNumber: dbMember.memberNumber,
+  };
 });
 
-
-
 export async function getCurrentMember(): Promise<MemberSession | null> {
-
   return resolveCurrentMember();
-
 }
-
-
 
 export async function requireMember(): Promise<MemberSession> {
   const member = await getCurrentMember();
@@ -107,25 +58,10 @@ export async function requireMember(): Promise<MemberSession> {
   return member;
 }
 
-
-
 /** Resolve gym registration token for login redirects (tenant-safe via member gymId). */
-
 export async function getMemberGymLoginToken(gymId: string): Promise<string | null> {
-
-  const gym = await withPlatformLookup((tx) =>
-
-    tx.gym.findUnique({
-
-      where: { id: gymId },
-
-      select: { registrationToken: true },
-
-    }),
-
-  );
-
-  return gym?.registrationToken ?? null;
+  const { gyms } = getRepositories();
+  return gyms.getRegistrationToken(platformContext, gymId);
 }
 
 /** Gym-specific member login URL, or generic index when token unknown. */
@@ -138,4 +74,3 @@ export async function resolveMemberLoginRedirect(
   }
   return "/member/login";
 }
-

@@ -1,6 +1,3 @@
-import { withTenant } from "@/lib/db-context";
-import type { MembershipRenewalRow } from "@/lib/queries";
-import { formatCurrency } from "@/lib/utils";
 import {
   queryAllCyclePendingTotals,
   queryCurrentCycleCollection,
@@ -13,11 +10,11 @@ import {
   statusCutoffs,
   type WeekBucket,
 } from "@/lib/dashboard-queries";
+import type { MembershipRenewalRow } from "@/lib/member-list-types";
+import type { PackageDistributionPoint } from "@/lib/chart-types";
+import { formatCurrency } from "@/lib/utils";
 
-export type PackageDistributionPoint = {
-  name: string;
-  count: number;
-};
+export type { PackageDistributionPoint } from "@/lib/chart-types";
 
 export type DashboardSparklines = {
   activeMembers: number[];
@@ -116,8 +113,9 @@ export async function getFinancialSparklines(
 ): Promise<FinancialSparklines> {
   const weekBuckets = lastNWeekBuckets(SPARKLINE_WEEKS);
 
-  const weeklyPaymentCounts = await withTenant(tenantGymId, (tx) =>
-    queryWeeklyPaymentCounts(tx, tenantGymId, weekBuckets),
+  const weeklyPaymentCounts = await queryWeeklyPaymentCounts(
+    tenantGymId,
+    weekBuckets,
   );
 
   const revenue =
@@ -163,7 +161,25 @@ export async function getDashboardMetrics(
     sparkRows,
     newMembersThisMonth,
     newMembersLastMonth,
-  } = await withTenant(tenantGymId, async (tx) => {
+  } = await (async () => {
+    const { getRepositories, platformContext } = await import("@/lib/firestore");
+    const { members } = getRepositories();
+    const { getFirestoreDb } = await import("@/lib/firebase/admin");
+    const { Timestamp } = await import("firebase-admin/firestore");
+    const db = getFirestoreDb();
+
+    const countSince = async (start: Date, end?: Date) => {
+      let q = db
+        .collection("members")
+        .where("gymId", "==", tenantGymId)
+        .where("createdAt", ">=", Timestamp.fromDate(start));
+      if (end) {
+        q = q.where("createdAt", "<", Timestamp.fromDate(end));
+      }
+      const snap = await q.count().get();
+      return snap.data().count;
+    };
+
     const [
       statusCounts,
       pendingTotals,
@@ -175,23 +191,17 @@ export async function getDashboardMetrics(
       thisMonth,
       lastMonth,
     ] = await Promise.all([
-      queryDashboardStatusCounts(tx, tenantGymId, cutoffs),
-      queryAllCyclePendingTotals(tx, tenantGymId),
-      queryCurrentCycleCollection(tx, tenantGymId),
-      queryPackageDistribution(tx, tenantGymId, cutoffs),
-      queryUpcomingRenewalPreview(tx, tenantGymId, cutoffs),
-      queryExpiredMembershipPreview(tx, tenantGymId, cutoffs),
-      queryMemberSparklines(tx, tenantGymId, weekBuckets, now),
-      tx.member.count({
-        where: { gymId: tenantGymId, createdAt: { gte: startThisMonth } },
-      }),
-      tx.member.count({
-        where: {
-          gymId: tenantGymId,
-          createdAt: { gte: startLastMonth, lt: startThisMonth },
-        },
-      }),
+      queryDashboardStatusCounts(tenantGymId, cutoffs),
+      queryAllCyclePendingTotals(tenantGymId),
+      queryCurrentCycleCollection(tenantGymId),
+      queryPackageDistribution(tenantGymId, cutoffs),
+      queryUpcomingRenewalPreview(tenantGymId, cutoffs),
+      queryExpiredMembershipPreview(tenantGymId, cutoffs),
+      queryMemberSparklines(tenantGymId, weekBuckets, now),
+      countSince(startThisMonth),
+      countSince(startLastMonth, startThisMonth),
     ]);
+    void members;
     return {
       status: statusCounts,
       pending: pendingTotals,
@@ -203,7 +213,7 @@ export async function getDashboardMetrics(
       newMembersThisMonth: thisMonth,
       newMembersLastMonth: lastMonth,
     };
-  });
+  })();
 
   const collectionRatePercent =
     collection.collectionExpected > 0

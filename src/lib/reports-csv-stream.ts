@@ -1,6 +1,7 @@
-import { Prisma } from "@prisma/client";
-
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
+import { COLLECTIONS } from "@/lib/firestore/collections";
+import { getFirestoreDb } from "@/lib/firebase/admin";
+import type { UserDoc } from "@/lib/firestore/types";
 import { csvDataLine } from "@/lib/csv";
 import { statusFromEndDate } from "@/lib/subscription";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -34,187 +35,79 @@ function formatPaymentMethod(method: string): string {
   return method.replace(/_/g, " ");
 }
 
-function idList(ids: string[]) {
-  return Prisma.join(ids.map((id) => Prisma.sql`${id}`));
-}
-
 async function* iterateMemberExportRows(tenantGymId: string) {
-  let cursor: { createdAt: Date; id: string } | null = null;
+  const { members } = getRepositories();
+  const ctx = platformContext;
+  const db = getFirestoreDb();
+  const trainerCache = new Map<string, string>();
+  let startAfterId: string | null = null;
+
+  async function trainerName(trainerId: string | null): Promise<string> {
+    if (!trainerId) return "";
+    const cached = trainerCache.get(trainerId);
+    if (cached !== undefined) return cached;
+    const snap = await db.collection(COLLECTIONS.users).doc(trainerId).get();
+    const name = snap.exists ? (snap.data() as UserDoc).name : "";
+    trainerCache.set(trainerId, name);
+    return name;
+  }
 
   for (;;) {
-    const members = await withTenant(tenantGymId, (tx) =>
-      tx.member.findMany({
-        where: {
-          gymId: tenantGymId,
-          ...(cursor
-            ? {
-                OR: [
-                  { createdAt: { lt: cursor.createdAt } },
-                  { createdAt: cursor.createdAt, id: { lt: cursor.id } },
-                ],
-              }
-            : {}),
-        },
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-        take: EXPORT_BATCH_SIZE,
-        select: {
-          id: true,
-          memberNumber: true,
-          name: true,
-          phone: true,
-          createdAt: true,
-          isPt: true,
-          trainer: { select: { name: true } },
-        },
-      }),
-    );
+    const batch = await members.listExportBatch(ctx, tenantGymId, {
+      limit: EXPORT_BATCH_SIZE,
+      startAfterId,
+    });
+    if (batch.rows.length === 0) return;
 
-    if (members.length === 0) return;
-
-    const ids = members.map((m) => m.id);
-    const inIds = idList(ids);
-
-    const [currentSubs, firstSubs, pendingRows] = await withTenant(
-      tenantGymId,
-      async (tx) =>
-        Promise.all([
-          tx.$queryRaw<
-            {
-              memberId: string;
-              startDate: Date;
-              endDate: Date;
-              packageName: string;
-            }[]
-          >`
-            SELECT DISTINCT ON (s."memberId")
-              s."memberId",
-              s."startDate",
-              s."endDate",
-              pkg.name AS "packageName"
-            FROM "Subscription" s
-            JOIN "Package" pkg ON pkg.id = s."packageId" AND pkg."gymId" = ${tenantGymId}
-            WHERE s."gymId" = ${tenantGymId}
-              AND s."memberId" IN (${inIds})
-            ORDER BY s."memberId", s."endDate" DESC, s."createdAt" DESC
-          `,
-          tx.$queryRaw<{ memberId: string; addedByName: string | null }[]>`
-            SELECT DISTINCT ON (s."memberId")
-              s."memberId",
-              u.name AS "addedByName"
-            FROM "Subscription" s
-            LEFT JOIN "User" u ON u.id = s."createdById"
-            WHERE s."gymId" = ${tenantGymId}
-              AND s."memberId" IN (${inIds})
-            ORDER BY s."memberId", s."createdAt" ASC
-          `,
-          tx.$queryRaw<{ memberId: string; pending: number }[]>`
-            WITH paid AS (
-              SELECT p."subscriptionId" AS id, SUM(p.amount) AS paid_amount
-              FROM "Payment" p
-              WHERE p."gymId" = ${tenantGymId}
-                AND p."subscriptionId" IS NOT NULL
-                AND p."memberId" IN (${inIds})
-              GROUP BY p."subscriptionId"
-            )
-            SELECT
-              s."memberId",
-              COALESCE(
-                SUM(
-                  GREATEST(
-                    0,
-                    s."priceAtPurchase"
-                      - COALESCE(paid.paid_amount, 0)
-                      - COALESCE(s."writtenOffAmount", 0)
-                  )
-                ),
-                0
-              )::float AS pending
-            FROM "Subscription" s
-            LEFT JOIN paid ON paid.id = s.id
-            WHERE s."gymId" = ${tenantGymId}
-              AND s."memberId" IN (${inIds})
-            GROUP BY s."memberId"
-          `,
-        ]),
-    );
-
-    const currentByMember = new Map(currentSubs.map((row) => [row.memberId, row]));
-    const addedByMember = new Map(firstSubs.map((row) => [row.memberId, row.addedByName]));
-    const pendingByMember = new Map(
-      pendingRows.map((row) => [row.memberId, Number(row.pending)]),
-    );
-
-    for (const m of members) {
-      const current = currentByMember.get(m.id);
-      const pending = pendingByMember.get(m.id) ?? 0;
+    for (const member of batch.rows) {
       yield csvDataLine([
-        String(m.memberNumber).padStart(4, "0"),
-        m.name,
-        m.phone,
-        current?.packageName ?? "",
-        statusFromEndDate(current?.endDate),
-        current?.startDate ? formatDate(current.startDate) : "",
-        current?.endDate ? formatDate(current.endDate) : "",
-        pending > 0 ? formatCurrency(pending) : "",
-        m.isPt ? "Yes" : "No",
-        m.trainer?.name ?? "",
-        addedByMember.get(m.id) ?? "",
+        String(member.memberNumber).padStart(4, "0"),
+        member.name,
+        member.phone,
+        member.currentPackageName ?? "",
+        statusFromEndDate(member.currentEndDate?.toDate()),
+        member.currentStartDate ? formatDate(member.currentStartDate.toDate()) : "",
+        member.currentEndDate ? formatDate(member.currentEndDate.toDate()) : "",
+        member.pendingAmountTotal > 0
+          ? formatCurrency(member.pendingAmountTotal)
+          : "",
+        member.isPt ? "Yes" : "No",
+        await trainerName(member.trainerId),
+        member.addedByName ?? "",
       ]);
     }
 
-    if (members.length < EXPORT_BATCH_SIZE) return;
-    const last = members[members.length - 1];
-    cursor = { createdAt: last.createdAt, id: last.id };
+    if (!batch.nextCursor) return;
+    startAfterId = batch.nextCursor;
   }
 }
 
 async function* iteratePaymentExportRows(tenantGymId: string) {
-  let cursor: { paidAt: Date; id: string } | null = null;
+  const { payments } = getRepositories();
+  const ctx = platformContext;
+  let startAfterId: string | null = null;
 
   for (;;) {
-    const payments = await withTenant(tenantGymId, (tx) =>
-      tx.payment.findMany({
-        where: {
-          gymId: tenantGymId,
-          ...(cursor
-            ? {
-                OR: [
-                  { paidAt: { lt: cursor.paidAt } },
-                  { paidAt: cursor.paidAt, id: { lt: cursor.id } },
-                ],
-              }
-            : {}),
-        },
-        orderBy: [{ paidAt: "desc" }, { id: "desc" }],
-        take: EXPORT_BATCH_SIZE,
-        select: {
-          id: true,
-          paidAt: true,
-          amount: true,
-          method: true,
-          member: { select: { name: true } },
-          subscription: { select: { package: { select: { name: true } } } },
-          recordedBy: { select: { name: true } },
-        },
-      }),
-    );
+    const batch = await payments.listExportBatch(ctx, tenantGymId, {
+      limit: EXPORT_BATCH_SIZE,
+      startAfterId,
+    });
+    if (batch.rows.length === 0) return;
 
-    if (payments.length === 0) return;
-
-    for (const p of payments) {
+    const mapped = await payments.mapExportRows(batch.rows);
+    for (const payment of mapped) {
       yield csvDataLine([
-        formatDate(p.paidAt),
-        p.member.name,
-        p.subscription?.package.name ?? "",
-        formatCurrency(Number(p.amount)),
-        formatPaymentMethod(p.method),
-        p.recordedBy?.name ?? "",
+        formatDate(payment.paidAt),
+        payment.member.name,
+        payment.subscription?.package.name ?? "",
+        formatCurrency(Number(payment.amount)),
+        formatPaymentMethod(payment.method),
+        payment.recordedBy?.name ?? "",
       ]);
     }
 
-    if (payments.length < EXPORT_BATCH_SIZE) return;
-    const last = payments[payments.length - 1];
-    cursor = { paidAt: last.paidAt, id: last.id };
+    if (!batch.nextCursor) return;
+    startAfterId = batch.nextCursor;
   }
 }
 

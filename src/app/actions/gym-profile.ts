@@ -3,12 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { withTenant } from "@/lib/db-context";
-import { requireGym } from "@/lib/session";
-import { canManageStaff } from "@/lib/permissions";
-import { uploadGymLogo } from "@/lib/storage";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
+import { getRepositories, type StaffContext } from "@/lib/firestore";
 import { persistMembershipPolicyText } from "@/lib/membership-policy";
+import { canManageStaff } from "@/lib/permissions";
+import { requireGym } from "@/lib/session";
+import { uploadGymLogo } from "@/lib/storage";
 
 const profileSchema = z.object({
   name: z.string().trim().min(1, "Gym name is required").max(120),
@@ -23,6 +23,19 @@ const profileSchema = z.object({
     .or(z.literal("")),
   membershipPolicyText: z.string().max(20000).optional().or(z.literal("")),
 });
+
+function toStaffContext(user: {
+  id: string;
+  gymId: string;
+  role: StaffContext["role"];
+}): StaffContext {
+  return {
+    kind: "staff",
+    userId: user.id,
+    gymId: user.gymId,
+    role: user.role,
+  };
+}
 
 export async function updateGymProfile(
   _prev: ActionResult | undefined,
@@ -39,8 +52,6 @@ export async function updateGymProfile(
   }
   const data = parsed.data;
 
-  // A logo upload failure (e.g. storage not configured) should not block
-  // saving the rest of the profile — surface it as a warning instead.
   let logoUrl: string | undefined;
   let logoWarning: string | undefined;
   const logo = formData.get("logo");
@@ -65,13 +76,8 @@ export async function updateGymProfile(
     ...(logoUrl ? { logoUrl } : {}),
   };
 
-  await withTenant(user.gymId, (tx) =>
-    tx.gymProfile.upsert({
-      where: { gymId: user.gymId },
-      update: payload,
-      create: { gymId: user.gymId, ...payload },
-    }),
-  );
+  const { gymProfiles } = getRepositories();
+  await gymProfiles.upsert(toStaffContext(user), user.gymId, payload);
 
   revalidatePath("/settings");
   return actionOk(

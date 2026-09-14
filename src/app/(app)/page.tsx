@@ -18,7 +18,7 @@ import {
   canManagePackages,
   canViewFinancials,
 } from "@/lib/permissions";
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
 import {
   getDashboardMetrics,
   getFinancialSparklines,
@@ -95,26 +95,22 @@ async function DashboardBody({
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const [agg, trend, finSparklines] = await (async () => {
-      const aggResult = await withTenant(tenantGymId, (tx) =>
-        tx.payment.aggregate({
-          _sum: { amount: true },
-          where: {
-            gymId: tenantGymId,
-            paidAt: { gte: start, lt: end },
-          },
-        }),
-      );
-      const trendResult = await getMonthlyRevenueTrend(tenantGymId);
-      const finResult = await getFinancialSparklines(
+    const trend = await getMonthlyRevenueTrend(tenantGymId);
+    const [monthRevenueSum, finSparklines] = await Promise.all([
+      getRepositories().payments.sumPaidInRange(
+        platformContext,
+        tenantGymId,
+        start,
+        end,
+      ),
+      getFinancialSparklines(
         tenantGymId,
         metrics.collectionExpected,
         metrics.pendingTotal,
-        trendResult.map((point) => point.revenue),
-      );
-      return [aggResult, trendResult, finResult] as const;
-    })();
-    monthRevenue = Number(agg._sum.amount ?? 0);
+        trend.map((point) => point.revenue),
+      ),
+    ]);
+    monthRevenue = monthRevenueSum;
     revenueTrend = trend;
     financialSparklines = finSparklines;
     const rev = finSparklines.revenue;

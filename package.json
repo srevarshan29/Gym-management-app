@@ -12,7 +12,12 @@
     "db:deploy": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first prisma migrate deploy",
     "db:push": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first prisma db push",
     "db:seed": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first prisma db seed",
-    "db:studio": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first prisma studio"
+    "db:seed:firestore": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first node --env-file=.env --import tsx scripts/seed-firestore.ts",
+    "db:studio": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first prisma studio",
+    "firebase:emulators": "firebase emulators:start --only firestore",
+    "test:firestore:rules": "firebase emulators:exec --only firestore \"vitest run tests/firestore/rules.test.ts\"",
+    "test:firestore:rules:watch": "firebase emulators:exec --only firestore \"vitest watch tests/firestore/rules.test.ts\"",
+    "test:firestore:rules:docker": "docker build -t gymdesk-firebase-emulator docker/firebase-emulator && docker run --rm -v \"%cd%:/app\" -w /app gymdesk-firebase-emulator firebase emulators:exec --only firestore \"npx vitest run tests/firestore/rules.test.ts\""
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -29,6 +34,7 @@
     "@radix-ui/react-tabs": "1.1.0",
     "@react-pdf/renderer": "^3.4.4",
     "@supabase/supabase-js": "^2.110.2",
+    "firebase-admin": "^13.0.2",
     "bcryptjs": "2.4.3",
     "class-variance-authority": "0.7.0",
     "clsx": "2.1.1",
@@ -47,16 +53,20 @@
     "zod": "3.23.8"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
     "@types/bcryptjs": "2.4.6",
     "@types/node": "20.14.13",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
     "autoprefixer": "10.4.19",
     "cross-env": "^7.0.3",
+    "firebase": "^11.2.0",
+    "firebase-tools": "^13.29.1",
     "postcss": "8.4.40",
     "prisma": "5.17.0",
     "tailwindcss": "3.4.7",
     "tsx": "4.16.2",
-    "typescript": "5.5.4"
+    "typescript": "5.5.4",
+    "vitest": "^3.0.5"
   }
 }

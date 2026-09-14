@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { MembershipRenewalRow } from "@/lib/queries";
+import type { MembershipRenewalRow } from "@/lib/member-list-types";
 import { daysUntil, expiredDaysAgoLabel } from "@/lib/subscription";
 import { formatDate } from "@/lib/utils";
 

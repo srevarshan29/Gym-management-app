@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
+import {
+  createEventRecord,
+  deleteEventRecord,
+} from "@/lib/firestore/event-operations";
 import { requireGym } from "@/lib/session";
 import { canManageEvents } from "@/lib/permissions";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
@@ -21,8 +25,9 @@ function parseEventDate(value: string): Date | null {
   return date;
 }
 
-function revalidateEventsPath() {
+function revalidateEventsPaths() {
   revalidatePath("/operations/events");
+  revalidatePath("/member/events");
 }
 
 export async function createEvent(
@@ -44,19 +49,14 @@ export async function createEvent(
     return actionError("Invalid event date.");
   }
 
-  await withTenant(user.gymId, (tx) =>
-    tx.gymEvent.create({
-      data: {
-        gymId: user.gymId,
-        title: parsed.data.title,
-        eventDate,
-        location: parsed.data.location,
-        description: parsed.data.description || null,
-      },
-    }),
-  );
+  await createEventRecord(user.gymId, {
+    title: parsed.data.title,
+    eventDate,
+    location: parsed.data.location,
+    description: parsed.data.description || null,
+  });
 
-  revalidateEventsPath();
+  revalidateEventsPaths();
   return actionOk("Event added.");
 }
 
@@ -82,22 +82,20 @@ export async function updateEvent(
     return actionError("Invalid event date.");
   }
 
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.gymEvent.updateMany({
-      where: { id, gymId: user.gymId },
-      data: {
-        title: parsed.data.title,
-        eventDate,
-        location: parsed.data.location,
-        description: parsed.data.description || null,
-      },
-    }),
-  );
-  if (result.count === 0) {
+  const { events } = getRepositories();
+  const existing = await events.getById(platformContext, user.gymId, id);
+  if (!existing) {
     return actionError("Event not found.");
   }
 
-  revalidateEventsPath();
+  await events.updateEvent(platformContext, user.gymId, id, {
+    title: parsed.data.title,
+    eventDate,
+    location: parsed.data.location,
+    description: parsed.data.description || null,
+  });
+
+  revalidateEventsPaths();
   return actionOk("Event updated.");
 }
 
@@ -108,13 +106,11 @@ export async function deleteEvent(id: string): Promise<ActionResult> {
   }
   if (!id) return actionError("Missing event id.");
 
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.gymEvent.deleteMany({ where: { id, gymId: user.gymId } }),
-  );
-  if (result.count === 0) {
+  const deleted = await deleteEventRecord(user.gymId, id);
+  if (!deleted) {
     return actionError("Event not found.");
   }
 
-  revalidateEventsPath();
+  revalidateEventsPaths();
   return actionOk("Event removed.");
 }

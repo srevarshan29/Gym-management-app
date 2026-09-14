@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
@@ -8,16 +9,20 @@ import { PageHeader } from "@/components/page-header";
 import { ProgrammePlansPageSkeleton } from "@/components/page-loading-skeletons";
 import { WorkoutPlansList } from "@/components/workout-plans-list";
 import { Button } from "@/components/ui/button";
-import { Suspense } from "react";
 
-export default async function WorkoutPlansPage() {
+export default async function WorkoutPlansPage({
+  searchParams,
+}: {
+  searchParams?: { page?: string };
+}) {
   const user = await requireGym();
   const canManage = canManageMembers(user.role);
+  const page = Number(searchParams?.page ?? "1");
 
   return (
     <div className="space-y-6">
-      <Suspense fallback={<WorkoutPlansPageShell />}>
-        <WorkoutPlansPageContent gymId={user.gymId} canManage={canManage} />
+      <Suspense key={page} fallback={<WorkoutPlansPageShell />}>
+        <WorkoutPlansPageContent gymId={user.gymId} canManage={canManage} page={page} />
       </Suspense>
     </div>
   );
@@ -38,15 +43,18 @@ function WorkoutPlansPageShell() {
 async function WorkoutPlansPageContent({
   gymId,
   canManage,
+  page,
 }: {
   gymId: string;
   canManage: boolean;
+  page: number;
 }) {
-  const { plans, members } = await getWorkoutPlansPageData(gymId);
+  const { plans, members, assignedMemberIds, total, pageSize } =
+    await getWorkoutPlansPageData(gymId, page);
 
-  const assignedMemberIds = new Set(plans.map((plan) => plan.memberId));
+  const assignedSet = new Set(assignedMemberIds);
   const eligibleMembers = members.filter(
-    (member) => !assignedMemberIds.has(member.id),
+    (member) => !assignedSet.has(member.id),
   );
 
   return (
@@ -71,7 +79,13 @@ async function WorkoutPlansPageContent({
         ) : null}
       </PageHeader>
 
-      <WorkoutPlansList plans={plans} canManage={canManage} />
+      <WorkoutPlansList
+        plans={plans}
+        canManage={canManage}
+        page={page}
+        pageSize={pageSize}
+        total={total}
+      />
     </>
   );
 }

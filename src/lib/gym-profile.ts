@@ -1,20 +1,15 @@
-import { withTenant } from "@/lib/db-context";
 import {
   DEFAULT_MEMBERSHIP_POLICY_TEXT,
   membershipPolicyTextForSettings,
   normalizeMembershipPolicyText,
 } from "@/lib/membership-policy";
+import type { GymProfileData } from "@/lib/gym-profile-types";
+import {
+  getRepositories,
+  platformContext,
+} from "@/lib/firestore";
 
-export type GymProfileData = {
-  id: string | null;
-  name: string;
-  logoUrl: string | null;
-  address: string | null;
-  phone: string | null;
-  ownerNotifyPhone: string | null;
-  ownerNotifyEmail: string | null;
-  membershipPolicyText: string;
-};
+export type { GymProfileData } from "@/lib/gym-profile-types";
 
 const DEFAULT_PROFILE: GymProfileData = {
   id: null,
@@ -29,9 +24,8 @@ const DEFAULT_PROFILE: GymProfileData = {
 
 /** Each gym has at most one profile row; returns sensible defaults if none exists yet. */
 export async function getGymProfile(tenantGymId: string): Promise<GymProfileData> {
-  const profile = await withTenant(tenantGymId, (tx) =>
-    tx.gymProfile.findUnique({ where: { gymId: tenantGymId } }),
-  );
+  const { gymProfiles } = getRepositories();
+  const profile = await gymProfiles.getByGymId(platformContext, tenantGymId);
   if (!profile) return DEFAULT_PROFILE;
 
   return {
@@ -52,12 +46,8 @@ export async function getGymProfile(tenantGymId: string): Promise<GymProfileData
 export async function getMembershipPolicyForGym(
   tenantGymId: string,
 ): Promise<string | null> {
-  const profile = await withTenant(tenantGymId, (tx) =>
-    tx.gymProfile.findUnique({
-      where: { gymId: tenantGymId },
-      select: { membershipPolicyText: true },
-    }),
-  );
+  const { gymProfiles } = getRepositories();
+  const profile = await gymProfiles.getByGymId(platformContext, tenantGymId);
   return normalizeMembershipPolicyText(profile?.membershipPolicyText);
 }
 
@@ -66,4 +56,26 @@ export async function getMembershipPolicyForGymPublic(
   tenantGymId: string,
 ): Promise<string | null> {
   return getMembershipPolicyForGym(tenantGymId);
+}
+
+/** Platform reads for receipts and other server-side denormalization. */
+export async function getGymProfilePlatform(
+  tenantGymId: string,
+): Promise<GymProfileData> {
+  const { gymProfiles } = getRepositories();
+  const profile = await gymProfiles.getByGymId(platformContext, tenantGymId);
+  if (!profile) return DEFAULT_PROFILE;
+
+  return {
+    id: profile.id,
+    name: profile.name,
+    logoUrl: profile.logoUrl,
+    address: profile.address,
+    phone: profile.phone,
+    ownerNotifyPhone: profile.ownerNotifyPhone,
+    ownerNotifyEmail: profile.ownerNotifyEmail,
+    membershipPolicyText: membershipPolicyTextForSettings(
+      profile.membershipPolicyText,
+    ),
+  };
 }

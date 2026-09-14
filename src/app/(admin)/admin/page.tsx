@@ -1,6 +1,4 @@
-import { Building2 } from "lucide-react";
-
-import { withSuperAdmin } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
 import { formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { GymManager } from "@/components/gym-manager";
@@ -11,32 +9,31 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Building2 } from "lucide-react";
 
 export default async function AdminPage() {
-  const gyms = await withSuperAdmin((tx) =>
-    tx.gym.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        users: {
-          where: { role: "OWNER" },
-          select: { name: true, email: true },
-          orderBy: { createdAt: "asc" },
-          take: 1,
-        },
-        _count: { select: { members: true, users: true } },
-      },
+  const { gyms, users, members } = getRepositories();
+  const gymDocs = await gyms.listAllForAdmin(platformContext);
+
+  const rows = await Promise.all(
+    gymDocs.map(async (g) => {
+      const [owner, staffCount, memberCount] = await Promise.all([
+        users.findOwnerByGym(platformContext, g.id),
+        users.countByGym(platformContext, g.id),
+        members.countByGym(platformContext, g.id),
+      ]);
+
+      return {
+        id: g.id,
+        name: g.name,
+        createdAt: g.createdAt.toDate(),
+        ownerName: owner?.name ?? null,
+        ownerEmail: owner?.email ?? null,
+        memberCount,
+        staffCount,
+      };
     }),
   );
-
-  const rows = gyms.map((g) => ({
-    id: g.id,
-    name: g.name,
-    createdAt: g.createdAt,
-    ownerName: g.users[0]?.name ?? null,
-    ownerEmail: g.users[0]?.email ?? null,
-    memberCount: g._count.members,
-    staffCount: g._count.users,
-  }));
 
   return (
     <div>

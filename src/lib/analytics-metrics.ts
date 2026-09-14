@@ -1,6 +1,4 @@
-import type { Prisma } from "@prisma/client";
-
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
 import {
   buildMonthlyRevenueTrendFromPayments,
   type MonthlyRevenuePoint,
@@ -78,29 +76,6 @@ export function buildMonthlyMemberJoinsFromEarliestStarts(
   return buckets;
 }
 
-async function fetchEarliestJoinStartsInWindow(
-  tx: Prisma.TransactionClient,
-  tenantGymId: string,
-  startMonth: Date,
-): Promise<Date[]> {
-  const groups = await tx.subscription.groupBy({
-    by: ["memberId"],
-    where: { gymId: tenantGymId },
-    _min: { startDate: true },
-    having: {
-      startDate: {
-        _min: {
-          gte: startMonth,
-        },
-      },
-    },
-  });
-
-  return groups
-    .map((g) => g._min.startDate)
-    .filter((d): d is Date => d != null);
-}
-
 /**
  * New member signups per calendar month for the last N months.
  * Uses each member's earliest subscription startDate (not Member.createdAt).
@@ -110,79 +85,70 @@ export async function getMonthlyMemberJoins(
   tenantGymId: string,
   monthCount = ANALYTICS_MONTH_COUNT,
 ): Promise<MonthlyMemberJoinPoint[]> {
-  return withTenant(tenantGymId, async (tx) => {
-    const now = new Date();
-    const startMonth = chartStartMonth(monthCount, now);
-    const earliestStarts = await fetchEarliestJoinStartsInWindow(
-      tx,
-      tenantGymId,
-      startMonth,
-    );
-    return buildMonthlyMemberJoinsFromEarliestStarts(
-      earliestStarts,
-      monthCount,
-      now,
-    );
-  });
+  const { subscriptions } = getRepositories();
+  const now = new Date();
+  const startMonth = chartStartMonth(monthCount, now);
+  const earliestStarts = await subscriptions.listEarliestJoinStartsSince(
+    platformContext,
+    tenantGymId,
+    startMonth,
+  );
+  return buildMonthlyMemberJoinsFromEarliestStarts(
+    earliestStarts,
+    monthCount,
+    now,
+  );
 }
 
 export async function getAnalyticsPageData(
   tenantGymId: string,
 ): Promise<AnalyticsPageData> {
-  return withTenant(tenantGymId, async (tx) => {
-    const now = new Date();
-    const { startThisMonth, startNextMonth } = monthBounds(now);
-    const startMonth = chartStartMonth(ANALYTICS_MONTH_COUNT, now);
+  const { gyms, members, payments, subscriptions, visitors } = getRepositories();
+  const ctx = platformContext;
+  const now = new Date();
+  const { startThisMonth, startNextMonth } = monthBounds(now);
+  const startMonth = chartStartMonth(ANALYTICS_MONTH_COUNT, now);
 
-    const [
-      totalMembers,
-      paymentsLoggedThisMonth,
-      visitorsCount,
-      earliestStarts,
-      payments,
-    ] = await Promise.all([
-      tx.member.count({ where: { gymId: tenantGymId } }),
-      tx.payment.count({
-        where: {
-          gymId: tenantGymId,
-          paidAt: { gte: startThisMonth, lt: startNextMonth },
-        },
-      }),
-      tx.visitor.count({
-        where: {
-          gymId: tenantGymId,
-          status: "pending",
-          source: "walk_in",
-        },
-      }),
-      fetchEarliestJoinStartsInWindow(tx, tenantGymId, startMonth),
-      tx.payment.findMany({
-        where: { gymId: tenantGymId, paidAt: { gte: startMonth } },
-        select: { amount: true, paidAt: true },
-      }),
-    ]);
+  const gym = await gyms.getById(ctx, tenantGymId);
+  const pendingWalkIns =
+    gym?.dashboardCounters?.pendingWalkInVisitors ??
+    (await visitors.countByGym(ctx, tenantGymId, {
+      status: "pending",
+      source: "walk_in",
+    }));
 
-    const memberJoins = buildMonthlyMemberJoinsFromEarliestStarts(
-      earliestStarts,
-      ANALYTICS_MONTH_COUNT,
-      now,
-    );
-    const revenueTrend = buildMonthlyRevenueTrendFromPayments(
-      payments,
-      ANALYTICS_MONTH_COUNT,
-      now,
-    );
+  const [
+    totalMembers,
+    paymentsLoggedThisMonth,
+    earliestStarts,
+    paymentRows,
+  ] = await Promise.all([
+    members.countByGym(ctx, tenantGymId),
+    payments.countPaidInRange(ctx, tenantGymId, startThisMonth, startNextMonth),
+    subscriptions.listEarliestJoinStartsSince(ctx, tenantGymId, startMonth),
+    payments.listSince(ctx, tenantGymId, startMonth),
+  ]);
 
-    const totalRevenue = revenueTrend.reduce((sum, point) => sum + point.revenue, 0);
-    const avgRevenuePerMonth = totalRevenue / ANALYTICS_MONTH_COUNT;
+  const memberJoins = buildMonthlyMemberJoinsFromEarliestStarts(
+    earliestStarts,
+    ANALYTICS_MONTH_COUNT,
+    now,
+  );
+  const revenueTrend = buildMonthlyRevenueTrendFromPayments(
+    paymentRows.map((p) => ({ amount: p.amount, paidAt: p.paidAt.toDate() })),
+    ANALYTICS_MONTH_COUNT,
+    now,
+  );
 
-    return {
-      totalMembers,
-      paymentsLoggedThisMonth,
-      visitorsCount,
-      avgRevenuePerMonth,
-      memberJoins,
-      revenueTrend,
-    };
-  });
+  const totalRevenue = revenueTrend.reduce((sum, point) => sum + point.revenue, 0);
+  const avgRevenuePerMonth = totalRevenue / ANALYTICS_MONTH_COUNT;
+
+  return {
+    totalMembers,
+    paymentsLoggedThisMonth,
+    visitorsCount: pendingWalkIns,
+    avgRevenuePerMonth,
+    memberJoins,
+    revenueTrend,
+  };
 }

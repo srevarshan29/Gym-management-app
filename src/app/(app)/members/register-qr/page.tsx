@@ -16,11 +16,12 @@ function parseView(raw?: string): "pending" | "converted" | "all" {
 export default async function RegisterQrPage({
   searchParams,
 }: {
-  searchParams?: { view?: string };
+  searchParams?: { view?: string; page?: string };
 }) {
   const user = await requireGym();
   const canManage = canManageMembers(user.role);
   const view = parseView(searchParams?.view);
+  const page = Number(searchParams?.page ?? "1");
 
   return (
     <div className="space-y-8">
@@ -30,13 +31,14 @@ export default async function RegisterQrPage({
       />
 
       <Suspense
-        key={view}
+        key={`${view}-${page}`}
         fallback={<RegisterQrPageSkeleton />}
       >
         <RegisterQrPageContent
           gymId={user.gymId}
           canManage={canManage}
           view={view}
+          page={page}
         />
       </Suspense>
     </div>
@@ -47,19 +49,27 @@ async function RegisterQrPageContent({
   gymId,
   canManage,
   view,
+  page,
 }: {
   gymId: string;
   canManage: boolean;
   view: "pending" | "converted" | "all";
+  page: number;
 }) {
-  const { registrationToken, registrations } = await getRegisterQrPageData(
-    gymId,
-    view,
-  );
+  const data = await getRegisterQrPageData(gymId, { status: view, page });
 
-  const registrationUrl = getRegistrationUrl(registrationToken);
+  if (!data.registrationToken) {
+    return (
+      <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+        QR registration is not set up for this gym yet. Contact support if this
+        persists.
+      </p>
+    );
+  }
 
-  const rows = registrations.map((registration) => ({
+  const registrationUrl = getRegistrationUrl(data.registrationToken);
+
+  const rows = data.registrations.map((registration) => ({
     id: registration.id,
     name: registration.name,
     phone: registration.phone,
@@ -81,6 +91,9 @@ async function RegisterQrPageContent({
           registrations={rows}
           canManage={canManage}
           view={view}
+          page={data.page}
+          pageSize={data.pageSize}
+          total={data.total}
         />
       </div>
     </>

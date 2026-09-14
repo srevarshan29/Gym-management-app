@@ -2,12 +2,11 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { cookies } from "next/headers";
 
-import { withPlatformLookup } from "@/lib/db-context";
 import {
   MEMBER_PORTAL_GYM_TOKEN_COOKIE,
   normalizeMemberEmail,
 } from "@/lib/member-portal/constants";
-import { findGymMembersByEmail } from "@/lib/member-portal/email";
+import { getRepositories, platformContext } from "@/lib/firestore";
 import { memberAuthConfig } from "@/member-auth.config";
 
 const MEMBER_AUTH_ERROR_PATH = "/member/auth-error";
@@ -63,28 +62,25 @@ export const {
         }
 
         const normalizedEmail = normalizeMemberEmail(rawEmail);
+        const { gyms, members } = getRepositories();
 
-        const gym = await withPlatformLookup((tx) =>
-          tx.gym.findUnique({
-            where: { registrationToken: gymToken },
-            select: { id: true },
-          }),
-        );
+        const gym = await gyms.findByRegistrationToken(platformContext, gymToken);
         if (!gym) {
           return MEMBER_AUTH_ERROR_PATH;
         }
 
-        const matches = await withPlatformLookup((tx) =>
-          findGymMembersByEmail(tx, gym.id, normalizedEmail, {
-            portalEnabledOnly: true,
-          }),
+        const matches = await members.findByEmail(
+          platformContext,
+          gym.id,
+          normalizedEmail,
+          { portalEnabledOnly: true },
         );
 
         if (matches.length !== 1) {
           return MEMBER_AUTH_ERROR_PATH;
         }
 
-        const member = matches[0];
+        const member = matches[0]!;
 
         const u = user as {
           memberId?: string;

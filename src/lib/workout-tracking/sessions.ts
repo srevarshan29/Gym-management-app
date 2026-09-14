@@ -1,117 +1,113 @@
-import { prisma } from "@/lib/prisma";
-import { muscleGroupLabel } from "@/lib/exercises";
-import type { ExerciseTrackingType, MuscleGroup } from "@prisma/client";
+import { getRepositories } from "@/lib/firestore";
+import type { MemberContext } from "@/lib/firestore/context";
+import { platformContext } from "@/lib/firestore/helpers";
+import { muscleGroupLabel } from "@/lib/muscle-groups";
+import type { MuscleGroup } from "@/lib/muscle-groups";
+import {
+  buildPlanExerciseMap,
+  planExerciseDisplayName,
+  resolvePlanExerciseTrackingType,
+  type ExerciseLibraryMap,
+} from "@/lib/workout-tracking/session-plan";
+import type { ActiveWorkoutSession } from "@/lib/workout-tracking/types";
 
-export type ActiveWorkoutSetLog = {
-  setNumber: number;
-  weightKg: number | null;
-  durationSeconds: number | null;
-};
+export type { ActiveWorkoutSession, ActiveWorkoutSetLog } from "@/lib/workout-tracking/types";
 
-export type ActiveWorkoutSession = {
-  id: string;
-  startedAt: string;
-  durationSeconds: number | null;
-  exercises: {
-    id: string;
-    sortOrder: number;
-    displayName: string;
-    muscleGroup: string | null;
-    trackingType: ExerciseTrackingType;
-    exerciseId: string | null;
-    customName: string | null;
-    targetSets: number;
-    targetReps: string;
-    targetWeightKg: number | null;
-    restSeconds: number | null;
-    sets: ActiveWorkoutSetLog[];
-  }[];
-};
-
-function resolveTrackingType(planExercise: {
-  trackingTypeOverride: ExerciseTrackingType | null;
-  exercise: { trackingType: ExerciseTrackingType } | null;
-}): ExerciseTrackingType {
-  return (
-    planExercise.trackingTypeOverride ??
-    planExercise.exercise?.trackingType ??
-    "WEIGHTED"
+async function loadExerciseLibraryMap(gymId: string): Promise<ExerciseLibraryMap> {
+  const { customExercises } = getRepositories();
+  const rows = await customExercises.listLibrary(platformContext, gymId);
+  return new Map(
+    rows.map((row) => [
+      row.id,
+      {
+        name: row.name,
+        muscleGroup: row.muscleGroup,
+        trackingType: row.trackingType,
+        isSeeded: row.isSeeded,
+      },
+    ]),
   );
+}
+
+function memberContext(gymId: string, memberId: string): MemberContext {
+  return { kind: "member", gymId, memberId };
 }
 
 export async function getActiveWorkoutSession(
   tenantGymId: string,
   memberId: string,
 ): Promise<ActiveWorkoutSession | null> {
-  const session = await prisma.workoutSession.findFirst({
-    where: {
-      gymId: tenantGymId,
-      memberId: memberId,
-      status: "IN_PROGRESS",
-    },
-    orderBy: { startedAt: "desc" },
-    select: {
-      id: true,
-      startedAt: true,
-      durationSeconds: true,
-      exercises: {
-        orderBy: { sortOrder: "asc" },
-        select: {
-          id: true,
-          sortOrder: true,
-          planExercise: {
-            select: {
-              targetSets: true,
-              targetReps: true,
-              targetWeightKg: true,
-              restSeconds: true,
-              customName: true,
-              exerciseId: true,
-              trackingTypeOverride: true,
-              exercise: {
-                select: { name: true, muscleGroup: true, trackingType: true },
-              },
-            },
-          },
-          sets: {
-            orderBy: { setNumber: "asc" },
-            select: { setNumber: true, weightKg: true, durationSeconds: true },
-          },
-        },
-      },
-    },
-  });
+  const ctx = memberContext(tenantGymId, memberId);
+  const { workoutPlans, workoutSessions } = getRepositories();
+
+  const session = await workoutSessions.findActiveSession(
+    ctx,
+    tenantGymId,
+    memberId,
+  );
   if (!session) return null;
+
+  const [plan, library] = await Promise.all([
+    workoutPlans.getById(ctx, tenantGymId, session.workoutPlanId),
+    loadExerciseLibraryMap(tenantGymId),
+  ]);
+  if (!plan) return null;
+
+  const planExerciseMap = buildPlanExerciseMap(plan);
 
   return {
     id: session.id,
-    startedAt: session.startedAt.toISOString(),
+    startedAt: session.startedAt.toDate().toISOString(),
     durationSeconds: session.durationSeconds,
-    exercises: session.exercises.map((row) => ({
-      id: row.id,
-      sortOrder: row.sortOrder,
-      displayName:
-        row.planExercise.exercise?.name ??
-        row.planExercise.customName ??
-        "Exercise",
-      muscleGroup: row.planExercise.exercise
-        ? muscleGroupLabel(row.planExercise.exercise.muscleGroup as MuscleGroup)
-        : null,
-      trackingType: resolveTrackingType(row.planExercise),
-      exerciseId: row.planExercise.exerciseId,
-      customName: row.planExercise.customName,
-      targetSets: row.planExercise.targetSets,
-      targetReps: row.planExercise.targetReps,
-      targetWeightKg:
-        row.planExercise.targetWeightKg != null
-          ? Number(row.planExercise.targetWeightKg)
-          : null,
-      restSeconds: row.planExercise.restSeconds,
-      sets: row.sets.map((set) => ({
-        setNumber: set.setNumber,
-        weightKg: set.weightKg != null ? Number(set.weightKg) : null,
-        durationSeconds: set.durationSeconds,
-      })),
-    })),
+    exercises: [...session.exercises]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((row) => {
+        const planExercise = planExerciseMap.get(row.workoutPlanExerciseId);
+        if (!planExercise) {
+          return {
+            id: row.id,
+            sortOrder: row.sortOrder,
+            displayName: "Exercise",
+            muscleGroup: null,
+            trackingType: "WEIGHTED" as const,
+            exerciseId: null,
+            customName: null,
+            targetSets: 1,
+            targetReps: "",
+            targetWeightKg: null,
+            restSeconds: null,
+            sets: row.sets.map((set) => ({
+              setNumber: set.setNumber,
+              weightKg: set.weightKg,
+              durationSeconds: set.durationSeconds,
+            })),
+          };
+        }
+
+        const libraryExercise = planExercise.exerciseId
+          ? library.get(planExercise.exerciseId)
+          : null;
+
+        return {
+          id: row.id,
+          sortOrder: row.sortOrder,
+          displayName: planExerciseDisplayName(planExercise, library),
+          muscleGroup: libraryExercise
+            ? muscleGroupLabel(libraryExercise.muscleGroup as MuscleGroup)
+            : null,
+          trackingType: resolvePlanExerciseTrackingType(planExercise, library),
+          exerciseId: planExercise.exerciseId,
+          customName: planExercise.customName,
+          targetSets: planExercise.targetSets,
+          targetReps: planExercise.targetReps,
+          targetWeightKg: planExercise.targetWeightKg,
+          restSeconds: planExercise.restSeconds,
+          sets: row.sets.map((set) => ({
+            setNumber: set.setNumber,
+            weightKg: set.weightKg,
+            durationSeconds: set.durationSeconds,
+          })),
+        };
+      }),
   };
 }

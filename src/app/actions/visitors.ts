@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { withTenant } from "@/lib/db-context";
+import { getRepositories, platformContext } from "@/lib/firestore";
+import {
+  convertVisitorRecord,
+  createWalkInVisitor,
+  deleteVisitorRecord,
+} from "@/lib/firestore/visitor-operations";
 import { requireGym } from "@/lib/session";
 import { canManageMembers } from "@/lib/permissions";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
@@ -46,18 +51,12 @@ export async function createVisitor(
     return actionError("Invalid visit date.");
   }
 
-  await withTenant(user.gymId, (tx) =>
-    tx.visitor.create({
-      data: {
-        gymId: user.gymId,
-        name: parsed.data.name,
-        phone: parsed.data.phone,
-        visitDate,
-        notes: parsed.data.notes || null,
-        source: "walk_in",
-      },
-    }),
-  );
+  await createWalkInVisitor(user.gymId, {
+    name: parsed.data.name,
+    phone: parsed.data.phone,
+    visitDate,
+    notes: parsed.data.notes || null,
+  });
 
   revalidateVisitorPaths();
   return actionOk("Visitor logged.");
@@ -85,21 +84,18 @@ export async function updateVisitor(
     return actionError("Invalid visit date.");
   }
 
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.visitor.updateMany({
-      where: { id, gymId: user.gymId },
-      data: {
-        name: parsed.data.name,
-        phone: parsed.data.phone,
-        visitDate,
-        notes: parsed.data.notes || null,
-      },
-    }),
-  );
-
-  if (result.count === 0) {
+  const { visitors } = getRepositories();
+  const existing = await visitors.getById(platformContext, user.gymId, id);
+  if (!existing) {
     return actionError("Visitor not found.");
   }
+
+  await visitors.updateVisitor(platformContext, user.gymId, id, {
+    name: parsed.data.name,
+    phone: parsed.data.phone,
+    visitDate,
+    notes: parsed.data.notes || null,
+  });
 
   revalidateVisitorPaths();
   return actionOk("Visitor updated.");
@@ -111,11 +107,8 @@ export async function deleteVisitor(id: string): Promise<ActionResult> {
     return actionError("You do not have permission to delete visitors.");
   }
 
-  const result = await withTenant(user.gymId, (tx) =>
-    tx.visitor.deleteMany({ where: { id, gymId: user.gymId } }),
-  );
-
-  if (result.count === 0) {
+  const deleted = await deleteVisitorRecord(user.gymId, id);
+  if (!deleted) {
     return actionError("Visitor not found.");
   }
 

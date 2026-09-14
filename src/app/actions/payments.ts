@@ -3,12 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { withTenant } from "@/lib/db-context";
-import { requireGym } from "@/lib/session";
-import { canLogPayments } from "@/lib/permissions";
-import { createReceiptForPayment } from "@/lib/receipts";
-import { notifyPaymentLogged } from "@/lib/notifications";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
+import { logPaymentWithReceipt } from "@/lib/firestore";
+import { notifyPaymentLogged } from "@/lib/notifications";
+import { canLogPayments } from "@/lib/permissions";
+import { requireGym } from "@/lib/session";
+import { staffContextFromUser } from "@/lib/firestore/session-context";
+import { getRepositories } from "@/lib/firestore";
 
 const paymentSchema = z.object({
   memberId: z.string().min(1),
@@ -42,59 +43,36 @@ export async function logPayment(
     return actionError("Invalid payment date.");
   }
 
-  const member = await withTenant(tenantGymId, (tx) =>
-    tx.member.findFirst({
-      where: { id: data.memberId, gymId: tenantGymId },
-      select: { id: true },
-    }),
+  const ctx = staffContextFromUser(user);
+  const { members, subscriptions } = getRepositories();
+
+  const member = await members.findByIdAndGym(
+    ctx,
+    data.memberId,
+    tenantGymId,
   );
   if (!member) return actionError("Member not found.");
 
   if (data.subscriptionId) {
-    const subscription = await withTenant(tenantGymId, (tx) =>
-      tx.subscription.findFirst({
-        where: {
-          id: data.subscriptionId,
-          gymId: tenantGymId,
-          memberId: data.memberId,
-        },
-        select: { id: true },
-      }),
+    const subscription = await subscriptions.findById(
+      ctx,
+      tenantGymId,
+      data.subscriptionId,
     );
-    if (!subscription) return actionError("Subscription not found.");
+    if (!subscription || subscription.memberId !== data.memberId) {
+      return actionError("Subscription not found.");
+    }
   }
 
-  const payment = await withTenant(tenantGymId, async (tx) => {
-    const duplicateWindowStart = new Date(paidAt.getTime() - 60_000);
-    const recentDuplicate = await tx.payment.findFirst({
-      where: {
-        gymId: tenantGymId,
-        memberId: data.memberId,
-        amount: data.amount,
-        method: data.method,
-        paidAt: { gte: duplicateWindowStart, lte: paidAt },
-      },
-      orderBy: { createdAt: "desc" },
-      select: { id: true },
-    });
-    if (recentDuplicate) {
-      return { id: recentDuplicate.id, isDuplicate: true as const };
-    }
-
-    const created = await tx.payment.create({
-      data: {
-        gymId: tenantGymId,
-        memberId: data.memberId,
-        subscriptionId: data.subscriptionId || null,
-        amount: data.amount,
-        method: data.method,
-        paidAt,
-        note: data.note || null,
-        recordedById: user.id,
-      },
-    });
-    await createReceiptForPayment(tx, tenantGymId, created.id);
-    return { id: created.id, isDuplicate: false as const };
+  const payment = await logPaymentWithReceipt({
+    gymId: tenantGymId,
+    memberId: data.memberId,
+    subscriptionId: data.subscriptionId || null,
+    amount: data.amount,
+    method: data.method,
+    paidAt,
+    note: data.note || null,
+    recordedById: user.id,
   });
 
   revalidatePath("/payments");
@@ -104,10 +82,10 @@ export async function logPayment(
   revalidatePath("/finance/pending-dues");
 
   if (!payment.isDuplicate) {
-    notifyPaymentLogged(tenantGymId, payment.id).catch((err) =>
+    notifyPaymentLogged(tenantGymId, payment.paymentId).catch((err) =>
       console.error("[payments] notifyPaymentLogged failed:", err),
     );
   }
 
-  return actionOk("Payment recorded.", { paymentId: payment.id });
+  return actionOk("Payment recorded.", { paymentId: payment.paymentId });
 }

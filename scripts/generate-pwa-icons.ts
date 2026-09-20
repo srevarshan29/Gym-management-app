@@ -68,13 +68,9 @@ async function sampleBackgroundColor(source: Sharp): Promise<string> {
   return rgbToHex(r, g, b);
 }
 
-/** Full-bleed icon — artwork fills the entire canvas, no added margins or canvas. */
+/** Full-bleed icon — direct downscale of the supplied square artwork. */
 async function writeRegularIcon(source: Sharp, size: number, outputPath: string) {
-  await source
-    .clone()
-    .resize(size, size, { fit: "cover", position: "center" })
-    .png()
-    .toFile(outputPath);
+  await source.clone().resize(size, size).png().toFile(outputPath);
 }
 
 /**
@@ -90,7 +86,7 @@ async function writeMaskableIcon(
   const artworkSize = Math.round(size * MASKABLE_SAFE_RATIO);
   const artwork = await source
     .clone()
-    .resize(artworkSize, artworkSize, { fit: "cover", position: "center" })
+    .resize(artworkSize, artworkSize)
     .png()
     .toBuffer();
 
@@ -105,6 +101,16 @@ async function writeMaskableIcon(
     .composite([{ input: artwork, gravity: "center" }])
     .png()
     .toFile(outputPath);
+}
+
+async function verifyRegularIcon(
+  sourcePath: string,
+  outputPath: string,
+  size: number,
+): Promise<boolean> {
+  const expected = await sharp(sourcePath).resize(size, size).png().toBuffer();
+  const actual = await sharp(outputPath).png().toBuffer();
+  return expected.equals(actual);
 }
 
 async function main() {
@@ -136,6 +142,20 @@ async function main() {
     .png()
     .toFile(path.join(PUBLIC, "favicon.ico"));
 
+  const checks = await Promise.all([
+    verifyRegularIcon(sourcePath, path.join(ICONS_DIR, "icon-192x192.png"), 192),
+    verifyRegularIcon(sourcePath, path.join(ICONS_DIR, "icon-512x512.png"), 512),
+    verifyRegularIcon(
+      sourcePath,
+      path.join(ICONS_DIR, "apple-touch-icon.png"),
+      180,
+    ),
+  ]);
+
+  if (!checks.every(Boolean)) {
+    throw new Error("Generated icons do not match the source artwork.");
+  }
+
   console.log("Generated PWA icons in public/icons/:");
   console.log("  icon-192x192.png (192x192, full bleed)");
   console.log("  icon-512x512.png (512x512, full bleed)");
@@ -144,6 +164,7 @@ async function main() {
     `  icon-512x512-maskable.png (512x512, ${Math.round(MASKABLE_SAFE_RATIO * 100)}% safe zone)`,
   );
   console.log("  ../favicon.ico (32x32, from 192px icon)");
+  console.log("Verification: all regular icons are pixel-identical downscales of gymdesk-icon.png");
 }
 
 main().catch((error) => {

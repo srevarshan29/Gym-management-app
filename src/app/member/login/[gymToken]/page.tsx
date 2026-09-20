@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import { Dumbbell } from "lucide-react";
-
+import { GymDeskLogo } from "@/components/gymdesk-logo";
 import { getGymByRegistrationToken } from "@/lib/member-portal/access";
 import { MemberLoginForm } from "@/components/member-portal/member-login-form";
 import {
@@ -23,9 +22,7 @@ export default async function MemberLoginPage({
     <main className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-soft">
-            <Dumbbell className="h-6 w-6" />
-          </div>
+          <GymDeskLogo variant="hero" priority />
           <h1 className="font-display text-2xl font-bold tracking-tight">
             Member Portal
           </h1>

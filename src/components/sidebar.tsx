@@ -3,8 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Dumbbell, X } from "lucide-react";
+import { X } from "lucide-react";
 
+import { GymDeskLogo } from "@/components/gymdesk-logo";
 import { useSharedNavigationLock } from "@/components/navigation/navigation-lock-provider";
 import { useSidebar } from "@/components/sidebar-provider";
 import {
@@ -110,9 +111,7 @@ function SidebarNavContent({
     <>
       <div className="mb-6 flex items-center justify-between gap-2 px-2">
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Dumbbell className="h-5 w-5" />
-          </div>
+          <GymDeskLogo variant="mark" />
           <span className="font-display text-lg font-bold tracking-tight whitespace-nowrap">
             GymDesk
           </span>

@@ -1,5 +1,6 @@
 "use client";
 
+import { GymDeskLogo } from "@/components/gymdesk-logo";
 import { SidebarProvider } from "@/components/sidebar-provider";
 import { Sidebar } from "@/components/sidebar";
 import { SidebarToggle } from "@/components/sidebar-toggle";
@@ -47,9 +48,7 @@ export function AppShell({
           <header className="app-shell-header safe-area-top safe-area-x sticky top-0 z-30 flex shrink-0 items-center justify-between gap-2 border-b bg-card sm:gap-3">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <SidebarToggle />
-              <div className="truncate font-display text-base font-bold sm:text-lg md:hidden">
-                GymDesk
-              </div>
+              <GymDeskLogo variant="header" className="md:hidden" />
             </div>
             <div className="flex shrink-0 items-center gap-1 sm:gap-2 lg:gap-3">
               <div className="hidden min-w-0 text-right xl:block">

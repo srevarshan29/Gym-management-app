@@ -1,5 +1,4 @@
-import { ShieldCheck } from "lucide-react";
-
+import { GymDeskLogo } from "@/components/gymdesk-logo";
 import { requireSuperAdmin } from "@/lib/session";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -17,9 +16,7 @@ export default async function AdminLayout({
     <div className="flex min-h-screen flex-col bg-background">
       <header className="flex h-16 items-center justify-between border-b bg-card px-6">
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <ShieldCheck className="h-5 w-5" />
-          </div>
+          <GymDeskLogo variant="mark" />
           <span className="font-display text-lg font-bold tracking-tight">
             GymDesk <span className="text-muted-foreground">Platform Admin</span>
           </span>

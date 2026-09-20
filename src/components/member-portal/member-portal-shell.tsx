@@ -1,7 +1,6 @@
 "use client";
 
-import { Dumbbell } from "lucide-react";
-
+import { GymDeskLogo } from "@/components/gymdesk-logo";
 import { MemberPortalNav } from "@/components/member-portal/member-portal-nav";
 import { MemberSignOutButton } from "@/components/member-portal/member-sign-out-button";
 import { LockedLink } from "@/components/navigation/locked-link";
@@ -24,9 +23,7 @@ export function MemberPortalShell({
         <header className="app-shell-header safe-area-top safe-area-x sticky top-0 z-30 border-b bg-card/80 backdrop-blur">
           <div className="mx-auto flex max-w-2xl min-w-0 items-center justify-between gap-2 py-3 sm:gap-3 sm:py-4">
             <div className="flex min-w-0 items-center gap-2">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Dumbbell className="h-5 w-5" />
-              </div>
+              <GymDeskLogo variant="mark" />
               <div className="min-w-0">
                 <p className="font-display text-sm font-bold leading-tight">
                   Member Portal

@@ -15,8 +15,8 @@ const PUBLIC = path.join(ROOT, "public");
 const ICONS_DIR = path.join(PUBLIC, "icons");
 const CANONICAL_LOGO = path.join(PUBLIC, "logo.png");
 
-/** Dark app background — matches globals.css .dark --background (240 6% 7%). */
-const BACKGROUND = "#101012";
+/** Neon green — full-bleed PWA icon background (matches theme --primary). */
+const ICON_BACKGROUND = "#B8FF29";
 
 const PREFERRED_SOURCES = [
   "Logo.png (2).png",
@@ -83,15 +83,20 @@ async function writeSquareIcon(
   outputPath: string,
   options?: { maskable?: boolean },
 ) {
-  const metadata = await source.metadata();
-  const isWide = (metadata.width ?? 1) > (metadata.height ?? 1) * 1.2;
-  const paddingRatio = options?.maskable ? (isWide ? 0.14 : 0.1) : isWide ? 0.08 : 0.04;
-  const inset = Math.round(size * paddingRatio);
-  const logoBox = size - inset * 2;
+  // Previously: logo was shrunk (4–14% inset) and composited onto #101012,
+  // which produced a visible black ring around the neon-green logo square.
+  //
+  // Regular icons: fill ~96% so the dumbbell scales up without clipping.
+  // Maskable icons: ~84% safe zone (OS masks only) — padding stays neon green.
+  const fillRatio = options?.maskable ? 0.84 : 0.96;
+  const logoBox = Math.round(size * fillRatio);
 
   const logoBuffer = await source
     .clone()
-    .resize(logoBox, logoBox, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .resize(logoBox, logoBox, {
+      fit: "contain",
+      background: ICON_BACKGROUND,
+    })
     .png()
     .toBuffer();
 
@@ -100,7 +105,7 @@ async function writeSquareIcon(
       width: size,
       height: size,
       channels: 4,
-      background: BACKGROUND,
+      background: ICON_BACKGROUND,
     },
   })
     .composite([{ input: logoBuffer, gravity: "center" }])

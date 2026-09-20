@@ -14,6 +14,7 @@ import {
 } from "@/lib/firestore/member-search";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
 import { omitUndefined, touchUpdatedAt } from "@/lib/firestore/serialize";
+import { queryPageByNumber } from "@/lib/firestore/pagination";
 import type { FitnessGoal, MemberDoc, MemberGender } from "@/lib/firestore/types";
 import { normalizeMemberEmail } from "@/lib/member-portal/constants";
 import { statusFromEndDate } from "@/lib/subscription";
@@ -390,13 +391,12 @@ export class MembersRepository {
     let candidates: DocWithId<MemberDoc>[];
 
     if (tokens.length === 0) {
-      const fetchLimit = page * pageSize;
-      const snap = await this.col()
-        .where("gymId", "==", gymId)
-        .orderBy("createdAt", "desc")
-        .limit(fetchLimit)
-        .get();
-      candidates = snap.docs.map((d) => ({
+      const pageSnaps = await queryPageByNumber(
+        this.col().where("gymId", "==", gymId).orderBy("createdAt", "desc"),
+        page,
+        pageSize,
+      );
+      candidates = pageSnaps.map((d) => ({
         id: d.id,
         ...(d.data() as MemberDoc),
       }));
@@ -418,8 +418,10 @@ export class MembersRepository {
     }
 
     const matchingCount = tokens.length === 0 ? totalMembers : candidates.length;
-    const offset = (page - 1) * pageSize;
-    const pageMembers = candidates.slice(offset, offset + pageSize);
+    const pageMembers = tokens.length === 0 ? candidates : candidates.slice(
+      (page - 1) * pageSize,
+      page * pageSize,
+    );
 
     const rows = pageMembers.map((m) => this.toListItem(m, null));
 

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 
+import { PwaServiceWorkerRegister } from "@/components/pwa-service-worker-register";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -17,9 +18,28 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["400", "500", "600"],
 });
 
+/** Volt Green — matches globals.css dark --primary (#B8FF29). */
+const PWA_THEME_COLOR = "#B8FF29";
+
 export const metadata: Metadata = {
-  title: "Gym Management",
+  title: "GymDesk",
   description: "Manage members, packages, payments, and subscriptions.",
+  applicationName: "GymDesk",
+  appleWebApp: {
+    capable: true,
+    title: "GymDesk",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport: Viewport = {
@@ -27,6 +47,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: "cover",
+  themeColor: PWA_THEME_COLOR,
 };
 
 export default function RootLayout({
@@ -39,6 +60,7 @@ export default function RootLayout({
       >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           {children}
+          <PwaServiceWorkerRegister />
           <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>

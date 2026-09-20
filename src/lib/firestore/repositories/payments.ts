@@ -2,6 +2,7 @@ import {
   AggregateField,
   Timestamp,
   type Firestore,
+  type QueryDocumentSnapshot,
 } from "firebase-admin/firestore";
 
 import { COLLECTIONS } from "@/lib/firestore/collections";
@@ -9,6 +10,7 @@ import type { FirestoreContext } from "@/lib/firestore/context";
 import { assertTenantAccess } from "@/lib/firestore/context";
 import { DocumentNotFoundError } from "@/lib/firestore/errors";
 import { newDocId } from "@/lib/firestore/helpers";
+import { queryPageByNumber } from "@/lib/firestore/pagination";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
 import { omitUndefined } from "@/lib/firestore/serialize";
 import type {
@@ -128,13 +130,6 @@ export class PaymentsRepository {
     const paymentCount = countSnap.data().count;
     const totalCollected = sumSnap.data().total ?? 0;
 
-    const fetchLimit = page * pageSize;
-    const snap = await listQuery.limit(fetchLimit).get();
-    let docs = snap.docs.map((d) => ({
-      id: d.id,
-      ...(d.data() as PaymentDoc),
-    }));
-
     const db = this.db;
     const memberCache = new Map<string, MemberDoc>();
     const subCache = new Map<string, SubscriptionDoc>();
@@ -167,18 +162,45 @@ export class PaymentsRepository {
       return data;
     }
 
+    let docs: DocWithId<PaymentDoc>[];
     if (q) {
-      const filtered: typeof docs = [];
-      for (const p of docs) {
-        const member = await loadMember(p.memberId);
-        if (member.name.toLowerCase().includes(q)) filtered.push(p);
+      const scanLimit = page * pageSize;
+      const filtered: DocWithId<PaymentDoc>[] = [];
+      let scanned = 0;
+      let cursor: QueryDocumentSnapshot | undefined;
+
+      while (scanned < scanLimit) {
+        const batchSize = Math.min(pageSize, scanLimit - scanned);
+        let batchQuery = listQuery.limit(batchSize);
+        if (cursor) batchQuery = batchQuery.startAfter(cursor);
+        const snap = await batchQuery.get();
+        if (snap.empty) break;
+
+        for (const doc of snap.docs) {
+          scanned += 1;
+          const payment = { id: doc.id, ...(doc.data() as PaymentDoc) };
+          const member = await loadMember(payment.memberId);
+          if (member.name.toLowerCase().includes(q)) {
+            filtered.push(payment);
+          }
+        }
+
+        cursor = snap.docs[snap.docs.length - 1];
+        if (snap.docs.length < batchSize) break;
       }
+
       docs = filtered;
+    } else {
+      const pageSnaps = await queryPageByNumber(listQuery, page, pageSize);
+      docs = pageSnaps.map((d) => ({
+        id: d.id,
+        ...(d.data() as PaymentDoc),
+      }));
     }
 
     const matchingCount = q ? docs.length : paymentCount;
     const offset = (page - 1) * pageSize;
-    const pageDocs = docs.slice(offset, offset + pageSize);
+    const pageDocs = q ? docs.slice(offset, offset + pageSize) : docs;
 
     const rows: PaidPaymentRow[] = await Promise.all(
       pageDocs.map(async (p) => {

@@ -214,7 +214,7 @@ export function Sidebar({
       <aside
         id="mobile-sidebar"
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[min(18rem,88vw)] flex-col border-r bg-card px-4 py-6 shadow-lg transition-transform duration-200 ease-out md:hidden",
+          "fixed inset-y-0 left-0 z-50 flex w-[min(18rem,88vw)] flex-col border-r bg-card px-4 py-4 shadow-lg transition-transform duration-200 ease-out safe-area-top safe-area-bottom pl-[max(1rem,env(safe-area-inset-left,0px))] md:hidden",
           mobileOpen ? "translate-x-0" : "-translate-x-full pointer-events-none",
         )}
         aria-hidden={!mobileOpen}

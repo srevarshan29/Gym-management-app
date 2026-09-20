@@ -9,6 +9,7 @@ import { COLLECTIONS } from "@/lib/firestore/collections";
 import type { FirestoreContext } from "@/lib/firestore/context";
 import { assertTenantAccess } from "@/lib/firestore/context";
 import { DocumentNotFoundError } from "@/lib/firestore/errors";
+import { batchGetByIds } from "@/lib/firestore/batch-get";
 import { newDocId } from "@/lib/firestore/helpers";
 import { queryPageByNumber } from "@/lib/firestore/pagination";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
@@ -123,20 +124,14 @@ export class PaymentsRepository {
       .where("gymId", "==", gymId)
       .orderBy("paidAt", "desc");
 
-    const [countSnap, sumSnap] = await Promise.all([
-      statsQuery.count().get(),
-      statsQuery.aggregate({ total: AggregateField.sum("amount") }).get(),
-    ]);
-    const paymentCount = countSnap.data().count;
-    const totalCollected = sumSnap.data().total ?? 0;
-
     const db = this.db;
     const memberCache = new Map<string, MemberDoc>();
     const subCache = new Map<string, SubscriptionDoc>();
     const userCache = new Map<string, UserDoc>();
 
     async function loadMember(id: string) {
-      if (memberCache.has(id)) return memberCache.get(id)!;
+      const cached = memberCache.get(id);
+      if (cached) return cached;
       const s = await db.collection(COLLECTIONS.members).doc(id).get();
       if (!s.exists) throw new DocumentNotFoundError(COLLECTIONS.members, id);
       const data = s.data() as MemberDoc;
@@ -144,88 +139,125 @@ export class PaymentsRepository {
       return data;
     }
 
-    async function loadSub(id: string) {
-      if (subCache.has(id)) return subCache.get(id)!;
-      const s = await db.collection(COLLECTIONS.subscriptions).doc(id).get();
-      if (!s.exists) throw new DocumentNotFoundError(COLLECTIONS.subscriptions, id);
-      const data = s.data() as SubscriptionDoc;
-      subCache.set(id, data);
+    async function primeRelatedDocs(pageDocs: DocWithId<PaymentDoc>[]) {
+      const memberIds = pageDocs.map((p) => p.memberId);
+      const subIds = pageDocs
+        .map((p) => p.subscriptionId)
+        .filter((id): id is string => Boolean(id));
+      const userIds = pageDocs
+        .map((p) => p.recordedById)
+        .filter((id): id is string => Boolean(id));
+
+      const [members, subs, users] = await Promise.all([
+        batchGetByIds<MemberDoc>(db, COLLECTIONS.members, memberIds),
+        batchGetByIds<SubscriptionDoc>(db, COLLECTIONS.subscriptions, subIds),
+        batchGetByIds<UserDoc>(db, COLLECTIONS.users, userIds),
+      ]);
+
+      for (const [id, data] of members) memberCache.set(id, data);
+      for (const [id, data] of subs) subCache.set(id, data);
+      for (const [id, data] of users) userCache.set(id, data);
+    }
+
+    function loadMemberCached(id: string) {
+      const data = memberCache.get(id);
+      if (!data) throw new DocumentNotFoundError(COLLECTIONS.members, id);
       return data;
     }
 
-    async function loadUser(id: string) {
-      if (userCache.has(id)) return userCache.get(id)!;
-      const s = await db.collection(COLLECTIONS.users).doc(id).get();
-      if (!s.exists) throw new DocumentNotFoundError(COLLECTIONS.users, id);
-      const data = s.data() as UserDoc;
-      userCache.set(id, data);
+    function loadSubCached(id: string) {
+      const data = subCache.get(id);
+      if (!data) throw new DocumentNotFoundError(COLLECTIONS.subscriptions, id);
       return data;
     }
+
+    function loadUserCached(id: string) {
+      const data = userCache.get(id);
+      if (!data) throw new DocumentNotFoundError(COLLECTIONS.users, id);
+      return data;
+    }
+
+    const statsPromise = Promise.all([
+      statsQuery.count().get(),
+      statsQuery.aggregate({ total: AggregateField.sum("amount") }).get(),
+    ]);
 
     let docs: DocWithId<PaymentDoc>[];
     if (q) {
-      const scanLimit = page * pageSize;
-      const filtered: DocWithId<PaymentDoc>[] = [];
-      let scanned = 0;
-      let cursor: QueryDocumentSnapshot | undefined;
+      const scanPromise = (async () => {
+        const scanLimit = page * pageSize;
+        const filtered: DocWithId<PaymentDoc>[] = [];
+        let scanned = 0;
+        let cursor: QueryDocumentSnapshot | undefined;
 
-      while (scanned < scanLimit) {
-        const batchSize = Math.min(pageSize, scanLimit - scanned);
-        let batchQuery = listQuery.limit(batchSize);
-        if (cursor) batchQuery = batchQuery.startAfter(cursor);
-        const snap = await batchQuery.get();
-        if (snap.empty) break;
+        while (scanned < scanLimit) {
+          const batchSize = Math.min(pageSize, scanLimit - scanned);
+          let batchQuery = listQuery.limit(batchSize);
+          if (cursor) batchQuery = batchQuery.startAfter(cursor);
+          const snap = await batchQuery.get();
+          if (snap.empty) break;
 
-        for (const doc of snap.docs) {
-          scanned += 1;
-          const payment = { id: doc.id, ...(doc.data() as PaymentDoc) };
-          const member = await loadMember(payment.memberId);
-          if (member.name.toLowerCase().includes(q)) {
-            filtered.push(payment);
+          for (const doc of snap.docs) {
+            scanned += 1;
+            const payment = { id: doc.id, ...(doc.data() as PaymentDoc) };
+            const member = await loadMember(payment.memberId);
+            if (member.name.toLowerCase().includes(q)) {
+              filtered.push(payment);
+            }
           }
+
+          cursor = snap.docs[snap.docs.length - 1];
+          if (snap.docs.length < batchSize) break;
         }
 
-        cursor = snap.docs[snap.docs.length - 1];
-        if (snap.docs.length < batchSize) break;
-      }
+        return filtered;
+      })();
 
+      const [filtered] = await Promise.all([scanPromise, statsPromise]);
       docs = filtered;
     } else {
-      const pageSnaps = await queryPageByNumber(listQuery, page, pageSize);
+      const [pageSnaps] = await Promise.all([
+        queryPageByNumber(listQuery, page, pageSize),
+        statsPromise,
+      ]);
       docs = pageSnaps.map((d) => ({
         id: d.id,
         ...(d.data() as PaymentDoc),
       }));
     }
 
+    const [countSnap, sumSnap] = await statsPromise;
+    const paymentCount = countSnap.data().count;
+    const totalCollected = sumSnap.data().total ?? 0;
+
     const matchingCount = q ? docs.length : paymentCount;
     const offset = (page - 1) * pageSize;
     const pageDocs = q ? docs.slice(offset, offset + pageSize) : docs;
 
-    const rows: PaidPaymentRow[] = await Promise.all(
-      pageDocs.map(async (p) => {
-        const member = await loadMember(p.memberId);
-        let subscription: PaidPaymentRow["subscription"] = null;
-        if (p.subscriptionId) {
-          const sub = await loadSub(p.subscriptionId);
-          subscription = { package: { name: sub.packageName } };
-        }
-        let recordedBy: PaidPaymentRow["recordedBy"] = null;
-        if (p.recordedById) {
-          const user = await loadUser(p.recordedById);
-          recordedBy = { name: user.name };
-        }
-        return {
-          id: p.id,
-          paidAt: p.paidAt.toDate(),
-          amount: p.amount,
-          method: p.method,
-          member: { id: p.memberId, name: member.name },
-          subscription,
-          recordedBy,
-        };
-      }),
-    );
+    await primeRelatedDocs(pageDocs);
+
+    const rows: PaidPaymentRow[] = pageDocs.map((p) => {
+      const member = loadMemberCached(p.memberId);
+      let subscription: PaidPaymentRow["subscription"] = null;
+      if (p.subscriptionId) {
+        const sub = loadSubCached(p.subscriptionId);
+        subscription = { package: { name: sub.packageName } };
+      }
+      let recordedBy: PaidPaymentRow["recordedBy"] = null;
+      if (p.recordedById) {
+        const user = loadUserCached(p.recordedById);
+        recordedBy = { name: user.name };
+      }
+      return {
+        id: p.id,
+        paidAt: p.paidAt.toDate(),
+        amount: p.amount,
+        method: p.method,
+        member: { id: p.memberId, name: member.name },
+        subscription,
+        recordedBy,
+      };
+    });
 
     return {
       rows,

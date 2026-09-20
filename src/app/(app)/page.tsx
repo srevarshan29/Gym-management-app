@@ -83,19 +83,26 @@ async function DashboardBody({
   canManageMembers: boolean;
   canManagePackages: boolean;
 }) {
-  const metrics = await getDashboardMetrics(tenantGymId);
+  const metricsPromise = getDashboardMetrics(tenantGymId);
 
   let monthRevenue = 0;
   let revenueTrend: Awaited<ReturnType<typeof getMonthlyRevenueTrend>> = [];
   let financialSparklines: Awaited<ReturnType<typeof getFinancialSparklines>> | null =
     null;
   let revenueTrendLabel: string | undefined;
+  let metrics: Awaited<ReturnType<typeof getDashboardMetrics>>;
 
   if (showFinancials) {
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const trend = await getMonthlyRevenueTrend(tenantGymId);
+
+    const [resolvedMetrics, trend] = await Promise.all([
+      metricsPromise,
+      getMonthlyRevenueTrend(tenantGymId),
+    ]);
+    metrics = resolvedMetrics;
+
     const [monthRevenueSum, finSparklines] = await Promise.all([
       getRepositories().payments.sumPaidInRange(
         platformContext,
@@ -117,13 +124,16 @@ async function DashboardBody({
     if (rev.length >= 2) {
       revenueTrendLabel = formatTrendLabel(rev[rev.length - 1], rev[rev.length - 2]);
     }
-  } else if (canLogPayments) {
-    financialSparklines = await getFinancialSparklines(
-      tenantGymId,
-      metrics.collectionExpected,
-      metrics.pendingTotal,
-      [],
-    );
+  } else {
+    metrics = await metricsPromise;
+    if (canLogPayments) {
+      financialSparklines = await getFinancialSparklines(
+        tenantGymId,
+        metrics.collectionExpected,
+        metrics.pendingTotal,
+        [],
+      );
+    }
   }
 
   return (

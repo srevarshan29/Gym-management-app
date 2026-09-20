@@ -139,4 +139,35 @@
   .table-scroll {
     -webkit-overflow-scrolling: touch;
   }
+
+  /* iOS/Android PWA safe areas (requires viewport-fit=cover in layout). */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .safe-area-x {
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .safe-area-x {
+      padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+      padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+    }
+  }
+
+  .app-shell-header {
+    min-height: calc(3.5rem + env(safe-area-inset-top, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .app-shell-header {
+      min-height: calc(4rem + env(safe-area-inset-top, 0px));
+    }
+  }
 }

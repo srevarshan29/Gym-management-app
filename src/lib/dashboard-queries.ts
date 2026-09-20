@@ -1,4 +1,6 @@
 import { getRepositories, platformContext } from "@/lib/firestore";
+import { getFirestoreDb } from "@/lib/firebase/admin";
+import { Timestamp } from "firebase-admin/firestore";
 import {
   filterExpiredMemberships,
   filterUpcomingRenewals,
@@ -212,8 +214,6 @@ export async function loadDashboardMemberMetrics(
   monthBounds: { startThisMonth: Date; startLastMonth: Date },
 ): Promise<DashboardMemberMetrics> {
   const { members, subscriptions } = getRepositories();
-  const { getFirestoreDb } = await import("@/lib/firebase/admin");
-  const { Timestamp } = await import("firebase-admin/firestore");
   const db = getFirestoreDb();
 
   const countSince = async (start: Date, end?: Date) => {

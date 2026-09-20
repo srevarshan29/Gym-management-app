@@ -14,7 +14,7 @@ export function SidebarToggle() {
         type="button"
         variant="ghost"
         size="icon"
-        className="inline-flex shrink-0 md:hidden"
+        className="inline-flex h-11 w-11 shrink-0 md:h-9 md:w-9"
         onClick={toggleMobile}
         aria-expanded={mobileOpen}
         aria-controls="mobile-sidebar"

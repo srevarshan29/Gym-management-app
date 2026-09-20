@@ -1,12 +1,11 @@
-import type { MemberGender } from "@prisma/client";
-
 import { getRepositories, platformContext } from "@/lib/firestore";
 import {
   filterExpiredMemberships,
   filterUpcomingRenewals,
+  type MemberListItem,
   type MembershipRenewalRow,
 } from "@/lib/queries";
-import { EXPIRING_SOON_DAYS, statusFromEndDate } from "@/lib/subscription";
+import { EXPIRING_SOON_DAYS } from "@/lib/subscription";
 
 export type WeekBucket = { start: Date; end: Date };
 
@@ -40,16 +39,11 @@ export type DashboardStatusCounts = {
   expiredCount: number;
 };
 
-export async function queryDashboardStatusCounts(
-  tenantGymId: string,
+export function computeDashboardStatusCounts(
+  totalMembers: number,
+  all: MemberListItem[],
   cutoffs: StatusCutoffs,
-): Promise<DashboardStatusCounts> {
-  const { members } = getRepositories();
-  const [totalMembers, all] = await Promise.all([
-    members.countByGym(platformContext, tenantGymId),
-    members.listAllWithStatus(platformContext, tenantGymId),
-  ]);
-
+): DashboardStatusCounts {
   let activeOrExpiringCount = 0;
   let expiringSoonCount = 0;
   let expiredCount = 0;
@@ -89,21 +83,24 @@ export type DashboardCollectionTotals = {
   collectionCollected: number;
 };
 
-export async function queryCurrentCycleCollection(
-  tenantGymId: string,
-): Promise<DashboardCollectionTotals> {
-  const { members, subscriptions } = getRepositories();
-  const all = await members.listAllWithStatus(platformContext, tenantGymId);
+/**
+ * Current-cycle collection uses `priceAtPurchase` and `paidTotal`, which live
+ * only on subscription documents — they are not denormalized onto members
+ * (members only carry `pendingAmountTotal`, summed across all cycles).
+ */
+export function computeCurrentCycleCollection(
+  all: MemberListItem[],
+  subsById: Map<
+    string,
+    { priceAtPurchase: number; paidTotal: number }
+  >,
+): DashboardCollectionTotals {
   let collectionExpected = 0;
   let collectionCollected = 0;
 
   for (const m of all) {
     if (!m.currentSubscriptionId) continue;
-    const sub = await subscriptions.findById(
-      platformContext,
-      tenantGymId,
-      m.currentSubscriptionId,
-    );
+    const sub = subsById.get(m.currentSubscriptionId);
     if (!sub) continue;
     collectionExpected += sub.priceAtPurchase;
     collectionCollected += sub.paidTotal;
@@ -112,12 +109,10 @@ export async function queryCurrentCycleCollection(
   return { collectionExpected, collectionCollected };
 }
 
-export async function queryPackageDistribution(
-  tenantGymId: string,
+export function computePackageDistribution(
+  all: MemberListItem[],
   cutoffs: StatusCutoffs,
-): Promise<PackageCountRow[]> {
-  const { members } = getRepositories();
-  const all = await members.listAllWithStatus(platformContext, tenantGymId);
+): PackageCountRow[] {
   const counts = new Map<string, number>();
 
   for (const m of all) {
@@ -131,25 +126,21 @@ export async function queryPackageDistribution(
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 }
 
-export async function queryUpcomingRenewalPreview(
-  tenantGymId: string,
+export function computeUpcomingRenewalPreview(
+  all: MemberListItem[],
   _cutoffs: StatusCutoffs,
   limit = 5,
-): Promise<MembershipRenewalRow[]> {
+): MembershipRenewalRow[] {
   void _cutoffs;
-  const { members } = getRepositories();
-  const all = await members.listAllWithStatus(platformContext, tenantGymId);
   return filterUpcomingRenewals(all).slice(0, limit);
 }
 
-export async function queryExpiredMembershipPreview(
-  tenantGymId: string,
+export function computeExpiredMembershipPreview(
+  all: MemberListItem[],
   _cutoffs: StatusCutoffs,
   limit = 5,
-): Promise<MembershipRenewalRow[]> {
+): MembershipRenewalRow[] {
   void _cutoffs;
-  const { members } = getRepositories();
-  const all = await members.listAllWithStatus(platformContext, tenantGymId);
   return filterExpiredMemberships(all).slice(0, limit);
 }
 
@@ -161,14 +152,12 @@ export type MemberSparklineRow = {
   expiredCount: number;
 };
 
-export async function queryMemberSparklines(
-  tenantGymId: string,
+export function computeMemberSparklines(
+  all: MemberListItem[],
   buckets: WeekBucket[],
   now: Date,
-): Promise<MemberSparklineRow[]> {
+): MemberSparklineRow[] {
   if (buckets.length === 0) return [];
-  const { members } = getRepositories();
-  const all = await members.listAllWithStatus(platformContext, tenantGymId);
   const cutoffs = statusCutoffs(now);
 
   return buckets.map((bucket, idx) => {
@@ -199,20 +188,96 @@ export async function queryMemberSparklines(
   });
 }
 
+export type DashboardMemberMetrics = {
+  status: DashboardStatusCounts;
+  pending: DashboardPendingTotals;
+  collection: DashboardCollectionTotals;
+  packageDistribution: PackageCountRow[];
+  upcomingPreview: MembershipRenewalRow[];
+  expiredPreview: MembershipRenewalRow[];
+  sparkRows: MemberSparklineRow[];
+  newMembersThisMonth: number;
+  newMembersLastMonth: number;
+};
+
+/**
+ * Loads dashboard member-derived metrics with a single member list fetch,
+ * then derives all KPIs from that in-memory snapshot.
+ */
+export async function loadDashboardMemberMetrics(
+  tenantGymId: string,
+  cutoffs: StatusCutoffs,
+  weekBuckets: WeekBucket[],
+  now: Date,
+  monthBounds: { startThisMonth: Date; startLastMonth: Date },
+): Promise<DashboardMemberMetrics> {
+  const { members, subscriptions } = getRepositories();
+  const { getFirestoreDb } = await import("@/lib/firebase/admin");
+  const { Timestamp } = await import("firebase-admin/firestore");
+  const db = getFirestoreDb();
+
+  const countSince = async (start: Date, end?: Date) => {
+    let q = db
+      .collection("members")
+      .where("gymId", "==", tenantGymId)
+      .where("createdAt", ">=", Timestamp.fromDate(start));
+    if (end) {
+      q = q.where("createdAt", "<", Timestamp.fromDate(end));
+    }
+    const snap = await q.count().get();
+    return snap.data().count;
+  };
+
+  const [totalMembers, allMembers, pendingTotals, thisMonth, lastMonth] =
+    await Promise.all([
+      members.countByGym(platformContext, tenantGymId),
+      members.listAllWithStatus(platformContext, tenantGymId),
+      queryAllCyclePendingTotals(tenantGymId),
+      countSince(monthBounds.startThisMonth),
+      countSince(monthBounds.startLastMonth, monthBounds.startThisMonth),
+    ]);
+
+  const subscriptionIds = allMembers
+    .map((m) => m.currentSubscriptionId)
+    .filter((id): id is string => Boolean(id));
+  const subsById = await subscriptions.findManyByIds(
+    platformContext,
+    tenantGymId,
+    subscriptionIds,
+  );
+
+  const status = computeDashboardStatusCounts(totalMembers, allMembers, cutoffs);
+  const collection = computeCurrentCycleCollection(allMembers, subsById);
+  const packageDistribution = computePackageDistribution(allMembers, cutoffs);
+  const upcomingPreview = computeUpcomingRenewalPreview(allMembers, cutoffs);
+  const expiredPreview = computeExpiredMembershipPreview(allMembers, cutoffs);
+  const sparkRows = computeMemberSparklines(allMembers, weekBuckets, now);
+
+  return {
+    status,
+    pending: pendingTotals,
+    collection,
+    packageDistribution,
+    upcomingPreview,
+    expiredPreview,
+    sparkRows,
+    newMembersThisMonth: thisMonth,
+    newMembersLastMonth: lastMonth,
+  };
+}
+
 export async function queryWeeklyPaymentCounts(
   tenantGymId: string,
   buckets: WeekBucket[],
 ): Promise<number[]> {
   if (buckets.length === 0) return [];
   const { payments } = getRepositories();
-  const all = await payments.listByMember(platformContext, tenantGymId, "");
-  void all;
-  const db = (await import("@/lib/firebase/admin")).getFirestoreDb();
-  const snap = await db
-    .collection("payments")
-    .where("gymId", "==", tenantGymId)
-    .get();
-  const pays = snap.docs.map((d) => (d.data() as { paidAt: { toDate(): Date } }).paidAt.toDate());
+  const rangeStart = buckets[0]!.start;
+  const rangeEnd = buckets[buckets.length - 1]!.end;
+  const rows = await payments.listSince(platformContext, tenantGymId, rangeStart);
+  const pays = rows
+    .map((p) => p.paidAt.toDate())
+    .filter((paidAt) => paidAt <= rangeEnd);
 
   return buckets.map((bucket) =>
     pays.filter((p) => p >= bucket.start && p <= bucket.end).length,

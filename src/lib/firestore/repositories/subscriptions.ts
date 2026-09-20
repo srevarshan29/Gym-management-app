@@ -47,6 +47,32 @@ export class SubscriptionsRepository {
     return { id: snap.id, ...data };
   }
 
+  /** Batch-load subscriptions by id (used by dashboard collection totals). */
+  async findManyByIds(
+    ctx: FirestoreContext,
+    gymId: string,
+    subscriptionIds: string[],
+  ): Promise<Map<string, DocWithId<SubscriptionDoc>>> {
+    assertTenantAccess(ctx, gymId);
+    const unique = [...new Set(subscriptionIds)];
+    const map = new Map<string, DocWithId<SubscriptionDoc>>();
+    if (unique.length === 0) return map;
+
+    const CHUNK_SIZE = 100;
+    for (let i = 0; i < unique.length; i += CHUNK_SIZE) {
+      const chunk = unique.slice(i, i + CHUNK_SIZE);
+      const refs = chunk.map((id) => this.col().doc(id));
+      const snaps = await this.db.getAll(...refs);
+      for (const snap of snaps) {
+        if (!snap.exists) continue;
+        const data = snap.data() as SubscriptionDoc;
+        if (data.gymId !== gymId) continue;
+        map.set(snap.id, { id: snap.id, ...data });
+      }
+    }
+    return map;
+  }
+
   buildSubscriptionData(
     gymId: string,
     input: CreateSubscriptionInput,

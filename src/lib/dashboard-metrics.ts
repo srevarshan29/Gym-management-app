@@ -1,11 +1,5 @@
 import {
-  queryAllCyclePendingTotals,
-  queryCurrentCycleCollection,
-  queryDashboardStatusCounts,
-  queryExpiredMembershipPreview,
-  queryMemberSparklines,
-  queryPackageDistribution,
-  queryUpcomingRenewalPreview,
+  loadDashboardMemberMetrics,
   queryWeeklyPaymentCounts,
   statusCutoffs,
   type WeekBucket,
@@ -161,59 +155,10 @@ export async function getDashboardMetrics(
     sparkRows,
     newMembersThisMonth,
     newMembersLastMonth,
-  } = await (async () => {
-    const { getRepositories, platformContext } = await import("@/lib/firestore");
-    const { members } = getRepositories();
-    const { getFirestoreDb } = await import("@/lib/firebase/admin");
-    const { Timestamp } = await import("firebase-admin/firestore");
-    const db = getFirestoreDb();
-
-    const countSince = async (start: Date, end?: Date) => {
-      let q = db
-        .collection("members")
-        .where("gymId", "==", tenantGymId)
-        .where("createdAt", ">=", Timestamp.fromDate(start));
-      if (end) {
-        q = q.where("createdAt", "<", Timestamp.fromDate(end));
-      }
-      const snap = await q.count().get();
-      return snap.data().count;
-    };
-
-    const [
-      statusCounts,
-      pendingTotals,
-      collectionTotals,
-      packages,
-      upcoming,
-      expired,
-      sparks,
-      thisMonth,
-      lastMonth,
-    ] = await Promise.all([
-      queryDashboardStatusCounts(tenantGymId, cutoffs),
-      queryAllCyclePendingTotals(tenantGymId),
-      queryCurrentCycleCollection(tenantGymId),
-      queryPackageDistribution(tenantGymId, cutoffs),
-      queryUpcomingRenewalPreview(tenantGymId, cutoffs),
-      queryExpiredMembershipPreview(tenantGymId, cutoffs),
-      queryMemberSparklines(tenantGymId, weekBuckets, now),
-      countSince(startThisMonth),
-      countSince(startLastMonth, startThisMonth),
-    ]);
-    void members;
-    return {
-      status: statusCounts,
-      pending: pendingTotals,
-      collection: collectionTotals,
-      packageDistribution: packages,
-      upcomingPreview: upcoming,
-      expiredPreview: expired,
-      sparkRows: sparks,
-      newMembersThisMonth: thisMonth,
-      newMembersLastMonth: lastMonth,
-    };
-  })();
+  } = await loadDashboardMemberMetrics(tenantGymId, cutoffs, weekBuckets, now, {
+    startThisMonth,
+    startLastMonth,
+  });
 
   const collectionRatePercent =
     collection.collectionExpected > 0

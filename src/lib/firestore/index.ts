@@ -29,6 +29,7 @@ export {
   createRepositories,
   CustomExercisesRepository,
   DietPlansRepository,
+  ExerciseCatalogRepository,
   EmployeesRepository,
   EventsRepository,
   GymProfilesRepository,

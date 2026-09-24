@@ -1,5 +1,7 @@
 import { withTenant } from "@/lib/db-context";
-import type { LedgerTransactionType } from "@prisma/client";
+import { getRepositories, platformContext } from "@/lib/firestore";
+import type { LedgerTransactionType } from "@/lib/firestore/types";
+import type { LedgerTransactionType as PrismaLedgerTransactionType } from "@prisma/client";
 
 export type AccountsSummary = {
   membershipIncome: number;
@@ -9,6 +11,48 @@ export type AccountsSummary = {
   totalExpense: number;
   net: number;
 };
+
+type LedgerAmountRow = {
+  type: LedgerTransactionType | PrismaLedgerTransactionType;
+  amount: number | { toString(): string };
+};
+
+/** Pure summary builder — membership income is Firestore-only; manual rows are Postgres ledger. */
+export function buildAccountsSummary(params: {
+  membershipIncome: number;
+  ledgerRows: LedgerAmountRow[];
+}): AccountsSummary {
+  let manualIncome = 0;
+  let manualExpense = 0;
+
+  for (const row of params.ledgerRows) {
+    const amount = Number(row.amount);
+    if (row.type === "INCOME") {
+      manualIncome += amount;
+    } else {
+      manualExpense += amount;
+    }
+  }
+
+  const membershipIncome = params.membershipIncome;
+  const totalIncome = membershipIncome + manualIncome;
+  const totalExpense = manualExpense;
+  const net = totalIncome - totalExpense;
+
+  return {
+    membershipIncome,
+    manualIncome,
+    manualExpense,
+    totalIncome,
+    totalExpense,
+    net,
+  };
+}
+
+async function getMembershipPaymentIncome(tenantGymId: string): Promise<number> {
+  const { payments } = getRepositories();
+  return payments.sumAllPaidByGym(platformContext, tenantGymId);
+}
 
 export async function getLedgerTransactions(tenantGymId: string) {
   return withTenant(tenantGymId, (tx) =>
@@ -22,45 +66,17 @@ export async function getLedgerTransactions(tenantGymId: string) {
 export async function getAccountsSummary(
   tenantGymId: string,
 ): Promise<AccountsSummary> {
-  return withTenant(tenantGymId, async (tx) => {
-    const [ledgerRows, paymentAgg] = await Promise.all([
-      tx.ledgerTransaction.findMany({
-        where: { gymId: tenantGymId },
-        select: { type: true, amount: true },
-      }),
-      tx.payment.aggregate({
-        where: { gymId: tenantGymId },
-        _sum: { amount: true },
-      }),
-    ]);
+  const [ledgerRows, membershipIncome] = await Promise.all([
+    getLedgerTransactions(tenantGymId),
+    getMembershipPaymentIncome(tenantGymId),
+  ]);
 
-    let manualIncome = 0;
-    let manualExpense = 0;
-    for (const row of ledgerRows) {
-      const amount = Number(row.amount);
-      if (row.type === "INCOME") manualIncome += amount;
-      else manualExpense += amount;
-    }
-
-    const membershipIncome = Number(paymentAgg._sum.amount ?? 0);
-    const totalIncome = membershipIncome + manualIncome;
-    const totalExpense = manualExpense;
-    const net = totalIncome - totalExpense;
-
-    return {
-      membershipIncome,
-      manualIncome,
-      manualExpense,
-      totalIncome,
-      totalExpense,
-      net,
-    };
-  });
+  return buildAccountsSummary({ membershipIncome, ledgerRows });
 }
 
 export type LedgerTransactionInput = {
   id: string;
-  type: LedgerTransactionType;
+  type: PrismaLedgerTransactionType;
   category: string;
   amount: number;
   occurredOn: string;
@@ -69,7 +85,7 @@ export type LedgerTransactionInput = {
 
 export function toLedgerTransactionInput(row: {
   id: string;
-  type: LedgerTransactionType;
+  type: PrismaLedgerTransactionType;
   category: string;
   amount: { toString(): string } | number;
   occurredOn: Date;

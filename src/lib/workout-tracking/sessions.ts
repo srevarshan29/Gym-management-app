@@ -1,33 +1,24 @@
 import { getRepositories } from "@/lib/firestore";
 import type { MemberContext } from "@/lib/firestore/context";
-import { platformContext } from "@/lib/firestore/helpers";
 import { muscleGroupLabel } from "@/lib/muscle-groups";
 import type { MuscleGroup } from "@/lib/muscle-groups";
+import { getExercisesByIds } from "@/lib/workout-tracking/exercise-library";
+import { resolveMemberExerciseMedia } from "@/lib/workout-tracking/member-exercise-media";
+import { emptyExerciseMediaMetadata } from "@/lib/exercises/media-validation";
+import type { ExerciseLibraryMap } from "@/lib/workout-tracking/session-plan";
 import {
   buildPlanExerciseMap,
+  collectLibraryExerciseIdsFromPlan,
   planExerciseDisplayName,
   resolvePlanExerciseTrackingType,
-  type ExerciseLibraryMap,
 } from "@/lib/workout-tracking/session-plan";
+import {
+  collectLibraryExerciseIdsFromSessionExercises,
+  resolveSessionExerciseContext,
+} from "@/lib/workout-tracking/session-exercise-identity";
 import type { ActiveWorkoutSession } from "@/lib/workout-tracking/types";
 
 export type { ActiveWorkoutSession, ActiveWorkoutSetLog } from "@/lib/workout-tracking/types";
-
-async function loadExerciseLibraryMap(gymId: string): Promise<ExerciseLibraryMap> {
-  const { customExercises } = getRepositories();
-  const rows = await customExercises.listLibrary(platformContext, gymId);
-  return new Map(
-    rows.map((row) => [
-      row.id,
-      {
-        name: row.name,
-        muscleGroup: row.muscleGroup,
-        trackingType: row.trackingType,
-        isSeeded: row.isSeeded,
-      },
-    ]),
-  );
-}
 
 function memberContext(gymId: string, memberId: string): MemberContext {
   return { kind: "member", gymId, memberId };
@@ -47,11 +38,36 @@ export async function getActiveWorkoutSession(
   );
   if (!session) return null;
 
-  const [plan, library] = await Promise.all([
-    workoutPlans.getById(ctx, tenantGymId, session.workoutPlanId),
-    loadExerciseLibraryMap(tenantGymId),
-  ]);
+  const plan = await workoutPlans.getById(ctx, tenantGymId, session.workoutPlanId);
   if (!plan) return null;
+
+  const exerciseIds = [
+    ...new Set([
+      ...collectLibraryExerciseIdsFromPlan(plan),
+      ...collectLibraryExerciseIdsFromSessionExercises(session.exercises),
+    ]),
+  ];
+  const libraryItems = await getExercisesByIds(tenantGymId, exerciseIds);
+  const library: ExerciseLibraryMap = new Map(
+    libraryItems.map((item) => [
+      item.id,
+      {
+        name: item.name,
+        muscleGroup: item.muscleGroup,
+        trackingType: item.trackingType,
+        isSeeded: item.isSeeded,
+      },
+    ]),
+  );
+  const mediaById = new Map(
+    libraryItems.map((item) => [
+      item.id,
+      {
+        media: item.media ?? emptyExerciseMediaMetadata(),
+        hasMedia: item.hasMedia,
+      },
+    ]),
+  );
 
   const planExerciseMap = buildPlanExerciseMap(plan);
 
@@ -62,8 +78,8 @@ export async function getActiveWorkoutSession(
     exercises: [...session.exercises]
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((row) => {
-        const planExercise = planExerciseMap.get(row.workoutPlanExerciseId);
-        if (!planExercise) {
+        const exerciseContext = resolveSessionExerciseContext(row, planExerciseMap);
+        if (!exerciseContext) {
           return {
             id: row.id,
             sortOrder: row.sortOrder,
@@ -76,6 +92,8 @@ export async function getActiveWorkoutSession(
             targetReps: "",
             targetWeightKg: null,
             restSeconds: null,
+            media: null,
+            hasMedia: false,
             sets: row.sets.map((set) => ({
               setNumber: set.setNumber,
               weightKg: set.weightKg,
@@ -84,24 +102,30 @@ export async function getActiveWorkoutSession(
           };
         }
 
-        const libraryExercise = planExercise.exerciseId
-          ? library.get(planExercise.exerciseId)
+        const libraryExercise = exerciseContext.exerciseId
+          ? library.get(exerciseContext.exerciseId)
           : null;
+        const mediaEntry = resolveMemberExerciseMedia(
+          exerciseContext.exerciseId,
+          mediaById,
+        );
 
         return {
           id: row.id,
           sortOrder: row.sortOrder,
-          displayName: planExerciseDisplayName(planExercise, library),
+          displayName: planExerciseDisplayName(exerciseContext, library),
           muscleGroup: libraryExercise
             ? muscleGroupLabel(libraryExercise.muscleGroup as MuscleGroup)
             : null,
-          trackingType: resolvePlanExerciseTrackingType(planExercise, library),
-          exerciseId: planExercise.exerciseId,
-          customName: planExercise.customName,
-          targetSets: planExercise.targetSets,
-          targetReps: planExercise.targetReps,
-          targetWeightKg: planExercise.targetWeightKg,
-          restSeconds: planExercise.restSeconds,
+          trackingType: resolvePlanExerciseTrackingType(exerciseContext, library),
+          exerciseId: exerciseContext.exerciseId,
+          customName: exerciseContext.customName,
+          targetSets: exerciseContext.targetSets,
+          targetReps: exerciseContext.targetReps,
+          targetWeightKg: exerciseContext.targetWeightKg,
+          restSeconds: exerciseContext.restSeconds,
+          media: mediaEntry.media,
+          hasMedia: mediaEntry.hasMedia,
           sets: row.sets.map((set) => ({
             setNumber: set.setNumber,
             weightKg: set.weightKg,

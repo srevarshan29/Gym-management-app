@@ -1,30 +1,23 @@
 import { getFirestoreDb } from "@/lib/firebase/admin";
 import { getRepositories } from "@/lib/firestore";
 import type { MemberContext } from "@/lib/firestore/context";
-import { newDocId, platformContext } from "@/lib/firestore/helpers";
+import { newDocId } from "@/lib/firestore/helpers";
 import type { ExerciseTrackingType } from "@/lib/firestore/types";
 import {
-  buildPlanExerciseMap,
-  resolvePlanExerciseTrackingType,
-  type ExerciseLibraryMap,
-} from "@/lib/workout-tracking/session-plan";
+  resolveSessionExerciseContext,
+} from "@/lib/workout-tracking/session-exercise-identity";
+import { buildPlanExerciseMap, resolvePlanExerciseTrackingType } from "@/lib/workout-tracking/session-plan";
+import { getExerciseLibraryMapByIds } from "@/lib/workout-tracking/exercise-library";
+import type { ActiveWorkoutSetLog } from "@/lib/workout-tracking/types";
 
-async function loadExerciseLibraryMap(gymId: string): Promise<ExerciseLibraryMap> {
-  const { customExercises } = getRepositories();
-  const rows = await customExercises.listLibrary(platformContext, gymId);
-  return new Map(
-    rows.map((row) => [
-      row.id,
-      {
-        name: row.name,
-        muscleGroup: row.muscleGroup,
-        trackingType: row.trackingType,
-        isSeeded: row.isSeeded,
-      },
-    ]),
-  );
+async function loadExerciseLibraryMapForTracking(
+  gymId: string,
+  exerciseId: string | null | undefined,
+) {
+  const id = exerciseId?.trim();
+  if (!id) return new Map();
+  return getExerciseLibraryMapByIds(gymId, [id]);
 }
-
 function buildSetLogValues(
   trackingType: ExerciseTrackingType,
   weightKg: number | undefined,
@@ -84,12 +77,21 @@ export async function startWorkoutSessionRecord(
       id: newDocId(),
       workoutPlanExerciseId: row.id,
       sortOrder: row.sortOrder,
+      exerciseId: row.exerciseId,
+      customName: row.customName,
+      trackingTypeOverride: row.trackingTypeOverride,
+      targetReps: row.targetReps,
       sets: [],
     })),
   });
 
   return { sessionId, resumed: false };
 }
+
+export type LogWorkoutSetResult = {
+  sessionExerciseId: string;
+  set: ActiveWorkoutSetLog;
+};
 
 export async function logWorkoutSetRecord(
   ctx: MemberContext,
@@ -99,7 +101,7 @@ export async function logWorkoutSetRecord(
     weightKg?: number;
     durationSeconds?: number;
   },
-): Promise<void> {
+): Promise<LogWorkoutSetResult> {
   const { workoutPlans, workoutSessions } = getRepositories();
   const gymId = ctx.gymId;
   const memberId = ctx.memberId;
@@ -116,22 +118,33 @@ export async function logWorkoutSetRecord(
     throw new Error("Workout session not found.");
   }
 
-  const [plan, library] = await Promise.all([
-    workoutPlans.getById(ctx, gymId, active.workoutPlanId),
-    loadExerciseLibraryMap(gymId),
-  ]);
+  const plan = await workoutPlans.getById(ctx, gymId, active.workoutPlanId);
   if (!plan) {
     throw new Error("Workout session not found.");
   }
 
-  const planExercise = buildPlanExerciseMap(plan).get(
-    sessionExercise.workoutPlanExerciseId,
+  const planExerciseMap = buildPlanExerciseMap(plan);
+  const exerciseContext = resolveSessionExerciseContext(
+    sessionExercise,
+    planExerciseMap,
   );
-  if (!planExercise) {
+  if (!exerciseContext) {
     throw new Error("Workout session not found.");
   }
 
-  const trackingType = resolvePlanExerciseTrackingType(planExercise, library);
+  let trackingType: ExerciseTrackingType;
+  if (exerciseContext.trackingTypeOverride) {
+    trackingType = exerciseContext.trackingTypeOverride;
+  } else if (exerciseContext.exerciseId) {
+    const library = await loadExerciseLibraryMapForTracking(
+      gymId,
+      exerciseContext.exerciseId,
+    );
+    trackingType = resolvePlanExerciseTrackingType(exerciseContext, library);
+  } else {
+    trackingType = "WEIGHTED";
+  }
+
   if (trackingType === "WEIGHTED" && input.weightKg == null) {
     throw new Error("Enter a weight for this set.");
   }
@@ -157,6 +170,15 @@ export async function logWorkoutSetRecord(
       setValues,
     );
   });
+
+  return {
+    sessionExerciseId: input.sessionExerciseId,
+    set: {
+      setNumber: input.setNumber,
+      weightKg: setValues.weightKg,
+      durationSeconds: setValues.durationSeconds,
+    },
+  };
 }
 
 export async function completeWorkoutSessionRecord(

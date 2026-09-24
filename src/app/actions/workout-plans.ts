@@ -5,9 +5,13 @@ import { z } from "zod";
 
 import { getRepositories, platformContext } from "@/lib/firestore";
 import {
+  ActiveSessionPlanEditBlockedError,
   buildEmbeddedPlanDays,
   deleteWorkoutPlanRecord,
   saveWorkoutPlanRecord,
+  validateWorkoutPlanLibraryExerciseIds,
+  validateWorkoutPlanSaveForActiveSession,
+  WorkoutPlanExerciseValidationError,
   type NormalizedPlanDayInput,
 } from "@/lib/firestore/workout-plan-operations";
 import { requireGym } from "@/lib/session";
@@ -19,9 +23,11 @@ function normalizeDays(
   days: z.infer<typeof workoutPlanPayloadSchema>["days"],
 ): NormalizedPlanDayInput[] {
   return days.map((day, dayIndex) => ({
+    id: day.id?.trim() || undefined,
     label: day.label.trim(),
     sortOrder: dayIndex,
     exercises: day.exercises.map((row, exerciseIndex) => ({
+      id: row.id?.trim() || undefined,
       exerciseId: row.exerciseId?.trim() || null,
       customName: row.customName?.trim() || null,
       sortOrder: exerciseIndex,
@@ -56,7 +62,7 @@ export async function saveWorkoutPlan(
   }
 
   const { memberId, title, durationWeeks, focusGoal } = parsed.data;
-  const { members } = getRepositories();
+  const { members, workoutPlans } = getRepositories();
   const member = await members.findByIdAndGym(
     platformContext,
     memberId,
@@ -64,6 +70,32 @@ export async function saveWorkoutPlan(
   );
   if (!member) {
     return actionError("Member not found.");
+  }
+
+  const existingPlan = await workoutPlans.findByMemberId(
+    platformContext,
+    user.gymId,
+    memberId,
+  );
+
+  const normalizedDays = normalizeDays(parsed.data.days);
+
+  try {
+    await validateWorkoutPlanLibraryExerciseIds(user.gymId, normalizedDays);
+    await validateWorkoutPlanSaveForActiveSession(
+      user.gymId,
+      memberId,
+      existingPlan,
+      normalizedDays,
+    );
+  } catch (error) {
+    if (error instanceof WorkoutPlanExerciseValidationError) {
+      return actionError(error.message);
+    }
+    if (error instanceof ActiveSessionPlanEditBlockedError) {
+      return actionError(error.message);
+    }
+    throw error;
   }
 
   const planId = await saveWorkoutPlanRecord(user.gymId, {
@@ -74,7 +106,7 @@ export async function saveWorkoutPlan(
     focusGoal: focusGoal?.trim() || null,
     level: null,
     weeklySchedule: null,
-    days: buildEmbeddedPlanDays(normalizeDays(parsed.data.days)),
+    days: buildEmbeddedPlanDays(normalizedDays, existingPlan),
   });
 
   revalidateWorkoutPlanPaths(planId);

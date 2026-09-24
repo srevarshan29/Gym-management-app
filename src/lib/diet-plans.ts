@@ -46,19 +46,19 @@ export async function getDietPlansPageData(
 ): Promise<DietPlansPageData> {
   const { dietPlans, members } = getRepositories();
 
-  const [planPage, memberOptions, allPlans] = await Promise.all([
+  const [planPage, memberOptions, assignedMemberIds] = await Promise.all([
     dietPlans.listDietPlanPage(platformContext, tenantGymId, {
       page,
       pageSize: DIET_PLANS_PAGE_SIZE,
     }),
     members.listMemberOptions(platformContext, tenantGymId),
-    dietPlans.listAllForExport(platformContext, tenantGymId),
+    dietPlans.listAssignedMemberIds(platformContext, tenantGymId),
   ]);
 
   return {
     plans: planPage.items.map(toListItem),
     members: memberOptions,
-    assignedMemberIds: allPlans.map((plan) => plan.memberId),
+    assignedMemberIds,
     total: planPage.total,
     page: planPage.page,
     pageSize: planPage.pageSize,

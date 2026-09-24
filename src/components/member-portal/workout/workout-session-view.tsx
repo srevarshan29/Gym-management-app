@@ -10,6 +10,7 @@ import {
   logWorkoutSet,
 } from "@/app/actions/workout-sessions";
 import { RestTimer } from "@/components/member-portal/workout/rest-timer";
+import { MemberExerciseDemonstrationDialog } from "@/components/member-portal/workout/member-exercise-demonstration-dialog";
 import { clearRestTimersForSession } from "@/lib/workout-tracking/rest-timer-storage";
 import { SessionTimer } from "@/components/member-portal/workout/session-timer";
 import { LockedLink } from "@/components/navigation/locked-link";
@@ -20,6 +21,7 @@ import { parseTargetReps } from "@/lib/workout-tracking/progress-format";
 import { cn } from "@/lib/utils";
 import type {
   ActiveWorkoutSession,
+  ActiveWorkoutSetLog,
   PreviousSetLog,
 } from "@/lib/workout-tracking/types";
 
@@ -70,6 +72,32 @@ function defaultInputValue(
   return "";
 }
 
+function mergeLoggedSet(
+  session: ActiveWorkoutSession,
+  sessionExerciseId: string,
+  set: ActiveWorkoutSetLog,
+): ActiveWorkoutSession {
+  return {
+    ...session,
+    exercises: session.exercises.map((exercise) => {
+      if (exercise.id !== sessionExerciseId) {
+        return exercise;
+      }
+
+      const sets = [...exercise.sets];
+      const index = sets.findIndex((row) => row.setNumber === set.setNumber);
+      if (index >= 0) {
+        sets[index] = set;
+      } else {
+        sets.push(set);
+        sets.sort((a, b) => a.setNumber - b.setNumber);
+      }
+
+      return { ...exercise, sets };
+    }),
+  };
+}
+
 function firstIncompleteIndex(session: ActiveWorkoutSession): number {
   const index = session.exercises.findIndex((exercise) => {
     const logged = new Set(exercise.sets.map((set) => set.setNumber));
@@ -86,16 +114,22 @@ type WorkoutSessionViewProps = {
 };
 
 export function WorkoutSessionView({
-  session,
+  session: initialSession,
   previousSets,
 }: WorkoutSessionViewProps) {
   const router = useRouter();
   const { run, isPending: pending } = useActionLock();
+  const [session, setSession] = React.useState(initialSession);
   const [exerciseIndex, setExerciseIndex] = React.useState(() =>
-    firstIncompleteIndex(session),
+    firstIncompleteIndex(initialSession),
   );
   const [addedSets, setAddedSets] = React.useState<Record<string, number>>({});
   const [setValues, setSetValues] = React.useState<Record<string, string>>({});
+
+  React.useEffect(() => {
+    setSession(initialSession);
+    setExerciseIndex(firstIncompleteIndex(initialSession));
+  }, [initialSession]);
 
   const exercises = session.exercises;
   const total = exercises.length;
@@ -181,8 +215,13 @@ export function WorkoutSessionView({
           toast.error(result.error);
           return;
         }
+        if (result.ok && result.data) {
+          const { sessionExerciseId, set } = result.data;
+          setSession((current) =>
+            mergeLoggedSet(current, sessionExerciseId, set),
+          );
+        }
         toast.success("Set saved.");
-        router.refresh();
       } catch (error) {
         console.error("[workout] logWorkoutSet failed:", error);
         toast.error(
@@ -283,6 +322,16 @@ export function WorkoutSessionView({
         <h2 className="text-center font-display text-2xl font-bold leading-tight">
           {exercise.displayName}
         </h2>
+        {exercise.exerciseId ? (
+          <div className="flex justify-center overflow-x-hidden">
+            <MemberExerciseDemonstrationDialog
+              exerciseName={exercise.displayName}
+              media={exercise.media}
+              hasMedia={exercise.hasMedia}
+              compact
+            />
+          </div>
+        ) : null}
         <RestTimer
           key={exercise.id}
           sessionId={session.id}

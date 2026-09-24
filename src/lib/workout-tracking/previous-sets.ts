@@ -4,6 +4,9 @@ import {
   buildPlanExerciseMap,
   matchesPlanExerciseIdentity,
 } from "@/lib/workout-tracking/session-plan";
+import {
+  matchesSessionExerciseIdentity,
+} from "@/lib/workout-tracking/session-exercise-identity";
 import type {
   PreviousSetLog,
   PreviousSetsBySessionExerciseId,
@@ -70,13 +73,10 @@ export async function getPreviousSetsForSessionExercises(
 
     for (const session of completedSessions) {
       for (const sessionExercise of session.exercises) {
-        const planExercise = planExerciseMap.get(
-          sessionExercise.workoutPlanExerciseId,
-        );
-        if (!planExercise) continue;
         if (
-          !matchesPlanExerciseIdentity(
-            planExercise,
+          !matchesSessionExerciseIdentity(
+            sessionExercise,
+            planExerciseMap,
             identity.exerciseId,
             identity.customName,
           )

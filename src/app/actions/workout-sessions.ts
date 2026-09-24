@@ -11,6 +11,7 @@ import {
 import type { MemberContext } from "@/lib/firestore/context";
 import { requireMember } from "@/lib/member-session";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
+import type { ActiveWorkoutSetLog } from "@/lib/workout-tracking/types";
 
 const logSetSchema = z.object({
   sessionExerciseId: z.string().trim().min(1),
@@ -70,7 +71,12 @@ export async function startWorkoutSession(
 
 export async function logWorkoutSet(
   payload: unknown,
-): Promise<ActionResult> {
+): Promise<
+  ActionResult<{
+    sessionExerciseId: string;
+    set: ActiveWorkoutSetLog;
+  }>
+> {
   try {
     const member = await requireMember();
     const parsed = logSetSchema.safeParse(payload);
@@ -78,10 +84,12 @@ export async function logWorkoutSet(
       return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
     }
 
-    await logWorkoutSetRecord(memberContextFromSession(member), parsed.data);
+    const result = await logWorkoutSetRecord(
+      memberContextFromSession(member),
+      parsed.data,
+    );
 
-    revalidatePath("/member/workout");
-    return actionOk("Set logged.");
+    return actionOk("Set logged.", result);
   } catch (error) {
     return actionErrorFromUnknown(
       error,

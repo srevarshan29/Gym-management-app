@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
+import { Role } from "@prisma/client";
+
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
 import {
   getRepositories,
@@ -12,6 +14,8 @@ import {
 } from "@/lib/firestore";
 import { DEFAULT_MEMBERSHIP_POLICY_TEXT } from "@/lib/membership-policy";
 import { seedExercisesForGym } from "@/lib/exercises";
+import { mirrorTenantStaffToPostgres } from "@/lib/seed/postgres-tenant-mirror";
+import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/session";
 
 const createGymSchema = z.object({
@@ -49,6 +53,7 @@ export async function createGym(
 
   const passwordHash = await bcrypt.hash(ownerPassword, 10);
   const gymId = newDocId();
+  const ownerUserId = newDocId();
   const registrationToken = newDocId();
 
   await gyms.create(platformContext, {
@@ -58,7 +63,7 @@ export async function createGym(
   });
 
   await users.create(platformContext, {
-    id: newDocId(),
+    id: ownerUserId,
     gymId,
     name: ownerName,
     email: ownerEmail,
@@ -69,6 +74,18 @@ export async function createGym(
   await gymProfiles.create(platformContext, gymId, {
     name: gymName,
     membershipPolicyText: DEFAULT_MEMBERSHIP_POLICY_TEXT,
+  });
+
+  await mirrorTenantStaffToPostgres(prisma, {
+    gym: { gymId, name: gymName, registrationToken },
+    owner: {
+      id: ownerUserId,
+      gymId,
+      name: ownerName,
+      email: ownerEmail,
+      passwordHash,
+      role: Role.OWNER,
+    },
   });
 
   await seedExercisesForGym(gymId);

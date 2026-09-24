@@ -1,20 +1,24 @@
 import { PrismaClient, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-/** Seed runs as postgres via DIRECT_URL — bypasses RLS for bootstrap data. */
-const prisma = new PrismaClient({
-  datasources: {
-    db: { url: process.env.DIRECT_URL ?? process.env.DATABASE_URL },
-  },
-});
+import {
+  DEFAULT_SEED_GYM_ID,
+  DEFAULT_SEED_OWNER_USER_ID,
+} from "../src/lib/seed/default-tenant";
+import {
+  createSeedPrismaClient,
+  ensurePostgresGym,
+  ensurePostgresStaffUser,
+} from "../src/lib/seed/postgres-tenant-mirror";
 
-const DEFAULT_GYM_ID = "gym_default_0000000001";
+/** Seed runs as postgres via DIRECT_URL — bypasses RLS for bootstrap data. */
+const prisma = createSeedPrismaClient();
 
 async function main() {
-  const gym = await prisma.gym.upsert({
-    where: { id: DEFAULT_GYM_ID },
-    update: {},
-    create: { id: DEFAULT_GYM_ID, name: "Gym #1" },
+  const gymName = process.env.SEED_GYM_NAME ?? "Gym #1";
+  await ensurePostgresGym(prisma, {
+    gymId: DEFAULT_SEED_GYM_ID,
+    name: gymName,
   });
 
   const ownerName = process.env.SEED_OWNER_NAME ?? "Gym Owner";
@@ -24,16 +28,21 @@ async function main() {
   const existingOwner = await prisma.user.findUnique({ where: { email: ownerEmail } });
   if (existingOwner) {
     console.log(`Owner account already exists: ${ownerEmail}`);
+    if (existingOwner.id !== DEFAULT_SEED_OWNER_USER_ID) {
+      console.warn(
+        `[seed] Postgres owner id (${existingOwner.id}) differs from Firestore bootstrap id (${DEFAULT_SEED_OWNER_USER_ID}). ` +
+          "Re-run npm run db:seed:firestore to mirror the Firestore owner, or manual ledger createdById may fail.",
+      );
+    }
   } else {
     const passwordHash = await bcrypt.hash(ownerPassword, 10);
-    await prisma.user.create({
-      data: {
-        name: ownerName,
-        email: ownerEmail,
-        passwordHash,
-        role: Role.OWNER,
-        gymId: gym.id,
-      },
+    await ensurePostgresStaffUser(prisma, {
+      id: DEFAULT_SEED_OWNER_USER_ID,
+      gymId: DEFAULT_SEED_GYM_ID,
+      name: ownerName,
+      email: ownerEmail,
+      passwordHash,
+      role: Role.OWNER,
     });
     console.log("Seeded initial owner account (Gym #1):");
     console.log(`  email:    ${ownerEmail}`);

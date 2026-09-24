@@ -5,12 +5,14 @@ import { toast } from "sonner";
 import {
   ArrowDown,
   ArrowUp,
+  Loader2,
   Plus,
   Search,
   Trash2,
 } from "lucide-react";
 
 import { saveWorkoutPlan } from "@/app/actions/workout-plans";
+import { searchExerciseLibraryAction } from "@/app/actions/exercises";
 import { LockedLink } from "@/components/navigation/locked-link";
 import { useSharedNavigationLock } from "@/components/navigation/navigation-lock-provider";
 import { useActionLock } from "@/hooks/use-action-lock";
@@ -34,6 +36,7 @@ import type {
   WorkoutPlanDetail,
   WorkoutPlanExerciseInput,
 } from "@/lib/workout-tracking/types";
+import { AsyncRequestSequence } from "@/lib/async/request-sequence";
 
 type DraftExercise = WorkoutPlanExerciseInput & {
   key: string;
@@ -92,14 +95,12 @@ function initialDays(plan?: WorkoutPlanDetail): DraftDay[] {
 
 type WorkoutPlanBuilderProps = {
   members: MemberOption[];
-  library: ExerciseListItem[];
   plan?: WorkoutPlanDetail;
   fixedMemberId?: string;
 };
 
 export function WorkoutPlanBuilder({
   members,
-  library,
   plan,
   fixedMemberId,
 }: WorkoutPlanBuilderProps) {
@@ -114,22 +115,90 @@ export function WorkoutPlanBuilder({
   const [days, setDays] = React.useState<DraftDay[]>(() => initialDays(plan));
   const [selectedDayIndex, setSelectedDayIndex] = React.useState(0);
   const [query, setQuery] = React.useState("");
+  const [debouncedQuery, setDebouncedQuery] = React.useState("");
   const [muscleFilter, setMuscleFilter] = React.useState<string>("ALL");
+  const [searchItems, setSearchItems] = React.useState<ExerciseListItem[]>([]);
+  const [searchCursor, setSearchCursor] = React.useState<string | null>(null);
+  const [searchLoading, setSearchLoading] = React.useState(true);
+  const [searchLoadingMore, setSearchLoadingMore] = React.useState(false);
+  const [searchError, setSearchError] = React.useState<string | null>(null);
+  const requestSeq = React.useRef(new AsyncRequestSequence());
+  const mountedRef = React.useRef(true);
   const { navigate } = useSharedNavigationLock();
   const { run, isPending: pending } = useActionLock();
 
-  const selectedDay = days[selectedDayIndex] ?? days[0];
+  React.useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
-  const filteredLibrary = React.useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return library.filter((item) => {
-      if (muscleFilter !== "ALL" && item.muscleGroup !== muscleFilter) {
-        return false;
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  const loadSearch = React.useCallback(
+    async (options: { append?: boolean; startAfterId?: string | null } = {}) => {
+      const append = options.append ?? false;
+      const requestId = append
+        ? requestSeq.current.current()
+        : requestSeq.current.start();
+      if (append) setSearchLoadingMore(true);
+      else {
+        setSearchLoading(true);
+        setSearchError(null);
       }
-      if (!q) return true;
-      return item.name.toLowerCase().includes(q);
-    });
-  }, [library, query, muscleFilter]);
+
+      try {
+        const result = await searchExerciseLibraryAction({
+          query: debouncedQuery || undefined,
+          muscleGroup: muscleFilter === "ALL" ? null : (muscleFilter as MuscleGroup),
+          startAfterId: append ? (options.startAfterId ?? searchCursor) : null,
+        });
+
+        if (!mountedRef.current || !requestSeq.current.isCurrent(requestId)) {
+          return;
+        }
+
+        if (!result.ok || !result.data) {
+          const message = result.ok
+            ? "Could not load exercises."
+            : result.error;
+          setSearchError(message);
+          if (!append) setSearchItems([]);
+          return;
+        }
+
+        setSearchItems((current) =>
+          append ? [...current, ...result.data!.items] : result.data!.items,
+        );
+        setSearchCursor(result.data.nextCursor);
+        setSearchError(null);
+      } catch (error) {
+        if (!mountedRef.current || !requestSeq.current.isCurrent(requestId)) {
+          return;
+        }
+        console.error("[workout-plan-builder] searchExerciseLibraryAction failed:", error);
+        setSearchError("Could not load exercises.");
+        if (!append) setSearchItems([]);
+      } finally {
+        if (!mountedRef.current || !requestSeq.current.isCurrent(requestId)) {
+          return;
+        }
+        setSearchLoading(false);
+        setSearchLoadingMore(false);
+      }
+    },
+    [debouncedQuery, muscleFilter, searchCursor],
+  );
+
+  React.useEffect(() => {
+    void loadSearch();
+  }, [debouncedQuery, muscleFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const selectedDay = days[selectedDayIndex] ?? days[0];
 
   function addDay() {
     setDays((prev) => {
@@ -284,8 +353,10 @@ export function WorkoutPlanBuilder({
           durationWeeks: durationWeeks ? Number(durationWeeks) : null,
           focusGoal,
           days: days.map((day) => ({
+            id: day.key,
             label: day.label.trim(),
             exercises: day.exercises.map((row) => ({
+              id: row.key,
               exerciseId: row.exerciseId || "",
               customName: row.customName || "",
               targetSets: row.targetSets,
@@ -655,23 +726,60 @@ export function WorkoutPlanBuilder({
             </SelectContent>
           </Select>
           <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
-            {filteredLibrary.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => addFromLibrary(item)}
-                className="flex w-full items-center justify-between rounded-lg border border-border bg-card/60 px-3 py-2 text-left text-sm transition-colors hover:border-primary/40 hover:bg-primary/5"
-              >
-                <span>
-                  <span className="font-medium">{item.name}</span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground">
-                    {muscleGroupLabel(item.muscleGroup as MuscleGroup)}
+            {searchLoading ? (
+              <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading exercises...
+              </div>
+            ) : searchError ? (
+              <div className="space-y-3 py-6 text-center text-sm">
+                <p className="text-destructive">{searchError}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void loadSearch()}
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : searchItems.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                No exercises matched your search.
+              </p>
+            ) : (
+              searchItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => addFromLibrary(item)}
+                  className="flex w-full items-center justify-between rounded-lg border border-border bg-card/60 px-3 py-2 text-left text-sm transition-colors hover:border-primary/40 hover:bg-primary/5"
+                >
+                  <span>
+                    <span className="font-medium">{item.name}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      {muscleGroupLabel(item.muscleGroup as MuscleGroup)}
+                    </span>
                   </span>
-                </span>
-                <Plus className="h-4 w-4 shrink-0 text-primary" />
-              </button>
-            ))}
+                  <Plus className="h-4 w-4 shrink-0 text-primary" />
+                </button>
+              ))
+            )}
           </div>
+          {searchCursor && !searchLoading ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
+              disabled={searchLoadingMore}
+              onClick={() =>
+                void loadSearch({ append: true, startAfterId: searchCursor })
+              }
+            >
+              {searchLoadingMore ? "Loading..." : "Load more"}
+            </Button>
+          ) : null}
         </CardContent>
       </Card>
     </div>

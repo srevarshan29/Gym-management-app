@@ -1,16 +1,20 @@
 import { getRepositories } from "@/lib/firestore";
 import type { MemberContext } from "@/lib/firestore/context";
-import { platformContext } from "@/lib/firestore/helpers";
 import type { WorkoutPlanDoc, WorkoutPlanExerciseEmbedded } from "@/lib/firestore/types";
 import {
   buildPlanExerciseMap,
+  collectLibraryExerciseIdsFromPlan,
   findPlanExercisesByIdentity,
-  matchesPlanExerciseIdentity,
   planExerciseDisplayName,
   resolvePlanExerciseTrackingType,
   resolveProgressTrackingType,
-  type ExerciseLibraryMap,
 } from "@/lib/workout-tracking/session-plan";
+import {
+  collectLibraryExerciseIdsFromSessionExercises,
+  matchesSessionExerciseIdentity,
+  resolveSessionExerciseContext,
+} from "@/lib/workout-tracking/session-exercise-identity";
+import { getExerciseLibraryMapByIds } from "@/lib/workout-tracking/exercise-library";
 import { parseTargetReps } from "@/lib/workout-tracking/progress-format";
 import type {
   ExerciseProgressData,
@@ -29,22 +33,6 @@ export type {
 
 function memberContext(gymId: string, memberId: string): MemberContext {
   return { kind: "member", gymId, memberId };
-}
-
-async function loadExerciseLibraryMap(gymId: string): Promise<ExerciseLibraryMap> {
-  const { customExercises } = getRepositories();
-  const rows = await customExercises.listLibrary(platformContext, gymId);
-  return new Map(
-    rows.map((row) => [
-      row.id,
-      {
-        name: row.name,
-        muscleGroup: row.muscleGroup,
-        trackingType: row.trackingType,
-        isSeeded: row.isSeeded,
-      },
-    ]),
-  );
 }
 
 function bucketKey(date: Date, grouping: ProgressGrouping): string {
@@ -105,11 +93,24 @@ export async function getExerciseProgressData(
   const ctx = memberContext(tenantGymId, memberId);
   const { workoutPlans, workoutSessions } = getRepositories();
 
-  const [plan, completedSessions, library] = await Promise.all([
+  const [plan, completedSessions] = await Promise.all([
     workoutPlans.findByMemberId(ctx, tenantGymId, memberId),
     workoutSessions.listCompletedForMember(ctx, tenantGymId, memberId),
-    loadExerciseLibraryMap(tenantGymId),
   ]);
+
+  const library = plan
+    ? await getExerciseLibraryMapByIds(
+        tenantGymId,
+        [
+          ...new Set([
+            ...collectLibraryExerciseIdsFromPlan(plan),
+            ...completedSessions.flatMap((session) =>
+              collectLibraryExerciseIdsFromSessionExercises(session.exercises),
+            ),
+          ]),
+        ],
+      )
+    : new Map();
 
   const planMatches = plan
     ? findPlanExercisesByIdentity(plan, exerciseId, customName)
@@ -146,13 +147,10 @@ export async function getExerciseProgressData(
       session.completedAt?.toDate() ?? session.startedAt.toDate();
 
     for (const sessionExercise of session.exercises) {
-      const matchedPlanExercise = planExerciseMap.get(
-        sessionExercise.workoutPlanExerciseId,
-      );
-      if (!matchedPlanExercise) continue;
       if (
-        !matchesPlanExerciseIdentity(
-          matchedPlanExercise,
+        !matchesSessionExerciseIdentity(
+          sessionExercise,
+          planExerciseMap,
           exerciseId,
           customName,
         )
@@ -160,10 +158,16 @@ export async function getExerciseProgressData(
         continue;
       }
 
+      const exerciseContext = resolveSessionExerciseContext(
+        sessionExercise,
+        planExerciseMap,
+      );
+      if (!exerciseContext) continue;
+
       let maxWeightKg: number | null = null;
       let maxDurationSeconds: number | null = null;
       const sessionTrackingType = resolvePlanExerciseTrackingType(
-        matchedPlanExercise,
+        exerciseContext,
         library,
       );
 
@@ -179,7 +183,7 @@ export async function getExerciseProgressData(
 
         if (sessionTrackingType === "BODYWEIGHT") {
           const reps =
-            set.weightKg ?? parseTargetReps(matchedPlanExercise.targetReps);
+            set.weightKg ?? parseTargetReps(exerciseContext.targetReps);
           if (reps == null) continue;
           maxWeightKg =
             maxWeightKg == null ? reps : Math.max(maxWeightKg, reps);
@@ -285,15 +289,27 @@ export async function getMemberExerciseOptions(
   memberId: string,
 ): Promise<ExerciseProgressOption[]> {
   const ctx = memberContext(tenantGymId, memberId);
-  const { workoutPlans } = getRepositories();
+  const { workoutPlans, workoutSessions } = getRepositories();
 
-  const [plan, library] = await Promise.all([
+  const [plan, completedSessions] = await Promise.all([
     workoutPlans.findByMemberId(ctx, tenantGymId, memberId),
-    loadExerciseLibraryMap(tenantGymId),
+    workoutSessions.listCompletedForMember(ctx, tenantGymId, memberId),
   ]);
-
   if (!plan) return [];
 
+  const library = await getExerciseLibraryMapByIds(
+    tenantGymId,
+    [
+      ...new Set([
+        ...collectLibraryExerciseIdsFromPlan(plan),
+        ...completedSessions.flatMap((session) =>
+          collectLibraryExerciseIdsFromSessionExercises(session.exercises),
+        ),
+      ]),
+    ],
+  );
+
+  const planExerciseMap = buildPlanExerciseMap(plan);
   const seen = new Set<string>();
   const options: ExerciseProgressOption[] = [];
   const days = [...(plan.days ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
@@ -311,6 +327,40 @@ export async function getMemberExerciseOptions(
             label: row.customName ?? "Custom exercise",
           };
       if (seen.has(option.key)) continue;
+      seen.add(option.key);
+      options.push(option);
+    }
+  }
+
+  for (const session of completedSessions) {
+    for (const sessionExercise of session.exercises) {
+      if (sessionExercise.sets.length === 0) continue;
+
+      const context = resolveSessionExerciseContext(
+        sessionExercise,
+        planExerciseMap,
+      );
+      if (!context) continue;
+
+      const option = context.exerciseId
+        ? {
+            key: context.exerciseId,
+            label: planExerciseDisplayName(context, library),
+          }
+        : {
+            key: `custom:${context.customName ?? "Custom exercise"}`,
+            label: context.customName ?? "Custom exercise",
+          };
+      if (seen.has(option.key)) continue;
+      if (
+        findPlanExercisesByIdentity(
+          plan,
+          context.exerciseId,
+          context.customName,
+        ).length > 0
+      ) {
+        continue;
+      }
       seen.add(option.key);
       options.push(option);
     }

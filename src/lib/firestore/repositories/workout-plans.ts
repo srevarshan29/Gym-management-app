@@ -10,6 +10,10 @@ import {
   clampPageSize,
 } from "@/lib/firestore/repositories/base";
 import { omitUndefined, serverTimestamps } from "@/lib/firestore/serialize";
+import {
+  EXERCISE_REFERENCE_SCAN_BATCH_SIZE,
+  planDaysReferenceLibraryExercise,
+} from "@/lib/firestore/workout-plan-exercise-reference";
 import type {
   WorkoutLevel,
   WorkoutPlanDayEmbedded,
@@ -146,6 +150,62 @@ export class WorkoutPlansRepository extends TenantRepository<WorkoutPlanDoc> {
     return all;
   }
 
+  /**
+   * Lightweight gym-scoped scan of assigned member ids for page eligibility checks.
+   * Uses field projection and cursor pagination — does not load embedded plan days.
+   */
+  async listAssignedMemberIds(
+    ctx: FirestoreContext,
+    gymId: string,
+    maxRows = 1000,
+  ): Promise<string[]> {
+    assertTenantAccess(ctx, gymId);
+    const memberIds: string[] = [];
+    let startAfterId: string | null = null;
+
+    while (memberIds.length < maxRows) {
+      const limit = clampPageSize(WORKOUT_PLANS_PAGE_SIZE);
+      let query = this.collection()
+        .where("gymId", "==", gymId)
+        .orderBy("memberName", "asc")
+        .select("gymId", "memberId", "memberName")
+        .limit(limit + 1);
+
+      if (startAfterId) {
+        const cursor = await this.docRef(startAfterId).get();
+        if (cursor.exists) {
+          query = query.startAfter(cursor);
+        }
+      }
+
+      const snap = await query.get();
+      if (snap.empty) {
+        break;
+      }
+
+      const docs = snap.docs.slice(0, Math.min(limit, maxRows - memberIds.length));
+      for (const doc of docs) {
+        const data = doc.data() as Pick<WorkoutPlanDoc, "gymId" | "memberId">;
+        if (data.gymId !== gymId) {
+          continue;
+        }
+        const memberId = data.memberId?.trim();
+        if (memberId) {
+          memberIds.push(memberId);
+        }
+      }
+
+      const hasMore = snap.docs.length > limit && memberIds.length < maxRows;
+      if (!hasMore) {
+        break;
+      }
+
+      startAfterId = docs[docs.length - 1]!.id;
+    }
+
+    return memberIds;
+  }
+
   /** Replace entire embedded plan in one write (Step 5 action layer). */
   async savePlan(
     ctx: FirestoreContext,
@@ -232,19 +292,53 @@ export class WorkoutPlansRepository extends TenantRepository<WorkoutPlanDoc> {
     exerciseId: string,
   ): Promise<boolean> {
     assertTenantAccess(ctx, gymId);
-    const snap = await this.collection().where("gymId", "==", gymId).get();
-    for (const doc of snap.docs) {
-      const plan = doc.data() as WorkoutPlanDoc;
-      for (const day of plan.days ?? []) {
-        if (
-          day.exercises.some(
-            (row) => row.exerciseId != null && row.exerciseId === exerciseId,
-          )
-        ) {
+    const trimmedExerciseId = exerciseId.trim();
+    if (!trimmedExerciseId) {
+      return false;
+    }
+
+    /*
+     * Library exercise ids live inside embedded `days[].exercises[]` arrays, so
+     * Firestore cannot target a single exercise id without a schema migration.
+     * Scan gym-scoped plans in bounded batches with field projection and exit
+     * as soon as a match is found.
+     */
+    let startAfterId: string | null = null;
+
+    while (true) {
+      let query = this.collection()
+        .where("gymId", "==", gymId)
+        .orderBy("memberName", "asc")
+        .select("gymId", "memberName", "days")
+        .limit(EXERCISE_REFERENCE_SCAN_BATCH_SIZE);
+
+      if (startAfterId) {
+        const cursor = await this.docRef(startAfterId).get();
+        if (cursor.exists) {
+          query = query.startAfter(cursor);
+        }
+      }
+
+      const snap = await query.get();
+      if (snap.empty) {
+        return false;
+      }
+
+      for (const doc of snap.docs) {
+        const data = doc.data() as Pick<WorkoutPlanDoc, "gymId" | "days">;
+        if (data.gymId !== gymId) {
+          continue;
+        }
+        if (planDaysReferenceLibraryExercise(data.days, trimmedExerciseId)) {
           return true;
         }
       }
+
+      if (snap.docs.length < EXERCISE_REFERENCE_SCAN_BATCH_SIZE) {
+        return false;
+      }
+
+      startAfterId = snap.docs[snap.docs.length - 1]!.id;
     }
-    return false;
   }
 }

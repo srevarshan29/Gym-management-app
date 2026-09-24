@@ -3,8 +3,7 @@ import { Plus } from "lucide-react";
 
 import { requireGym } from "@/lib/session";
 import { canManageMembers } from "@/lib/permissions";
-import { getWorkoutPlansPageData } from "@/lib/workout-plans";
-import { getExerciseLibrary } from "@/lib/workout-tracking/exercise-library";
+import { getWorkoutPlanNewPageData } from "@/lib/workout-plans";
 import { PageHeader } from "@/components/page-header";
 import { WorkoutPlanBuilder } from "@/components/workout/workout-plan-builder";
 import { Button } from "@/components/ui/button";
@@ -23,10 +22,7 @@ export default async function NewWorkoutPlanPage({
     );
   }
 
-  const [{ members, assignedMemberIds }, library] = await Promise.all([
-    getWorkoutPlansPageData(user.gymId),
-    getExerciseLibrary(user.gymId),
-  ]);
+  const { members, assignedMemberIds } = await getWorkoutPlanNewPageData(user.gymId);
 
   const assigned = new Set(assignedMemberIds);
   const eligibleMembers = members.filter((member) => !assigned.has(member.id));
@@ -58,7 +54,6 @@ export default async function NewWorkoutPlanPage({
       />
       <WorkoutPlanBuilder
         members={eligibleMembers}
-        library={library}
         fixedMemberId={memberId}
       />
     </div>

@@ -1,93 +1,138 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+import {
+  validateImageUploadFile,
+} from "@/lib/storage/image-validation";
+import {
+  validatePublicStorageObjectPath,
+  validatePublicStoragePath,
+} from "@/lib/storage/path-validation";
+import {
+  validateSupabaseStorageConfig,
+  type SupabaseStorageRuntimeConfig,
+} from "@/lib/storage/supabase-config";
 
-const ALLOWED_IMAGE_TYPES = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif",
-} as const;
+export type UploadResult =
+  | { url: string; objectPath: string }
+  | { error: string };
 
-type AllowedImageMime = keyof typeof ALLOWED_IMAGE_TYPES;
+export type DeleteStorageResult = { ok: true } | { ok: false; error: string };
 
-function extensionForMime(mime: string): AllowedImageMime | null {
-  if (mime === "image/svg+xml" || mime === "image/svg") {
-    return null;
-  }
-  if (mime in ALLOWED_IMAGE_TYPES) {
-    return mime as AllowedImageMime;
-  }
-  return null;
+let cachedClient:
+  | { config: SupabaseStorageRuntimeConfig; client: SupabaseClient }
+  | null
+  | undefined;
+
+/** Clears cached Supabase admin client (tests only). */
+export function resetSupabaseAdminCache(): void {
+  cachedClient = undefined;
 }
 
-let cachedClient: SupabaseClient | null | undefined;
+function getSupabaseAdmin():
+  | { config: SupabaseStorageRuntimeConfig; client: SupabaseClient }
+  | { error: string } {
+  const validated = validateSupabaseStorageConfig();
+  if (!validated.ok) {
+    return { error: validated.error };
+  }
 
-/** Returns null if Supabase Storage env vars are not configured. */
-function getSupabaseAdmin(): SupabaseClient | null {
-  if (cachedClient !== undefined) return cachedClient;
-
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    cachedClient = null;
+  if (
+    cachedClient &&
+    cachedClient.config.url === validated.config.url &&
+    cachedClient.config.serviceRoleKey === validated.config.serviceRoleKey &&
+    cachedClient.config.bucket === validated.config.bucket
+  ) {
     return cachedClient;
   }
 
-  cachedClient = createClient(url, key, { auth: { persistSession: false } });
+  cachedClient = {
+    config: validated.config,
+    client: createClient(validated.config.url, validated.config.serviceRoleKey, {
+      auth: { persistSession: false },
+    }),
+  };
   return cachedClient;
 }
 
-export type UploadResult = { url: string } | { error: string };
-
-async function uploadImage(
+/**
+ * Upload a public image object to Supabase Storage.
+ * `pathWithoutExt` must be a safe, caller-validated storage key without extension.
+ */
+export async function uploadPublicStorageImage(
   file: File,
   pathWithoutExt: string,
 ): Promise<UploadResult> {
-  const supabase = getSupabaseAdmin();
-  if (!supabase) {
-    return {
-      error:
-        "Image upload is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to enable it.",
-    };
+  const admin = getSupabaseAdmin();
+  if ("error" in admin) {
+    return { error: admin.error };
   }
 
-  const mime = file.type;
-  if (mime === "image/svg+xml" || mime === "image/svg") {
-    return { error: "SVG uploads are not allowed." };
+  const validated = validateImageUploadFile(file);
+  if (!validated.ok) {
+    return { error: validated.error };
   }
 
-  const allowedMime = extensionForMime(mime);
-  if (!allowedMime) {
-    return {
-      error: "File must be a JPEG, PNG, WebP, or GIF image.",
-    };
-  }
-  if (file.size > MAX_IMAGE_BYTES) {
-    return { error: "Image must be smaller than 5MB." };
+  const pathValidation = validatePublicStoragePath(pathWithoutExt);
+  if (!pathValidation.ok) {
+    return { error: pathValidation.error };
   }
 
-  const ext = ALLOWED_IMAGE_TYPES[allowedMime];
-  const path = `${pathWithoutExt}.${ext}`;
+  const objectPath = `${pathWithoutExt}.${validated.extension}`;
+  const objectPathValidation = validatePublicStorageObjectPath(objectPath);
+  if (!objectPathValidation.ok) {
+    return { error: objectPathValidation.error };
+  }
+
   const buffer = Buffer.from(await file.arrayBuffer());
+  const { config, client } = admin;
 
-  const bucket = process.env.SUPABASE_STORAGE_BUCKET || "gym-assets";
-
-  const { error: uploadError } = await supabase.storage
-    .from(bucket)
-    .upload(path, buffer, { contentType: allowedMime, upsert: true });
+  const { error: uploadError } = await client.storage
+    .from(config.bucket)
+    .upload(objectPath, buffer, {
+      contentType: validated.mime,
+      upsert: true,
+    });
 
   if (uploadError) {
     return { error: `Could not upload image: ${uploadError.message}` };
   }
 
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-  return { url: data.publicUrl };
+  const { data } = client.storage.from(config.bucket).getPublicUrl(objectPath);
+  return { url: data.publicUrl, objectPath };
+}
+
+/**
+ * Deletes a previously uploaded public storage object.
+ * Only approved object paths may be deleted.
+ */
+export async function deletePublicStorageObject(
+  objectPath: string,
+): Promise<DeleteStorageResult> {
+  const admin = getSupabaseAdmin();
+  if ("error" in admin) {
+    return { ok: false, error: admin.error };
+  }
+
+  const pathValidation = validatePublicStorageObjectPath(objectPath);
+  if (!pathValidation.ok) {
+    return { ok: false, error: pathValidation.error };
+  }
+
+  const { config, client } = admin;
+  const { error } = await client.storage.from(config.bucket).remove([objectPath]);
+  if (error) {
+    return {
+      ok: false,
+      error: `Could not delete uploaded image: ${error.message}`,
+    };
+  }
+
+  return { ok: true };
 }
 
 /** Uploads a gym logo image to Supabase Storage and returns its public URL. */
 export async function uploadGymLogo(file: File): Promise<UploadResult> {
-  return uploadImage(file, `logo-${Date.now()}`);
+  return uploadPublicStorageImage(file, `logo-${Date.now()}`);
 }
 
 /** Uploads a member profile photo and returns its public URL. */
@@ -95,5 +140,5 @@ export async function uploadMemberPhoto(
   file: File,
   memberId: string,
 ): Promise<UploadResult> {
-  return uploadImage(file, `members/${memberId}-${Date.now()}`);
+  return uploadPublicStorageImage(file, `members/${memberId}-${Date.now()}`);
 }

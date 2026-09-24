@@ -27,6 +27,20 @@ export function buildPlanExerciseMap(plan: WorkoutPlanDoc): PlanExerciseMap {
   return map;
 }
 
+/** Unique library exercise ids referenced by a workout plan. */
+export function collectLibraryExerciseIdsFromPlan(
+  plan: Pick<WorkoutPlanDoc, "days">,
+): string[] {
+  const ids = new Set<string>();
+  for (const day of plan.days ?? []) {
+    for (const exercise of day.exercises) {
+      const id = exercise.exerciseId?.trim();
+      if (id) ids.add(id);
+    }
+  }
+  return [...ids];
+}
+
 export function findDayIdForPlanExercise(
   plan: WorkoutPlanDoc,
   workoutPlanExerciseId: string,

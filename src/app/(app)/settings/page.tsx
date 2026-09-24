@@ -6,6 +6,7 @@ import { canManageStaff } from "@/lib/permissions";
 import { requireGym } from "@/lib/session";
 import { PageHeader } from "@/components/page-header";
 import { AccountSettingsForm } from "@/components/account-settings-form";
+import { ExerciseCatalogAttribution } from "@/components/exercise-catalog-attribution";
 import { GymProfileForm } from "@/components/gym-profile-form";
 import {
   Card,
@@ -75,6 +76,18 @@ export default async function SettingsPage() {
           </CardContent>
         </Card>
       ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Exercise catalog</CardTitle>
+          <CardDescription>
+            Information about imported exercise metadata and demonstration media.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ExerciseCatalogAttribution />
+        </CardContent>
+      </Card>
     </div>
   );
 }

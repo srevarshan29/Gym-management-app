@@ -1,17 +1,21 @@
 import { getRepositories, platformContext } from "@/lib/firestore";
 import { WORKOUT_PLANS_PAGE_SIZE } from "@/lib/firestore/repositories/workout-plans";
 import type {
-  MuscleGroup,
   WorkoutPlanDoc,
   WorkoutPlanExerciseEmbedded,
 } from "@/lib/firestore/types";
+import type { MuscleGroup } from "@/lib/muscle-groups";
 import type { WorkoutPlanListItem, MemberOption } from "@/lib/programme-types";
 import { muscleGroupLabel } from "@/lib/muscle-groups";
+import { getExercisesByIds } from "@/lib/workout-tracking/exercise-library";
+import { collectLibraryExerciseIdsFromPlan } from "@/lib/workout-tracking/session-plan";
 import type {
   WorkoutPlanDayView,
   WorkoutPlanDetail,
   WorkoutPlanExerciseView,
 } from "@/lib/workout-tracking/types";
+import type { ExerciseListItem } from "@/lib/workout-tracking/types";
+import { EMPTY_MEMBER_EXERCISE_MEDIA } from "@/lib/workout-tracking/member-exercise-media";
 
 export type { MemberOption, WorkoutPlanListItem } from "@/lib/programme-types";
 
@@ -24,10 +28,7 @@ export type WorkoutPlansPageData = {
   pageSize: number;
 };
 
-type ExerciseLookup = Map<
-  string,
-  { name: string; muscleGroup: MuscleGroup }
->;
+type ExerciseLookup = Map<string, ExerciseListItem>;
 
 function countPlanExercises(plan: Pick<WorkoutPlanDoc, "days">): number {
   return (plan.days ?? []).reduce(
@@ -43,15 +44,13 @@ function isLegacyPlan(
   return exerciseCount === 0 && Boolean(weeklySchedule?.trim());
 }
 
-async function loadExerciseLookup(gymId: string): Promise<ExerciseLookup> {
-  const { customExercises } = getRepositories();
-  const rows = await customExercises.listLibrary(platformContext, gymId);
-  return new Map(
-    rows.map((row) => [
-      row.id,
-      { name: row.name, muscleGroup: row.muscleGroup },
-    ]),
-  );
+async function loadExerciseLookup(
+  gymId: string,
+  plan: Pick<WorkoutPlanDoc, "days">,
+): Promise<ExerciseLookup> {
+  const exerciseIds = collectLibraryExerciseIdsFromPlan(plan);
+  const items = await getExercisesByIds(gymId, exerciseIds);
+  return new Map(items.map((item) => [item.id, item]));
 }
 
 function mapExerciseRow(
@@ -59,18 +58,26 @@ function mapExerciseRow(
   lookup: ExerciseLookup,
 ): WorkoutPlanExerciseView {
   const exercise = row.exerciseId ? lookup.get(row.exerciseId) : null;
+  const mediaEntry = exercise
+    ? { media: exercise.media, hasMedia: exercise.hasMedia }
+    : EMPTY_MEMBER_EXERCISE_MEDIA;
+
   return {
     id: row.id,
     exerciseId: row.exerciseId,
     customName: row.customName,
     displayName: exercise?.name ?? row.customName ?? "Exercise",
-    muscleGroup: exercise ? muscleGroupLabel(exercise.muscleGroup) : null,
+    muscleGroup: exercise
+      ? muscleGroupLabel(exercise.muscleGroup as MuscleGroup)
+      : null,
     sortOrder: row.sortOrder,
     targetSets: row.targetSets,
     targetReps: row.targetReps,
     tempo: row.tempo,
     restSeconds: row.restSeconds,
     targetWeightKg: row.targetWeightKg,
+    media: mediaEntry.media,
+    hasMedia: mediaEntry.hasMedia,
   };
 }
 
@@ -148,22 +155,38 @@ export async function getWorkoutPlansPageData(
 ): Promise<WorkoutPlansPageData> {
   const { workoutPlans, members } = getRepositories();
 
-  const [planPage, memberOptions, allPlans] = await Promise.all([
+  const [planPage, memberOptions, assignedMemberIds] = await Promise.all([
     workoutPlans.listWorkoutPlanPage(platformContext, tenantGymId, {
       page,
       pageSize: WORKOUT_PLANS_PAGE_SIZE,
     }),
     members.listMemberOptions(platformContext, tenantGymId),
-    workoutPlans.listAllForExport(platformContext, tenantGymId),
+    workoutPlans.listAssignedMemberIds(platformContext, tenantGymId),
   ]);
 
   return {
     plans: planPage.items.map(toListItem),
     members: memberOptions,
-    assignedMemberIds: allPlans.map((plan) => plan.memberId),
+    assignedMemberIds,
     total: planPage.total,
     page: planPage.page,
     pageSize: planPage.pageSize,
+  };
+}
+
+export async function getWorkoutPlanNewPageData(
+  tenantGymId: string,
+): Promise<Pick<WorkoutPlansPageData, "members" | "assignedMemberIds">> {
+  const { workoutPlans, members } = getRepositories();
+
+  const [memberOptions, assignedMemberIds] = await Promise.all([
+    members.listMemberOptions(platformContext, tenantGymId),
+    workoutPlans.listAssignedMemberIds(platformContext, tenantGymId),
+  ]);
+
+  return {
+    members: memberOptions,
+    assignedMemberIds,
   };
 }
 
@@ -184,11 +207,9 @@ export async function getWorkoutPlanDetail(
   planId: string,
 ): Promise<WorkoutPlanDetail | null> {
   const { workoutPlans } = getRepositories();
-  const [plan, lookup] = await Promise.all([
-    workoutPlans.getById(platformContext, tenantGymId, planId),
-    loadExerciseLookup(tenantGymId),
-  ]);
+  const plan = await workoutPlans.getById(platformContext, tenantGymId, planId);
   if (!plan) return null;
+  const lookup = await loadExerciseLookup(tenantGymId, plan);
   return toPlanDetail(plan, lookup);
 }
 
@@ -197,10 +218,12 @@ export async function getMemberWorkoutPlanDetail(
   memberId: string,
 ): Promise<WorkoutPlanDetail | null> {
   const { workoutPlans } = getRepositories();
-  const [plan, lookup] = await Promise.all([
-    workoutPlans.findByMemberId(platformContext, tenantGymId, memberId),
-    loadExerciseLookup(tenantGymId),
-  ]);
+  const plan = await workoutPlans.findByMemberId(
+    platformContext,
+    tenantGymId,
+    memberId,
+  );
   if (!plan) return null;
+  const lookup = await loadExerciseLookup(tenantGymId, plan);
   return toPlanDetail(plan, lookup);
 }

@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { requireGym } from "@/lib/session";
 import { canManageMembers } from "@/lib/permissions";
 import { getWorkoutPlanDetail } from "@/lib/workout-plans";
-import { getExerciseLibrary } from "@/lib/workout-tracking/exercise-library";
 import { PageHeader } from "@/components/page-header";
 import { WorkoutPlanBuilder } from "@/components/workout/workout-plan-builder";
 import { Button } from "@/components/ui/button";
@@ -24,10 +23,7 @@ export default async function EditWorkoutPlanPage({
     );
   }
 
-  const [plan, library] = await Promise.all([
-    getWorkoutPlanDetail(user.gymId, params.id),
-    getExerciseLibrary(user.gymId),
-  ]);
+  const plan = await getWorkoutPlanDetail(user.gymId, params.id);
   if (!plan) notFound();
 
   return (
@@ -55,7 +51,6 @@ export default async function EditWorkoutPlanPage({
 
       <WorkoutPlanBuilder
         members={[{ id: plan.memberId, name: plan.memberName }]}
-        library={library}
         plan={plan}
         fixedMemberId={plan.memberId}
       />

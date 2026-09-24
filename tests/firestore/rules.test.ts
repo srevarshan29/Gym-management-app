@@ -9,6 +9,7 @@ import {
 } from "@firebase/rules-unit-testing";
 import {
   doc,
+  deleteDoc,
   getDoc,
   setDoc,
   updateDoc,
@@ -48,6 +49,40 @@ async function seedMember(
       phone: "9999999999",
       ...overrides,
     });
+  });
+}
+
+function customExerciseDoc(gymId: string, overrides: Record<string, unknown> = {}) {
+  return {
+    gymId,
+    name: "Push Up",
+    nameLower: "push up",
+    muscleGroup: "CHEST",
+    defaultSets: 3,
+    defaultReps: "12",
+    defaultTempo: null,
+    defaultRestSeconds: 60,
+    trackingType: "BODYWEIGHT",
+    isSeeded: false,
+    exerciseSource: "CUSTOM",
+    catalogId: null,
+    importedCatalogVersion: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  };
+}
+
+async function seedCustomExercise(
+  id: string,
+  gymId: string,
+  overrides: Record<string, unknown> = {},
+) {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(
+      doc(ctx.firestore(), `customExercises/${id}`),
+      customExerciseDoc(gymId, overrides),
+    );
   });
 }
 
@@ -145,6 +180,82 @@ describe("Firestore security rules — tenant isolation", () => {
     );
   });
 
+  it("denies all client access to exerciseCatalog", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "exerciseCatalog/bench-press"), {
+        catalogId: "bench-press",
+        name: "Bench Press",
+        nameLower: "bench press",
+        muscleGroup: "CHEST",
+        isActive: true,
+      });
+    });
+
+    const owner = staffContext("owner-a", "gym-a", "OWNER");
+    const admin = superAdminContext("super-1");
+    const member = memberContext("mem-1", "gym-a", "m1");
+
+    await assertFails(
+      getDoc(doc(owner.firestore(), "exerciseCatalog/bench-press")),
+    );
+    await assertFails(
+      getDoc(doc(admin.firestore(), "exerciseCatalog/bench-press")),
+    );
+    await assertFails(
+      getDoc(doc(member.firestore(), "exerciseCatalog/bench-press")),
+    );
+  });
+
+  it("denies client writes to exerciseCatalog", async () => {
+    const owner = staffContext("owner-a", "gym-a", "OWNER");
+    await assertFails(
+      setDoc(doc(owner.firestore(), "exerciseCatalog/new-exercise"), {
+        catalogId: "new-exercise",
+        name: "New Exercise",
+        nameLower: "new exercise",
+        muscleGroup: "CHEST",
+        isActive: true,
+      }),
+    );
+  });
+
+  it("denies client writes to catalogSyncMeta", async () => {
+    const owner = staffContext("owner-a", "gym-a", "OWNER");
+    await assertFails(
+      setDoc(doc(owner.firestore(), "catalogSyncMeta/active"), {
+        catalogVersion: "test",
+        exerciseCount: 1,
+        jsonSha256: "a".repeat(64),
+        mediaObjectCount: 0,
+        syncedAt: new Date().toISOString(),
+        status: "complete",
+        lastRun: {
+          dryRun: false,
+          startedAt: new Date().toISOString(),
+          finishedAt: new Date().toISOString(),
+          created: 1,
+          updated: 0,
+          deactivated: 0,
+          unchanged: 0,
+          failures: [],
+          warnings: [],
+          scriptVersion: "2b-2",
+        },
+      }),
+    );
+  });
+
+  it("denies client writes to catalogImportLocks", async () => {
+    const owner = staffContext("owner-a", "gym-a", "OWNER");
+    await assertFails(
+      setDoc(doc(owner.firestore(), "catalogImportLocks/gym-a_dev-push-up"), {
+        gymId: "gym-a",
+        catalogId: "dev-push-up",
+        exerciseId: "ex-1",
+      }),
+    );
+  });
+
   it("denies receipt updates (immutable snapshots)", async () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), "receipts/r1"), {
@@ -180,5 +291,103 @@ describe("Firestore security rules — tenant isolation", () => {
     });
     const member = memberContext("mem-1", "gym-a", "m1");
     await assertFails(getDoc(doc(member.firestore(), "payments/p1")));
+  });
+
+  it("allows staff to read exercises in their own gym", async () => {
+    await seedCustomExercise("ex-1", "gym-a");
+    const staff = staffContext("staff-a", "gym-a", "STAFF");
+    await assertSucceeds(getDoc(doc(staff.firestore(), "customExercises/ex-1")));
+  });
+
+  it("denies staff from reading another gym's exercises", async () => {
+    await seedCustomExercise("ex-1", "gym-b");
+    const staff = staffContext("staff-a", "gym-a", "STAFF");
+    await assertFails(getDoc(doc(staff.firestore(), "customExercises/ex-1")));
+  });
+
+  it("allows members to read exercises in their own gym", async () => {
+    await seedCustomExercise("ex-1", "gym-a");
+    const member = memberContext("mem-1", "gym-a", "m1");
+    await assertSucceeds(getDoc(doc(member.firestore(), "customExercises/ex-1")));
+  });
+
+  it("denies members from reading another gym's exercises", async () => {
+    await seedCustomExercise("ex-1", "gym-b");
+    const member = memberContext("mem-1", "gym-a", "m1");
+    await assertFails(getDoc(doc(member.firestore(), "customExercises/ex-1")));
+  });
+
+  it("denies staff from directly creating customExercises", async () => {
+    const staff = staffContext("staff-a", "gym-a", "STAFF");
+    await assertFails(
+      setDoc(doc(staff.firestore(), "customExercises/ex-new"), customExerciseDoc("gym-a")),
+    );
+  });
+
+  it("denies owner from directly creating customExercises", async () => {
+    const owner = staffContext("owner-a", "gym-a", "OWNER");
+    await assertFails(
+      setDoc(doc(owner.firestore(), "customExercises/ex-new"), customExerciseDoc("gym-a")),
+    );
+  });
+
+  it("denies super-admin client SDK creates on customExercises", async () => {
+    const admin = superAdminContext("super-1");
+    await assertFails(
+      setDoc(doc(admin.firestore(), "customExercises/ex-new"), customExerciseDoc("gym-a")),
+    );
+  });
+
+  it("denies staff from directly updating customExercises", async () => {
+    await seedCustomExercise("ex-1", "gym-a");
+    const staff = staffContext("staff-a", "gym-a", "STAFF");
+    await assertFails(
+      updateDoc(doc(staff.firestore(), "customExercises/ex-1"), {
+        name: "Tampered Name",
+        updatedAt: new Date(),
+      }),
+    );
+  });
+
+  it("denies owner from directly updating protected exercise fields", async () => {
+    await seedCustomExercise("ex-1", "gym-a", { isSeeded: true, exerciseSource: "SEEDED" });
+    const owner = staffContext("owner-a", "gym-a", "OWNER");
+    await assertFails(
+      updateDoc(doc(owner.firestore(), "customExercises/ex-1"), {
+        isSeeded: false,
+        exerciseSource: "CUSTOM",
+        updatedAt: new Date(),
+      }),
+    );
+  });
+
+  it("denies staff from directly deleting customExercises", async () => {
+    await seedCustomExercise("ex-1", "gym-a");
+    const staff = staffContext("staff-a", "gym-a", "STAFF");
+    await assertFails(deleteDoc(doc(staff.firestore(), "customExercises/ex-1")));
+  });
+
+  it("denies owner from directly deleting customExercises", async () => {
+    await seedCustomExercise("ex-1", "gym-a");
+    const owner = staffContext("owner-a", "gym-a", "OWNER");
+    await assertFails(deleteDoc(doc(owner.firestore(), "customExercises/ex-1")));
+  });
+
+  it("denies client writes even when payload gymId matches auth gym", async () => {
+    const owner = staffContext("owner-a", "gym-a", "OWNER");
+    await assertFails(
+      setDoc(
+        doc(owner.firestore(), "customExercises/ex-valid-looking"),
+        customExerciseDoc("gym-a", {
+          exerciseSource: "CATALOG",
+          catalogId: "dev-push-up",
+          media: {
+            primaryImageUrl: null,
+            secondaryImageUrl: null,
+            thumbnailUrl: null,
+          },
+        }),
+      ),
+    );
   });
 });

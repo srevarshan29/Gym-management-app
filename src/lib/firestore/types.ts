@@ -1,8 +1,20 @@
 import type { Timestamp } from "firebase-admin/firestore";
 
+import type {
+  ExerciseDifficulty,
+  ExerciseMediaMetadata,
+  ExerciseProviderMetadata,
+  ExerciseSource,
+} from "@/lib/exercises/catalog-types";
 import type { MuscleGroup } from "@/lib/muscle-groups";
 import type { VisitorStatus } from "@/lib/visitor-types";
 
+export type {
+  ExerciseDifficulty,
+  ExerciseMediaMetadata,
+  ExerciseProviderMetadata,
+  ExerciseSource,
+} from "@/lib/exercises/catalog-types";
 export type { MuscleGroup } from "@/lib/muscle-groups";
 export type { VisitorStatus, VisitorStatusFilter } from "@/lib/visitor-types";
 
@@ -113,6 +125,56 @@ export type CustomExerciseDoc = {
   defaultRestSeconds: number | null;
   trackingType: ExerciseTrackingType;
   isSeeded: boolean;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+
+  /** Infer legacy source via resolveExerciseSource when absent. */
+  exerciseSource?: ExerciseSource | null;
+  catalogId?: string | null;
+  importedCatalogVersion?: string | null;
+  description?: string | null;
+  instructions?: string[] | null;
+  tips?: string[] | null;
+  equipment?: string | null;
+  bodyPart?: string | null;
+  difficulty?: ExerciseDifficulty | null;
+  movementPattern?: string | null;
+  primaryMuscles?: string[] | null;
+  secondaryMuscles?: string[] | null;
+  safetyNotes?: string[] | null;
+  media?: ExerciseMediaMetadata | null;
+  provider?: ExerciseProviderMetadata | null;
+  enrichedAt?: Timestamp | null;
+};
+
+/**
+ * Platform-scoped master exercise catalog entry.
+ * Document ID = catalogId slug. No gymId — not tenant-scoped.
+ */
+export type ExerciseCatalogDoc = {
+  catalogId: string;
+  name: string;
+  /** Lowercase name for prefix search and sorting. */
+  nameLower: string;
+  muscleGroup: MuscleGroup;
+  description: string | null;
+  instructions: string[];
+  tips: string[] | null;
+  equipment: string | null;
+  bodyPart: string | null;
+  difficulty: ExerciseDifficulty | null;
+  movementPattern: string | null;
+  primaryMuscles: string[];
+  secondaryMuscles: string[] | null;
+  safetyNotes: string[] | null;
+  category: string | null;
+  isBodyweight: boolean;
+  media: ExerciseMediaMetadata;
+  provider: ExerciseProviderMetadata;
+  catalogVersion: string;
+  /** Prefix tokens (length >= 3) derived from name words for array-contains search. */
+  searchPrefixes: string[];
+  isActive: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 };
@@ -302,6 +364,11 @@ export type WorkoutSessionExerciseEmbedded = {
   id: string;
   workoutPlanExerciseId: string;
   sortOrder: number;
+  /** Snapshot of plan-row identity at session start (legacy sessions omit these). */
+  exerciseId?: string | null;
+  customName?: string | null;
+  trackingTypeOverride?: ExerciseTrackingType | null;
+  targetReps?: string;
   sets: WorkoutSetLogEmbedded[];
 };
 

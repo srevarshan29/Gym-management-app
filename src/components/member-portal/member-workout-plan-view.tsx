@@ -6,6 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { WorkoutPlanDetail } from "@/lib/workout-tracking/types";
+import { MemberExerciseDemonstrationDialog } from "@/components/member-portal/workout/member-exercise-demonstration-dialog";
 
 type MemberWorkoutPlanViewProps = {
   plan: WorkoutPlanDetail | null;
@@ -74,12 +75,23 @@ export function MemberWorkoutPlanView({ plan }: MemberWorkoutPlanViewProps) {
                 key={exercise.id}
                 className="rounded-xl border border-border bg-muted/20 p-4"
               >
-                <p className="font-medium">{exercise.displayName}</p>
-                {exercise.muscleGroup ? (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {exercise.muscleGroup}
-                  </p>
-                ) : null}
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{exercise.displayName}</p>
+                    {exercise.muscleGroup ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {exercise.muscleGroup}
+                      </p>
+                    ) : null}
+                  </div>
+                  {exercise.exerciseId ? (
+                    <MemberExerciseDemonstrationDialog
+                      exerciseName={exercise.displayName}
+                      media={exercise.media}
+                      hasMedia={exercise.hasMedia}
+                    />
+                  ) : null}
+                </div>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-muted-foreground">
                   <span>
                     {exercise.targetSets} sets × {exercise.targetReps} reps

@@ -100,6 +100,18 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /exerciseCatalog/{catalogId} {
+      allow read, write: if false;
+    }
+
+    match /catalogSyncMeta/{metaId} {
+      allow read, write: if false;
+    }
+
+    match /catalogImportLocks/{lockId} {
+      allow read, write: if false;
+    }
+
     // ── Gyms & profile ───────────────────────────────────────────────────
 
     match /gyms/{gymId} {
@@ -219,12 +231,11 @@ service cloud.firestore {
         && authRole() == 'OWNER';
     }
 
+    // Gym exercise library: server/Admin SDK writes only (server actions).
     match /customExercises/{exerciseId} {
       allow read: if staffTenantRead(resource.data.gymId)
         || memberOwnsGym(resource.data.gymId);
-      allow create: if staffTenantCreate() && hasRequiredGymId();
-      allow update: if staffTenantUpdate(resource.data.gymId);
-      allow delete: if staffTenantDelete(resource.data.gymId);
+      allow create, update, delete: if false;
     }
 
     match /workoutPlans/{planId} {

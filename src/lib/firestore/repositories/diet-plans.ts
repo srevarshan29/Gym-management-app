@@ -141,6 +141,62 @@ export class DietPlansRepository extends TenantRepository<DietPlanDoc> {
     return all;
   }
 
+  /**
+   * Lightweight gym-scoped scan of assigned member ids for page eligibility checks.
+   * Uses field projection and cursor pagination — does not load plan content fields.
+   */
+  async listAssignedMemberIds(
+    ctx: FirestoreContext,
+    gymId: string,
+    maxRows = 1000,
+  ): Promise<string[]> {
+    assertTenantAccess(ctx, gymId);
+    const memberIds: string[] = [];
+    let startAfterId: string | null = null;
+
+    while (memberIds.length < maxRows) {
+      const limit = clampPageSize(DIET_PLANS_PAGE_SIZE);
+      let query = this.collection()
+        .where("gymId", "==", gymId)
+        .orderBy("memberName", "asc")
+        .select("gymId", "memberId", "memberName")
+        .limit(limit + 1);
+
+      if (startAfterId) {
+        const cursor = await this.docRef(startAfterId).get();
+        if (cursor.exists) {
+          query = query.startAfter(cursor);
+        }
+      }
+
+      const snap = await query.get();
+      if (snap.empty) {
+        break;
+      }
+
+      const docs = snap.docs.slice(0, Math.min(limit, maxRows - memberIds.length));
+      for (const doc of docs) {
+        const data = doc.data() as Pick<DietPlanDoc, "gymId" | "memberId">;
+        if (data.gymId !== gymId) {
+          continue;
+        }
+        const memberId = data.memberId?.trim();
+        if (memberId) {
+          memberIds.push(memberId);
+        }
+      }
+
+      const hasMore = snap.docs.length > limit && memberIds.length < maxRows;
+      if (!hasMore) {
+        break;
+      }
+
+      startAfterId = docs[docs.length - 1]!.id;
+    }
+
+    return memberIds;
+  }
+
   async createPlan(
     ctx: FirestoreContext,
     gymId: string,

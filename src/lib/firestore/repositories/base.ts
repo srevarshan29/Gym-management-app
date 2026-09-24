@@ -18,6 +18,7 @@ export type DocWithId<T> = T & { id: string };
 export type PaginatedResult<T> = {
   items: DocWithId<T>[];
   nextCursor: string | null;
+  hasMore: boolean;
 };
 
 const DEFAULT_PAGE_SIZE = 25;
@@ -173,6 +174,7 @@ export abstract class TenantRepository<T extends TenantDocument> {
     return {
       items,
       nextCursor: hasMore ? items[items.length - 1]!.id : null,
+      hasMore,
     };
   }
 

@@ -1,3 +1,8 @@
+import type { ExerciseSource } from "@/lib/exercises/catalog-types";
+import {
+  resolveExerciseSource,
+  type ExerciseSourceInput,
+} from "@/lib/exercises/source";
 import type { Role } from "@prisma/client";
 
 /**
@@ -62,4 +67,94 @@ export function canExportReports(role: Role | undefined | null): boolean {
 
 export function canManageMembers(role: Role | undefined | null): boolean {
   return role === "OWNER" || role === "ADMIN" || role === "STAFF";
+}
+
+/** Browse master exercise catalog (read-only preview). Owner, Admin, and Staff. */
+export function canBrowseExerciseCatalog(role: Role | undefined | null): boolean {
+  return canManageMembers(role);
+}
+
+/** Import exercises from master catalog. Owner and Admin only. */
+export function canImportExerciseCatalog(role: Role | undefined | null): boolean {
+  return role === "OWNER" || role === "ADMIN";
+}
+
+/** Upload exercise demonstration media. Owner and Admin only. */
+export function canUploadExerciseMedia(role: Role | undefined | null): boolean {
+  return role === "OWNER" || role === "ADMIN";
+}
+
+/** Gym-owned custom exercises only; catalog and starter exercises stay read-only. */
+export function canUploadExerciseMediaForExercise(
+  role: Role | undefined | null,
+  exercise: {
+    isSeeded: boolean;
+    exerciseSource: ExerciseSource;
+    catalogId?: string | null;
+  },
+): boolean {
+  if (!canUploadExerciseMedia(role)) return false;
+  return isCustomExerciseMediaUploadTarget(exercise);
+}
+
+export function isCustomExerciseMediaUploadTarget(exercise: {
+  isSeeded: boolean;
+  exerciseSource: ExerciseSource;
+  catalogId?: string | null;
+}): boolean {
+  if (exercise.isSeeded) return false;
+  if (exercise.catalogId?.trim()) return false;
+  if (exercise.exerciseSource === "CATALOG") return false;
+  return true;
+}
+
+/** Add custom exercises to the gym library. Owner, Admin, and Staff. */
+export function canManageExerciseLibrary(role: Role | undefined | null): boolean {
+  return canManageMembers(role);
+}
+
+export type ExerciseLibraryPermissionInput = ExerciseSourceInput & {
+  catalogId?: string | null;
+};
+
+/** True when a gym exercise is linked to the platform catalog (import lock or legacy link). */
+export function isCatalogLinkedExercise(
+  exercise: ExerciseLibraryPermissionInput,
+): boolean {
+  if (exercise.catalogId?.trim()) {
+    return true;
+  }
+  return resolveExerciseSource(exercise) === "CATALOG";
+}
+
+/**
+ * Edit gym library defaults. Custom exercises: Owner/Admin/Staff.
+ * Catalog imports: Owner/Admin only (metadata stays platform-managed).
+ */
+export function canEditExerciseDefaults(
+  role: Role | undefined | null,
+  exercise: ExerciseLibraryPermissionInput,
+): boolean {
+  if (!canManageExerciseLibrary(role)) return false;
+  if (resolveExerciseSource(exercise) === "SEEDED") return false;
+  if (isCatalogLinkedExercise(exercise)) {
+    return canImportExerciseCatalog(role);
+  }
+  return true;
+}
+
+/**
+ * Remove a gym library exercise. Custom exercises: Owner/Admin/Staff.
+ * Catalog imports: Owner/Admin only (also clears import lock).
+ */
+export function canDeleteLibraryExercise(
+  role: Role | undefined | null,
+  exercise: ExerciseLibraryPermissionInput,
+): boolean {
+  if (!canManageExerciseLibrary(role)) return false;
+  if (resolveExerciseSource(exercise) === "SEEDED") return false;
+  if (isCatalogLinkedExercise(exercise)) {
+    return canImportExerciseCatalog(role);
+  }
+  return true;
 }

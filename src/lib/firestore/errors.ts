@@ -12,6 +12,13 @@ export class DocumentNotFoundError extends Error {
   }
 }
 
+export class InvalidPaginationCursorError extends Error {
+  constructor(message = "Invalid pagination cursor.") {
+    super(message);
+    this.name = "InvalidPaginationCursorError";
+  }
+}
+
 export function isFirestoreNotFound(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
   const code = (error as { code?: number | string }).code;

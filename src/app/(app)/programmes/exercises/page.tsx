@@ -1,33 +1,78 @@
 import { requireGym } from "@/lib/session";
-import { canManageMembers } from "@/lib/permissions";
-import { getExerciseLibrary } from "@/lib/workout-tracking/exercise-library";
-import { muscleGroupLabel } from "@/lib/exercises";
+import {
+  canBrowseExerciseCatalog,
+  canImportExerciseCatalog,
+  canManageExerciseLibrary,
+  canUploadExerciseMedia,
+} from "@/lib/permissions";
+import { browseExerciseLibrary } from "@/lib/workout-tracking/exercise-library";
 import { PageHeader } from "@/components/page-header";
 import { AddExerciseDialog } from "@/components/workout/add-exercise-dialog";
-import { ExerciseLibraryList } from "@/components/workout/exercise-library-list";
-import type { MuscleGroup } from "@/lib/firestore/types";
+import { CatalogBrowser } from "@/components/workout/catalog-browser";
+import { ExerciseLibraryBrowse } from "@/components/workout/exercise-library-browse";
+import { LockedLink } from "@/components/navigation/locked-link";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export default async function ExerciseLibraryPage() {
+export default async function ExerciseLibraryPage({
+  searchParams,
+}: {
+  searchParams?: { tab?: string };
+}) {
   const user = await requireGym();
-  const canManage = canManageMembers(user.role);
-  const exercises = await getExerciseLibrary(user.gymId);
+  const canManage = canManageExerciseLibrary(user.role);
+  const canBrowse = canBrowseExerciseCatalog(user.role);
+  const canImport = canImportExerciseCatalog(user.role);
+  const canUploadMedia = canUploadExerciseMedia(user.role);
+  const tab = searchParams?.tab === "catalog" && canBrowse ? "catalog" : "library";
 
-  const grouped = exercises.reduce<Record<string, typeof exercises>>((acc, item) => {
-    const label = muscleGroupLabel(item.muscleGroup as MuscleGroup);
-    if (!acc[label]) acc[label] = [];
-    acc[label]!.push(item);
-    return acc;
-  }, {});
+  const library =
+    tab === "library"
+      ? await browseExerciseLibrary(user.gymId)
+      : null;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Exercise library"
-        description="Starter exercises plus your gym's custom entries for building member plans."
+        description="Starter exercises, custom entries, and catalog imports for building member plans."
       >
         {canManage ? <AddExerciseDialog /> : null}
       </PageHeader>
-      <ExerciseLibraryList grouped={grouped} canManage={canManage} />
+
+      <Tabs value={tab}>
+        <TabsList>
+          <TabsTrigger value="library" asChild>
+            <LockedLink href="/programmes/exercises?tab=library">My library</LockedLink>
+          </TabsTrigger>
+          {canBrowse ? (
+            <TabsTrigger value="catalog" asChild>
+              <LockedLink href="/programmes/exercises?tab=catalog">
+                Browse catalog
+              </LockedLink>
+            </TabsTrigger>
+          ) : null}
+        </TabsList>
+
+        <TabsContent value="library" className="mt-4 space-y-4">
+          {library ? (
+            <ExerciseLibraryBrowse
+              initialItems={library.items}
+              initialNextCursor={library.nextCursor}
+              totalCount={library.totalCount}
+              userRole={user.role}
+              canManage={canManage}
+              canRefreshCatalog={canImport}
+              canUploadMedia={canUploadMedia}
+            />
+          ) : null}
+        </TabsContent>
+
+        {canBrowse ? (
+          <TabsContent value="catalog" className="mt-4">
+            <CatalogBrowser canImport={canImport} />
+          </TabsContent>
+        ) : null}
+      </Tabs>
     </div>
   );
 }

@@ -1,7 +1,13 @@
 import { z } from "zod";
 
+import type {
+  ExerciseMediaMetadata,
+  ExerciseSource,
+} from "@/lib/exercises/catalog-types";
+
 export const workoutPlanExerciseInputSchema = z
   .object({
+    id: z.string().trim().min(1).max(80).optional(),
     exerciseId: z.string().trim().optional().or(z.literal("")),
     customName: z.string().trim().optional().or(z.literal("")),
     targetSets: z.coerce.number().int().min(1).max(20),
@@ -16,6 +22,7 @@ export const workoutPlanExerciseInputSchema = z
   );
 
 export const workoutPlanDayInputSchema = z.object({
+  id: z.string().trim().min(1).max(80).optional(),
   label: z.string().trim().min(1, "Enter a day label.").max(80),
   exercises: z
     .array(workoutPlanExerciseInputSchema)
@@ -52,6 +59,8 @@ export type WorkoutPlanExerciseView = {
   tempo: string | null;
   restSeconds: number | null;
   targetWeightKg: number | null;
+  media: ExerciseMediaMetadata | null;
+  hasMedia: boolean;
 };
 
 export type WorkoutPlanDayView = {
@@ -82,7 +91,13 @@ export type ExerciseListItem = {
   defaultReps: string | null;
   defaultTempo: string | null;
   defaultRestSeconds: number | null;
+  trackingType: ExerciseTrackingType;
   isSeeded: boolean;
+  exerciseSource: ExerciseSource;
+  catalogId: string | null;
+  importedCatalogVersion: string | null;
+  media: ExerciseMediaMetadata | null;
+  hasMedia: boolean;
 };
 
 export type ExerciseTrackingType = "WEIGHTED" | "TIME" | "BODYWEIGHT";
@@ -109,6 +124,8 @@ export type ActiveWorkoutSession = {
     targetReps: string;
     targetWeightKg: number | null;
     restSeconds: number | null;
+    media: ExerciseMediaMetadata | null;
+    hasMedia: boolean;
     sets: ActiveWorkoutSetLog[];
   }[];
 };

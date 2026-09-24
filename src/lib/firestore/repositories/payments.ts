@@ -400,6 +400,16 @@ export class PaymentsRepository {
     return snap.data().total ?? 0;
   }
 
+  /** All-time sum of logged member payments for a gym (realized income only). */
+  async sumAllPaidByGym(ctx: FirestoreContext, gymId: string): Promise<number> {
+    assertTenantAccess(ctx, gymId);
+    const snap = await this.col()
+      .where("gymId", "==", gymId)
+      .aggregate({ total: AggregateField.sum("amount") })
+      .get();
+    return snap.data().total ?? 0;
+  }
+
   async listSince(
     ctx: FirestoreContext,
     gymId: string,

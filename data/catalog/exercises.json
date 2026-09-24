@@ -1,0 +1,55 @@
+[
+  {
+    "catalogId": "dev-push-up",
+    "name": "Push Up",
+    "muscleGroup": "CHEST",
+    "description": "Development fixture — bodyweight chest exercise.",
+    "instructions": [
+      "Start in a high plank with hands under shoulders.",
+      "Lower your chest toward the floor under control.",
+      "Press back up without sagging the hips."
+    ],
+    "primaryMuscles": ["pectorals"],
+    "secondaryMuscles": ["triceps"],
+    "isBodyweight": true,
+    "provider": {
+      "provider": "gym",
+      "providerExerciseId": "dev-push-up"
+    }
+  },
+  {
+    "catalogId": "dev-bodyweight-squat",
+    "name": "Bodyweight Squat",
+    "muscleGroup": "LEGS",
+    "description": "Development fixture — lower-body bodyweight squat.",
+    "instructions": [
+      "Stand with feet shoulder-width apart.",
+      "Sit hips back and down while keeping chest lifted.",
+      "Drive through the heels to return to standing."
+    ],
+    "primaryMuscles": ["quadriceps"],
+    "secondaryMuscles": ["glutes"],
+    "isBodyweight": true,
+    "provider": {
+      "provider": "gym",
+      "providerExerciseId": "dev-bodyweight-squat"
+    }
+  },
+  {
+    "catalogId": "dev-plank-hold",
+    "name": "Plank Hold",
+    "muscleGroup": "CORE",
+    "description": "Development fixture — isometric core hold.",
+    "instructions": [
+      "Place forearms on the floor with elbows under shoulders.",
+      "Brace the core and glutes to maintain a straight line.",
+      "Hold without letting the hips sag or pike upward."
+    ],
+    "primaryMuscles": ["abdominals"],
+    "isBodyweight": true,
+    "provider": {
+      "provider": "gym",
+      "providerExerciseId": "dev-plank-hold"
+    }
+  }
+]

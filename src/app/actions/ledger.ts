@@ -5,6 +5,10 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { withTenant } from "@/lib/db-context";
+import {
+  LedgerPostgresGymMissingError,
+  assertPostgresGymExistsForLedger,
+} from "@/lib/ledger-diagnostics";
 import { requireGym } from "@/lib/session";
 import { canManageLedger } from "@/lib/permissions";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
@@ -59,19 +63,35 @@ export async function createLedgerTransaction(
     return actionError("Enter a valid amount greater than zero.");
   }
 
-  await withTenant(user.gymId, (tx) =>
-    tx.ledgerTransaction.create({
-      data: {
-        gymId: user.gymId,
-        type: parsed.data.type,
-        category: parsed.data.category,
-        amount,
-        occurredOn,
-        note: parsed.data.note || null,
-        createdById: user.id,
-      },
-    }),
-  );
+  try {
+    await withTenant(user.gymId, async (tx) => {
+      const ledgerGymId = user.gymId;
+      const createdById = user.id;
+
+      await assertPostgresGymExistsForLedger(tx, user, {
+        ledgerGymIdPassedToCreate: ledgerGymId,
+      });
+
+      await tx.ledgerTransaction.create({
+        data: {
+          gymId: ledgerGymId,
+          type: parsed.data.type,
+          category: parsed.data.category,
+          amount,
+          occurredOn,
+          note: parsed.data.note || null,
+          createdById,
+        },
+      });
+    });
+  } catch (error) {
+    if (error instanceof LedgerPostgresGymMissingError) {
+      return actionError(
+        "Unable to log this transaction because the gym is not provisioned in Postgres. Please contact support.",
+      );
+    }
+    throw error;
+  }
 
   revalidateAccountsPath();
   return actionOk("Transaction logged.");

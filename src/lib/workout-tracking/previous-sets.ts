@@ -11,8 +11,13 @@ import type {
   PreviousSetLog,
   PreviousSetsBySessionExerciseId,
 } from "@/lib/workout-tracking/types";
+import type { DocWithId } from "@/lib/firestore/repositories/base";
+import type { WorkoutPlanDoc } from "@/lib/firestore/types";
 
 export type { PreviousSetLog, PreviousSetsBySessionExerciseId } from "@/lib/workout-tracking/types";
+
+/** Recent completed sessions scanned when resolving "previous set" values. */
+export const PREVIOUS_SETS_COMPLETED_SESSION_LIMIT = 200;
 
 type ExerciseIdentity = {
   sessionExerciseId: string;
@@ -37,6 +42,10 @@ export async function getPreviousSetsForSessionExercises(
   tenantGymId: string,
   memberId: string,
   exercises: ExerciseIdentity[],
+  options?: {
+    planDoc?: DocWithId<WorkoutPlanDoc> | null;
+    completedSessionLimit?: number;
+  },
 ): Promise<PreviousSetsBySessionExerciseId> {
   const ctx = memberContext(tenantGymId, memberId);
   const { workoutPlans, workoutSessions } = getRepositories();
@@ -60,9 +69,22 @@ export async function getPreviousSetsForSessionExercises(
     );
   }
 
+  const sessionLimit =
+    options?.completedSessionLimit ?? PREVIOUS_SETS_COMPLETED_SESSION_LIMIT;
+
+  const planPromise =
+    options?.planDoc !== undefined
+      ? Promise.resolve(options.planDoc)
+      : workoutPlans.findByMemberId(ctx, tenantGymId, memberId);
+
   const [plan, completedSessions] = await Promise.all([
-    workoutPlans.findByMemberId(ctx, tenantGymId, memberId),
-    workoutSessions.listCompletedForMember(ctx, tenantGymId, memberId),
+    planPromise,
+    workoutSessions.listCompletedForMember(
+      ctx,
+      tenantGymId,
+      memberId,
+      sessionLimit,
+    ),
   ]);
 
   const planExerciseMap = plan ? buildPlanExerciseMap(plan) : new Map();

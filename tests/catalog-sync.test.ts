@@ -128,6 +128,20 @@ describe("catalog bundle validation", () => {
     }
   });
 
+  it("regression: committed manifest sha256OfJson matches exercises.json digest", () => {
+    const bundle = loadCatalogBundleFiles();
+    const manifestResult = validateCatalogManifest(bundle.manifestRaw);
+    expect(manifestResult.ok).toBe(true);
+    if (!manifestResult.ok) return;
+
+    expect(
+      validateManifestSha256(
+        manifestResult.manifest,
+        sha256Hex(bundle.exercisesJson),
+      ),
+    ).toBeNull();
+  });
+
   it("detects duplicate catalog IDs", () => {
     const dir = mkdtempSync(join(tmpdir(), "catalog-dup-id-"));
     const { manifestPath, exercisesPath } = writeFixture(dir, [

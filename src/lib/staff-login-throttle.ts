@@ -102,8 +102,10 @@ export async function recordStaffLoginFailure(
   const now = new Date();
   const { staffLoginThrottles } = getRepositories();
   try {
-    await staffLoginThrottles.bumpBucket(emailThrottleKey(email), EMAIL_WINDOW_MS, now);
-    await staffLoginThrottles.bumpBucket(ipThrottleKey(ip), IP_WINDOW_MS, now);
+    await Promise.all([
+      staffLoginThrottles.bumpBucket(emailThrottleKey(email), EMAIL_WINDOW_MS, now),
+      staffLoginThrottles.bumpBucket(ipThrottleKey(ip), IP_WINDOW_MS, now),
+    ]);
   } catch (error) {
     console.error("[staff-login-throttle] record failure failed", error);
   }

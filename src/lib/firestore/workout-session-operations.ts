@@ -43,7 +43,10 @@ export async function startWorkoutSessionRecord(
   const gymId = ctx.gymId;
   const memberId = ctx.memberId;
 
-  const plan = await workoutPlans.findByMemberId(ctx, gymId, memberId);
+  const [plan, existing] = await Promise.all([
+    workoutPlans.findByMemberId(ctx, gymId, memberId),
+    workoutSessions.findActiveSession(ctx, gymId, memberId),
+  ]);
   const daysWithExercises = (plan?.days ?? []).filter(
     (day) => day.exercises.length > 0,
   );
@@ -51,7 +54,6 @@ export async function startWorkoutSessionRecord(
     throw new Error("No structured workout plan assigned yet.");
   }
 
-  const existing = await workoutSessions.findActiveSession(ctx, gymId, memberId);
   if (existing) {
     return { sessionId: existing.id, resumed: true };
   }
@@ -69,23 +71,24 @@ export async function startWorkoutSessionRecord(
   }
 
   const sessionId = newDocId();
-  await workoutSessions.createSession(ctx, gymId, sessionId, {
-    memberId,
-    workoutPlanId: plan.id,
-    workoutPlanDayId: day.id,
-    exercises: day.exercises.map((row) => ({
-      id: newDocId(),
-      workoutPlanExerciseId: row.id,
-      sortOrder: row.sortOrder,
-      exerciseId: row.exerciseId,
-      customName: row.customName,
-      trackingTypeOverride: row.trackingTypeOverride,
-      targetReps: row.targetReps,
-      sets: [],
-    })),
-  });
+  const { sessionId: resolvedId, created } =
+    await workoutSessions.createSessionIfNoActive(ctx, gymId, sessionId, {
+      memberId,
+      workoutPlanId: plan.id,
+      workoutPlanDayId: day.id,
+      exercises: day.exercises.map((row) => ({
+        id: newDocId(),
+        workoutPlanExerciseId: row.id,
+        sortOrder: row.sortOrder,
+        exerciseId: row.exerciseId,
+        customName: row.customName,
+        trackingTypeOverride: row.trackingTypeOverride,
+        targetReps: row.targetReps,
+        sets: [],
+      })),
+    });
 
-  return { sessionId, resumed: false };
+  return { sessionId: resolvedId, resumed: !created };
 }
 
 export type LogWorkoutSetResult = {

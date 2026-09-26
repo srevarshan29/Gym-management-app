@@ -12,6 +12,31 @@ import type { ValidatedCatalogExercise } from "@/lib/catalog/types";
 
 const MEDIA_POSES: ExerciseMediaPose[] = ["primary", "secondary", "thumbnail"];
 
+export function collectMissingCatalogMediaAssetErrors(
+  exercises: ValidatedCatalogExercise[],
+  imagesRoot: string,
+): string[] {
+  const errors: string[] = [];
+
+  for (const exercise of exercises) {
+    const assets = exercise.mediaAssets;
+    if (!assets) continue;
+
+    for (const pose of MEDIA_POSES) {
+      const filename = assets[pose];
+      if (!filename) continue;
+
+      if (!localCatalogMediaAssetExists(imagesRoot, exercise.catalogId, filename)) {
+        errors.push(
+          `[media] ${exercise.catalogId}: Missing local media asset ${filename} for pose ${pose}.`,
+        );
+      }
+    }
+  }
+
+  return errors;
+}
+
 const SAFE_MEDIA_ASSET_FILENAME =
   /^[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp|gif)$/i;
 

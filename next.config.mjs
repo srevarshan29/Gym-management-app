@@ -10,23 +10,29 @@ const nextConfig = {
     },
   },
   async headers() {
+    const sharedSecurityHeaders = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      {
+        key: "Referrer-Policy",
+        value: "strict-origin-when-cross-origin",
+      },
+    ];
+
     return [
       {
-        source: "/:path*",
+        source: "/payments/:paymentId/receipt",
         headers: [
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          ...sharedSecurityHeaders,
         ],
       },
-      // Receipt PDF is embedded in an iframe on member profile / payment modals.
-      // Override DENY for this route only (same-origin framing).
       {
-        source: "/payments/:paymentId/receipt",
-        headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }],
+        // Do not send X-Frame-Options: DENY for receipt PDFs (same-origin preview).
+        source: "/((?!payments/[^/]+/receipt).*)",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          ...sharedSecurityHeaders,
+        ],
       },
     ];
   },

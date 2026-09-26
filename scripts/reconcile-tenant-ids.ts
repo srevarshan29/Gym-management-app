@@ -5,6 +5,7 @@
  *   npm run db:reconcile:tenant-ids
  *   npm run db:reconcile:tenant-ids -- --dry-run
  *   TENANT_ID_RECONCILE_ALLOW_PRODUCTION=true npm run db:reconcile:tenant-ids -- --apply --confirm
+ *   TENANT_ID_RECONCILE_ALLOW_PRODUCTION=true npm run db:reconcile:tenant-ids:apply
  *
  * Default: dry-run (no Postgres writes). Apply requires --apply --confirm and
  * TENANT_ID_RECONCILE_ALLOW_PRODUCTION=true.
@@ -26,6 +27,7 @@ import {
   assertTenantIdReconcileApplyEnvironment,
   formatTenantReconcileBundle,
   parseTenantIdReconcileCliArgs,
+  resolveTenantIdReconcileCliArgs,
   TenantIdReconcileNotConfirmedError,
   TenantIdReconcileProductionBlockedError,
   type FirestoreGymSnapshot,
@@ -94,10 +96,11 @@ function formatStaffApplyResult(result: ApplyStaffReconcileResult): string {
 }
 
 async function main() {
-  const args = parseTenantIdReconcileCliArgs(process.argv.slice(2));
+  const args = resolveTenantIdReconcileCliArgs();
 
   if (args.help) {
     console.log(`Usage: npm run db:reconcile:tenant-ids [--dry-run] [--apply --confirm]
+       npm run db:reconcile:tenant-ids:apply
 
 Detects legacy Postgres tenants whose owner email matches Firestore auth but whose
 Postgres Gym.id and/or User.id differ from the Firestore session identity.
@@ -114,6 +117,10 @@ Apply safeguards:
   - Firestore users/gyms are never modified or deleted.
   - Safe to re-run: aligned tenants are skipped.
 
+Windows note: if "npm run ... -- --apply --confirm" still shows dry-run, use:
+  npm run db:reconcile:tenant-ids:apply
+  or set TENANT_ID_RECONCILE_APPLY=true and TENANT_ID_RECONCILE_CONFIRM=true.
+
 Fresh deployments should continue using:
   npm run db:seed
   npm run db:seed:firestore
@@ -126,6 +133,13 @@ Fresh deployments should continue using:
       assertTenantIdReconcileApplyConfirmed(args);
       assertTenantIdReconcileApplyEnvironment();
     }
+
+    console.log(
+      args.dryRun
+        ? "Mode: dry-run (no Postgres writes)"
+        : "Mode: APPLY (Postgres writes enabled)",
+    );
+    console.log("");
 
     const prisma = createSeedPrismaClient();
 
@@ -191,8 +205,10 @@ Fresh deployments should continue using:
 
       if (args.dryRun) {
         console.log(
-          "Dry-run complete. To apply, set TENANT_ID_RECONCILE_ALLOW_PRODUCTION=true and run with --apply --confirm.",
+          "Dry-run complete. To apply, set TENANT_ID_RECONCILE_ALLOW_PRODUCTION=true and run:",
         );
+        console.log("  npm run db:reconcile:tenant-ids -- --apply --confirm");
+        console.log("  npm run db:reconcile:tenant-ids:apply");
       } else {
         console.log("Reconciliation complete.");
       }

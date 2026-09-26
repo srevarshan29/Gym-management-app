@@ -4,6 +4,7 @@ import {
   validateCatalogBundle,
 } from "@/lib/catalog/bundle-validation";
 import { syncCatalogMediaAssets } from "@/lib/catalog/catalog-media-sync";
+import { collectMissingCatalogMediaAssetErrors } from "@/lib/catalog/catalog-media-population";
 import { CATALOG_IMAGES_DIR } from "@/lib/catalog/paths";
 import { formatCatalogSyncReport } from "@/lib/catalog/format-report";
 import {
@@ -114,10 +115,44 @@ export async function runCatalogSync(
     ? await options.backend.listExistingSnapshots()
     : (options.existingCatalog ?? []);
 
+  const uploadMedia = options.uploadMedia ?? false;
+  const imagesRoot = options.imagesRoot ?? CATALOG_IMAGES_DIR;
+
+  if (uploadMedia && !dryRun) {
+    const missingAssetErrors = collectMissingCatalogMediaAssetErrors(
+      validation.exercises,
+      imagesRoot,
+    );
+    if (missingAssetErrors.length > 0) {
+      return {
+        ...emptyReport(false),
+        catalogVersion: validation.manifest.catalogVersion,
+        totalInputExercises,
+        validExercises: validation.exercises.length,
+        invalidExercises: 0,
+        duplicateCatalogIds: [],
+        duplicateNameLowers: [],
+        wouldCreate: 0,
+        wouldUpdate: 0,
+        wouldDeactivate: 0,
+        unchanged: 0,
+        batchesProcessed: 0,
+        errors: missingAssetErrors,
+        warnings: validation.warnings,
+        failures: missingAssetErrors.map((message) => ({
+          catalogId: null,
+          phase: "media" as const,
+          message,
+        })),
+        environment: options.environmentLabel,
+      };
+    }
+  }
+
   const mediaSync = await syncCatalogMediaAssets({
     exercises: validation.exercises,
-    imagesRoot: options.imagesRoot ?? CATALOG_IMAGES_DIR,
-    uploadMedia: options.uploadMedia ?? false,
+    imagesRoot,
+    uploadMedia,
     dryRun,
   });
 

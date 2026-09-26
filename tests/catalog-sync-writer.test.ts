@@ -1,7 +1,7 @@
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { sha256Hex } from "@/lib/catalog/hash";
 import { validateCatalogExerciseInput } from "@/lib/catalog/input-validation";
@@ -10,11 +10,14 @@ import {
   validateCatalogSyncMetaDoc,
 } from "@/lib/catalog/sync-meta-validation";
 import {
+  assertCatalogSyncMediaUploadConfiguration,
   assertCatalogSyncWriteConfirmed,
   assertCatalogSyncWriteEnvironment,
+  CatalogSyncMediaUploadConfigurationError,
   CatalogSyncProductionBlockedError,
   CatalogSyncWriteNotConfirmedError,
   parseCatalogSyncCliArgs,
+  resolveCatalogSyncRunnerUploadMedia,
 } from "@/lib/catalog/sync-environment";
 import {
   computeCatalogSyncPlan,
@@ -31,6 +34,7 @@ import {
   type CatalogSyncWriterBackend,
 } from "@/lib/catalog/sync-writer";
 import { CATALOG_SYNC_SCRIPT_VERSION } from "@/lib/catalog/sync-version";
+import * as catalogMediaSync from "@/lib/catalog/catalog-media-sync";
 import type {
   CatalogExerciseInput,
   CatalogSyncMetaDoc,
@@ -135,6 +139,34 @@ describe("catalog sync CLI safeguards", () => {
     expect(parseCatalogSyncCliArgs(["--dry-run"]).dryRun).toBe(true);
   });
 
+  it("parses --upload-media", () => {
+    expect(parseCatalogSyncCliArgs(["--upload-media"]).uploadMediaRequested).toBe(true);
+    expect(parseCatalogSyncCliArgs([]).uploadMediaRequested).toBe(false);
+  });
+
+  it("does not enable runner uploads in dry-run even with --upload-media", () => {
+    const args = parseCatalogSyncCliArgs(["--upload-media", "--dry-run"]);
+    expect(args.dryRun).toBe(true);
+    expect(args.uploadMediaRequested).toBe(true);
+    expect(resolveCatalogSyncRunnerUploadMedia(args)).toBe(false);
+  });
+
+  it("enables runner uploads only for confirmed write with --upload-media", () => {
+    expect(
+      resolveCatalogSyncRunnerUploadMedia(
+        parseCatalogSyncCliArgs(["--write", "--confirm-write", "--upload-media"]),
+      ),
+    ).toBe(true);
+    expect(
+      resolveCatalogSyncRunnerUploadMedia(
+        parseCatalogSyncCliArgs(["--write", "--confirm-write"]),
+      ),
+    ).toBe(false);
+    expect(
+      resolveCatalogSyncRunnerUploadMedia(parseCatalogSyncCliArgs(["--upload-media"])),
+    ).toBe(false);
+  });
+
   it("requires explicit confirmation for write mode", () => {
     expect(() =>
       assertCatalogSyncWriteConfirmed(parseCatalogSyncCliArgs(["--write"])),
@@ -164,6 +196,15 @@ describe("catalog sync CLI safeguards", () => {
         allowProduction: true,
       }),
     ).not.toThrow();
+  });
+
+  it("requires Supabase configuration when media upload is enabled for write", () => {
+    expect(() =>
+      assertCatalogSyncMediaUploadConfiguration({
+        SUPABASE_URL: undefined,
+        SUPABASE_SERVICE_ROLE_KEY: undefined,
+      }),
+    ).toThrow(CatalogSyncMediaUploadConfigurationError);
   });
 });
 
@@ -319,6 +360,88 @@ describe("runCatalogSync write integration", () => {
       exercisesPath,
     });
     expect(report.errors.length).toBeGreaterThan(0);
+    expect(backend.upsertCalls).toHaveLength(0);
+    expect(backend.metaWrites).toHaveLength(0);
+  });
+
+  it("passes uploadMedia true to media sync on write when enabled", async () => {
+    const spy = vi.spyOn(catalogMediaSync, "syncCatalogMediaAssets");
+    spy.mockImplementation(async (options) => ({
+      exercises: options.exercises,
+      mediaObjectCount: 0,
+      uploaded: 0,
+      skipped: 0,
+      failures: [],
+    }));
+
+    const backend = new MockCatalogSyncWriterBackend();
+    await runCatalogSync({ dryRun: false, uploadMedia: true, backend });
+
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ uploadMedia: true, dryRun: false }),
+    );
+    spy.mockRestore();
+  });
+
+  it("keeps uploadMedia false on write when media upload is not enabled", async () => {
+    const spy = vi.spyOn(catalogMediaSync, "syncCatalogMediaAssets");
+    spy.mockImplementation(async (options) => ({
+      exercises: options.exercises,
+      mediaObjectCount: 0,
+      uploaded: 0,
+      skipped: 0,
+      failures: [],
+    }));
+
+    const backend = new MockCatalogSyncWriterBackend();
+    await runCatalogSync({ dryRun: false, uploadMedia: false, backend });
+
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ uploadMedia: false, dryRun: false }),
+    );
+    spy.mockRestore();
+  });
+
+  it("does not upload media bytes in dry-run even when uploadMedia is requested", async () => {
+    const spy = vi.spyOn(catalogMediaSync, "syncCatalogMediaAssets");
+    spy.mockImplementation(async (options) => ({
+      exercises: options.exercises,
+      mediaObjectCount: 0,
+      uploaded: 0,
+      skipped: 0,
+      failures: [],
+    }));
+
+    await runCatalogSync({ dryRun: true, uploadMedia: true });
+
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ uploadMedia: true, dryRun: true }),
+    );
+    spy.mockRestore();
+  });
+
+  it("blocks write upload when referenced local media assets are missing", async () => {
+    const backend = new MockCatalogSyncWriterBackend();
+    const dir = mkdtempSync(join(tmpdir(), "catalog-missing-media-"));
+    const imagesRoot = mkdtempSync(join(tmpdir(), "catalog-images-empty-"));
+    const { manifestPath, exercisesPath } = writeFixture(dir, [
+      exerciseRow({
+        mediaAssets: { primary: "primary.webp" },
+      }),
+    ]);
+
+    const report = await runCatalogSync({
+      dryRun: false,
+      uploadMedia: true,
+      backend,
+      manifestPath,
+      exercisesPath,
+      imagesRoot,
+    });
+
+    expect(report.errors.some((error) => error.includes("Missing local media asset"))).toBe(
+      true,
+    );
     expect(backend.upsertCalls).toHaveLength(0);
     expect(backend.metaWrites).toHaveLength(0);
   });

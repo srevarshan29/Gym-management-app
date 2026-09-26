@@ -7,6 +7,7 @@ import {
   buildStaffReconcilePlan,
   formatTenantReconcileBundle,
   parseTenantIdReconcileCliArgs,
+  resolveTenantIdReconcileCliArgs,
   TenantIdReconcileNotConfirmedError,
   assertTenantIdReconcileApplyConfirmed,
 } from "@/lib/seed/tenant-id-reconciliation";
@@ -245,8 +246,76 @@ describe("tenant reconcile reporting", () => {
 });
 
 describe("tenant id reconcile CLI safeguards", () => {
+  function reconcileEnv(
+    overrides: Record<string, string | undefined> = {},
+  ): NodeJS.ProcessEnv {
+    const env = { ...process.env };
+    delete env.TENANT_ID_RECONCILE_APPLY;
+    delete env.TENANT_ID_RECONCILE_CONFIRM;
+    return { ...env, ...overrides };
+  }
+
   it("defaults to dry-run", () => {
-    expect(parseTenantIdReconcileCliArgs([])).toMatchObject({ dryRun: true });
+    expect(parseTenantIdReconcileCliArgs([], reconcileEnv())).toMatchObject({
+      dryRun: true,
+    });
+  });
+
+  it("enters apply mode when --apply --confirm are present", () => {
+    expect(
+      parseTenantIdReconcileCliArgs(["--apply", "--confirm"]),
+    ).toMatchObject({
+      dryRun: false,
+      applyRequested: true,
+      confirm: true,
+    });
+  });
+
+  it("supports apply mode via environment variables", () => {
+    expect(
+      parseTenantIdReconcileCliArgs(
+        [],
+        reconcileEnv({
+          TENANT_ID_RECONCILE_APPLY: "true",
+          TENANT_ID_RECONCILE_CONFIRM: "true",
+        }),
+      ),
+    ).toMatchObject({
+      dryRun: false,
+      applyRequested: true,
+      confirm: true,
+    });
+  });
+
+  it("prefers explicit --dry-run over apply flags", () => {
+    expect(
+      parseTenantIdReconcileCliArgs(["--apply", "--confirm", "--dry-run"]),
+    ).toMatchObject({
+      dryRun: true,
+      applyRequested: true,
+    });
+  });
+
+  it("resolveTenantIdReconcileCliArgs scans full process.argv when slice(2) is empty", () => {
+    const original = process.argv;
+    process.argv = [
+      "node",
+      "scripts/reconcile-tenant-ids.ts",
+      "--apply",
+      "--confirm",
+    ];
+    try {
+      expect(resolveTenantIdReconcileCliArgs(reconcileEnv({
+        TENANT_ID_RECONCILE_APPLY: "true",
+        TENANT_ID_RECONCILE_CONFIRM: "true",
+      }))).toMatchObject({
+        dryRun: false,
+        applyRequested: true,
+        confirm: true,
+      });
+    } finally {
+      process.argv = original;
+    }
   });
 
   it("requires explicit confirmation for apply mode", () => {

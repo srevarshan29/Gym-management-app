@@ -146,6 +146,9 @@ Before pointing a live gym at this build:
    ```bash
    npm run db:reconcile:tenant-ids
    TENANT_ID_RECONCILE_ALLOW_PRODUCTION=true npm run db:reconcile:tenant-ids -- --apply --confirm
+   # Windows fallback if npm drops forwarded flags:
+   TENANT_ID_RECONCILE_ALLOW_PRODUCTION=true npm run db:reconcile:tenant-ids:apply
+   # Or set TENANT_ID_RECONCILE_APPLY=true TENANT_ID_RECONCILE_CONFIRM=true
    ```
    This migrates all Postgres `gymId`-scoped tenant rows to the canonical Firestore gym id,
    re-keys legacy `User.id` values via PostgreSQL `ON UPDATE CASCADE`, and never modifies

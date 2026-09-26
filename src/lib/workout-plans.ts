@@ -227,3 +227,21 @@ export async function getMemberWorkoutPlanDetail(
   const lookup = await loadExerciseLookup(tenantGymId, plan);
   return toPlanDetail(plan, lookup);
 }
+
+/** Builds a member plan view from an already-loaded plan and exercise lookup. */
+export function buildMemberWorkoutPlanDetail(
+  plan: WorkoutPlanDoc & { id: string },
+  lookup: ExerciseLookup,
+): WorkoutPlanDetail {
+  return toPlanDetail(plan, lookup);
+}
+
+export async function buildMemberWorkoutPlanDetailWithLookup(
+  tenantGymId: string,
+  plan: WorkoutPlanDoc & { id: string },
+  prefetchedLookup?: ExerciseLookup,
+): Promise<WorkoutPlanDetail> {
+  const lookup =
+    prefetchedLookup ?? (await loadExerciseLookup(tenantGymId, plan));
+  return toPlanDetail(plan, lookup);
+}

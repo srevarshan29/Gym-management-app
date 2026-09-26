@@ -1,3 +1,4 @@
+import { measureServerPhase } from "@/lib/server-perf";
 import { getRepositories, platformContext } from "@/lib/firestore";
 import { getFirestoreDb } from "@/lib/firebase/admin";
 import { Timestamp } from "firebase-admin/firestore";
@@ -213,6 +214,7 @@ export async function loadDashboardMemberMetrics(
   now: Date,
   monthBounds: { startThisMonth: Date; startLastMonth: Date },
 ): Promise<DashboardMemberMetrics> {
+  return measureServerPhase("staff.dashboard.memberMetrics", async () => {
   const { members, subscriptions } = getRepositories();
   const db = getFirestoreDb();
 
@@ -264,6 +266,7 @@ export async function loadDashboardMemberMetrics(
     newMembersThisMonth: thisMonth,
     newMembersLastMonth: lastMonth,
   };
+  });
 }
 
 export async function queryWeeklyPaymentCounts(

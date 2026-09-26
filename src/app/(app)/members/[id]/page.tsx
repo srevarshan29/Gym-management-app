@@ -13,10 +13,6 @@ import { getRepositories, platformContext } from "@/lib/firestore";
 import { getMemberDetail } from "@/lib/queries";
 import { durationLabel, statusFromEndDate } from "@/lib/subscription";
 import { memberGenderLabel } from "@/lib/member-gender";
-import {
-  computeSubscriptionBalance,
-  sumPaymentAmounts,
-} from "@/lib/subscription-balance";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { MemberAvatar } from "@/components/member-avatar";
@@ -82,20 +78,10 @@ export default async function MemberProfilePage({
   )[0];
   const status = statusFromEndDate(current?.endDate);
   const balancesBySubId = new Map(
-    member.subscriptions.map((s) => [
-      s.id,
-      computeSubscriptionBalance(
-        Number(s.priceAtPurchase),
-        sumPaymentAmounts(s.payments),
-        Number(s.writtenOffAmount),
-      ),
-    ]),
+    member.subscriptions.map((s) => [s.id, s.balance]),
   );
   const currentBalance = current ? balancesBySubId.get(current.id) ?? null : null;
-  const totalPending = [...balancesBySubId.values()].reduce(
-    (sum, b) => sum + b.pendingAmount,
-    0,
-  );
+  const totalPending = member.pendingAmountTotal;
   const firstSubscription = [...member.subscriptions].sort(
     (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
   )[0];

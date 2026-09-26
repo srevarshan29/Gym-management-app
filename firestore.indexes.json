@@ -37,6 +37,14 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "gymId", "order": "ASCENDING" },
+        { "fieldPath": "phoneDigits", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "members",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gymId", "order": "ASCENDING" },
         { "fieldPath": "searchTokens", "arrayConfig": "CONTAINS" }
       ]
     },

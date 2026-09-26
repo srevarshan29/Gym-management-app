@@ -39,7 +39,7 @@ export default async function MemberPaymentsPage() {
         <CardHeader>
           <CardTitle className="text-base">Your payment history</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="min-w-0">
           {payments.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
               No payments recorded yet.

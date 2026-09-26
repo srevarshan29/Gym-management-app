@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
+  collectMissingCatalogMediaAssetErrors,
   countCatalogMediaObjects,
   populateCatalogMediaFromAssets,
   validateCatalogMediaAssets,
@@ -65,6 +66,19 @@ describe("validateCatalogMediaAssets", () => {
     expect(validateCatalogMediaAssets({ primary: "primary.webp" }).ok).toBe(true);
     expect(validateCatalogMediaAssets({ primary: "../evil.webp" }).ok).toBe(false);
     expect(validateCatalogMediaAssets({ primary: "primary.svg" }).ok).toBe(false);
+  });
+});
+
+describe("collectMissingCatalogMediaAssetErrors", () => {
+  it("reports missing local files referenced by mediaAssets", () => {
+    const imagesRoot = mkdtempSync(join(tmpdir(), "catalog-images-missing-"));
+    const errors = collectMissingCatalogMediaAssetErrors(
+      [validatedExercise()],
+      imagesRoot,
+    );
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain("Missing local media asset primary.webp");
   });
 });
 

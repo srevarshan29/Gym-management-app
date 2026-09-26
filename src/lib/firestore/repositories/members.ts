@@ -17,6 +17,7 @@ import { omitUndefined, touchUpdatedAt } from "@/lib/firestore/serialize";
 import { queryPageByNumber } from "@/lib/firestore/pagination";
 import type { FitnessGoal, MemberDoc, MemberGender } from "@/lib/firestore/types";
 import { normalizeMemberEmail } from "@/lib/member-portal/constants";
+import { phoneDigits as digitsOnlyPhone } from "@/lib/utils";
 import { statusFromEndDate } from "@/lib/subscription";
 import type { MemberListItem } from "@/lib/queries";
 import type { MemberGender as PrismaMemberGender } from "@prisma/client";
@@ -122,10 +123,22 @@ export class MembersRepository {
     phone: string,
     excludeMemberId?: string,
   ): Promise<DocWithId<MemberDoc> | null> {
+    return this.findByPhoneDigits(ctx, gymId, phone, excludeMemberId);
+  }
+
+  /** Tenant-scoped duplicate check using normalized digits (not display formatting). */
+  async findByPhoneDigits(
+    ctx: FirestoreContext,
+    gymId: string,
+    phone: string,
+    excludeMemberId?: string,
+  ): Promise<DocWithId<MemberDoc> | null> {
     assertTenantAccess(ctx, gymId);
+    const digits = digitsOnlyPhone(phone);
+    if (!digits) return null;
     const snap = await this.col()
       .where("gymId", "==", gymId)
-      .where("phone", "==", phone)
+      .where("phoneDigits", "==", digits)
       .limit(1)
       .get();
     const doc = snap.docs[0];

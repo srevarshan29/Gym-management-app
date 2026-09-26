@@ -50,7 +50,7 @@ export function MemberExerciseDemonstrationDialog({
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] max-w-lg overflow-hidden sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="pr-8">{exerciseName}</DialogTitle>
+          <DialogTitle className="truncate pr-8">{exerciseName}</DialogTitle>
         </DialogHeader>
         <div className="max-w-full overflow-hidden">
           <ExerciseMedia

@@ -131,6 +131,46 @@ export class WorkoutSessionsRepository extends TenantRepository<WorkoutSessionDo
       .filter((d): d is DocWithId<WorkoutSessionDoc> => d !== null);
   }
 
+  async createSessionIfNoActive(
+    ctx: FirestoreContext,
+    gymId: string,
+    id: string,
+    input: CreateWorkoutSessionInput,
+  ): Promise<{ sessionId: string; created: boolean }> {
+    assertTenantAccess(ctx, gymId);
+    assertMemberSelfAccess(ctx, input.memberId);
+
+    return this.db.runTransaction(async (tx) => {
+      const activeQuery = this.collection()
+        .where("gymId", "==", gymId)
+        .where("memberId", "==", input.memberId)
+        .where("status", "==", "IN_PROGRESS")
+        .orderBy("startedAt", "desc")
+        .limit(1);
+
+      const activeSnap = await tx.get(activeQuery);
+      if (!activeSnap.empty) {
+        return { sessionId: activeSnap.docs[0]!.id, created: false };
+      }
+
+      const now = Timestamp.now();
+      const doc: WorkoutSessionDoc = omitUndefined({
+        gymId,
+        memberId: input.memberId,
+        workoutPlanId: input.workoutPlanId,
+        workoutPlanDayId: input.workoutPlanDayId,
+        status: "IN_PROGRESS",
+        startedAt: now,
+        completedAt: null,
+        durationSeconds: null,
+        exercises: input.exercises,
+      });
+
+      tx.set(this.docRef(id), doc);
+      return { sessionId: id, created: true };
+    });
+  }
+
   async createSession(
     ctx: FirestoreContext,
     gymId: string,

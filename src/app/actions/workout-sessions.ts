@@ -9,6 +9,7 @@ import {
   startWorkoutSessionRecord,
 } from "@/lib/firestore/workout-session-operations";
 import type { MemberContext } from "@/lib/firestore/context";
+import { measureServerPhase } from "@/lib/server-perf";
 import { requireMember } from "@/lib/member-session";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
 import type { ActiveWorkoutSetLog } from "@/lib/workout-tracking/types";
@@ -49,9 +50,11 @@ export async function startWorkoutSession(
 ): Promise<ActionResult & { sessionId?: string }> {
   try {
     const member = await requireMember();
-    const result = await startWorkoutSessionRecord(
-      memberContextFromSession(member),
-      workoutPlanDayId,
+    const result = await measureServerPhase("member.workout.start", () =>
+      startWorkoutSessionRecord(
+        memberContextFromSession(member),
+        workoutPlanDayId,
+      ),
     );
 
     revalidateWorkoutSessionPaths();

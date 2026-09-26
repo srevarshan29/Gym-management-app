@@ -2,6 +2,7 @@
 
 import { Download } from "lucide-react";
 
+import { ReceiptPdfPreview } from "@/components/receipt-pdf-preview";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { buildReceiptPdfUrl } from "@/lib/receipt-preview";
 
 export function ReceiptModal({
   paymentId,
@@ -21,7 +23,7 @@ export function ReceiptModal({
 }) {
   return (
     <Dialog open={paymentId !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-[min(42rem,calc(100vw-2rem))]">
         <DialogHeader>
           <DialogTitle>Payment receipt</DialogTitle>
           <DialogDescription>
@@ -32,17 +34,11 @@ export function ReceiptModal({
 
         {paymentId ? (
           <>
-            <div className="h-[60vh] overflow-hidden rounded-lg border bg-muted">
-              <iframe
-                src={`/payments/${paymentId}/receipt`}
-                title="Payment receipt preview"
-                className="h-full w-full"
-              />
-            </div>
+            <ReceiptPdfPreview paymentId={paymentId} />
 
             <DialogFooter>
               <Button asChild>
-                <a href={`/payments/${paymentId}/receipt?download=1`} download>
+                <a href={buildReceiptPdfUrl(paymentId, { download: true })} download>
                   <Download className="h-4 w-4" /> Download PDF
                 </a>
               </Button>

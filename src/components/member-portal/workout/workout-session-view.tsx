@@ -269,11 +269,11 @@ export function WorkoutSessionView({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <LockedLink
           href="/member"
           aria-label="Back to overview"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-foreground hover:bg-muted"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-foreground hover:bg-muted"
         >
           <ChevronLeft className="h-5 w-5" />
         </LockedLink>
@@ -283,7 +283,7 @@ export function WorkoutSessionView({
             compact
           />
         </div>
-        <Button size="sm" onClick={onComplete} disabled={pending}>
+        <Button size="sm" className="shrink-0" onClick={onComplete} disabled={pending}>
           {pending ? "..." : "Finish"}
         </Button>
       </div>
@@ -319,7 +319,7 @@ export function WorkoutSessionView({
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-center font-display text-2xl font-bold leading-tight">
+        <h2 className="break-words text-center font-display text-2xl font-bold leading-tight">
           {exercise.displayName}
         </h2>
         {exercise.exerciseId ? (

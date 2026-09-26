@@ -21,6 +21,7 @@ import {
 import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
 import type { ExerciseMediaMetadata } from "@/lib/exercises/catalog-types";
+import { hasDemonstrationMedia } from "@/lib/exercises/media";
 import { buildGymExerciseMediaMetadataPatch } from "@/lib/exercises/media-storage";
 import { isCustomExerciseMediaUploadTarget } from "@/lib/permissions";
 import { MAX_IMAGE_BYTES, validateImageUploadFile } from "@/lib/storage/image-validation";
@@ -119,7 +120,7 @@ export function ExerciseMediaPanel({
     <div className="space-y-3 rounded-lg border border-border/60 bg-muted/10 p-4">
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-sm font-medium">Demonstration media</p>
-        {exercise.hasMedia ? (
+        {hasDemonstrationMedia(media) ? (
           <Badge variant="outline">Has demo image</Badge>
         ) : (
           <Badge variant="secondary">No demo image</Badge>

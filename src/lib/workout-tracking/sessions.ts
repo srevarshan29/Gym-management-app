@@ -1,5 +1,7 @@
 import { getRepositories } from "@/lib/firestore";
 import type { MemberContext } from "@/lib/firestore/context";
+import type { DocWithId } from "@/lib/firestore/repositories/base";
+import type { WorkoutPlanDoc, WorkoutSessionDoc } from "@/lib/firestore/types";
 import { muscleGroupLabel } from "@/lib/muscle-groups";
 import type { MuscleGroup } from "@/lib/muscle-groups";
 import { getExercisesByIds } from "@/lib/workout-tracking/exercise-library";
@@ -9,6 +11,7 @@ import type { ExerciseLibraryMap } from "@/lib/workout-tracking/session-plan";
 import {
   buildPlanExerciseMap,
   collectLibraryExerciseIdsFromPlan,
+  emptyWorkoutPlanShellForSession,
   planExerciseDisplayName,
   resolvePlanExerciseTrackingType,
 } from "@/lib/workout-tracking/session-plan";
@@ -16,7 +19,10 @@ import {
   collectLibraryExerciseIdsFromSessionExercises,
   resolveSessionExerciseContext,
 } from "@/lib/workout-tracking/session-exercise-identity";
-import type { ActiveWorkoutSession } from "@/lib/workout-tracking/types";
+import type {
+  ActiveWorkoutSession,
+  ExerciseListItem,
+} from "@/lib/workout-tracking/types";
 
 export type { ActiveWorkoutSession, ActiveWorkoutSetLog } from "@/lib/workout-tracking/types";
 
@@ -24,30 +30,12 @@ function memberContext(gymId: string, memberId: string): MemberContext {
   return { kind: "member", gymId, memberId };
 }
 
-export async function getActiveWorkoutSession(
-  tenantGymId: string,
-  memberId: string,
-): Promise<ActiveWorkoutSession | null> {
-  const ctx = memberContext(tenantGymId, memberId);
-  const { workoutPlans, workoutSessions } = getRepositories();
-
-  const session = await workoutSessions.findActiveSession(
-    ctx,
-    tenantGymId,
-    memberId,
-  );
-  if (!session) return null;
-
-  const plan = await workoutPlans.getById(ctx, tenantGymId, session.workoutPlanId);
-  if (!plan) return null;
-
-  const exerciseIds = [
-    ...new Set([
-      ...collectLibraryExerciseIdsFromPlan(plan),
-      ...collectLibraryExerciseIdsFromSessionExercises(session.exercises),
-    ]),
-  ];
-  const libraryItems = await getExercisesByIds(tenantGymId, exerciseIds);
+export function buildActiveWorkoutSessionView(
+  _tenantGymId: string,
+  plan: DocWithId<WorkoutPlanDoc>,
+  session: DocWithId<WorkoutSessionDoc>,
+  libraryItems: ExerciseListItem[],
+): ActiveWorkoutSession {
   const library: ExerciseLibraryMap = new Map(
     libraryItems.map((item) => [
       item.id,
@@ -134,4 +122,38 @@ export async function getActiveWorkoutSession(
         };
       }),
   };
+}
+
+export async function getActiveWorkoutSession(
+  tenantGymId: string,
+  memberId: string,
+): Promise<ActiveWorkoutSession | null> {
+  const ctx = memberContext(tenantGymId, memberId);
+  const { workoutPlans, workoutSessions } = getRepositories();
+
+  const session = await workoutSessions.findActiveSession(
+    ctx,
+    tenantGymId,
+    memberId,
+  );
+  if (!session) return null;
+
+  const plan =
+    (await workoutPlans.getById(ctx, tenantGymId, session.workoutPlanId)) ??
+    emptyWorkoutPlanShellForSession(session);
+
+  const exerciseIds = [
+    ...new Set([
+      ...collectLibraryExerciseIdsFromPlan(plan),
+      ...collectLibraryExerciseIdsFromSessionExercises(session.exercises),
+    ]),
+  ];
+  const libraryItems = await getExercisesByIds(tenantGymId, exerciseIds);
+
+  return buildActiveWorkoutSessionView(
+    tenantGymId,
+    plan,
+    session,
+    libraryItems,
+  );
 }

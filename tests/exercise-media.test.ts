@@ -279,6 +279,19 @@ describe("gym exercise media metadata patch", () => {
     expect(assertGymExerciseMediaUrl(patch.primaryImageUrl!, "gym-a")).toBe(true);
     expect(assertCatalogExerciseMediaUrl(`${PUBLIC_BASE}/catalog/x/primary.webp`)).toBe(true);
   });
+
+  it("regression: upload patch flips demonstration availability before server refresh", () => {
+    const publicUrl = `${PUBLIC_BASE}/gyms/gym-a/exercises/ex-1/primary.webp`;
+    expect(hasDemonstrationMedia(null)).toBe(false);
+
+    const patched = buildGymExerciseMediaMetadataPatch({
+      pose: "primary",
+      publicUrl,
+      existing: null,
+    });
+
+    expect(hasDemonstrationMedia(patched)).toBe(true);
+  });
 });
 
 describe("exercise media permissions", () => {

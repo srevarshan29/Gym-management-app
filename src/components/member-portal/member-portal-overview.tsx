@@ -124,7 +124,7 @@ export function MemberPortalOverviewPanel({
   if (!hasSubscription) {
     return (
       <div className="space-y-4">
-        <h1 className="font-display text-xl font-bold">
+        <h1 className="min-w-0 break-words font-display text-xl font-bold">
           Hi, {overview.memberName}
         </h1>
         <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70">
@@ -153,8 +153,8 @@ export function MemberPortalOverviewPanel({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <h1 className="font-display text-xl font-bold">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <h1 className="min-w-0 break-words font-display text-xl font-bold">
           Hi, {overview.memberName}
         </h1>
         <StatusBadge status={overview.status} className="shrink-0" />

@@ -1,3 +1,4 @@
+import { measureServerPhase } from "@/lib/server-perf";
 import {
   loadDashboardMemberMetrics,
   queryWeeklyPaymentCounts,
@@ -155,10 +156,12 @@ export async function getDashboardMetrics(
     sparkRows,
     newMembersThisMonth,
     newMembersLastMonth,
-  } = await loadDashboardMemberMetrics(tenantGymId, cutoffs, weekBuckets, now, {
-    startThisMonth,
-    startLastMonth,
-  });
+  } = await measureServerPhase("staff.dashboard.metrics", () =>
+    loadDashboardMemberMetrics(tenantGymId, cutoffs, weekBuckets, now, {
+      startThisMonth,
+      startLastMonth,
+    }),
+  );
 
   const collectionRatePercent =
     collection.collectionExpected > 0

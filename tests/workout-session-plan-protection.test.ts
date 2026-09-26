@@ -21,7 +21,10 @@ import type {
   WorkoutSessionExerciseEmbedded,
 } from "@/lib/firestore/types";
 import { getExerciseProgressData, getMemberExerciseOptions } from "@/lib/workout-tracking/progress";
-import { getPreviousSetsForSessionExercises } from "@/lib/workout-tracking/previous-sets";
+import {
+  getPreviousSetsForSessionExercises,
+  PREVIOUS_SETS_COMPLETED_SESSION_LIMIT,
+} from "@/lib/workout-tracking/previous-sets";
 import {
   getSessionExerciseSnapshot,
   hasSessionExerciseSnapshot,
@@ -91,6 +94,7 @@ const mockWorkoutPlans = {
 const mockWorkoutSessions = {
   findActiveSession: vi.fn(),
   createSession: vi.fn(),
+  createSessionIfNoActive: vi.fn(),
   upsertSetLogInTransaction: vi.fn(),
   listCompletedForMember: vi.fn(),
   getActiveSessionForMember: vi.fn(),
@@ -547,11 +551,14 @@ describe("startWorkoutSessionRecord", () => {
   it("snapshots plan-row identity on new sessions", async () => {
     mockWorkoutPlans.findByMemberId.mockResolvedValue(samplePlan());
     mockWorkoutSessions.findActiveSession.mockResolvedValue(null);
-    mockWorkoutSessions.createSession.mockResolvedValue(activeSession());
+    mockWorkoutSessions.createSessionIfNoActive.mockResolvedValue({
+      sessionId: "session-new",
+      created: true,
+    });
 
     await startWorkoutSessionRecord(memberCtx, "day-1");
 
-    expect(mockWorkoutSessions.createSession).toHaveBeenCalledWith(
+    expect(mockWorkoutSessions.createSessionIfNoActive).toHaveBeenCalledWith(
       memberCtx,
       "gym-a",
       expect.any(String),
@@ -571,6 +578,18 @@ describe("startWorkoutSessionRecord", () => {
         ]),
       }),
     );
+  });
+
+  it("does not create a second session when one is already active", async () => {
+    mockWorkoutPlans.findByMemberId.mockResolvedValue(samplePlan());
+    mockWorkoutSessions.findActiveSession.mockResolvedValue(
+      activeSession({ id: "session-active" }),
+    );
+
+    const result = await startWorkoutSessionRecord(memberCtx, "day-1");
+
+    expect(result).toEqual({ sessionId: "session-active", resumed: true });
+    expect(mockWorkoutSessions.createSessionIfNoActive).not.toHaveBeenCalled();
   });
 });
 
@@ -827,6 +846,40 @@ describe("getExerciseProgressData", () => {
 });
 
 describe("getPreviousSetsForSessionExercises", () => {
+  it("uses a bounded completed-session scan by default", async () => {
+    mockWorkoutPlans.findByMemberId.mockResolvedValue(samplePlan());
+    mockWorkoutSessions.listCompletedForMember.mockResolvedValue([]);
+
+    await getPreviousSetsForSessionExercises("gym-a", "member-1", [
+      {
+        sessionExerciseId: "sess-ex-a",
+        exerciseId: "ex-bench",
+        customName: null,
+      },
+    ]);
+
+    expect(mockWorkoutSessions.listCompletedForMember).toHaveBeenCalledWith(
+      expect.anything(),
+      "gym-a",
+      "member-1",
+      PREVIOUS_SETS_COMPLETED_SESSION_LIMIT,
+    );
+  });
+
+  it("skips plan lookup when planDoc is supplied", async () => {
+    const plan = samplePlan();
+    mockWorkoutSessions.listCompletedForMember.mockResolvedValue([]);
+
+    await getPreviousSetsForSessionExercises(
+      "gym-a",
+      "member-1",
+      [],
+      { planDoc: plan },
+    );
+
+    expect(mockWorkoutPlans.findByMemberId).not.toHaveBeenCalled();
+  });
+
   it("finds previous sets after the plan row is removed", async () => {
     mockWorkoutPlans.findByMemberId.mockResolvedValue(
       samplePlan({

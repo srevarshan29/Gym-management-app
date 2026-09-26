@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
+import { measureServerPhase } from "@/lib/server-perf";
 import { authConfig } from "@/auth.config";
 import { getRepositories, platformContext } from "@/lib/firestore";
 import {
@@ -26,6 +27,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        return measureServerPhase("staff.auth.credentials", async () => {
         const parsed = credentialsSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
@@ -58,6 +60,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           role: user.role,
           gymId: user.gymId,
         };
+        });
       },
     }),
   ],

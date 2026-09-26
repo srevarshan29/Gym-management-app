@@ -1,3 +1,8 @@
+import {
+  validateSupabaseStorageConfig,
+  type SupabaseStorageEnvInput,
+} from "@/lib/storage/supabase-config";
+
 export type CatalogSyncEnvironment = {
   projectId: string | null;
   firestoreEmulatorHost: string | null;
@@ -25,6 +30,13 @@ export class CatalogSyncWriteNotConfirmedError extends Error {
   }
 }
 
+export class CatalogSyncMediaUploadConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CatalogSyncMediaUploadConfigurationError";
+  }
+}
+
 export function resolveCatalogSyncEnvironment(
   env: NodeJS.ProcessEnv = process.env,
 ): CatalogSyncEnvironment {
@@ -47,6 +59,7 @@ export type ParsedCatalogSyncCliArgs = {
   dryRun: boolean;
   writeRequested: boolean;
   writeConfirmed: boolean;
+  uploadMediaRequested: boolean;
   help: boolean;
 };
 
@@ -54,18 +67,38 @@ export function parseCatalogSyncCliArgs(argv: string[]): ParsedCatalogSyncCliArg
   const help = argv.includes("--help") || argv.includes("-h");
   const writeRequested = argv.includes("--write");
   const writeConfirmed = argv.includes("--confirm-write");
+  const uploadMediaRequested = argv.includes("--upload-media");
   const dryRun = !writeRequested || argv.includes("--dry-run");
   return {
     dryRun: writeRequested ? false : dryRun,
     writeRequested,
     writeConfirmed,
+    uploadMediaRequested,
     help,
   };
+}
+
+/** True only for an explicit confirmed write with --upload-media (never in dry-run). */
+export function resolveCatalogSyncRunnerUploadMedia(
+  args: ParsedCatalogSyncCliArgs,
+): boolean {
+  if (args.dryRun) return false;
+  if (!args.writeRequested || !args.writeConfirmed) return false;
+  return args.uploadMediaRequested;
 }
 
 export function assertCatalogSyncWriteConfirmed(args: ParsedCatalogSyncCliArgs): void {
   if (!args.writeRequested) return;
   if (!args.writeConfirmed) {
     throw new CatalogSyncWriteNotConfirmedError();
+  }
+}
+
+export function assertCatalogSyncMediaUploadConfiguration(
+  env: SupabaseStorageEnvInput = process.env as SupabaseStorageEnvInput,
+): void {
+  const result = validateSupabaseStorageConfig(env);
+  if (!result.ok) {
+    throw new CatalogSyncMediaUploadConfigurationError(result.error);
   }
 }

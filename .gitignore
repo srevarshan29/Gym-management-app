@@ -71,3 +71,6 @@ ui-debug.log
 # local uploads / scratch (if added later)
 /uploads/
 /tmp/
+
+# tenant reconcile CLI dry-run captures (local only)
+tenant-reconcile-dry-run.txt

@@ -294,14 +294,53 @@ export class TenantIdReconcileProductionBlockedError extends Error {
   }
 }
 
-export function parseTenantIdReconcileCliArgs(argv: string[]): TenantIdReconcileCliArgs {
+export function parseTenantIdReconcileCliArgs(
+  argv: string[] = process.argv.slice(2),
+  env: NodeJS.ProcessEnv = process.env,
+): TenantIdReconcileCliArgs {
   const help = argv.includes("--help") || argv.includes("-h");
-  const applyRequested = argv.includes("--apply");
-  const confirm = argv.includes("--confirm");
+  const applyRequested =
+    argv.includes("--apply") || env.TENANT_ID_RECONCILE_APPLY === "true";
+  const confirm =
+    argv.includes("--confirm") || env.TENANT_ID_RECONCILE_CONFIRM === "true";
   const dryRunExplicit = argv.includes("--dry-run");
   const dryRun = dryRunExplicit || !applyRequested;
 
   return { help, dryRun, applyRequested, confirm };
+}
+
+/**
+ * Resolve CLI mode from process.argv with Windows/npm fallbacks.
+ * `npm run ... -- --apply --confirm` can drop forwarded args when the script
+ * is wrapped in cross-env; scan full argv and env vars as backup.
+ */
+export function resolveTenantIdReconcileCliArgs(
+  env: NodeJS.ProcessEnv = process.env,
+): TenantIdReconcileCliArgs {
+  const userArgs = process.argv.slice(2);
+  const parsed = parseTenantIdReconcileCliArgs(userArgs, env);
+
+  const hasUserFlag =
+    userArgs.includes("--apply") ||
+    userArgs.includes("--confirm") ||
+    userArgs.includes("--dry-run") ||
+    userArgs.includes("--help") ||
+    userArgs.includes("-h");
+
+  if (hasUserFlag) return parsed;
+
+  const hasProcessFlag =
+    process.argv.includes("--apply") ||
+    process.argv.includes("--confirm") ||
+    process.argv.includes("--dry-run") ||
+    process.argv.includes("--help") ||
+    process.argv.includes("-h");
+
+  if (hasProcessFlag) {
+    return parseTenantIdReconcileCliArgs(process.argv, env);
+  }
+
+  return parsed;
 }
 
 export function assertTenantIdReconcileApplyConfirmed(args: TenantIdReconcileCliArgs) {

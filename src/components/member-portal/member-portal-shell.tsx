@@ -19,7 +19,7 @@ export function MemberPortalShell({
 }) {
   return (
     <NavigationLockProvider>
-      <div className="flex min-h-dvh min-w-0 flex-col bg-background">
+      <div className="flex min-h-dvh min-w-0 flex-col overflow-x-clip bg-background">
         <header className="app-shell-header safe-area-top safe-area-x sticky top-0 z-30 border-b bg-card/80 backdrop-blur">
           <div className="mx-auto flex max-w-2xl min-w-0 items-center justify-between gap-2 py-3 sm:gap-3 sm:py-4">
             <div className="flex min-w-0 items-center gap-2">
@@ -36,7 +36,7 @@ export function MemberPortalShell({
             <MemberSignOutButton />
           </div>
         </header>
-        <main className="safe-area-x mx-auto w-full min-w-0 max-w-2xl flex-1 py-4 pb-[max(6rem,env(safe-area-inset-bottom,0px))] sm:py-4">
+        <main className="safe-area-x mx-auto w-full min-w-0 max-w-2xl flex-1 overflow-x-clip py-4 pb-[max(6rem,env(safe-area-inset-bottom,0px))] sm:py-4">
           {children}
         </main>
         <footer className="border-t py-3 pb-24 text-center text-xs text-muted-foreground">

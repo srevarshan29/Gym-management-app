@@ -1,8 +1,5 @@
 import { getRepositories, platformContext } from "@/lib/firestore";
-import {
-  computeSubscriptionBalance,
-  sumPaymentAmounts,
-} from "@/lib/subscription-balance";
+import { computeSubscriptionBalance } from "@/lib/subscription-balance";
 import { statusFromEndDate } from "@/lib/subscription";
 
 export type MemberPortalOverview = {
@@ -36,7 +33,7 @@ export async function getMemberPortalOverview(
   tenantGymId: string,
   memberId: string,
 ): Promise<MemberPortalOverview | null> {
-  const { members, subscriptions, payments } = getRepositories();
+  const { members, subscriptions } = getRepositories();
 
   const member = await members.findByIdAndGym(
     platformContext,
@@ -46,11 +43,6 @@ export async function getMemberPortalOverview(
   if (!member) return null;
 
   const subs = await subscriptions.listByMember(
-    platformContext,
-    tenantGymId,
-    memberId,
-  );
-  const pays = await payments.listByMember(
     platformContext,
     tenantGymId,
     memberId,
@@ -84,24 +76,11 @@ export async function getMemberPortalOverview(
     current.endDate.toDate(),
   );
 
-  const currentPayments = pays.filter((p) => p.subscriptionId === current.id);
   const currentBalance = computeSubscriptionBalance(
     current.priceAtPurchase,
-    sumPaymentAmounts(currentPayments.map((p) => ({ amount: p.amount }))),
+    current.paidTotal,
     current.writtenOffAmount,
   );
-
-  const pendingAmount = subs.reduce((sum, sub) => {
-    const subPayments = pays.filter((p) => p.subscriptionId === sub.id);
-    return (
-      sum +
-      computeSubscriptionBalance(
-        sub.priceAtPurchase,
-        sumPaymentAmounts(subPayments.map((p) => ({ amount: p.amount }))),
-        sub.writtenOffAmount,
-      ).pendingAmount
-    );
-  }, 0);
 
   return {
     memberName: member.name,
@@ -111,7 +90,7 @@ export async function getMemberPortalOverview(
     daysRemaining,
     planTotalDays,
     paidAmount: currentBalance.paidAmount,
-    pendingAmount,
+    pendingAmount: member.pendingAmountTotal,
     endDate: current.endDate.toDate(),
   };
 }

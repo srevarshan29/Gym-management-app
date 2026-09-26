@@ -3,6 +3,8 @@ import type {
   WorkoutPlanDoc,
   WorkoutPlanExerciseEmbedded,
 } from "@/lib/firestore/types";
+import { Timestamp } from "firebase-admin/firestore";
+import type { DocWithId } from "@/lib/firestore/repositories/base";
 import { resolveSeededTrackingType } from "@/lib/exercises";
 
 export type PlanExerciseMap = Map<string, WorkoutPlanExerciseEmbedded>;
@@ -25,6 +27,31 @@ export function buildPlanExerciseMap(plan: WorkoutPlanDoc): PlanExerciseMap {
     }
   }
   return map;
+}
+
+/** Minimal plan shell so active sessions hydrate from embedded exercise snapshots when the plan doc is gone. */
+export function emptyWorkoutPlanShellForSession(
+  session: {
+    workoutPlanId: string;
+    gymId: string;
+    memberId: string;
+  },
+): DocWithId<WorkoutPlanDoc> {
+  const now = Timestamp.now();
+  return {
+    id: session.workoutPlanId,
+    gymId: session.gymId,
+    memberId: session.memberId,
+    memberName: "",
+    title: "",
+    durationWeeks: null,
+    focusGoal: null,
+    level: null,
+    weeklySchedule: null,
+    createdAt: now,
+    updatedAt: now,
+    days: [],
+  };
 }
 
 /** Unique library exercise ids referenced by a workout plan. */

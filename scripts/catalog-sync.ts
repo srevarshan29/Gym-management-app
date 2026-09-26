@@ -5,18 +5,23 @@
  *   npx tsx scripts/catalog-sync.ts
  *   npx tsx scripts/catalog-sync.ts --dry-run
  *   FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 npx tsx scripts/catalog-sync.ts --write --confirm-write
+ *   FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node --env-file=.env --import tsx scripts/catalog-sync.ts --write --confirm-write --upload-media
  *
  * Default: dry-run (no Firestore writes).
  * Write mode requires --write --confirm-write and either the Firestore emulator
  * or CATALOG_SYNC_ALLOW_PRODUCTION=true.
+ * Catalog media byte upload requires --upload-media in addition to confirmed write mode.
  */
 import { getFirestoreDb } from "../src/lib/firebase/admin";
 import { formatCatalogSyncEnvironment } from "../src/lib/catalog/format-environment";
 import {
+  assertCatalogSyncMediaUploadConfiguration,
   assertCatalogSyncWriteConfirmed,
   assertCatalogSyncWriteEnvironment,
   parseCatalogSyncCliArgs,
   resolveCatalogSyncEnvironment,
+  resolveCatalogSyncRunnerUploadMedia,
+  CatalogSyncMediaUploadConfigurationError,
   CatalogSyncProductionBlockedError,
   CatalogSyncWriteNotConfirmedError,
 } from "../src/lib/catalog/sync-environment";
@@ -31,18 +36,20 @@ async function main() {
   const args = parseCatalogSyncCliArgs(process.argv.slice(2));
 
   if (args.help) {
-    console.log(`Usage: npx tsx scripts/catalog-sync.ts [--dry-run] [--write --confirm-write]
+    console.log(`Usage: npx tsx scripts/catalog-sync.ts [--dry-run] [--write --confirm-write] [--upload-media]
 
 Options:
   --dry-run        Validate bundle and print sync plan without Firestore writes (default)
   --write          Enable Firestore upserts (requires --confirm-write)
   --confirm-write  Explicit safeguard for write mode
+  --upload-media   Upload catalog demonstration images to Supabase during a confirmed write
   --help           Show this help text
 
 Write safeguards:
   - Write mode never runs by default.
   - Writes are blocked outside the Firestore emulator unless
     CATALOG_SYNC_ALLOW_PRODUCTION=true is set.
+  - --upload-media never uploads in dry-run mode and requires --write --confirm-write.
   - Project/emulator information is printed before any write.
 `);
     process.exit(0);
@@ -50,6 +57,7 @@ Write safeguards:
 
   const environment = resolveCatalogSyncEnvironment();
   const environmentLabel = formatCatalogSyncEnvironment(environment);
+  const uploadMedia = resolveCatalogSyncRunnerUploadMedia(args);
 
   try {
     if (args.writeRequested) {
@@ -59,8 +67,13 @@ Write safeguards:
       console.log("");
     }
 
+    if (uploadMedia) {
+      assertCatalogSyncMediaUploadConfiguration();
+    }
+
     const report = await runCatalogSync({
       dryRun: args.dryRun,
+      uploadMedia,
       backend: args.dryRun
         ? undefined
         : new FirestoreCatalogSyncWriterBackend(getFirestoreDb()),
@@ -73,6 +86,7 @@ Write safeguards:
     if (
       error instanceof CatalogSyncWriteNotConfirmedError ||
       error instanceof CatalogSyncProductionBlockedError ||
+      error instanceof CatalogSyncMediaUploadConfigurationError ||
       error instanceof CatalogSyncWriteBackendRequiredError
     ) {
       console.error(error.message);

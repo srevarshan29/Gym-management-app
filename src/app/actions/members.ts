@@ -313,7 +313,7 @@ export async function updateMember(
     }
   }
 
-  const existing = await members.findByIdAndGym(ctx, user.gymId, id);
+  const existing = await members.findByIdAndGym(ctx, id, user.gymId);
   if (!existing) return actionError("Member not found.");
 
   const updated = await members.update(ctx, user.gymId, id, {
@@ -354,7 +354,7 @@ export async function deleteMember(formData: FormData): Promise<void> {
 
   const ctx = staffContextFromUser(user);
   const { members } = getRepositories();
-  const existing = await members.findByIdAndGym(ctx, user.gymId, id);
+  const existing = await members.findByIdAndGym(ctx, id, user.gymId);
   if (!existing) throw new Error("Member not found.");
 
   if (existing.isPt) {

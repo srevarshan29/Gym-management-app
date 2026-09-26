@@ -31,7 +31,7 @@ export async function GET(
   const filename = `${formatReceiptNumber(receipt.number)}.pdf`;
   const download = request.nextUrl.searchParams.get("download") === "1";
 
-  return new NextResponse(buffer, {
+  return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `${download ? "attachment" : "inline"}; filename="${filename}"`,

@@ -7,7 +7,6 @@ import { measureServerPhase } from "@/lib/server-perf";
 import { authConfig } from "@/auth.config";
 import { getRepositories, platformContext } from "@/lib/firestore";
 import {
-  checkStaffLoginThrottle,
   clearStaffLoginFailures,
   getStaffLoginClientIp,
   recordStaffLoginFailure,
@@ -33,19 +32,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const { email, password } = parsed.data;
         const ip = await getStaffLoginClientIp();
-        const throttle = await checkStaffLoginThrottle(email, ip);
-        if (!throttle.ok) {
-          return null;
-        }
 
         const { users } = getRepositories();
-        const user = await users.findByEmail(platformContext, email);
+        const user = await measureServerPhase(
+          "staff.auth.credentials.userLookup",
+          () => users.findByEmail(platformContext, email),
+        );
         if (!user) {
           await recordStaffLoginFailure(email, ip);
           return null;
         }
 
-        const passwordMatches = await bcrypt.compare(password, user.passwordHash);
+        const passwordMatches = await measureServerPhase(
+          "staff.auth.credentials.bcrypt",
+          () => bcrypt.compare(password, user.passwordHash),
+        );
         if (!passwordMatches) {
           await recordStaffLoginFailure(email, ip);
           return null;

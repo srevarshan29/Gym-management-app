@@ -11,6 +11,7 @@ export function hasDemonstrationMedia(
   if (!media) return false;
   return (
     isStructuredExerciseMediaUrl(media.primaryImageUrl ?? "") ||
-    isStructuredExerciseMediaUrl(media.secondaryImageUrl ?? "")
+    isStructuredExerciseMediaUrl(media.secondaryImageUrl ?? "") ||
+    isStructuredExerciseMediaUrl(media.thumbnailUrl ?? "")
   );
 }

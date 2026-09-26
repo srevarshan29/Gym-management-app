@@ -3,7 +3,9 @@ import { getRepositories } from "@/lib/firestore";
 import type { MemberContext } from "@/lib/firestore/context";
 import { newDocId } from "@/lib/firestore/helpers";
 import type { ExerciseTrackingType } from "@/lib/firestore/types";
+import { measureServerPhase } from "@/lib/server-perf";
 import {
+  hasSessionExerciseSnapshot,
   resolveSessionExerciseContext,
 } from "@/lib/workout-tracking/session-exercise-identity";
 import { buildPlanExerciseMap, resolvePlanExerciseTrackingType } from "@/lib/workout-tracking/session-plan";
@@ -105,83 +107,101 @@ export async function logWorkoutSetRecord(
     durationSeconds?: number;
   },
 ): Promise<LogWorkoutSetResult> {
-  const { workoutPlans, workoutSessions } = getRepositories();
-  const gymId = ctx.gymId;
-  const memberId = ctx.memberId;
+  return measureServerPhase("member.workout.logSet.total", async () => {
+    const { workoutPlans, workoutSessions } = getRepositories();
+    const gymId = ctx.gymId;
+    const memberId = ctx.memberId;
 
-  const active = await workoutSessions.findActiveSession(ctx, gymId, memberId);
-  if (!active) {
-    throw new Error("Workout session not found.");
-  }
-
-  const sessionExercise = active.exercises.find(
-    (row) => row.id === input.sessionExerciseId,
-  );
-  if (!sessionExercise) {
-    throw new Error("Workout session not found.");
-  }
-
-  const plan = await workoutPlans.getById(ctx, gymId, active.workoutPlanId);
-  if (!plan) {
-    throw new Error("Workout session not found.");
-  }
-
-  const planExerciseMap = buildPlanExerciseMap(plan);
-  const exerciseContext = resolveSessionExerciseContext(
-    sessionExercise,
-    planExerciseMap,
-  );
-  if (!exerciseContext) {
-    throw new Error("Workout session not found.");
-  }
-
-  let trackingType: ExerciseTrackingType;
-  if (exerciseContext.trackingTypeOverride) {
-    trackingType = exerciseContext.trackingTypeOverride;
-  } else if (exerciseContext.exerciseId) {
-    const library = await loadExerciseLibraryMapForTracking(
-      gymId,
-      exerciseContext.exerciseId,
+    const active = await measureServerPhase(
+      "member.workout.logSet.sessionLookup",
+      () => workoutSessions.findActiveSession(ctx, gymId, memberId),
     );
-    trackingType = resolvePlanExerciseTrackingType(exerciseContext, library);
-  } else {
-    trackingType = "WEIGHTED";
-  }
+    if (!active) {
+      throw new Error("Workout session not found.");
+    }
 
-  if (trackingType === "WEIGHTED" && input.weightKg == null) {
-    throw new Error("Enter a weight for this set.");
-  }
-  if (trackingType === "TIME" && input.durationSeconds == null) {
-    throw new Error("Enter a duration in seconds for this set.");
-  }
-
-  const setValues = buildSetLogValues(
-    trackingType,
-    input.weightKg,
-    input.durationSeconds,
-  );
-
-  const db = getFirestoreDb();
-  await db.runTransaction(async (tx) => {
-    await workoutSessions.upsertSetLogInTransaction(
-      tx,
-      ctx,
-      gymId,
-      active.id,
-      input.sessionExerciseId,
-      input.setNumber,
-      setValues,
+    const sessionExercise = active.exercises.find(
+      (row) => row.id === input.sessionExerciseId,
     );
+    if (!sessionExercise) {
+      throw new Error("Workout session not found.");
+    }
+
+    let exerciseContext = null;
+    if (hasSessionExerciseSnapshot(sessionExercise)) {
+      exerciseContext = resolveSessionExerciseContext(
+        sessionExercise,
+        new Map(),
+      );
+    } else {
+      const plan = await measureServerPhase(
+        "member.workout.logSet.planLookup",
+        () => workoutPlans.getById(ctx, gymId, active.workoutPlanId),
+      );
+      if (!plan) {
+        throw new Error("Workout session not found.");
+      }
+      exerciseContext = resolveSessionExerciseContext(
+        sessionExercise,
+        buildPlanExerciseMap(plan),
+      );
+    }
+
+    if (!exerciseContext) {
+      throw new Error("Workout session not found.");
+    }
+
+    let trackingType: ExerciseTrackingType;
+    if (exerciseContext.trackingTypeOverride) {
+      trackingType = exerciseContext.trackingTypeOverride;
+    } else if (exerciseContext.exerciseId) {
+      const library = await measureServerPhase(
+        "member.workout.logSet.libraryLookup",
+        () =>
+          loadExerciseLibraryMapForTracking(gymId, exerciseContext.exerciseId),
+      );
+      trackingType = resolvePlanExerciseTrackingType(exerciseContext, library);
+    } else {
+      trackingType = "WEIGHTED";
+    }
+
+    if (trackingType === "WEIGHTED" && input.weightKg == null) {
+      throw new Error("Enter a weight for this set.");
+    }
+    if (trackingType === "TIME" && input.durationSeconds == null) {
+      throw new Error("Enter a duration in seconds for this set.");
+    }
+
+    const setValues = buildSetLogValues(
+      trackingType,
+      input.weightKg,
+      input.durationSeconds,
+    );
+
+    const db = getFirestoreDb();
+    await measureServerPhase("member.workout.logSet.firestoreWrite", () =>
+      db.runTransaction(async (tx) => {
+        await workoutSessions.upsertSetLogInTransaction(
+          tx,
+          ctx,
+          gymId,
+          active.id,
+          input.sessionExerciseId,
+          input.setNumber,
+          setValues,
+        );
+      }),
+    );
+
+    return {
+      sessionExerciseId: input.sessionExerciseId,
+      set: {
+        setNumber: input.setNumber,
+        weightKg: setValues.weightKg,
+        durationSeconds: setValues.durationSeconds,
+      },
+    };
   });
-
-  return {
-    sessionExerciseId: input.sessionExerciseId,
-    set: {
-      setNumber: input.setNumber,
-      weightKg: setValues.weightKg,
-      durationSeconds: setValues.durationSeconds,
-    },
-  };
 }
 
 export async function completeWorkoutSessionRecord(

@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 import { getRepositories, platformContext } from "@/lib/firestore";
+import { measureServerPhase } from "@/lib/server-perf";
 import type { StaffRole } from "@/lib/firestore/types";
 
 export type SessionUser = {
@@ -22,26 +23,30 @@ export type GymSessionUser = SessionUser & { gymId: string };
  * deletion take effect on the next request. Deduped once per server request.
  */
 const resolveCurrentUser = cache(async (): Promise<SessionUser | null> => {
-  const session = await auth();
-  if (!session?.user?.id) return null;
+  return measureServerPhase("staff.session.resolveUser", async () => {
+    const session = await measureServerPhase("staff.session.auth", () => auth());
+    if (!session?.user?.id) return null;
 
-  const { users } = getRepositories();
-  const dbUser = await users.findById(platformContext, session.user.id);
+    const { users } = getRepositories();
+    const dbUser = await measureServerPhase("staff.session.userLookup", () =>
+      users.findById(platformContext, session.user.id),
+    );
 
-  if (!dbUser) {
-    // Cannot call signOut() here — cookie writes are forbidden during RSC
-    // render. Bounce through the /logout Route Handler, which is allowed to
-    // clear the session cookie and then send the user to /login.
-    redirect("/logout");
-  }
+    if (!dbUser) {
+      // Cannot call signOut() here — cookie writes are forbidden during RSC
+      // render. Bounce through the /logout Route Handler, which is allowed to
+      // clear the session cookie and then send the user to /login.
+      redirect("/logout");
+    }
 
-  return {
-    id: dbUser.id,
-    name: dbUser.name,
-    email: dbUser.email,
-    role: dbUser.role,
-    gymId: dbUser.gymId,
-  };
+    return {
+      id: dbUser.id,
+      name: dbUser.name,
+      email: dbUser.email,
+      role: dbUser.role,
+      gymId: dbUser.gymId,
+    };
+  });
 });
 
 export async function getCurrentUser(): Promise<SessionUser | null> {

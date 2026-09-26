@@ -7,6 +7,7 @@ import {
   isScopedCatalogExerciseMediaUrl,
   isStructuredExerciseMediaUrl,
   isUploadedGymExerciseMediaUrl,
+  parseSupabasePublicStorageUrl,
 } from "@/lib/exercises/media-paths";
 import {
   MAX_IMAGE_BYTES,
@@ -90,6 +91,26 @@ function sanitizeCatalogScopedMediaForRead(
   };
 }
 
+/** When catalogId was not persisted on import, derive it from stored catalog URLs. */
+export function inferCatalogIdFromMediaUrls(
+  media: ExerciseMediaMetadata,
+): string | null {
+  for (const url of [
+    media.primaryImageUrl,
+    media.secondaryImageUrl,
+    media.thumbnailUrl,
+  ]) {
+    if (!url?.trim()) continue;
+    const parsed = parseSupabasePublicStorageUrl(url.trim());
+    if (!parsed.ok) continue;
+    const match = parsed.objectPath.match(
+      /^catalog\/([^/]+)\/(primary|secondary|thumbnail)\.[a-z0-9]+$/i,
+    );
+    if (match?.[1]) return match[1];
+  }
+  return null;
+}
+
 function sanitizeGymOwnedMediaForRead(
   media: ExerciseMediaMetadata,
   gymId: string,
@@ -126,8 +147,11 @@ export function sanitizeGymExerciseMediaForRead(
 ): ExerciseMediaMetadata {
   const normalized = normalizeExerciseMediaMetadata(media);
 
-  if (context.catalogId) {
-    return sanitizeCatalogScopedMediaForRead(normalized, context.catalogId);
+  const catalogId =
+    context.catalogId?.trim() || inferCatalogIdFromMediaUrls(normalized) || null;
+
+  if (catalogId) {
+    return sanitizeCatalogScopedMediaForRead(normalized, catalogId);
   }
 
   return sanitizeGymOwnedMediaForRead(
@@ -231,6 +255,7 @@ export function resolveDemonstrationImageUrl(
   if (!media) return null;
   if (isDisplayableExerciseMediaUrl(media.primaryImageUrl)) return media.primaryImageUrl;
   if (isDisplayableExerciseMediaUrl(media.secondaryImageUrl)) return media.secondaryImageUrl;
+  if (isDisplayableExerciseMediaUrl(media.thumbnailUrl)) return media.thumbnailUrl;
   return null;
 }
 

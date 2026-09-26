@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { requireMember, logWorkoutSetRecord } = vi.hoisted(() => ({
@@ -81,5 +83,13 @@ describe("logWorkoutSet action", () => {
     if (!result.ok) {
       expect(result.error).toMatch(/not found/i);
     }
+  });
+
+  it("wraps the server record call with performance phase instrumentation", async () => {
+    const actionSource = readFileSync(
+      resolve("src/app/actions/workout-sessions.ts"),
+      "utf8",
+    );
+    expect(actionSource).toContain('measureServerPhase("member.workout.logSet.action"');
   });
 });

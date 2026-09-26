@@ -100,7 +100,7 @@ describe("sanitizeGymExerciseMediaForRead", () => {
       {
         primaryImageUrl: gymUrl(GYM_B, EXERCISE_A, "primary"),
         secondaryImageUrl: gymUrl(GYM_A, EXERCISE_B, "secondary"),
-        thumbnailUrl: catalogUrl(CATALOG_ID, "thumbnail"),
+        thumbnailUrl: "https://evil.example/thumb.jpg",
       },
       { gymId: GYM_A, exerciseId: EXERCISE_A },
     );
@@ -158,6 +158,35 @@ describe("sanitizeGymExerciseMediaForRead", () => {
 
     expect(sanitized.primaryImageUrl).toBeNull();
     expect(resolveListPreviewImageUrl(sanitized)).toBeNull();
+  });
+
+  it("infers catalogId from catalog URLs when catalogId was not stored on the exercise", () => {
+    const sanitized = sanitizeGymExerciseMediaForRead(
+      {
+        primaryImageUrl: catalogUrl(CATALOG_ID, "primary"),
+        secondaryImageUrl: null,
+        thumbnailUrl: null,
+      },
+      { gymId: GYM_A, exerciseId: EXERCISE_A },
+    );
+
+    expect(sanitized.primaryImageUrl).toContain(`/catalog/${CATALOG_ID}/`);
+    expect(hasDemonstrationMedia(sanitized)).toBe(true);
+    expect(resolveDemonstrationImageUrl(sanitized)).toContain("primary.webp");
+  });
+
+  it("treats thumbnail-only media as a demonstration image", () => {
+    const sanitized = sanitizeGymExerciseMediaForRead(
+      {
+        primaryImageUrl: null,
+        secondaryImageUrl: null,
+        thumbnailUrl: gymUrl(GYM_A, EXERCISE_A, "thumbnail"),
+      },
+      { gymId: GYM_A, exerciseId: EXERCISE_A },
+    );
+
+    expect(hasDemonstrationMedia(sanitized)).toBe(true);
+    expect(resolveDemonstrationImageUrl(sanitized)).toContain("thumbnail.webp");
   });
 });
 

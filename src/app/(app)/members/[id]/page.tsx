@@ -97,7 +97,7 @@ export default async function MemberProfilePage({
   }));
 
   return (
-    <div className="mx-auto min-w-0 max-w-4xl">
+    <div className="mx-auto min-w-0 max-w-4xl overflow-x-clip pb-[env(safe-area-inset-bottom)]">
       {showFinancials ? <AutoOpenReceipt /> : null}
       <div className="mb-4">
         <Button asChild variant="ghost" size="sm" className="gap-1">
@@ -107,8 +107,8 @@ export default async function MemberProfilePage({
         </Button>
       </div>
 
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div className="mb-6 flex min-w-0 flex-col gap-4 max-md:landscape:gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 flex-col gap-4 max-md:landscape:flex-row max-md:landscape:items-center sm:flex-row sm:items-center">
           <MemberPhotoBanner
             name={member.name}
             photoUrl={member.photoUrl}
@@ -125,9 +125,9 @@ export default async function MemberProfilePage({
               size="lg"
               className="hidden sm:flex"
             />
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <h1 className="font-display text-2xl font-bold tracking-tight">
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
+              <h1 className="min-w-0 break-words font-display text-2xl font-bold tracking-tight">
                 {member.name}
               </h1>
               <StatusBadge status={status} />
@@ -154,7 +154,7 @@ export default async function MemberProfilePage({
         </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 max-md:landscape:w-full max-md:landscape:justify-start">
           <RenewDialog
             memberId={member.id}
             packages={options}
@@ -262,6 +262,7 @@ export default async function MemberProfilePage({
                 No subscriptions recorded.
               </p>
             ) : (
+              <div className="min-w-0 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -338,6 +339,7 @@ export default async function MemberProfilePage({
                   })}
                 </TableBody>
               </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -357,6 +359,7 @@ export default async function MemberProfilePage({
                   No payments recorded yet.
                 </p>
               ) : (
+                <div className="min-w-0 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -397,6 +400,7 @@ export default async function MemberProfilePage({
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>

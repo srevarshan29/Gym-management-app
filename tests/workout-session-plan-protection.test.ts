@@ -668,6 +668,47 @@ describe("logWorkoutSetRecord", () => {
     expect(getExerciseLibraryMapByIds).toHaveBeenCalledWith("gym-a", ["ex-bench"]);
   });
 
+  it("skips workout plan fetch when session exercises carry identity snapshots", async () => {
+    mockWorkoutSessions.findActiveSession.mockResolvedValue(activeSession());
+    mockWorkoutPlans.getById.mockResolvedValue(samplePlan());
+
+    await logWorkoutSetRecord(memberCtx, {
+      sessionExerciseId: "sess-ex-a",
+      setNumber: 1,
+      weightKg: 80,
+    });
+
+    expect(mockWorkoutPlans.getById).not.toHaveBeenCalled();
+  });
+
+  it("loads the plan for legacy sessions without embedded identity snapshots", async () => {
+    mockWorkoutSessions.findActiveSession.mockResolvedValue(
+      activeSession({
+        exercises: [
+          sessionExercise({
+            id: "sess-ex-a",
+            workoutPlanExerciseId: "row-a",
+            sortOrder: 0,
+            sets: [],
+          }),
+        ],
+      }),
+    );
+    mockWorkoutPlans.getById.mockResolvedValue(samplePlan());
+
+    await logWorkoutSetRecord(memberCtx, {
+      sessionExerciseId: "sess-ex-a",
+      setNumber: 1,
+      weightKg: 80,
+    });
+
+    expect(mockWorkoutPlans.getById).toHaveBeenCalledWith(
+      memberCtx,
+      "gym-a",
+      "plan-1",
+    );
+  });
+
   it("upserts duplicate set numbers idempotently", async () => {
     mockWorkoutSessions.findActiveSession.mockResolvedValue(activeSession());
     mockWorkoutPlans.getById.mockResolvedValue(samplePlan());
@@ -689,7 +730,18 @@ describe("logWorkoutSetRecord", () => {
   });
 
   it("rejects cross-gym plan lookups via member context", async () => {
-    mockWorkoutSessions.findActiveSession.mockResolvedValue(activeSession());
+    mockWorkoutSessions.findActiveSession.mockResolvedValue(
+      activeSession({
+        exercises: [
+          sessionExercise({
+            id: "sess-ex-a",
+            workoutPlanExerciseId: "row-a",
+            sortOrder: 0,
+            sets: [],
+          }),
+        ],
+      }),
+    );
     mockWorkoutPlans.getById.mockResolvedValue(null);
 
     await expect(

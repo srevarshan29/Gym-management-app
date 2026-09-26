@@ -80,25 +80,30 @@ export async function logWorkoutSet(
     set: ActiveWorkoutSetLog;
   }>
 > {
-  try {
-    const member = await requireMember();
-    const parsed = logSetSchema.safeParse(payload);
-    if (!parsed.success) {
-      return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
+  return measureServerPhase("member.workout.logSet.action", async () => {
+    try {
+      const member = await measureServerPhase(
+        "member.workout.logSet.auth",
+        () => requireMember(),
+      );
+      const parsed = logSetSchema.safeParse(payload);
+      if (!parsed.success) {
+        return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
+      }
+
+      const result = await logWorkoutSetRecord(
+        memberContextFromSession(member),
+        parsed.data,
+      );
+
+      return actionOk("Set logged.", result);
+    } catch (error) {
+      return actionErrorFromUnknown(
+        error,
+        "Could not log set. Please try again.",
+      );
     }
-
-    const result = await logWorkoutSetRecord(
-      memberContextFromSession(member),
-      parsed.data,
-    );
-
-    return actionOk("Set logged.", result);
-  } catch (error) {
-    return actionErrorFromUnknown(
-      error,
-      "Could not log set. Please try again.",
-    );
-  }
+  });
 }
 
 export async function completeWorkoutSession(

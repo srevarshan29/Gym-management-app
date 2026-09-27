@@ -10,9 +10,21 @@ import {
   searchExerciseLibrary,
 } from "@/lib/workout-tracking/exercise-library";
 
+const { mockCustomExercises, mockExerciseCatalog } = vi.hoisted(() => ({
+  mockCustomExercises: {
+    searchLibrary: vi.fn(),
+    getByIds: vi.fn(),
+  },
+  mockExerciseCatalog: {
+    getByCatalogIds: vi.fn(async () => new Map()),
+    getActiveByNameLowerBatch: vi.fn(async () => new Map()),
+  },
+}));
+
 vi.mock("@/lib/firestore", () => ({
   getRepositories: () => ({
     customExercises: mockCustomExercises,
+    exerciseCatalog: mockExerciseCatalog,
   }),
   platformContext: { kind: "platform" },
 }));
@@ -20,11 +32,6 @@ vi.mock("@/lib/firestore", () => ({
 vi.mock("@/lib/exercises", () => ({
   seedExercisesForGym: vi.fn(),
 }));
-
-const mockCustomExercises = {
-  searchLibrary: vi.fn(),
-  getByIds: vi.fn(),
-};
 
 const PUBLIC_BASE =
   "https://example.supabase.co/storage/v1/object/public/gym-assets";

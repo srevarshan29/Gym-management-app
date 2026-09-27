@@ -39,11 +39,15 @@ const PUBLIC_BASE =
 beforeEach(() => {
   process.env.SUPABASE_URL = "https://example.supabase.co";
   process.env.SUPABASE_STORAGE_BUCKET = "gym-assets";
+  delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+  delete process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET;
 });
 
 afterEach(() => {
   delete process.env.SUPABASE_URL;
   delete process.env.SUPABASE_STORAGE_BUCKET;
+  delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+  delete process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET;
 });
 
 describe("media storage paths", () => {
@@ -113,11 +117,99 @@ describe("media storage paths", () => {
   it("rejects storage URLs when Supabase configuration is unavailable", () => {
     delete process.env.SUPABASE_URL;
     delete process.env.SUPABASE_STORAGE_BUCKET;
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET;
 
     const catalogUrl = `${PUBLIC_BASE}/catalog/dev-push-up/primary.webp`;
     expect(parseSupabasePublicStorageUrl(catalogUrl).ok).toBe(false);
     expect(isCatalogScopedMediaUrl(catalogUrl)).toBe(false);
     expect(isCatalogMetadataUrlAllowed(catalogUrl)).toBe(false);
+  });
+
+  describe("Supabase storage URL config env resolution", () => {
+    const barbellRowThumbnail = `${PUBLIC_BASE}/catalog/barbell-row/thumbnail.webp`;
+
+    function clearAllSupabaseEnv() {
+      delete process.env.SUPABASE_URL;
+      delete process.env.SUPABASE_STORAGE_BUCKET;
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      delete process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET;
+    }
+
+    it("A. accepts valid catalog URLs with server env only", () => {
+      clearAllSupabaseEnv();
+      process.env.SUPABASE_URL = "https://example.supabase.co";
+      process.env.SUPABASE_STORAGE_BUCKET = "gym-assets";
+
+      expect(parseSupabasePublicStorageUrl(barbellRowThumbnail).ok).toBe(true);
+      expect(
+        resolveListPreviewImageUrl({
+          primaryImageUrl: null,
+          secondaryImageUrl: null,
+          thumbnailUrl: barbellRowThumbnail,
+        }),
+      ).toBe(barbellRowThumbnail);
+    });
+
+    it("B. accepts valid catalog URLs with NEXT_PUBLIC env only", () => {
+      clearAllSupabaseEnv();
+      process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+      process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET = "gym-assets";
+
+      expect(parseSupabasePublicStorageUrl(barbellRowThumbnail).ok).toBe(true);
+      expect(
+        resolveListPreviewImageUrl({
+          primaryImageUrl: `${PUBLIC_BASE}/catalog/barbell-row/primary.webp`,
+          secondaryImageUrl: null,
+          thumbnailUrl: barbellRowThumbnail,
+        }),
+      ).toBe(barbellRowThumbnail);
+    });
+
+    it("C. rejects valid catalog URLs when no Supabase env is configured", () => {
+      clearAllSupabaseEnv();
+
+      expect(parseSupabasePublicStorageUrl(barbellRowThumbnail).ok).toBe(false);
+      expect(
+        resolveListPreviewImageUrl({
+          primaryImageUrl: `${PUBLIC_BASE}/catalog/barbell-row/primary.webp`,
+          secondaryImageUrl: null,
+          thumbnailUrl: null,
+        }),
+      ).toBeNull();
+    });
+
+    it("D. rejects catalog URLs with wrong host or bucket", () => {
+      process.env.SUPABASE_URL = "https://example.supabase.co";
+      process.env.SUPABASE_STORAGE_BUCKET = "gym-assets";
+
+      expect(
+        parseSupabasePublicStorageUrl(
+          "https://evil.example/storage/v1/object/public/gym-assets/catalog/barbell-row/primary.webp",
+        ).ok,
+      ).toBe(false);
+      expect(
+        parseSupabasePublicStorageUrl(
+          "https://example.supabase.co/storage/v1/object/public/wrong-bucket/catalog/barbell-row/primary.webp",
+        ).ok,
+      ).toBe(false);
+    });
+
+    it("E. accepts Barbell Row catalog URL and returns preview URL", () => {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+      process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET = "gym-assets";
+      delete process.env.SUPABASE_URL;
+
+      const primary = `${PUBLIC_BASE}/catalog/barbell-row/primary.webp`;
+      const preview = resolveListPreviewImageUrl({
+        primaryImageUrl: primary,
+        secondaryImageUrl: `${PUBLIC_BASE}/catalog/barbell-row/secondary.webp`,
+        thumbnailUrl: barbellRowThumbnail,
+      });
+
+      expect(preview).toBe(barbellRowThumbnail);
+      expect(parseSupabasePublicStorageUrl(primary).ok).toBe(true);
+    });
   });
 
   it("accepts uploaded gym exercise URLs only for the expected object path", () => {

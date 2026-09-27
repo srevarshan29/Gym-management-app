@@ -37,6 +37,11 @@ const mockCustomExercises = {
   getByIds: vi.fn(),
 };
 
+const mockExerciseCatalog = {
+  getByCatalogIds: vi.fn(async () => new Map()),
+  getActiveByNameLowerBatch: vi.fn(async () => new Map()),
+};
+
 vi.mock("@/lib/firebase/admin", () => ({
   getFirestoreDb: vi.fn(() => ({
     runTransaction: vi.fn(async (callback: (tx: unknown) => Promise<void>) =>
@@ -50,6 +55,7 @@ vi.mock("@/lib/firestore", () => ({
     workoutPlans: mockWorkoutPlans,
     workoutSessions: mockWorkoutSessions,
     customExercises: mockCustomExercises,
+    exerciseCatalog: mockExerciseCatalog,
   }),
   platformContext: { kind: "platform" },
 }));
@@ -73,7 +79,10 @@ function gymUrl(
   return `${PUBLIC_BASE}/gyms/${gymId}/exercises/${exerciseId}/${pose}.webp`;
 }
 
-function catalogUrl(catalogId: string, pose: "primary" | "secondary") {
+function catalogUrl(
+  catalogId: string,
+  pose: "primary" | "secondary" | "thumbnail",
+) {
   return `${PUBLIC_BASE}/catalog/${catalogId}/${pose}.webp`;
 }
 
@@ -397,6 +406,76 @@ describe("getActiveWorkoutSession member media", () => {
     expect(active?.exercises[0]?.hasMedia).toBe(true);
     expect(resolveDemonstrationImageUrl(active?.exercises[0]?.media)).toContain(
       "ex-custom/primary",
+    );
+  });
+
+  it("hydrates starter Barbell Row from platform catalog when gym doc has no media", async () => {
+    mockWorkoutSessions.findActiveSession.mockResolvedValue({
+      id: "session-1",
+      gymId: GYM_A,
+      memberId: MEMBER_ID,
+      workoutPlanId: "plan-1",
+      startedAt: Timestamp.now(),
+      durationSeconds: null,
+      status: "IN_PROGRESS",
+      exercises: [
+        {
+          id: "sess-ex-row",
+          workoutPlanExerciseId: "row-row",
+          sortOrder: 0,
+          exerciseId: "ex-barbell-row",
+          customName: null,
+          trackingTypeOverride: null,
+          targetReps: "8-10",
+          sets: [],
+        },
+      ],
+    });
+    mockWorkoutPlans.getById.mockResolvedValue(samplePlan());
+    mockCustomExercises.getByIds.mockResolvedValue([
+      exerciseDoc({
+        id: "ex-barbell-row",
+        name: "Barbell Row",
+        nameLower: "barbell row",
+        muscleGroup: "BACK",
+        isSeeded: true,
+        exerciseSource: "SEEDED",
+        catalogId: null,
+        media: {
+          primaryImageUrl: null,
+          secondaryImageUrl: null,
+          thumbnailUrl: null,
+        },
+      }),
+    ]);
+    mockExerciseCatalog.getActiveByNameLowerBatch.mockResolvedValue(
+      new Map([
+        [
+          "barbell row",
+          {
+            id: "barbell-row",
+            catalogId: "barbell-row",
+            name: "Barbell Row",
+            nameLower: "barbell row",
+            muscleGroup: "BACK",
+            media: {
+              primaryImageUrl: catalogUrl("barbell-row", "primary"),
+              secondaryImageUrl: null,
+              thumbnailUrl: catalogUrl("barbell-row", "thumbnail"),
+              animationUrl: null,
+              videoUrl: null,
+            },
+          },
+        ],
+      ]),
+    );
+
+    const active = await getActiveWorkoutSession(GYM_A, MEMBER_ID);
+    const row = active?.exercises[0];
+    expect(row?.displayName).toBe("Barbell Row");
+    expect(row?.hasMedia).toBe(true);
+    expect(resolveDemonstrationImageUrl(row?.media)).toContain(
+      "/catalog/barbell-row/primary.webp",
     );
   });
 });

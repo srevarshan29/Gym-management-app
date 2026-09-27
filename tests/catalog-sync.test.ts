@@ -118,13 +118,15 @@ describe("catalog manifest validation", () => {
 });
 
 describe("catalog bundle validation", () => {
-  it("validates the committed development fixture", () => {
+  it("validates the committed RepDB catalog bundle", () => {
     const bundle = loadCatalogBundleFiles();
     const result = validateCatalogBundle(bundle);
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.manifest.catalogVersion).toBe("dev-fixture-v1");
-      expect(result.exercises).toHaveLength(3);
+      expect(result.manifest.catalogVersion).toBe("repdb-free-v1");
+      expect(result.manifest.provider).toBe("repdb");
+      expect(result.exercises).toHaveLength(601);
+      expect(result.exercises.some((row) => row.catalogId === "barbell-row")).toBe(true);
     }
   });
 
@@ -379,16 +381,18 @@ describe("catalog sync meta validation", () => {
 });
 
 describe("runCatalogSync dry-run behavior", () => {
-  it("validates the dev fixture and reports would-create counts", async () => {
+  it("validates the RepDB bundle and reports would-create counts", async () => {
     const report = await runCatalogSync({ dryRun: true });
     expect(report.dryRun).toBe(true);
     expect(report.errors).toEqual([]);
-    expect(report.totalInputExercises).toBe(3);
-    expect(report.validExercises).toBe(3);
-    expect(report.wouldCreate).toBe(3);
+    expect(report.totalInputExercises).toBe(601);
+    expect(report.validExercises).toBe(601);
+    expect(report.wouldCreate).toBe(601);
     expect(report.wouldUpdate).toBe(0);
     expect(report.wouldDeactivate).toBe(0);
-    expect(report.batchesProcessed).toBe(1);
+    expect(report.batchesProcessed).toBeGreaterThanOrEqual(1);
+    expect(report.mediaObjectCount).toBeGreaterThan(600);
+    expect(report.failures).toEqual([]);
   });
 
   it("does not invoke backend writes in dry-run mode", async () => {

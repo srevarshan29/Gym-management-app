@@ -108,6 +108,63 @@ export class ExerciseCatalogRepository {
   }
 
   /**
+   * Loads active catalog exercises by exact nameLower for starter media hydration.
+   * When multiple catalog rows share a name, the name is omitted from the result map.
+   */
+  async getActiveByNameLowerBatch(
+    ctx: FirestoreContext,
+    nameLowers: string[],
+  ): Promise<Map<string, DocWithId<ExerciseCatalogDoc>>> {
+    this.assertCatalogReadAccess(ctx);
+    const unique = [...new Set(nameLowers.map((n) => n.trim().toLowerCase()).filter(Boolean))];
+    const result = new Map<string, DocWithId<ExerciseCatalogDoc>>();
+    if (unique.length === 0) return result;
+
+    const IN_LIMIT = 10;
+    for (let index = 0; index < unique.length; index += IN_LIMIT) {
+      const batch = unique.slice(index, index + IN_LIMIT);
+      const snap = await this.collection()
+        .where("isActive", "==", true)
+        .where("nameLower", "in", batch)
+        .get();
+
+      for (const nameLower of batch) {
+        const matches = snap.docs
+          .map((d) => this.fromSnapshot(d.id, d.data()))
+          .filter(
+            (d): d is DocWithId<ExerciseCatalogDoc> =>
+              d !== null && d.nameLower === nameLower,
+          );
+        if (matches.length === 1) {
+          result.set(nameLower, matches[0]!);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  async getByCatalogIds(
+    ctx: FirestoreContext,
+    catalogIds: string[],
+  ): Promise<Map<string, DocWithId<ExerciseCatalogDoc>>> {
+    this.assertCatalogReadAccess(ctx);
+    const unique = [...new Set(catalogIds.map((id) => id.trim()).filter(Boolean))];
+    const result = new Map<string, DocWithId<ExerciseCatalogDoc>>();
+    if (unique.length === 0) return result;
+
+    await Promise.all(
+      unique.map(async (catalogId) => {
+        const doc = await this.getByCatalogId(ctx, catalogId);
+        if (doc?.catalogId) {
+          result.set(doc.catalogId, doc);
+        }
+      }),
+    );
+    return result;
+  }
+
+  /**
    * Cursor-paginated catalog browse. Ordered by nameLower ascending with document id tie-breaker.
    * Pass `startAfterId` from a previous page's last item id.
    */

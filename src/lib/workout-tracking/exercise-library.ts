@@ -2,12 +2,17 @@ import type { ExerciseTrackingType, MuscleGroup } from "@/lib/firestore/types";
 import { getRepositories, platformContext } from "@/lib/firestore";
 import { seedExercisesForGym } from "@/lib/exercises";
 import { hasDemonstrationMedia } from "@/lib/exercises/media";
-import { sanitizeGymExerciseMediaForRead } from "@/lib/exercises/media-validation";
+import {
+  collectCatalogIdsForMediaHydration,
+  collectNameLowerLookupsForSeededMedia,
+  resolveGymExerciseMediaForRead,
+  type GymExerciseMediaReadInput,
+} from "@/lib/exercises/gym-exercise-media-read";
 import { resolveExerciseSource } from "@/lib/exercises/source";
-import type { ExerciseSource } from "@/lib/exercises/catalog-types";
-import type { ExerciseMediaMetadata } from "@/lib/exercises/catalog-types";
 import type { ExerciseListItem } from "@/lib/workout-tracking/types";
 import type { ExerciseLibraryMap } from "@/lib/workout-tracking/session-plan";
+import type { DocWithId } from "@/lib/firestore/repositories/base";
+import type { CustomExerciseDoc, ExerciseCatalogDoc } from "@/lib/firestore/types";
 
 export const EXERCISE_LIBRARY_PAGE_SIZE = 50;
 export const BUILDER_LIBRARY_SEARCH_LIMIT = 30;
@@ -21,27 +26,16 @@ export type ExerciseLibraryBrowsePage = ExerciseLibrarySearchPage & {
   totalCount: number;
 };
 
-function toListItem(doc: {
-  id: string;
-  gymId: string;
-  name: string;
-  muscleGroup: MuscleGroup;
-  defaultSets: number | null;
-  defaultReps: string | null;
-  defaultTempo: string | null;
-  defaultRestSeconds: number | null;
-  trackingType: string;
-  isSeeded: boolean;
-  exerciseSource?: ExerciseSource | null;
-  catalogId?: string | null;
-  importedCatalogVersion?: string | null;
-  media?: ExerciseMediaMetadata | null;
-}): ExerciseListItem {
-  const media = sanitizeGymExerciseMediaForRead(doc.media, {
-    gymId: doc.gymId,
-    exerciseId: doc.id,
-    catalogId: doc.catalogId ?? null,
-  });
+function toListItem(
+  doc: GymExerciseMediaReadInput,
+  catalogsById: ReadonlyMap<string, DocWithId<ExerciseCatalogDoc>>,
+  catalogsByNameLower: ReadonlyMap<string, DocWithId<ExerciseCatalogDoc>>,
+): ExerciseListItem {
+  const media = resolveGymExerciseMediaForRead(
+    doc,
+    catalogsById,
+    catalogsByNameLower,
+  );
   return {
     id: doc.id,
     name: doc.name,
@@ -58,6 +52,32 @@ function toListItem(doc: {
     media,
     hasMedia: hasDemonstrationMedia(media),
   };
+}
+
+async function loadCatalogMapsForExerciseDocs(
+  docs: DocWithId<CustomExerciseDoc>[],
+): Promise<{
+  catalogsById: Map<string, DocWithId<ExerciseCatalogDoc>>;
+  catalogsByNameLower: Map<string, DocWithId<ExerciseCatalogDoc>>;
+}> {
+  const { exerciseCatalog } = getRepositories();
+  const catalogIds = collectCatalogIdsForMediaHydration(docs);
+  const nameLowers = collectNameLowerLookupsForSeededMedia(docs);
+
+  const [catalogsById, catalogsByNameLower] = await Promise.all([
+    exerciseCatalog.getByCatalogIds(platformContext, catalogIds),
+    exerciseCatalog.getActiveByNameLowerBatch(platformContext, nameLowers),
+  ]);
+
+  return { catalogsById, catalogsByNameLower };
+}
+
+async function mapDocsToListItems(
+  docs: DocWithId<CustomExerciseDoc>[],
+): Promise<ExerciseListItem[]> {
+  const { catalogsById, catalogsByNameLower } =
+    await loadCatalogMapsForExerciseDocs(docs);
+  return docs.map((doc) => toListItem(doc, catalogsById, catalogsByNameLower));
 }
 
 function toLibraryMapEntry(doc: {
@@ -109,7 +129,7 @@ export async function searchExerciseLibrary(
   }
 
   return {
-    items: page.items.map(toListItem),
+    items: await mapDocsToListItems(page.items),
     nextCursor: page.nextCursor,
   };
 }
@@ -153,7 +173,7 @@ export async function browseExerciseLibrary(
         : 0;
 
   return {
-    items: page.items.map(toListItem),
+    items: await mapDocsToListItems(page.items),
     nextCursor: page.nextCursor,
     totalCount,
   };
@@ -166,7 +186,7 @@ export async function getExercisesByIds(
   if (ids.length === 0) return [];
   const { customExercises } = getRepositories();
   const rows = await customExercises.getByIds(platformContext, tenantGymId, ids);
-  return rows.map(toListItem);
+  return mapDocsToListItems(rows);
 }
 
 export async function getExerciseLibraryMapByIds(
@@ -208,7 +228,7 @@ export async function getExerciseLibrary(
     rows = await customExercises.listLibrary(platformContext, tenantGymId);
   }
 
-  return rows.map(toListItem);
+  return mapDocsToListItems(rows);
 }
 
 export { groupExercisesByMuscle } from "@/lib/workout-tracking/exercise-library-grouping";

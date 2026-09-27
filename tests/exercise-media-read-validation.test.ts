@@ -253,7 +253,13 @@ describe("read boundaries", () => {
     };
 
     vi.doMock("@/lib/firestore", () => ({
-      getRepositories: () => ({ customExercises: mockCustomExercises }),
+      getRepositories: () => ({
+        customExercises: mockCustomExercises,
+        exerciseCatalog: {
+          getByCatalogIds: vi.fn(async () => new Map()),
+          getActiveByNameLowerBatch: vi.fn(async () => new Map()),
+        },
+      }),
       platformContext: { kind: "platform" },
     }));
 

@@ -1,7 +1,7 @@
 {
-  "catalogVersion": "dev-fixture-v1",
-  "provider": "gym",
-  "exerciseCount": 3,
-  "sha256OfJson": "8e164b55bd17943c757441f80e8ae0d29cf6e4481f691dfd4966756f075af998",
+  "catalogVersion": "repdb-free-v1",
+  "provider": "repdb",
+  "exerciseCount": 601,
+  "sha256OfJson": "c2098b70168b9ebbf997132114f5d27e9741b454054917c19d1abf8353d28fe1",
   "syncedAt": null
 }

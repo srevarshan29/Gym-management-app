@@ -54,14 +54,33 @@ export type SupabasePublicStorageUrlParseResult =
   | { ok: true; objectPath: string }
   | { ok: false; reason: string };
 
+function readSupabaseProjectUrl(): string | null {
+  const serverUrl = process.env.SUPABASE_URL?.trim();
+  if (serverUrl) return serverUrl;
+
+  return process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || null;
+}
+
+function readSupabaseStorageBucket(): string {
+  return (
+    process.env.SUPABASE_STORAGE_BUCKET?.trim() ||
+    process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET?.trim() ||
+    "gym-assets"
+  );
+}
+
+/**
+ * Host/bucket pair used to validate public Supabase storage object URLs.
+ * Server runtime prefers SUPABASE_*; browser bundles use NEXT_PUBLIC_* fallbacks.
+ */
 export function getSupabaseStorageUrlConfig(): SupabaseStorageUrlConfig | null {
-  const supabaseUrl = process.env.SUPABASE_URL?.trim();
+  const supabaseUrl = readSupabaseProjectUrl();
   if (!supabaseUrl) return null;
 
   try {
     return {
       host: new URL(supabaseUrl).host,
-      bucket: process.env.SUPABASE_STORAGE_BUCKET?.trim() || "gym-assets",
+      bucket: readSupabaseStorageBucket(),
     };
   } catch {
     return null;

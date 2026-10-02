@@ -35,13 +35,14 @@ describe("member portal mobile layout constraints", () => {
 });
 
 describe("staff member profile mobile layout", () => {
-  it("constrains horizontal overflow and improves landscape header layout", () => {
+  it("constrains horizontal overflow and uses table min-width scroll like payments", () => {
     const pageSource = readFileSync(
       resolve("src/app/(app)/members/[id]/page.tsx"),
       "utf8",
     );
     expect(pageSource).toContain("overflow-x-clip");
     expect(pageSource).toContain("max-md:landscape:");
-    expect(pageSource).toMatch(/min-w-0 overflow-x-auto/);
+    expect(pageSource).toContain('className="min-w-[40rem]"');
+    expect(pageSource).toContain("subscriptionTableMinW");
   });
 });

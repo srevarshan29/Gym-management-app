@@ -96,6 +96,15 @@ export default async function MemberProfilePage({
     durationLabel: durationLabel(p.durationValue, p.durationUnit),
   }));
 
+  const subscriptionExtraColumns =
+    Number(showFinancials) + Number(canLog) + Number(canLog || canWriteOff);
+  const subscriptionTableMinW =
+    subscriptionExtraColumns >= 2
+      ? "min-w-[52rem]"
+      : subscriptionExtraColumns === 1
+        ? "min-w-[44rem]"
+        : "min-w-[36rem]";
+
   return (
     <div className="mx-auto min-w-0 max-w-4xl overflow-x-clip pb-[env(safe-area-inset-bottom)]">
       {showFinancials ? <AutoOpenReceipt /> : null}
@@ -184,7 +193,7 @@ export default async function MemberProfilePage({
         </div>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid min-w-0 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Overview</CardTitle>
@@ -256,14 +265,13 @@ export default async function MemberProfilePage({
               {member.subscriptions.length === 1 ? "" : "s"}.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="min-w-0">
             {member.subscriptions.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">
                 No subscriptions recorded.
               </p>
             ) : (
-              <div className="min-w-0 overflow-x-auto">
-              <Table>
+              <Table className={subscriptionTableMinW}>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Package</TableHead>
@@ -339,7 +347,6 @@ export default async function MemberProfilePage({
                   })}
                 </TableBody>
               </Table>
-              </div>
             )}
           </CardContent>
         </Card>
@@ -353,14 +360,13 @@ export default async function MemberProfilePage({
                 {member.payments.length === 1 ? "" : "s"} recorded.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="min-w-0">
               {member.payments.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
                   No payments recorded yet.
                 </p>
               ) : (
-                <div className="min-w-0 overflow-x-auto">
-                <Table>
+                <Table className="min-w-[40rem]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
@@ -400,7 +406,6 @@ export default async function MemberProfilePage({
                     ))}
                   </TableBody>
                 </Table>
-                </div>
               )}
             </CardContent>
           </Card>

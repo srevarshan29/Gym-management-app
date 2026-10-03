@@ -35,12 +35,12 @@ describe("member portal mobile layout constraints", () => {
 });
 
 describe("staff member profile mobile layout", () => {
-  it("constrains horizontal overflow and uses table min-width scroll like payments", () => {
+  it("uses table min-width scroll like payments without page-level overflow-x-clip", () => {
     const pageSource = readFileSync(
       resolve("src/app/(app)/members/[id]/page.tsx"),
       "utf8",
     );
-    expect(pageSource).toContain("overflow-x-clip");
+    expect(pageSource).not.toContain("overflow-x-clip");
     expect(pageSource).toContain("max-md:landscape:");
     expect(pageSource).toContain('className="min-w-[40rem]"');
     expect(pageSource).toContain("subscriptionTableMinW");

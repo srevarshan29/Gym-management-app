@@ -106,7 +106,7 @@ export default async function MemberProfilePage({
         : "min-w-[36rem]";
 
   return (
-    <div className="mx-auto min-w-0 max-w-4xl overflow-x-clip pb-[env(safe-area-inset-bottom)]">
+    <div className="mx-auto min-w-0 max-w-4xl pb-[env(safe-area-inset-bottom)]">
       {showFinancials ? <AutoOpenReceipt /> : null}
       <div className="mb-4">
         <Button asChild variant="ghost" size="sm" className="gap-1">

@@ -1,5 +1,10 @@
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 
+import {
+  formatReceiptDisplayCurrency,
+  formatReceiptDisplayDate,
+  receiptMethodLabel,
+} from "@/lib/receipt-display";
 import { formatReceiptNumber, type ReceiptData } from "@/lib/receipts";
 
 const PRIMARY = "#2563eb";
@@ -7,14 +12,6 @@ const PRIMARY_SOFT = "#eff6ff";
 const BORDER = "#e2e8f0";
 const MUTED = "#64748b";
 const TEXT = "#0f172a";
-
-const METHOD_LABEL: Record<string, string> = {
-  CASH: "Cash",
-  UPI: "UPI",
-  CARD: "Card",
-  BANK_TRANSFER: "Bank transfer",
-  OTHER: "Other",
-};
 
 const styles = StyleSheet.create({
   page: {
@@ -124,25 +121,9 @@ const styles = StyleSheet.create({
   },
 });
 
-function formatPdfDate(value: Date | null): string {
-  if (!value) return "\u2014";
-  return new Intl.DateTimeFormat("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(value);
-}
-
-function formatPdfCurrency(value: number): string {
-  return `Rs. ${value.toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
 export function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
   const receiptNumber = formatReceiptNumber(receipt.number);
-  const methodLabel = METHOD_LABEL[receipt.method] ?? receipt.method;
+  const methodLabel = receiptMethodLabel(receipt.method);
   const hasPeriod = receipt.periodStart && receipt.periodEnd;
 
   return (
@@ -168,7 +149,7 @@ export function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
             <Text style={styles.receiptTitle}>PAYMENT RECEIPT</Text>
             <Text style={styles.receiptMeta}>{receiptNumber}</Text>
             <Text style={styles.receiptMeta}>
-              Date: {formatPdfDate(receipt.paidAt)}
+              Date: {formatReceiptDisplayDate(receipt.paidAt)}
             </Text>
           </View>
         </View>
@@ -210,8 +191,8 @@ export function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
               <View style={styles.col}>
                 <Text style={styles.label}>Subscription validity period</Text>
                 <Text style={styles.value}>
-                  {formatPdfDate(receipt.periodStart)} to{" "}
-                  {formatPdfDate(receipt.periodEnd)}
+                  {formatReceiptDisplayDate(receipt.periodStart)} to{" "}
+                  {formatReceiptDisplayDate(receipt.periodEnd)}
                 </Text>
               </View>
             </View>
@@ -221,7 +202,7 @@ export function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
         <View style={styles.amountRow}>
           <Text style={styles.amountLabel}>Amount paid</Text>
           <Text style={styles.amountValue}>
-            {formatPdfCurrency(receipt.amount)}
+            {formatReceiptDisplayCurrency(receipt.amount)}
           </Text>
         </View>
 
@@ -232,13 +213,13 @@ export function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
               <View style={styles.col}>
                 <Text style={styles.label}>Total owed (this period)</Text>
                 <Text style={styles.value}>
-                  {formatPdfCurrency(receipt.amountOwed)}
+                  {formatReceiptDisplayCurrency(receipt.amountOwed)}
                 </Text>
               </View>
               <View style={styles.col}>
                 <Text style={styles.label}>Balance remaining</Text>
                 <Text style={styles.value}>
-                  {formatPdfCurrency(receipt.balanceAfter ?? 0)}
+                  {formatReceiptDisplayCurrency(receipt.balanceAfter ?? 0)}
                 </Text>
               </View>
             </View>

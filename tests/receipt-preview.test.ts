@@ -1,10 +1,58 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  buildReceiptDataUrl,
   buildReceiptPdfUrl,
   fetchReceiptPdfBlob,
+  fetchReceiptPreviewData,
   receiptPreviewErrorMessage,
+  serializeReceiptPreviewData,
 } from "@/lib/receipt-preview";
+
+const { requireGym } = vi.hoisted(() => ({
+  requireGym: vi.fn(),
+}));
+
+const { getOrCreateReceiptByPayment } = vi.hoisted(() => ({
+  getOrCreateReceiptByPayment: vi.fn(),
+}));
+
+vi.mock("@/lib/session", () => ({
+  requireGym,
+}));
+
+vi.mock("@/lib/receipts", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/receipts")>();
+  return {
+    ...actual,
+    getOrCreateReceiptByPayment,
+  };
+});
+
+const sampleReceipt = {
+  id: "rcpt-1",
+  number: 7,
+  createdAt: new Date("2026-01-15T10:00:00.000Z"),
+  gymName: "Iron Gym",
+  gymAddress: "123 Main St",
+  gymPhone: "9999999999",
+  gymLogoUrl: "https://example.com/logo.png",
+  memberId: "M-001",
+  memberName: "Alex Member",
+  memberPhone: "8888888888",
+  memberEmail: null,
+  packageName: "Gold Plan",
+  amount: 1500,
+  amountOwed: 3000,
+  balanceAfter: 1500,
+  method: "UPI",
+  paidAt: new Date("2026-01-15T10:00:00.000Z"),
+  periodStart: new Date("2026-01-01T00:00:00.000Z"),
+  periodEnd: new Date("2026-01-31T00:00:00.000Z"),
+};
 
 describe("buildReceiptPdfUrl", () => {
   it("builds inline and download receipt URLs", () => {
@@ -15,6 +63,22 @@ describe("buildReceiptPdfUrl", () => {
   });
 });
 
+describe("buildReceiptDataUrl", () => {
+  it("builds the JSON preview endpoint URL", () => {
+    expect(buildReceiptDataUrl("pay-1")).toBe("/payments/pay-1/receipt/data");
+  });
+});
+
+describe("serializeReceiptPreviewData", () => {
+  it("serializes receipt dates as ISO strings", () => {
+    const payload = serializeReceiptPreviewData(sampleReceipt);
+    expect(payload.number).toBe(7);
+    expect(payload.paidAt).toBe("2026-01-15T10:00:00.000Z");
+    expect(payload.periodStart).toBe("2026-01-01T00:00:00.000Z");
+    expect(payload.gymLogoUrl).toBe("https://example.com/logo.png");
+  });
+});
+
 describe("receiptPreviewErrorMessage", () => {
   it("maps auth and missing receipt statuses", () => {
     expect(receiptPreviewErrorMessage(403)).toContain("permission");
@@ -22,6 +86,52 @@ describe("receiptPreviewErrorMessage", () => {
     expect(receiptPreviewErrorMessage(500, "Server exploded")).toBe(
       "Server exploded",
     );
+  });
+});
+
+describe("fetchReceiptPreviewData", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("returns receipt JSON for successful responses", async () => {
+    const payload = serializeReceiptPreviewData(sampleReceipt);
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ receipt: payload }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    const result = await fetchReceiptPreviewData("pay-1");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.receipt.memberName).toBe("Alex Member");
+    }
+    expect(fetch).toHaveBeenCalledWith(
+      "/payments/pay-1/receipt/data",
+      expect.objectContaining({ credentials: "same-origin", cache: "no-store" }),
+    );
+  });
+
+  it("surfaces JSON error payloads from failed receipt loads", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ error: "Receipt not found." }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    const result = await fetchReceiptPreviewData("missing");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toBe("Receipt not found.");
+      expect(result.status).toBe(404);
+    }
   });
 });
 
@@ -83,5 +193,85 @@ describe("fetchReceiptPdfBlob", () => {
     if (!result.ok) {
       expect(result.message).toContain("unexpected format");
     }
+  });
+});
+
+describe("receipt data route", () => {
+  beforeEach(() => {
+    requireGym.mockReset();
+    getOrCreateReceiptByPayment.mockReset();
+  });
+
+  it("returns 403 when the user cannot log payments", async () => {
+    requireGym.mockResolvedValue({ gymId: "gym-1", role: "MEMBER" });
+    const { GET } = await import(
+      "@/app/(app)/payments/[paymentId]/receipt/data/route"
+    );
+    const response = await GET(new Request("http://localhost/test"), {
+      params: { paymentId: "pay-1" },
+    });
+    expect(response.status).toBe(403);
+  });
+
+  it("returns receipt JSON for authorized users", async () => {
+    requireGym.mockResolvedValue({ gymId: "gym-1", role: "STAFF" });
+    getOrCreateReceiptByPayment.mockResolvedValue(sampleReceipt);
+    const { GET } = await import(
+      "@/app/(app)/payments/[paymentId]/receipt/data/route"
+    );
+    const response = await GET(new Request("http://localhost/test"), {
+      params: { paymentId: "pay-1" },
+    });
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { receipt: { memberName: string } };
+    expect(body.receipt.memberName).toBe("Alex Member");
+    expect(getOrCreateReceiptByPayment).toHaveBeenCalledWith("gym-1", "pay-1");
+  });
+
+  it("returns 404 when receipt lookup fails", async () => {
+    requireGym.mockResolvedValue({ gymId: "gym-1", role: "ADMIN" });
+    getOrCreateReceiptByPayment.mockRejectedValue(new Error("missing"));
+    const { GET } = await import(
+      "@/app/(app)/payments/[paymentId]/receipt/data/route"
+    );
+    const response = await GET(new Request("http://localhost/test"), {
+      params: { paymentId: "missing" },
+    });
+    expect(response.status).toBe(404);
+  });
+});
+
+describe("receipt HTML preview UI", () => {
+  it("uses JSON preview fetch instead of PDF blob preview in the modal", () => {
+    const modalSource = readFileSync(
+      resolve("src/components/receipt-modal.tsx"),
+      "utf8",
+    );
+    expect(modalSource).toContain("ReceiptHtmlPreview");
+    expect(modalSource).not.toContain("ReceiptPdfPreview");
+    expect(modalSource).toContain('buildReceiptPdfUrl(paymentId, { download: true })');
+    expect(modalSource).not.toContain("<iframe");
+  });
+
+  it("renders receipt sections in the HTML preview view", () => {
+    const viewSource = readFileSync(
+      resolve("src/components/receipt-html-view.tsx"),
+      "utf8",
+    );
+    expect(viewSource).toContain("PAYMENT RECEIPT");
+    expect(viewSource).toContain("Billed to");
+    expect(viewSource).toContain("Payment details");
+    expect(viewSource).toContain("Amount paid");
+    expect(viewSource).toContain("Installment summary");
+    expect(viewSource).toContain('loading="lazy"');
+  });
+
+  it("loads preview data from the receipt data endpoint", () => {
+    const previewSource = readFileSync(
+      resolve("src/components/receipt-html-preview.tsx"),
+      "utf8",
+    );
+    expect(previewSource).toContain("fetchReceiptPreviewData");
+    expect(previewSource).not.toContain("fetchReceiptPdfBlob");
   });
 });

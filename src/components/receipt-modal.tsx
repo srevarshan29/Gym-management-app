@@ -2,7 +2,7 @@
 
 import { Download } from "lucide-react";
 
-import { ReceiptPdfPreview } from "@/components/receipt-pdf-preview";
+import { ReceiptHtmlPreview } from "@/components/receipt-html-preview";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,7 +34,7 @@ export function ReceiptModal({
 
         {paymentId ? (
           <>
-            <ReceiptPdfPreview paymentId={paymentId} />
+            <ReceiptHtmlPreview paymentId={paymentId} />
 
             <DialogFooter>
               <Button asChild>

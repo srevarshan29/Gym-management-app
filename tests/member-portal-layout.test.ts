@@ -4,12 +4,13 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("receipt modal preview", () => {
-  it("loads PDF via fetch/blob preview instead of iframe embedding", () => {
+  it("loads HTML receipt preview instead of embedding a PDF object", () => {
     const modalSource = readFileSync(
       resolve("src/components/receipt-modal.tsx"),
       "utf8",
     );
-    expect(modalSource).toContain("ReceiptPdfPreview");
+    expect(modalSource).toContain("ReceiptHtmlPreview");
+    expect(modalSource).not.toContain("ReceiptPdfPreview");
     expect(modalSource).not.toContain("<iframe");
   });
 });

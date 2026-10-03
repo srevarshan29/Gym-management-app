@@ -40,7 +40,9 @@ const sampleReceipt = {
   gymAddress: "123 Main St",
   gymPhone: "9999999999",
   gymLogoUrl: "https://example.com/logo.png",
-  memberId: "M-001",
+  memberId: "84b6562ba87a4df79044567b5",
+  memberNumber: 78,
+  memberDisplayId: "#0078",
   memberName: "Alex Member",
   memberPhone: "8888888888",
   memberEmail: null,
@@ -61,7 +63,7 @@ describe("receipt display formatters", () => {
       "utf8",
     );
     expect(displaySource).toContain("formatReceiptNumber");
-    expect(displaySource).toContain("formatReceiptDisplayCurrency");
+    expect(displaySource).toContain("formatMemberNumber");
     expect(displaySource).not.toContain("firestore");
     expect(displaySource).not.toContain("firebase-admin");
   });
@@ -91,6 +93,7 @@ describe("serializeReceiptPreviewData", () => {
   it("serializes receipt dates as ISO strings", () => {
     const payload = serializeReceiptPreviewData(sampleReceipt);
     expect(payload.number).toBe(7);
+    expect(payload.memberDisplayId).toBe("#0078");
     expect(payload.paidAt).toBe("2026-01-15T10:00:00.000Z");
     expect(payload.periodStart).toBe("2026-01-01T00:00:00.000Z");
     expect(payload.gymLogoUrl).toBe("https://example.com/logo.png");
@@ -287,6 +290,8 @@ describe("receipt HTML preview UI", () => {
     expect(viewSource).toContain("min-w-0");
     expect(viewSource).toContain("overflow-x-hidden");
     expect(viewSource).toContain("break-words");
+    expect(viewSource).toContain("receipt.memberDisplayId");
+    expect(viewSource).not.toContain("receipt.memberId");
   });
 
   it("uses shared receipt design tokens in the PDF document", () => {
@@ -299,6 +304,8 @@ describe("receipt HTML preview UI", () => {
     expect(pdfSource).toContain("RECEIPT_FIELD_LABELS");
     expect(pdfSource).toContain("formatReceiptDisplayCurrency");
     expect(pdfSource).toContain("formatReceiptDisplayDate");
+    expect(pdfSource).toContain("receipt.memberDisplayId");
+    expect(pdfSource).not.toMatch(/receipt\.memberId/);
     expect(pdfSource).not.toContain("#2563eb");
   });
 

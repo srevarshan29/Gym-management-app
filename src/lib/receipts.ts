@@ -13,7 +13,12 @@ export type ReceiptData = {
   gymAddress: string | null;
   gymPhone: string | null;
   gymLogoUrl: string | null;
+  /** Internal Firestore member document ID (not shown on receipts). */
   memberId: string;
+  /** Snapshot at creation; null on legacy receipts until resolved from member. */
+  memberNumber: number | null;
+  /** Formatted customer-facing Member ID, e.g. #0078. */
+  memberDisplayId: string;
   memberName: string;
   memberPhone: string;
   memberEmail: string | null;
@@ -28,36 +33,6 @@ export type ReceiptData = {
 };
 
 export { formatReceiptNumber };
-
-function toReceiptData(
-  receipt: Awaited<
-    ReturnType<
-      ReturnType<typeof getRepositories>["receipts"]["findByPaymentId"]
-    >
-  > & { id: string },
-): ReceiptData {
-  return {
-    id: receipt.id,
-    number: receipt.number,
-    createdAt: receipt.createdAt.toDate(),
-    gymName: receipt.gymName,
-    gymAddress: receipt.gymAddress,
-    gymPhone: receipt.gymPhone,
-    gymLogoUrl: receipt.gymLogoUrl,
-    memberId: receipt.memberId,
-    memberName: receipt.memberName,
-    memberPhone: receipt.memberPhone,
-    memberEmail: receipt.memberEmail,
-    packageName: receipt.packageName,
-    amount: receipt.amount,
-    amountOwed: receipt.amountOwed,
-    balanceAfter: receipt.balanceAfter,
-    method: receipt.method,
-    paidAt: receipt.paidAt.toDate(),
-    periodStart: receipt.periodStart?.toDate() ?? null,
-    periodEnd: receipt.periodEnd?.toDate() ?? null,
-  };
-}
 
 export async function getOrCreateReceiptByPayment(
   tenantGymId: string,

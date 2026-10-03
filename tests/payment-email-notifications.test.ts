@@ -12,6 +12,8 @@ const baseReceipt: ReceiptData = {
   gymPhone: "9999999999",
   gymLogoUrl: null,
   memberId: "member-abc-long-id-should-wrap",
+  memberNumber: 49,
+  memberDisplayId: "#0049",
   memberName: "Priya",
   memberPhone: "7777777777",
   memberEmail: "priya@example.com",

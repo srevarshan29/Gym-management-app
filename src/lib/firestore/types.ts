@@ -302,6 +302,8 @@ export type ReceiptDoc = {
   gymPhone: string | null;
   gymLogoUrl: string | null;
   memberId: string;
+  /** Snapshot of member.memberNumber at receipt creation (optional on legacy receipts). */
+  memberNumber?: number;
   memberName: string;
   memberPhone: string;
   memberEmail: string | null;

@@ -36,6 +36,20 @@ export function formatReceiptNumber(number: number): string {
   return `RCPT-${String(number).padStart(4, "0")}`;
 }
 
+/** Customer-facing member identifier on receipts (matches members list / portal). */
+export function formatMemberNumber(memberNumber: number): string {
+  return `#${String(memberNumber).padStart(4, "0")}`;
+}
+
+export function receiptMemberDisplayId(
+  memberNumber: number | null | undefined,
+): string {
+  if (memberNumber == null || Number.isNaN(memberNumber)) {
+    return "\u2014";
+  }
+  return formatMemberNumber(memberNumber);
+}
+
 export const RECEIPT_METHOD_LABEL: Record<string, string> = {
   CASH: "Cash",
   UPI: "UPI",

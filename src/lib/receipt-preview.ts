@@ -22,7 +22,7 @@ export type ReceiptPreviewData = {
   gymAddress: string | null;
   gymPhone: string | null;
   gymLogoUrl: string | null;
-  memberId: string;
+  memberDisplayId: string;
   memberName: string;
   memberPhone: string;
   packageName: string | null;
@@ -42,7 +42,7 @@ export function serializeReceiptPreviewData(receipt: ReceiptData): ReceiptPrevie
     gymAddress: receipt.gymAddress,
     gymPhone: receipt.gymPhone,
     gymLogoUrl: receipt.gymLogoUrl,
-    memberId: receipt.memberId,
+    memberDisplayId: receipt.memberDisplayId,
     memberName: receipt.memberName,
     memberPhone: receipt.memberPhone,
     packageName: receipt.packageName,

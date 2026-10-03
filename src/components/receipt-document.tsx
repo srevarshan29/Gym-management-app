@@ -185,7 +185,7 @@ export function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
           <View style={styles.row}>
             <View style={styles.col}>
               <Text style={styles.label}>{RECEIPT_FIELD_LABELS.memberId}</Text>
-              <Text style={styles.value}>{receipt.memberId}</Text>
+              <Text style={styles.value}>{receipt.memberDisplayId}</Text>
             </View>
           </View>
         </View>

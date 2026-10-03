@@ -103,7 +103,10 @@ export function ReceiptHtmlView({ receipt, className }: ReceiptHtmlViewProps) {
           <Field label={RECEIPT_FIELD_LABELS.phoneNumber} value={receipt.memberPhone} />
         </div>
         <div className="mt-4 min-w-0">
-          <Field label={RECEIPT_FIELD_LABELS.memberId} value={receipt.memberId} />
+          <Field
+            label={RECEIPT_FIELD_LABELS.memberId}
+            value={receipt.memberDisplayId}
+          />
         </div>
       </section>
 

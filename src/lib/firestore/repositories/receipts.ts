@@ -16,35 +16,48 @@ import type {
   SubscriptionDoc,
 } from "@/lib/firestore/types";
 import { getGymProfilePlatform } from "@/lib/gym-profile";
+import {
+  formatReceiptNumber,
+  receiptMemberDisplayId,
+} from "@/lib/receipt-display";
 import { pendingAmount } from "@/lib/subscription-balance";
+import type { ReceiptData } from "@/lib/receipts";
 
-export type ReceiptData = {
-  id: string;
-  number: number;
-  createdAt: Date;
-  gymName: string;
-  gymAddress: string | null;
-  gymPhone: string | null;
-  gymLogoUrl: string | null;
-  memberId: string;
-  memberName: string;
-  memberPhone: string;
-  memberEmail: string | null;
-  packageName: string | null;
-  amount: number;
-  amountOwed: number | null;
-  balanceAfter: number | null;
-  method: string;
-  paidAt: Date;
-  periodStart: Date | null;
-  periodEnd: Date | null;
-};
-
-import { formatReceiptNumber } from "@/lib/receipt-display";
+export type { ReceiptData };
 
 export { formatReceiptNumber };
 
-function toReceiptData(receipt: DocWithId<ReceiptDoc>): ReceiptData {
+/** Resolve memberNumber for legacy receipts missing the snapshot field. */
+export async function resolveReceiptMemberNumber(
+  db: Firestore,
+  gymId: string,
+  receipt: Pick<ReceiptDoc, "memberId" | "memberNumber">,
+): Promise<number | null> {
+  if (receipt.memberNumber != null) {
+    return receipt.memberNumber;
+  }
+
+  try {
+    const memberSnap = await db
+      .collection(COLLECTIONS.members)
+      .doc(receipt.memberId)
+      .get();
+    if (!memberSnap.exists) return null;
+    const member = memberSnap.data() as MemberDoc;
+    if (member.gymId !== gymId) return null;
+    return member.memberNumber;
+  } catch (err) {
+    console.warn("[receipts] memberNumber fallback lookup failed:", err);
+    return null;
+  }
+}
+
+async function toReceiptData(
+  db: Firestore,
+  gymId: string,
+  receipt: DocWithId<ReceiptDoc>,
+): Promise<ReceiptData> {
+  const memberNumber = await resolveReceiptMemberNumber(db, gymId, receipt);
   return {
     id: receipt.id,
     number: receipt.number,
@@ -54,6 +67,8 @@ function toReceiptData(receipt: DocWithId<ReceiptDoc>): ReceiptData {
     gymPhone: receipt.gymPhone,
     gymLogoUrl: receipt.gymLogoUrl,
     memberId: receipt.memberId,
+    memberNumber,
+    memberDisplayId: receiptMemberDisplayId(memberNumber),
     memberName: receipt.memberName,
     memberPhone: receipt.memberPhone,
     memberEmail: receipt.memberEmail,
@@ -141,6 +156,7 @@ export class ReceiptsRepository {
       gymPhone: input.gymProfile.phone,
       gymLogoUrl: input.gymProfile.logoUrl,
       memberId: input.payment.memberId,
+      memberNumber: input.member.memberNumber,
       memberName: input.member.name,
       memberPhone: input.member.phone,
       memberEmail: input.member.email,
@@ -241,8 +257,8 @@ export class ReceiptsRepository {
     paymentId: string,
   ): Promise<ReceiptData> {
     const existing = await this.findByPaymentId(ctx, gymId, paymentId);
-    if (existing) return toReceiptData(existing);
+    if (existing) return toReceiptData(this.db, gymId, existing);
     const created = await this.createForPayment(ctx, gymId, paymentId);
-    return toReceiptData(created);
+    return toReceiptData(this.db, gymId, created);
   }
 }

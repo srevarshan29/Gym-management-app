@@ -24,7 +24,7 @@ import {
   DUPLICATE_MEMBER_EMAIL_MESSAGE,
   findGymMembersByEmailFirestore,
 } from "@/lib/member-portal/email";
-import { notifyPaymentLogged } from "@/lib/notifications";
+import { schedulePaymentLogged } from "@/lib/notifications";
 import { canDeleteMembers, canLogPayments } from "@/lib/permissions";
 import { requireGym } from "@/lib/session";
 import { uploadMemberPhoto } from "@/lib/storage";
@@ -257,9 +257,7 @@ export async function createMember(
   revalidatePath("/");
 
   if (paymentId) {
-    notifyPaymentLogged(tenantGymId, paymentId).catch((err) =>
-      console.error("[members] notifyPaymentLogged failed:", err),
-    );
+    schedulePaymentLogged(tenantGymId, paymentId);
     redirect(`/members/${memberId}?receipt=${paymentId}`);
   }
   redirect(`/members/${memberId}`);

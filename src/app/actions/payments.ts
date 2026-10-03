@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
 import { logPaymentWithReceipt } from "@/lib/firestore";
-import { notifyPaymentLogged } from "@/lib/notifications";
+import { schedulePaymentLogged } from "@/lib/notifications";
 import { canLogPayments } from "@/lib/permissions";
 import { requireGym } from "@/lib/session";
 import { staffContextFromUser } from "@/lib/firestore/session-context";
@@ -82,9 +82,7 @@ export async function logPayment(
   revalidatePath("/finance/pending-dues");
 
   if (!payment.isDuplicate) {
-    notifyPaymentLogged(tenantGymId, payment.paymentId).catch((err) =>
-      console.error("[payments] notifyPaymentLogged failed:", err),
-    );
+    schedulePaymentLogged(tenantGymId, payment.paymentId);
   }
 
   return actionOk("Payment recorded.", { paymentId: payment.paymentId });

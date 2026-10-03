@@ -3,11 +3,13 @@ import { renderToBuffer } from "@react-pdf/renderer";
 
 import { getGymProfile } from "@/lib/gym-profile";
 import {
-  formatReceiptNumber,
-  getOrCreateReceiptByPayment,
-  type ReceiptData,
-} from "@/lib/receipts";
+  deliverPaymentReceiptEmails,
+  type ReceiptEmailPayload,
+} from "@/lib/payment-email-notifications";
+import { getOrCreateReceiptByPayment, type ReceiptData } from "@/lib/receipts";
+import { formatReceiptNumber } from "@/lib/receipt-display";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { schedulePaymentLoggedNotification } from "@/lib/schedule-background-work";
 import { ReceiptDocument } from "@/components/receipt-document";
 
 const FAST2SMS_ENDPOINT = "https://www.fast2sms.com/dev/bulkV2";
@@ -67,24 +69,12 @@ function getResend(): Resend | null {
   return cachedResend;
 }
 
-async function sendReceiptEmail({
-  to,
-  cc,
-  subject,
-  html,
-  attachmentBuffer,
-  attachmentFilename,
-}: {
-  to: string;
-  cc?: string[];
-  subject: string;
-  html: string;
-  attachmentBuffer: Buffer;
-  attachmentFilename: string;
-}): Promise<void> {
+async function sendReceiptEmail(payload: ReceiptEmailPayload): Promise<void> {
   const resend = getResend();
   if (!resend) {
-    console.log(`[notifications] Email skipped (no RESEND_API_KEY) -> ${to}: ${subject}`);
+    console.log(
+      `[notifications] Email skipped (no RESEND_API_KEY) -> ${payload.to}: ${payload.subject}`,
+    );
     return;
   }
 
@@ -92,51 +82,44 @@ async function sendReceiptEmail({
   try {
     const { error } = await resend.emails.send({
       from,
-      to,
-      cc,
-      subject,
-      html,
-      attachments: [{ filename: attachmentFilename, content: attachmentBuffer }],
+      to: payload.to,
+      cc: payload.cc,
+      subject: payload.subject,
+      html: payload.html,
+      attachments: [
+        { filename: payload.attachmentFilename, content: payload.attachmentBuffer },
+      ],
     });
-    if (error) console.error("[notifications] Resend send failed:", error);
+    if (error) {
+      console.error("[notifications] Resend send failed:", {
+        to: payload.to,
+        cc: payload.cc,
+        error,
+      });
+      throw new Error(error.message ?? "Resend send failed");
+    }
   } catch (err) {
-    console.error("[notifications] Resend send threw:", err);
+    if (err instanceof Error && err.message.includes("Resend send failed")) {
+      throw err;
+    }
+    console.error("[notifications] Resend send threw:", {
+      to: payload.to,
+      cc: payload.cc,
+      err,
+    });
+    throw err;
   }
 }
 
-function buildReceiptEmailHtml(receipt: ReceiptData, receiptNumber: string): string {
-  const amountLabel = formatCurrency(receipt.amount);
-  const validity =
-    receipt.periodStart && receipt.periodEnd
-      ? `${formatDate(receipt.periodStart)} to ${formatDate(receipt.periodEnd)}`
-      : null;
-
-  return `
-  <div style="font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 480px; margin: 0 auto;">
-    <div style="background:#2563eb; color:#ffffff; padding:20px 24px; border-radius:12px 12px 0 0;">
-      <p style="margin:0; font-size:18px; font-weight:700;">${receipt.gymName}</p>
-      <p style="margin:4px 0 0; font-size:13px; opacity:0.9;">Payment receipt ${receiptNumber}</p>
-    </div>
-    <div style="border:1px solid #e2e8f0; border-top:none; border-radius:0 0 12px 12px; padding:24px;">
-      <p style="margin:0 0 12px; font-size:14px; color:#0f172a;">Hi ${receipt.memberName},</p>
-      <p style="margin:0 0 16px; font-size:14px; color:#334155; line-height:1.5;">
-        We've received your payment of <strong>${amountLabel}</strong> on ${formatDate(receipt.paidAt)}.
-        ${validity ? `Your subscription is valid from <strong>${validity}</strong>.` : ""}
-      </p>
-      <p style="margin:0 0 16px; font-size:14px; color:#334155;">
-        Your receipt (${receiptNumber}) is attached as a PDF.
-      </p>
-      <p style="margin:0; font-size:12px; color:#94a3b8;">Thank you for choosing ${receipt.gymName}.</p>
-    </div>
-  </div>`;
+async function renderReceiptPdf(receipt: ReceiptData): Promise<Buffer> {
+  return renderToBuffer(<ReceiptDocument receipt={receipt} />);
 }
 
 /**
  * Best-effort notifications fired after a payment is logged: SMS to the
  * member + owner, and email (with the PDF receipt attached) to the member
- * (if they have an email on file) and/or the owner. Every provider call is
- * caught internally so a notification failure never affects the payment
- * that was already saved.
+ * (if they have an email on file) and/or the owner. Failures are logged and
+ * never affect the payment that was already saved.
  */
 export async function notifyPaymentLogged(gymId: string, paymentId: string): Promise<void> {
   try {
@@ -163,40 +146,21 @@ export async function notifyPaymentLogged(gymId: string, paymentId: string): Pro
       smsJobs.push(sendSms(gymProfile.ownerNotifyPhone, ownerMsg));
     }
 
-    const emailJobs: Promise<void>[] = [];
-
-    if (receipt.memberEmail || gymProfile.ownerNotifyEmail) {
-      const pdfBuffer = await renderToBuffer(<ReceiptDocument receipt={receipt} />);
-      const filename = `${receiptNumber}.pdf`;
-      const subject = `Payment receipt ${receiptNumber} - ${receipt.gymName}`;
-      const html = buildReceiptEmailHtml(receipt, receiptNumber);
-
-      if (receipt.memberEmail) {
-        emailJobs.push(
-          sendReceiptEmail({
-            to: receipt.memberEmail,
-            cc: gymProfile.ownerNotifyEmail ? [gymProfile.ownerNotifyEmail] : undefined,
-            subject,
-            html,
-            attachmentBuffer: pdfBuffer,
-            attachmentFilename: filename,
-          }),
-        );
-      } else if (gymProfile.ownerNotifyEmail) {
-        emailJobs.push(
-          sendReceiptEmail({
-            to: gymProfile.ownerNotifyEmail,
-            subject: `${subject} (member has no email on file)`,
-            html,
-            attachmentBuffer: pdfBuffer,
-            attachmentFilename: filename,
-          }),
-        );
-      }
-    }
-
-    await Promise.all([...smsJobs, ...emailJobs]);
+    await Promise.all([
+      ...smsJobs,
+      deliverPaymentReceiptEmails({
+        receipt,
+        ownerNotifyEmail: gymProfile.ownerNotifyEmail,
+        sendEmail: sendReceiptEmail,
+        renderPdf: renderReceiptPdf,
+      }),
+    ]);
   } catch (err) {
     console.error("[notifications] notifyPaymentLogged failed:", err);
   }
+}
+
+/** Schedule receipt/SMS notifications to complete after the server action responds (Vercel waitUntil). */
+export function schedulePaymentLogged(gymId: string, paymentId: string): void {
+  schedulePaymentLoggedNotification(gymId, paymentId, notifyPaymentLogged);
 }

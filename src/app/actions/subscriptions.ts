@@ -11,7 +11,7 @@ import {
   writeOffSubscriptionInTransaction,
 } from "@/lib/firestore";
 import { staffContextFromUser } from "@/lib/firestore/session-context";
-import { notifyPaymentLogged } from "@/lib/notifications";
+import { schedulePaymentLogged } from "@/lib/notifications";
 import { canLogPayments, canWriteOffDues } from "@/lib/permissions";
 import { requireGym } from "@/lib/session";
 import { computeEndDate } from "@/lib/subscription";
@@ -95,9 +95,7 @@ export async function renewSubscription(
   revalidatePath("/finance/pending-dues");
 
   if (paymentId) {
-    notifyPaymentLogged(tenantGymId, paymentId).catch((err) =>
-      console.error("[subscriptions] notifyPaymentLogged failed:", err),
-    );
+    schedulePaymentLogged(tenantGymId, paymentId);
   }
 
   return actionOk("Subscription renewed.", { paymentId });

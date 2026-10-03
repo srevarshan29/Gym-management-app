@@ -40,9 +40,9 @@ export type ReceiptData = {
   periodEnd: Date | null;
 };
 
-export function formatReceiptNumber(number: number): string {
-  return `RCPT-${String(number).padStart(4, "0")}`;
-}
+import { formatReceiptNumber } from "@/lib/receipt-display";
+
+export { formatReceiptNumber };
 
 function toReceiptData(receipt: DocWithId<ReceiptDoc>): ReceiptData {
   return {

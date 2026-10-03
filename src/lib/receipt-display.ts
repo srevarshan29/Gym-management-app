@@ -1,3 +1,7 @@
+export function formatReceiptNumber(number: number): string {
+  return `RCPT-${String(number).padStart(4, "0")}`;
+}
+
 export const RECEIPT_METHOD_LABEL: Record<string, string> = {
   CASH: "Cash",
   UPI: "UPI",

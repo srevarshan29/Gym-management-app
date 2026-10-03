@@ -3,7 +3,7 @@ import {
   platformContext,
   type FirestoreContext,
 } from "@/lib/firestore";
-import { formatReceiptNumber } from "@/lib/firestore/repositories/receipts";
+import { formatReceiptNumber } from "@/lib/receipt-display";
 
 export type ReceiptData = {
   id: string;

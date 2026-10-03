@@ -5,9 +5,9 @@ import * as React from "react";
 import {
   formatReceiptDisplayCurrency,
   formatReceiptDisplayDate,
+  formatReceiptNumber,
   receiptMethodLabel,
 } from "@/lib/receipt-display";
-import { formatReceiptNumber } from "@/lib/receipts";
 import type { ReceiptPreviewData } from "@/lib/receipt-preview";
 import { cn } from "@/lib/utils";
 

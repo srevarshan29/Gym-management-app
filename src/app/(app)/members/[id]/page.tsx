@@ -257,7 +257,7 @@ export default async function MemberProfilePage({
           grouping={searchParams.grouping === "monthly" ? "monthly" : "weekly"}
         />
 
-        <Card>
+        <Card className="min-w-0">
           <CardHeader>
             <CardTitle>Subscription history</CardTitle>
             <CardDescription>
@@ -352,7 +352,7 @@ export default async function MemberProfilePage({
         </Card>
 
         {showFinancials ? (
-          <Card>
+          <Card className="min-w-0">
             <CardHeader>
               <CardTitle>Payment history</CardTitle>
               <CardDescription>

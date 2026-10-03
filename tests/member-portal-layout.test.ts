@@ -44,5 +44,7 @@ describe("staff member profile mobile layout", () => {
     expect(pageSource).toContain("max-md:landscape:");
     expect(pageSource).toContain('className="min-w-[40rem]"');
     expect(pageSource).toContain("subscriptionTableMinW");
+    const tableCardMinW = pageSource.match(/<Card className="min-w-0">/g);
+    expect(tableCardMinW?.length).toBe(2);
   });
 });

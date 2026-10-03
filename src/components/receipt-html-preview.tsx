@@ -72,7 +72,12 @@ export function ReceiptHtmlPreview({ paymentId, className }: ReceiptHtmlPreviewP
   }
 
   return (
-    <div className={cn("max-h-[min(60vh,28rem)] overflow-y-auto", className)}>
+    <div
+      className={cn(
+        "min-w-0 max-w-full overflow-x-hidden overflow-y-auto max-h-[min(60vh,28rem)]",
+        className,
+      )}
+    >
       <ReceiptHtmlView receipt={receipt} />
     </div>
   );

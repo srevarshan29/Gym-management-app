@@ -54,6 +54,24 @@ const sampleReceipt = {
   periodEnd: new Date("2026-01-31T00:00:00.000Z"),
 };
 
+describe("receipt display formatters", () => {
+  it("keeps formatters in client-safe receipt-display module", () => {
+    const displaySource = readFileSync(
+      resolve("src/lib/receipt-display.ts"),
+      "utf8",
+    );
+    expect(displaySource).toContain("formatReceiptNumber");
+    expect(displaySource).toContain("formatReceiptDisplayCurrency");
+    expect(displaySource).not.toContain("firestore");
+    expect(displaySource).not.toContain("firebase-admin");
+  });
+
+  it("formats currency with the rupee symbol", async () => {
+    const { formatReceiptDisplayCurrency } = await import("@/lib/receipt-display");
+    expect(formatReceiptDisplayCurrency(1000)).toBe("\u20B91,000.00");
+  });
+});
+
 describe("buildReceiptPdfUrl", () => {
   it("builds inline and download receipt URLs", () => {
     expect(buildReceiptPdfUrl("pay-1")).toBe("/payments/pay-1/receipt");
@@ -253,17 +271,35 @@ describe("receipt HTML preview UI", () => {
     expect(modalSource).not.toContain("<iframe");
   });
 
-  it("renders receipt sections in the HTML preview view", () => {
+  it("renders unified receipt sections in the HTML preview view", () => {
     const viewSource = readFileSync(
       resolve("src/components/receipt-html-view.tsx"),
       "utf8",
     );
-    expect(viewSource).toContain("PAYMENT RECEIPT");
-    expect(viewSource).toContain("Billed to");
-    expect(viewSource).toContain("Payment details");
-    expect(viewSource).toContain("Amount paid");
-    expect(viewSource).toContain("Installment summary");
+    expect(viewSource).toContain("RECEIPT_COPY.documentTitle");
+    expect(viewSource).toContain("RECEIPT_COPY.billedTo");
+    expect(viewSource).toContain("RECEIPT_COPY.paymentDetails");
+    expect(viewSource).toContain("RECEIPT_COPY.amountPaid");
+    expect(viewSource).toContain("RECEIPT_COPY.installmentSummary");
+    expect(viewSource).toContain("RECEIPT_COPY.footerThanks");
+    expect(viewSource).toContain("RECEIPT_COPY.footerLegal");
     expect(viewSource).toContain('loading="lazy"');
+    expect(viewSource).toContain("min-w-0");
+    expect(viewSource).toContain("overflow-x-hidden");
+    expect(viewSource).toContain("break-words");
+  });
+
+  it("uses shared receipt design tokens in the PDF document", () => {
+    const pdfSource = readFileSync(
+      resolve("src/components/receipt-document.tsx"),
+      "utf8",
+    );
+    expect(pdfSource).toContain("RECEIPT_DESIGN");
+    expect(pdfSource).toContain("RECEIPT_COPY");
+    expect(pdfSource).toContain("RECEIPT_FIELD_LABELS");
+    expect(pdfSource).toContain("formatReceiptDisplayCurrency");
+    expect(pdfSource).toContain("formatReceiptDisplayDate");
+    expect(pdfSource).not.toContain("#2563eb");
   });
 
   it("loads preview data from the receipt data endpoint", () => {
@@ -273,5 +309,6 @@ describe("receipt HTML preview UI", () => {
     );
     expect(previewSource).toContain("fetchReceiptPreviewData");
     expect(previewSource).not.toContain("fetchReceiptPdfBlob");
+    expect(previewSource).toContain("overflow-x-hidden");
   });
 });

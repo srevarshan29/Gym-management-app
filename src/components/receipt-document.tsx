@@ -3,121 +3,135 @@ import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/render
 import {
   formatReceiptDisplayCurrency,
   formatReceiptDisplayDate,
+  formatReceiptNumber,
+  RECEIPT_COPY,
+  RECEIPT_DESIGN,
+  RECEIPT_FIELD_LABELS,
   receiptMethodLabel,
 } from "@/lib/receipt-display";
-import { formatReceiptNumber, type ReceiptData } from "@/lib/receipts";
-
-const PRIMARY = "#2563eb";
-const PRIMARY_SOFT = "#eff6ff";
-const BORDER = "#e2e8f0";
-const MUTED = "#64748b";
-const TEXT = "#0f172a";
+import type { ReceiptData } from "@/lib/receipts";
 
 const styles = StyleSheet.create({
   page: {
     padding: 40,
     fontSize: 10,
     fontFamily: "Helvetica",
-    color: TEXT,
+    color: RECEIPT_DESIGN.text,
+    backgroundColor: RECEIPT_DESIGN.background,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    borderBottomWidth: 2,
-    borderBottomColor: PRIMARY,
-    paddingBottom: 16,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   gymBlock: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
+    maxWidth: "55%",
   },
   logo: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
+    width: 48,
+    height: 48,
+    borderRadius: 6,
     marginRight: 10,
   },
   gymName: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: "Helvetica-Bold",
-    color: PRIMARY,
+    color: RECEIPT_DESIGN.text,
   },
   gymMeta: {
     fontSize: 9,
-    color: MUTED,
-    marginTop: 2,
+    color: RECEIPT_DESIGN.textMuted,
+    marginTop: 3,
   },
   receiptBlock: {
     alignItems: "flex-end",
+    maxWidth: "40%",
   },
   receiptTitle: {
-    fontSize: 13,
+    fontSize: 10,
     fontFamily: "Helvetica-Bold",
-    color: PRIMARY,
-    marginBottom: 3,
+    letterSpacing: 0.8,
+    color: RECEIPT_DESIGN.text,
   },
   receiptMeta: {
     fontSize: 9,
-    color: MUTED,
+    color: RECEIPT_DESIGN.textMuted,
+    marginTop: 4,
   },
-  card: {
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 14,
+  divider: {
+    borderBottomWidth: 1,
+    borderBottomColor: RECEIPT_DESIGN.border,
+    marginBottom: 18,
+  },
+  section: {
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 8,
-    color: MUTED,
-    textTransform: "uppercase",
+    fontFamily: "Helvetica-Bold",
+    color: RECEIPT_DESIGN.textMuted,
+    letterSpacing: 1.2,
     marginBottom: 10,
-    letterSpacing: 1,
   },
   row: {
     flexDirection: "row",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   col: {
     flex: 1,
+    paddingRight: 8,
   },
   label: {
     fontSize: 8,
-    color: MUTED,
-    marginBottom: 3,
+    color: RECEIPT_DESIGN.textMuted,
+    marginBottom: 4,
+    textTransform: "uppercase",
   },
   value: {
     fontSize: 10,
     fontFamily: "Helvetica-Bold",
+    color: RECEIPT_DESIGN.text,
   },
-  amountRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: PRIMARY_SOFT,
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 20,
+  amountBox: {
+    borderWidth: 1,
+    borderColor: RECEIPT_DESIGN.border,
+    backgroundColor: RECEIPT_DESIGN.accentSoft,
+    borderRadius: 6,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    marginBottom: 18,
   },
   amountLabel: {
-    fontSize: 10,
-    color: MUTED,
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 1,
+    color: RECEIPT_DESIGN.textMuted,
+    marginBottom: 8,
   },
   amountValue: {
-    fontSize: 20,
+    fontSize: 22,
     fontFamily: "Helvetica-Bold",
-    color: PRIMARY,
+    color: RECEIPT_DESIGN.text,
   },
   footer: {
-    marginTop: 10,
-    paddingTop: 12,
+    marginTop: 8,
+    paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: BORDER,
-    fontSize: 8,
-    color: MUTED,
+    borderTopColor: RECEIPT_DESIGN.border,
     textAlign: "center",
+  },
+  footerThanks: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    color: RECEIPT_DESIGN.text,
+    marginBottom: 6,
+  },
+  footerLegal: {
+    fontSize: 8,
+    color: RECEIPT_DESIGN.textMuted,
   },
 });
 
@@ -141,12 +155,12 @@ export function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
                 <Text style={styles.gymMeta}>{receipt.gymAddress}</Text>
               ) : null}
               {receipt.gymPhone ? (
-                <Text style={styles.gymMeta}>Ph: {receipt.gymPhone}</Text>
+                <Text style={styles.gymMeta}>{receipt.gymPhone}</Text>
               ) : null}
             </View>
           </View>
           <View style={styles.receiptBlock}>
-            <Text style={styles.receiptTitle}>PAYMENT RECEIPT</Text>
+            <Text style={styles.receiptTitle}>{RECEIPT_COPY.documentTitle}</Text>
             <Text style={styles.receiptMeta}>{receiptNumber}</Text>
             <Text style={styles.receiptMeta}>
               Date: {formatReceiptDisplayDate(receipt.paidAt)}
@@ -154,42 +168,48 @@ export function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
           </View>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Billed to</Text>
+        <View style={styles.divider} />
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{RECEIPT_COPY.billedTo}</Text>
           <View style={styles.row}>
             <View style={styles.col}>
-              <Text style={styles.label}>Member name</Text>
+              <Text style={styles.label}>{RECEIPT_FIELD_LABELS.memberName}</Text>
               <Text style={styles.value}>{receipt.memberName}</Text>
             </View>
             <View style={styles.col}>
-              <Text style={styles.label}>Phone number</Text>
+              <Text style={styles.label}>{RECEIPT_FIELD_LABELS.phoneNumber}</Text>
               <Text style={styles.value}>{receipt.memberPhone}</Text>
             </View>
+          </View>
+          <View style={styles.row}>
             <View style={styles.col}>
-              <Text style={styles.label}>Member ID</Text>
+              <Text style={styles.label}>{RECEIPT_FIELD_LABELS.memberId}</Text>
               <Text style={styles.value}>{receipt.memberId}</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Payment details</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{RECEIPT_COPY.paymentDetails}</Text>
           <View style={styles.row}>
             <View style={styles.col}>
-              <Text style={styles.label}>Package / subscription</Text>
+              <Text style={styles.label}>{RECEIPT_FIELD_LABELS.package}</Text>
               <Text style={styles.value}>
-                {receipt.packageName ?? "General payment"}
+                {receipt.packageName ?? RECEIPT_FIELD_LABELS.generalPayment}
               </Text>
             </View>
             <View style={styles.col}>
-              <Text style={styles.label}>Payment method</Text>
+              <Text style={styles.label}>{RECEIPT_FIELD_LABELS.paymentMethod}</Text>
               <Text style={styles.value}>{methodLabel}</Text>
             </View>
           </View>
           {hasPeriod ? (
             <View style={styles.row}>
               <View style={styles.col}>
-                <Text style={styles.label}>Subscription validity period</Text>
+                <Text style={styles.label}>
+                  {RECEIPT_FIELD_LABELS.subscriptionValidity}
+                </Text>
                 <Text style={styles.value}>
                   {formatReceiptDisplayDate(receipt.periodStart)} to{" "}
                   {formatReceiptDisplayDate(receipt.periodEnd)}
@@ -199,25 +219,27 @@ export function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
           ) : null}
         </View>
 
-        <View style={styles.amountRow}>
-          <Text style={styles.amountLabel}>Amount paid</Text>
+        <View style={styles.amountBox}>
+          <Text style={styles.amountLabel}>{RECEIPT_COPY.amountPaid}</Text>
           <Text style={styles.amountValue}>
             {formatReceiptDisplayCurrency(receipt.amount)}
           </Text>
         </View>
 
         {receipt.amountOwed != null ? (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Installment summary</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{RECEIPT_COPY.installmentSummary}</Text>
             <View style={styles.row}>
               <View style={styles.col}>
-                <Text style={styles.label}>Total owed (this period)</Text>
+                <Text style={styles.label}>{RECEIPT_FIELD_LABELS.totalOwed}</Text>
                 <Text style={styles.value}>
                   {formatReceiptDisplayCurrency(receipt.amountOwed)}
                 </Text>
               </View>
               <View style={styles.col}>
-                <Text style={styles.label}>Balance remaining</Text>
+                <Text style={styles.label}>
+                  {RECEIPT_FIELD_LABELS.balanceRemaining}
+                </Text>
                 <Text style={styles.value}>
                   {formatReceiptDisplayCurrency(receipt.balanceAfter ?? 0)}
                 </Text>
@@ -227,10 +249,8 @@ export function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
         ) : null}
 
         <View style={styles.footer}>
-          <Text>
-            Thank you for your payment. This is a computer-generated receipt
-            and does not require a signature.
-          </Text>
+          <Text style={styles.footerThanks}>{RECEIPT_COPY.footerThanks}</Text>
+          <Text style={styles.footerLegal}>{RECEIPT_COPY.footerLegal}</Text>
         </View>
       </Page>
     </Document>

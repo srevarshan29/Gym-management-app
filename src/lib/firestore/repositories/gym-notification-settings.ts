@@ -45,6 +45,11 @@ export class GymNotificationSettingsRepository {
       paymentReceiptEmail: input.paymentReceiptEmail,
       membershipExpiry7Day: input.membershipExpiry7Day,
       membershipExpiry3Day: input.membershipExpiry3Day,
+      membershipExpiryDay: input.membershipExpiryDay,
+      membershipExpiry2DaysAfter: input.membershipExpiry2DaysAfter,
+      membershipExpiry7DaysAfter: input.membershipExpiry7DaysAfter,
+      membershipExpiry14DaysAfter: input.membershipExpiry14DaysAfter,
+      membershipExpiry30DaysAfter: input.membershipExpiry30DaysAfter,
       updatedAt: now,
     };
 

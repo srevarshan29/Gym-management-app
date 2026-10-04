@@ -17,10 +17,25 @@ const channelSchema = z.object({
   body: z.string().max(20000),
 });
 
+const MEMBERSHIP_EXPIRY_CHANNEL_KEYS = [
+  "membershipExpiry7Day",
+  "membershipExpiry3Day",
+  "membershipExpiryDay",
+  "membershipExpiry2DaysAfter",
+  "membershipExpiry7DaysAfter",
+  "membershipExpiry14DaysAfter",
+  "membershipExpiry30DaysAfter",
+] as const satisfies ReadonlyArray<keyof GymNotificationSettingsData>;
+
 const settingsSchema = z.object({
   paymentReceiptEmail: channelSchema,
   membershipExpiry7Day: channelSchema,
   membershipExpiry3Day: channelSchema,
+  membershipExpiryDay: channelSchema,
+  membershipExpiry2DaysAfter: channelSchema,
+  membershipExpiry7DaysAfter: channelSchema,
+  membershipExpiry14DaysAfter: channelSchema,
+  membershipExpiry30DaysAfter: channelSchema,
 });
 
 function toStaffContext(user: {
@@ -59,15 +74,13 @@ export async function updateGymNotificationSettings(
 
   const payload = {
     paymentReceiptEmail: parseChannelFromForm(formData, "paymentReceiptEmail"),
-    membershipExpiry7Day: parseChannelFromForm(
-      formData,
-      "membershipExpiry7Day",
+    ...Object.fromEntries(
+      MEMBERSHIP_EXPIRY_CHANNEL_KEYS.map((key) => [
+        key,
+        parseChannelFromForm(formData, key),
+      ]),
     ),
-    membershipExpiry3Day: parseChannelFromForm(
-      formData,
-      "membershipExpiry3Day",
-    ),
-  };
+  } as z.infer<typeof settingsSchema>;
 
   const parsed = settingsSchema.safeParse(payload);
   if (!parsed.success) {
@@ -85,7 +98,7 @@ export async function updateGymNotificationSettings(
   return actionOk("Notification settings saved.");
 }
 
-export type GymNotificationSettingsFormDefaults = Pick<
+export type GymNotificationSettingsFormDefaults = Omit<
   GymNotificationSettingsData,
-  "paymentReceiptEmail" | "membershipExpiry7Day" | "membershipExpiry3Day"
+  "gymId"
 >;

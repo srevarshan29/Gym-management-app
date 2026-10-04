@@ -44,7 +44,7 @@ export const NOTIFICATION_TEMPLATE_VARIABLE_DESCRIPTIONS: ReadonlyArray<{
     name: "days_remaining",
     token: "{{days_remaining}}",
     meaning:
-      "Days until expiry (7 or 3 for reminders), or days left on the subscription when a payment receipt is sent",
+      "Days until expiry (positive before, 0 on expiry day, negative after expiry)",
   },
 ];
 

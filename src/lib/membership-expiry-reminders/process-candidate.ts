@@ -1,13 +1,13 @@
 import { buildMembershipExpiryEmailFromSettings } from "@/lib/notification-settings/membership-expiry-email";
 import type { NotificationChannelSettings } from "@/lib/notification-settings/types";
+import type { MembershipExpiryReminderType } from "@/lib/firestore/types";
 import { isEligibleForExpiryReminder } from "@/lib/membership-expiry-reminders/window";
 
 import type {
   ExpiryReminderCandidate,
-  ExpiryReminderDays,
   ExpiryReminderDeliveryRecord,
 } from "./types";
-import { reminderTypeForDays } from "./types";
+import { daysUntilForReminderType } from "./types";
 
 export type ProcessExpiryReminderResult =
   | "skipped_ineligible"
@@ -34,7 +34,7 @@ export type ExpiryReminderProcessorDeps = {
 
 export async function processExpiryReminderCandidate(
   candidate: ExpiryReminderCandidate,
-  reminderDays: ExpiryReminderDays,
+  reminderType: MembershipExpiryReminderType,
   gymName: string,
   now: Date,
   channelSettings: NotificationChannelSettings,
@@ -44,13 +44,14 @@ export async function processExpiryReminderCandidate(
     return "skipped_disabled";
   }
 
-  if (!isEligibleForExpiryReminder(candidate, reminderDays, now)) {
+  const daysUntilTarget = daysUntilForReminderType(reminderType);
+
+  if (!isEligibleForExpiryReminder(candidate, daysUntilTarget, now)) {
     return "skipped_ineligible";
   }
 
   const subscriptionId = candidate.currentSubscriptionId!;
   const recipientEmail = candidate.memberEmail!.trim();
-  const reminderType = reminderTypeForDays(reminderDays);
   const deliveryRecord: ExpiryReminderDeliveryRecord = {
     gymId: candidate.gymId,
     memberId: candidate.memberId,
@@ -70,7 +71,7 @@ export async function processExpiryReminderCandidate(
       memberName: candidate.memberName,
       gymName,
       expiryDate: candidate.currentEndDate!,
-      daysRemaining: reminderDays,
+      daysRemaining: daysUntilTarget,
     },
   );
 

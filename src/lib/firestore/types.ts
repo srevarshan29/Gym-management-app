@@ -318,7 +318,14 @@ export type ReceiptDoc = {
   createdAt: Timestamp;
 };
 
-export type MembershipExpiryReminderType = "EXPIRY_7_DAY" | "EXPIRY_3_DAY";
+export type MembershipExpiryReminderType =
+  | "EXPIRY_7_DAY"
+  | "EXPIRY_3_DAY"
+  | "EXPIRY_DAY"
+  | "EXPIRY_2_DAYS_AFTER"
+  | "EXPIRY_7_DAYS_AFTER"
+  | "EXPIRY_14_DAYS_AFTER"
+  | "EXPIRY_30_DAYS_AFTER";
 
 /** Durable idempotency record for automated notification delivery. */
 export type NotificationDeliveryDoc = {
@@ -343,6 +350,11 @@ export type GymNotificationSettingsDoc = {
   paymentReceiptEmail: NotificationChannelSettingsDoc;
   membershipExpiry7Day: NotificationChannelSettingsDoc;
   membershipExpiry3Day: NotificationChannelSettingsDoc;
+  membershipExpiryDay?: NotificationChannelSettingsDoc;
+  membershipExpiry2DaysAfter?: NotificationChannelSettingsDoc;
+  membershipExpiry7DaysAfter?: NotificationChannelSettingsDoc;
+  membershipExpiry14DaysAfter?: NotificationChannelSettingsDoc;
+  membershipExpiry30DaysAfter?: NotificationChannelSettingsDoc;
   updatedAt: Timestamp;
 };
 

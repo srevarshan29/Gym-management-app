@@ -5,6 +5,7 @@ import { mergeGymNotificationSettings } from "@/lib/notification-settings/merge"
 import {
   DEFAULT_MEMBERSHIP_EXPIRY_3_DAY,
   DEFAULT_MEMBERSHIP_EXPIRY_7_DAY,
+  defaultGymNotificationSettings,
 } from "@/lib/notification-settings/defaults";
 import { processExpiryReminderCandidate } from "@/lib/membership-expiry-reminders/process-candidate";
 import type { ExpiryReminderCandidate } from "@/lib/membership-expiry-reminders/types";
@@ -156,6 +157,21 @@ describe("updateGymNotificationSettings", () => {
     form.set("membershipExpiry3Day.enabled", "true");
     form.set("membershipExpiry3Day.subject", "3 day");
     form.set("membershipExpiry3Day.body", "Body 3");
+    form.set("membershipExpiryDay.enabled", "true");
+    form.set("membershipExpiryDay.subject", "Day");
+    form.set("membershipExpiryDay.body", "Body day");
+    form.set("membershipExpiry2DaysAfter.enabled", "true");
+    form.set("membershipExpiry2DaysAfter.subject", "+2");
+    form.set("membershipExpiry2DaysAfter.body", "Body +2");
+    form.set("membershipExpiry7DaysAfter.enabled", "true");
+    form.set("membershipExpiry7DaysAfter.subject", "+7");
+    form.set("membershipExpiry7DaysAfter.body", "Body +7");
+    form.set("membershipExpiry14DaysAfter.enabled", "true");
+    form.set("membershipExpiry14DaysAfter.subject", "+14");
+    form.set("membershipExpiry14DaysAfter.body", "Body +14");
+    form.set("membershipExpiry30DaysAfter.enabled", "true");
+    form.set("membershipExpiry30DaysAfter.subject", "+30");
+    form.set("membershipExpiry30DaysAfter.body", "Body +30");
     return form;
   }
 
@@ -206,7 +222,7 @@ describe("membership expiry reminder toggles", () => {
 
     const result = await processExpiryReminderCandidate(
       candidate(),
-      7,
+      "EXPIRY_7_DAY",
       "Iron Gym",
       now,
       { ...DEFAULT_MEMBERSHIP_EXPIRY_7_DAY, enabled: false },
@@ -227,7 +243,7 @@ describe("membership expiry reminder toggles", () => {
 
     const result = await processExpiryReminderCandidate(
       candidate({ currentEndDate: new Date("2026-10-07T08:00:00.000Z") }),
-      3,
+      "EXPIRY_3_DAY",
       "Iron Gym",
       now,
       { ...DEFAULT_MEMBERSHIP_EXPIRY_3_DAY, enabled: false },
@@ -252,14 +268,12 @@ describe("notifyPaymentLogged payment receipt toggle", () => {
 
   it("does not deliver payment receipt email when disabled", async () => {
     getGymNotificationSettingsMock.mockResolvedValue({
-      gymId: "gym-a",
+      ...defaultGymNotificationSettings("gym-a"),
       paymentReceiptEmail: {
         enabled: false,
         subject: "",
         body: "",
       },
-      membershipExpiry7Day: DEFAULT_MEMBERSHIP_EXPIRY_7_DAY,
-      membershipExpiry3Day: DEFAULT_MEMBERSHIP_EXPIRY_3_DAY,
     });
 
     const { notifyPaymentLogged } = await import("@/lib/notifications");

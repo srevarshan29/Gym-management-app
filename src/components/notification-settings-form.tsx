@@ -24,10 +24,7 @@ import type {
   NotificationChannelSettings,
 } from "@/lib/notification-settings/types";
 
-type ChannelKey =
-  | "paymentReceiptEmail"
-  | "membershipExpiry7Day"
-  | "membershipExpiry3Day";
+type ChannelKey = keyof GymNotificationSettingsFormDefaults;
 
 const CHANNEL_META: Record<
   ChannelKey,
@@ -39,12 +36,32 @@ const CHANNEL_META: Record<
       "Sent to the member (and owner copy when configured) after a payment is logged. SMS is not affected.",
   },
   membershipExpiry7Day: {
-    title: "Membership expiry — 7 days",
+    title: "Membership expiry — 7 days before",
     description: "Email reminder sent 7 days before the member's end date.",
   },
   membershipExpiry3Day: {
-    title: "Membership expiry — 3 days",
+    title: "Membership expiry — 3 days before",
     description: "Email reminder sent 3 days before the member's end date.",
+  },
+  membershipExpiryDay: {
+    title: "Membership expiry — expiry day",
+    description: "Email reminder sent on the day the membership ends.",
+  },
+  membershipExpiry2DaysAfter: {
+    title: "Membership expiry — 2 days after",
+    description: "Follow-up email sent 2 days after the membership end date.",
+  },
+  membershipExpiry7DaysAfter: {
+    title: "Membership expiry — 7 days after",
+    description: "Follow-up email sent 7 days after the membership end date.",
+  },
+  membershipExpiry14DaysAfter: {
+    title: "Membership expiry — 14 days after",
+    description: "Follow-up email sent 14 days after the membership end date.",
+  },
+  membershipExpiry30DaysAfter: {
+    title: "Membership expiry — 30 days after",
+    description: "Follow-up email sent 30 days after the membership end date.",
   },
 };
 
@@ -66,6 +83,11 @@ export function NotificationSettingsForm({ settings, defaults }: Props) {
     paymentReceiptEmail: settings.paymentReceiptEmail,
     membershipExpiry7Day: settings.membershipExpiry7Day,
     membershipExpiry3Day: settings.membershipExpiry3Day,
+    membershipExpiryDay: settings.membershipExpiryDay,
+    membershipExpiry2DaysAfter: settings.membershipExpiry2DaysAfter,
+    membershipExpiry7DaysAfter: settings.membershipExpiry7DaysAfter,
+    membershipExpiry14DaysAfter: settings.membershipExpiry14DaysAfter,
+    membershipExpiry30DaysAfter: settings.membershipExpiry30DaysAfter,
   });
 
   React.useEffect(() => {
@@ -108,7 +130,9 @@ export function NotificationSettingsForm({ settings, defaults }: Props) {
         <p className="mb-3 text-xs text-muted-foreground">
           Type these tokens in the subject or message. They are replaced with each
           member&apos;s details when an email is sent. One template applies to all
-          members.
+          members. After expiry,{" "}
+          <code className="font-mono text-foreground">{`{{days_remaining}}`}</code>{" "}
+          is negative (for example -7).
         </p>
         <ul className="space-y-2 text-xs text-muted-foreground">
           {variableHint.map((item) => (

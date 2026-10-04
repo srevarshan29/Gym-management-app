@@ -99,11 +99,10 @@ export default async function SettingsPage() {
           <CardContent>
             <NotificationSettingsForm
               settings={notificationSettings}
-              defaults={{
-                paymentReceiptEmail: notificationDefaults.paymentReceiptEmail,
-                membershipExpiry7Day: notificationDefaults.membershipExpiry7Day,
-                membershipExpiry3Day: notificationDefaults.membershipExpiry3Day,
-              }}
+              defaults={(() => {
+                const { gymId: _gymId, ...formDefaults } = notificationDefaults;
+                return formDefaults;
+              })()}
             />
           </CardContent>
         </Card>

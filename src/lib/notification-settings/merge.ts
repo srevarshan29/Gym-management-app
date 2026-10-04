@@ -1,7 +1,12 @@
 import type { GymNotificationSettingsDoc } from "@/lib/firestore/types";
 import {
+  DEFAULT_MEMBERSHIP_EXPIRY_14_DAYS_AFTER,
+  DEFAULT_MEMBERSHIP_EXPIRY_2_DAYS_AFTER,
+  DEFAULT_MEMBERSHIP_EXPIRY_30_DAYS_AFTER,
   DEFAULT_MEMBERSHIP_EXPIRY_3_DAY,
   DEFAULT_MEMBERSHIP_EXPIRY_7_DAY,
+  DEFAULT_MEMBERSHIP_EXPIRY_7_DAYS_AFTER,
+  DEFAULT_MEMBERSHIP_EXPIRY_DAY,
   DEFAULT_PAYMENT_RECEIPT_EMAIL,
   defaultGymNotificationSettings,
 } from "@/lib/notification-settings/defaults";
@@ -49,6 +54,26 @@ export function mergeGymNotificationSettings(
     membershipExpiry3Day: mergeChannel(
       DEFAULT_MEMBERSHIP_EXPIRY_3_DAY,
       stored.membershipExpiry3Day,
+    ),
+    membershipExpiryDay: mergeChannel(
+      DEFAULT_MEMBERSHIP_EXPIRY_DAY,
+      stored.membershipExpiryDay,
+    ),
+    membershipExpiry2DaysAfter: mergeChannel(
+      DEFAULT_MEMBERSHIP_EXPIRY_2_DAYS_AFTER,
+      stored.membershipExpiry2DaysAfter,
+    ),
+    membershipExpiry7DaysAfter: mergeChannel(
+      DEFAULT_MEMBERSHIP_EXPIRY_7_DAYS_AFTER,
+      stored.membershipExpiry7DaysAfter,
+    ),
+    membershipExpiry14DaysAfter: mergeChannel(
+      DEFAULT_MEMBERSHIP_EXPIRY_14_DAYS_AFTER,
+      stored.membershipExpiry14DaysAfter,
+    ),
+    membershipExpiry30DaysAfter: mergeChannel(
+      DEFAULT_MEMBERSHIP_EXPIRY_30_DAYS_AFTER,
+      stored.membershipExpiry30DaysAfter,
     ),
   };
 }

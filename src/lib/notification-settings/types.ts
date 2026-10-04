@@ -9,4 +9,9 @@ export type GymNotificationSettingsData = {
   paymentReceiptEmail: NotificationChannelSettings;
   membershipExpiry7Day: NotificationChannelSettings;
   membershipExpiry3Day: NotificationChannelSettings;
+  membershipExpiryDay: NotificationChannelSettings;
+  membershipExpiry2DaysAfter: NotificationChannelSettings;
+  membershipExpiry7DaysAfter: NotificationChannelSettings;
+  membershipExpiry14DaysAfter: NotificationChannelSettings;
+  membershipExpiry30DaysAfter: NotificationChannelSettings;
 };

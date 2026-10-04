@@ -1,10 +1,10 @@
 import { daysUntil } from "@/lib/subscription";
 
-import type { ExpiryReminderCandidate, ExpiryReminderDays } from "./types";
+import type { ExpiryReminderCandidate, ExpiryReminderDaysUntil } from "./types";
 
 /** Calendar-day range [start, end) for members whose membership ends on the target day. */
 export function expiryCalendarDayRange(
-  daysRemaining: ExpiryReminderDays,
+  daysUntilExpiry: ExpiryReminderDaysUntil,
   now: Date = new Date(),
 ): { start: Date; end: Date } {
   const startOfToday = new Date(
@@ -13,7 +13,7 @@ export function expiryCalendarDayRange(
     now.getDate(),
   );
   const targetDay = new Date(startOfToday);
-  targetDay.setDate(targetDay.getDate() + daysRemaining);
+  targetDay.setDate(targetDay.getDate() + daysUntilExpiry);
   const end = new Date(targetDay);
   end.setDate(end.getDate() + 1);
   return { start: targetDay, end };
@@ -21,7 +21,7 @@ export function expiryCalendarDayRange(
 
 export function isEligibleForExpiryReminder(
   candidate: ExpiryReminderCandidate,
-  reminderDays: ExpiryReminderDays,
+  daysUntilTarget: ExpiryReminderDaysUntil,
   now: Date = new Date(),
 ): boolean {
   if (!candidate.currentEndDate || !candidate.currentSubscriptionId) {
@@ -30,5 +30,5 @@ export function isEligibleForExpiryReminder(
   if (!candidate.memberEmail?.trim()) {
     return false;
   }
-  return daysUntil(candidate.currentEndDate, now) === reminderDays;
+  return daysUntil(candidate.currentEndDate, now) === daysUntilTarget;
 }

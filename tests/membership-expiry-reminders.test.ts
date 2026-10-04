@@ -2,15 +2,29 @@ import { describe, expect, it, vi } from "vitest";
 
 import { verifyCronSecret } from "@/lib/cron-auth";
 import { DEFAULT_MEMBERSHIP_EXPIRY_7_DAY } from "@/lib/notification-settings/defaults";
+import { mergeGymNotificationSettings } from "@/lib/notification-settings/merge";
 import { buildMembershipExpiryDeliveryId } from "@/lib/membership-expiry-reminders/delivery-id";
 import { processExpiryReminderCandidate } from "@/lib/membership-expiry-reminders/process-candidate";
 import type { ExpiryReminderCandidate } from "@/lib/membership-expiry-reminders/types";
+import type { MembershipExpiryReminderType } from "@/lib/firestore/types";
 import {
   expiryCalendarDayRange,
   isEligibleForExpiryReminder,
 } from "@/lib/membership-expiry-reminders/window";
+import { Timestamp } from "firebase-admin/firestore";
 
 const now = new Date("2026-10-04T12:00:00.000Z");
+
+function endDateForDaysUntil(daysUntil: number, reference: Date = now): Date {
+  const startOfToday = new Date(
+    reference.getFullYear(),
+    reference.getMonth(),
+    reference.getDate(),
+  );
+  const end = new Date(startOfToday);
+  end.setDate(end.getDate() + daysUntil);
+  return end;
+}
 
 function candidate(
   overrides: Partial<ExpiryReminderCandidate> = {},
@@ -21,7 +35,7 @@ function candidate(
     memberName: "Priya",
     memberEmail: "priya@example.com",
     currentSubscriptionId: "sub-current",
-    currentEndDate: new Date("2026-10-11T15:00:00.000Z"),
+    currentEndDate: endDateForDaysUntil(7),
     ...overrides,
   };
 }
@@ -34,8 +48,58 @@ describe("isEligibleForExpiryReminder", () => {
   it("is eligible exactly 3 days before expiry", () => {
     expect(
       isEligibleForExpiryReminder(
-        candidate({ currentEndDate: new Date("2026-10-07T08:00:00.000Z") }),
+        candidate({ currentEndDate: endDateForDaysUntil(3) }),
         3,
+        now,
+      ),
+    ).toBe(true);
+  });
+
+  it("is eligible on expiry day", () => {
+    expect(
+      isEligibleForExpiryReminder(
+        candidate({ currentEndDate: endDateForDaysUntil(0) }),
+        0,
+        now,
+      ),
+    ).toBe(true);
+  });
+
+  it("is eligible exactly 2 days after expiry", () => {
+    expect(
+      isEligibleForExpiryReminder(
+        candidate({ currentEndDate: endDateForDaysUntil(-2) }),
+        -2,
+        now,
+      ),
+    ).toBe(true);
+  });
+
+  it("is eligible exactly 7 days after expiry", () => {
+    expect(
+      isEligibleForExpiryReminder(
+        candidate({ currentEndDate: endDateForDaysUntil(-7) }),
+        -7,
+        now,
+      ),
+    ).toBe(true);
+  });
+
+  it("is eligible exactly 14 days after expiry", () => {
+    expect(
+      isEligibleForExpiryReminder(
+        candidate({ currentEndDate: endDateForDaysUntil(-14) }),
+        -14,
+        now,
+      ),
+    ).toBe(true);
+  });
+
+  it("is eligible exactly 30 days after expiry", () => {
+    expect(
+      isEligibleForExpiryReminder(
+        candidate({ currentEndDate: endDateForDaysUntil(-30) }),
+        -30,
         now,
       ),
     ).toBe(true);
@@ -89,6 +153,24 @@ describe("buildMembershipExpiryDeliveryId", () => {
     });
     expect(oldId).not.toBe(newId);
   });
+
+  it("tracks each reminder type independently for the same subscription", () => {
+    const types: MembershipExpiryReminderType[] = [
+      "EXPIRY_7_DAY",
+      "EXPIRY_3_DAY",
+      "EXPIRY_DAY",
+      "EXPIRY_2_DAYS_AFTER",
+    ];
+    const ids = types.map((reminderType) =>
+      buildMembershipExpiryDeliveryId({
+        gymId: "gym-a",
+        memberId: "member-1",
+        subscriptionId: "sub-1",
+        reminderType,
+      }),
+    );
+    expect(new Set(ids).size).toBe(types.length);
+  });
 });
 
 describe("processExpiryReminderCandidate", () => {
@@ -98,7 +180,7 @@ describe("processExpiryReminderCandidate", () => {
 
     const result = await processExpiryReminderCandidate(
       candidate(),
-      7,
+      "EXPIRY_7_DAY",
       "Iron Gym",
       now,
       DEFAULT_MEMBERSHIP_EXPIRY_7_DAY,
@@ -128,9 +210,9 @@ describe("processExpiryReminderCandidate", () => {
     const result = await processExpiryReminderCandidate(
       candidate({
         currentSubscriptionId: "sub-new",
-        currentEndDate: new Date("2026-11-01T00:00:00.000Z"),
+        currentEndDate: endDateForDaysUntil(30),
       }),
-      7,
+      "EXPIRY_7_DAY",
       "Iron Gym",
       now,
       DEFAULT_MEMBERSHIP_EXPIRY_7_DAY,
@@ -146,12 +228,32 @@ describe("processExpiryReminderCandidate", () => {
     expect(sendEmail).not.toHaveBeenCalled();
   });
 
+  it("skips when the reminder type is disabled in settings", async () => {
+    const sendEmail = vi.fn();
+
+    const result = await processExpiryReminderCandidate(
+      candidate({ currentEndDate: endDateForDaysUntil(0) }),
+      "EXPIRY_DAY",
+      "Iron Gym",
+      now,
+      { ...DEFAULT_MEMBERSHIP_EXPIRY_7_DAY, enabled: false },
+      {
+        claimDelivery: vi.fn(),
+        releaseDelivery: vi.fn(),
+        sendEmail,
+      },
+    );
+
+    expect(result).toBe("skipped_disabled");
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
   it("sends when eligible and delivery claim succeeds", async () => {
     const sendEmail = vi.fn().mockResolvedValue(undefined);
 
     const result = await processExpiryReminderCandidate(
       candidate(),
-      7,
+      "EXPIRY_7_DAY",
       "Iron Gym",
       now,
       DEFAULT_MEMBERSHIP_EXPIRY_7_DAY,
@@ -169,10 +271,45 @@ describe("processExpiryReminderCandidate", () => {
   });
 });
 
+describe("mergeGymNotificationSettings — extended schedule", () => {
+  it("preserves customized templates already stored in Firestore", () => {
+    const merged = mergeGymNotificationSettings("gym-a", {
+      gymId: "gym-a",
+      paymentReceiptEmail: {
+        enabled: true,
+        subject: "Custom receipt",
+        body: "",
+      },
+      membershipExpiry7Day: {
+        enabled: true,
+        subject: "Owner 7-day {{member_name}}",
+        body: "Custom 7-day body",
+      },
+      membershipExpiry3Day: {
+        enabled: false,
+        subject: "Owner 3-day",
+        body: "Custom 3-day body",
+      },
+      updatedAt: Timestamp.now(),
+    });
+
+    expect(merged.membershipExpiry7Day.subject).toBe(
+      "Owner 7-day {{member_name}}",
+    );
+    expect(merged.membershipExpiry3Day.enabled).toBe(false);
+    expect(merged.membershipExpiryDay.enabled).toBe(true);
+  });
+});
+
 describe("expiryCalendarDayRange", () => {
   it("targets the calendar day 7 days from now", () => {
     const range = expiryCalendarDayRange(7, now);
     expect(range.start.toDateString()).toBe(new Date(2026, 9, 11).toDateString());
+  });
+
+  it("targets the calendar day 2 days before today for +2 day after expiry", () => {
+    const range = expiryCalendarDayRange(-2, now);
+    expect(range.start.toDateString()).toBe(new Date(2026, 9, 2).toDateString());
   });
 });
 

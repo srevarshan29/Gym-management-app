@@ -5,10 +5,11 @@ import { getGymNotificationSettings } from "@/lib/notification-settings/get-sett
 
 import { memberDocToExpiryCandidate } from "./candidate";
 import { processExpiryReminderCandidate } from "./process-candidate";
-import type { ExpiryReminderDays } from "./types";
+import {
+  channelSettingsForReminderType,
+  MEMBERSHIP_EXPIRY_REMINDER_SCHEDULE,
+} from "./types";
 import { expiryCalendarDayRange } from "./window";
-
-const REMINDER_DAYS: ExpiryReminderDays[] = [7, 3];
 
 export type MembershipExpiryReminderJobStats = {
   gymsProcessed: number;
@@ -48,16 +49,16 @@ export async function runMembershipExpiryRemindersJob(
       ]);
       const gymName = profile.name;
 
-      for (const reminderDays of REMINDER_DAYS) {
-        const channelSettings =
-          reminderDays === 7
-            ? notificationSettings.membershipExpiry7Day
-            : notificationSettings.membershipExpiry3Day;
+      for (const entry of MEMBERSHIP_EXPIRY_REMINDER_SCHEDULE) {
+        const channelSettings = channelSettingsForReminderType(
+          notificationSettings,
+          entry.reminderType,
+        );
         if (!channelSettings.enabled) {
           continue;
         }
 
-        const range = expiryCalendarDayRange(reminderDays, now);
+        const range = expiryCalendarDayRange(entry.daysUntil, now);
         const memberDocs = await members.listWithCurrentEndDateInRange(
           platformContext,
           gymId,
@@ -70,7 +71,7 @@ export async function runMembershipExpiryRemindersJob(
           const candidate = memberDocToExpiryCandidate(memberDoc);
           const result = await processExpiryReminderCandidate(
             candidate,
-            reminderDays,
+            entry.reminderType,
             gymName,
             now,
             channelSettings,

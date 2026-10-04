@@ -19,6 +19,7 @@ import { UsersRepository } from "@/lib/firestore/repositories/users";
 import { VisitorsRepository } from "@/lib/firestore/repositories/visitors";
 import { WorkoutPlansRepository } from "@/lib/firestore/repositories/workout-plans";
 import { WorkoutSessionsRepository } from "@/lib/firestore/repositories/workout-sessions";
+import { AttendanceRepository } from "@/lib/firestore/repositories/attendance";
 
 export type FirestoreRepositories = {
   gyms: GymsRepository;
@@ -40,6 +41,7 @@ export type FirestoreRepositories = {
   exerciseCatalog: ExerciseCatalogRepository;
   workoutPlans: WorkoutPlansRepository;
   workoutSessions: WorkoutSessionsRepository;
+  attendance: AttendanceRepository;
 };
 
 export function createRepositories(db: Firestore): FirestoreRepositories {
@@ -63,6 +65,7 @@ export function createRepositories(db: Firestore): FirestoreRepositories {
     exerciseCatalog: new ExerciseCatalogRepository(db),
     workoutPlans: new WorkoutPlansRepository(db),
     workoutSessions: new WorkoutSessionsRepository(db),
+    attendance: new AttendanceRepository(db),
   };
 }
 
@@ -85,6 +88,7 @@ export { UsersRepository } from "@/lib/firestore/repositories/users";
 export { VisitorsRepository } from "@/lib/firestore/repositories/visitors";
 export { WorkoutPlansRepository } from "@/lib/firestore/repositories/workout-plans";
 export { WorkoutSessionsRepository } from "@/lib/firestore/repositories/workout-sessions";
+export { AttendanceRepository } from "@/lib/firestore/repositories/attendance";
 export {
   TenantRepository,
   clampPageSize,

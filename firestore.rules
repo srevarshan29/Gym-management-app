@@ -215,6 +215,11 @@ service cloud.firestore {
       allow delete: if staffTenantDelete(resource.data.gymId);
     }
 
+    match /attendance/{attendanceId} {
+      allow read: if staffTenantRead(resource.data.gymId);
+      allow create, update, delete: if false;
+    }
+
     match /employees/{employeeId} {
       allow read: if staffTenantRead(resource.data.gymId);
       allow create: if staffTenantCreate() && hasRequiredGymId();

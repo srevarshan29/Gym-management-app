@@ -6,6 +6,8 @@ export type NotificationChannelSettings = {
 
 export type GymNotificationSettingsData = {
   gymId: string;
+  /** Global gate for automated emails (payment receipts + expiry cron). Default ON. */
+  automaticEmailNotificationsEnabled: boolean;
   paymentReceiptEmail: NotificationChannelSettings;
   membershipExpiry7Day: NotificationChannelSettings;
   membershipExpiry3Day: NotificationChannelSettings;

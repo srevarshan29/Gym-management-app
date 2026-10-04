@@ -42,6 +42,8 @@ export class GymNotificationSettingsRepository {
     const now = Timestamp.now();
     const payload: GymNotificationSettingsDoc = {
       gymId,
+      automaticEmailNotificationsEnabled:
+        input.automaticEmailNotificationsEnabled,
       paymentReceiptEmail: input.paymentReceiptEmail,
       membershipExpiry7Day: input.membershipExpiry7Day,
       membershipExpiry3Day: input.membershipExpiry3Day,

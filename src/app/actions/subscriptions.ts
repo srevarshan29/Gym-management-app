@@ -6,7 +6,6 @@ import { z } from "zod";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
 import {
   getRepositories,
-  logPaymentWithReceipt,
   renewWithSubscription,
   writeOffSubscriptionInTransaction,
 } from "@/lib/firestore";
@@ -14,7 +13,8 @@ import { staffContextFromUser } from "@/lib/firestore/session-context";
 import { schedulePaymentLogged } from "@/lib/notifications";
 import { canLogPayments, canWriteOffDues } from "@/lib/permissions";
 import { requireGym } from "@/lib/session";
-import { computeEndDate } from "@/lib/subscription";
+import { RENEWAL_OVERLAP_ERROR } from "@/lib/subscription-renewal";
+import { statusFromEndDate } from "@/lib/subscription";
 
 const renewSchema = z.object({
   memberId: z.string().min(1),
@@ -22,6 +22,7 @@ const renewSchema = z.object({
   logPayment: z.enum(["0", "1"]).default("0"),
   amount: z.string().optional(),
   method: z.enum(["CASH", "UPI", "CARD", "BANK_TRANSFER", "OTHER"]).default("CASH"),
+  activeMembershipConfirmed: z.enum(["0", "1"]).optional(),
 });
 
 export type RenewSubscriptionData = { paymentId: string | null };
@@ -47,18 +48,24 @@ export async function renewSubscription(
   const pkg = await packages.findById(ctx, tenantGymId, data.packageId);
   if (!pkg) return actionError("Selected package no longer exists.");
 
-  const latest = await subscriptions.findLatestByMember(
-    ctx,
-    tenantGymId,
-    data.memberId,
-  );
-
-  const now = new Date();
-  const startDate =
-    latest && latest.endDate.toDate() > now
-      ? latest.endDate.toDate()
-      : now;
-  const endDate = computeEndDate(startDate, pkg.durationValue, pkg.durationUnit);
+  const subs = await subscriptions.listByMember(ctx, tenantGymId, data.memberId);
+  const latestEnd = subs.length
+    ? subs.reduce(
+        (max, s) =>
+          s.endDate.toDate().getTime() > max.getTime()
+            ? s.endDate.toDate()
+            : max,
+        subs[0]!.endDate.toDate(),
+      )
+    : null;
+  const status = statusFromEndDate(latestEnd);
+  const needsConfirm =
+    status === "ACTIVE" || status === "EXPIRING_SOON";
+  if (needsConfirm && data.activeMembershipConfirmed !== "1") {
+    return actionError(
+      "Confirm that the new membership should start after the current period.",
+    );
+  }
 
   const logPayment = data.logPayment === "1";
   if (logPayment && !canLogPayments(user.role)) {
@@ -72,33 +79,40 @@ export async function renewSubscription(
     return actionError("Invalid payment amount.");
   }
 
-  const { paymentId } = await renewWithSubscription({
-    gymId: tenantGymId,
-    memberId: data.memberId,
-    memberName: member.name,
-    memberNumber: member.memberNumber,
-    packageId: pkg.id,
-    packageName: pkg.name,
-    packagePrice: pkg.price,
-    startDate,
-    endDate,
-    createdById: user.id,
-    logPayment,
-    paymentAmount: logPayment ? amount : undefined,
-    paymentMethod: data.method,
-  });
+  try {
+    const { paymentId } = await renewWithSubscription({
+      gymId: tenantGymId,
+      memberId: data.memberId,
+      memberName: member.name,
+      memberNumber: member.memberNumber,
+      packageId: pkg.id,
+      packageName: pkg.name,
+      packagePrice: pkg.price,
+      durationValue: pkg.durationValue,
+      durationUnit: pkg.durationUnit,
+      createdById: user.id,
+      logPayment,
+      paymentAmount: logPayment ? amount : undefined,
+      paymentMethod: data.method,
+    });
 
-  revalidatePath(`/members/${data.memberId}`);
-  revalidatePath("/members");
-  revalidatePath("/");
-  revalidatePath("/payments");
-  revalidatePath("/finance/pending-dues");
+    revalidatePath(`/members/${data.memberId}`);
+    revalidatePath("/members");
+    revalidatePath("/");
+    revalidatePath("/payments");
+    revalidatePath("/finance/pending-dues");
 
-  if (paymentId) {
-    schedulePaymentLogged(tenantGymId, paymentId);
+    if (paymentId) {
+      schedulePaymentLogged(tenantGymId, paymentId);
+    }
+
+    return actionOk("Subscription renewed.", { paymentId });
+  } catch (error) {
+    if (error instanceof Error && error.message === RENEWAL_OVERLAP_ERROR) {
+      return actionError(error.message);
+    }
+    throw error;
   }
-
-  return actionOk("Subscription renewed.", { paymentId });
 }
 
 export async function writeOffSubscriptionDues(

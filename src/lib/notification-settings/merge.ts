@@ -44,6 +44,8 @@ export function mergeGymNotificationSettings(
 
   return {
     gymId,
+    automaticEmailNotificationsEnabled:
+      stored.automaticEmailNotificationsEnabled !== false,
     paymentReceiptEmail: mergeChannel(
       DEFAULT_PAYMENT_RECEIPT_EMAIL,
       stored.paymentReceiptEmail,

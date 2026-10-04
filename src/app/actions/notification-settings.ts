@@ -28,6 +28,9 @@ const MEMBERSHIP_EXPIRY_CHANNEL_KEYS = [
 ] as const satisfies ReadonlyArray<keyof GymNotificationSettingsData>;
 
 const settingsSchema = z.object({
+  automaticEmailNotificationsEnabled: z
+    .union([z.literal("true"), z.literal("false"), z.boolean()])
+    .transform((v) => v === true || v === "true"),
   paymentReceiptEmail: channelSchema,
   membershipExpiry7Day: channelSchema,
   membershipExpiry3Day: channelSchema,
@@ -74,6 +77,9 @@ export async function updateGymNotificationSettings(
   }
 
   const payload = {
+    automaticEmailNotificationsEnabled:
+      formData.get("automaticEmailNotificationsEnabled") === "true" ||
+      formData.get("automaticEmailNotificationsEnabled") === "on",
     paymentReceiptEmail: parseChannelFromForm(formData, "paymentReceiptEmail"),
     manualRenewalReminder: parseChannelFromForm(
       formData,
@@ -100,6 +106,7 @@ export async function updateGymNotificationSettings(
   );
 
   revalidatePath("/settings");
+  revalidatePath("/settings/email");
   return actionOk("Notification settings saved.");
 }
 

@@ -69,6 +69,24 @@ export class MembersRepository {
     return { id: snap.id, ...data };
   }
 
+  async findByMemberNumber(
+    ctx: FirestoreContext,
+    gymId: string,
+    memberNumber: number,
+  ): Promise<DocWithId<MemberDoc> | null> {
+    assertTenantAccess(ctx, gymId);
+    const snap = await this.col()
+      .where("gymId", "==", gymId)
+      .where("memberNumber", "==", memberNumber)
+      .limit(1)
+      .get();
+    if (snap.empty) return null;
+    const doc = snap.docs[0]!;
+    const data = doc.data() as MemberDoc;
+    if (data.gymId !== gymId) return null;
+    return { id: doc.id, ...data };
+  }
+
   async findPortalMember(
     ctx: FirestoreContext,
     memberId: string,

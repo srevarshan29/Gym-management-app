@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { updateGymNotificationSettings } from "@/app/actions/notification-settings";
 import { mergeGymNotificationSettings } from "@/lib/notification-settings/merge";
+import { areAutomaticEmailNotificationsEnabled } from "@/lib/notification-settings/automatic-email";
 import {
   DEFAULT_MEMBERSHIP_EXPIRY_3_DAY,
   DEFAULT_MEMBERSHIP_EXPIRY_7_DAY,
@@ -82,10 +83,26 @@ function candidate(
   };
 }
 
+describe("areAutomaticEmailNotificationsEnabled", () => {
+  it("defaults to enabled when true or unset in merge", () => {
+    expect(
+      areAutomaticEmailNotificationsEnabled(
+        mergeGymNotificationSettings("gym-a", null),
+      ),
+    ).toBe(true);
+    expect(
+      areAutomaticEmailNotificationsEnabled({
+        automaticEmailNotificationsEnabled: false,
+      }),
+    ).toBe(false);
+  });
+});
+
 describe("mergeGymNotificationSettings", () => {
   it("returns defaults when no Firestore settings exist", () => {
     const merged = mergeGymNotificationSettings("gym-a", null);
     expect(merged.gymId).toBe("gym-a");
+    expect(merged.automaticEmailNotificationsEnabled).toBe(true);
     expect(merged.paymentReceiptEmail.enabled).toBe(true);
     expect(merged.membershipExpiry7Day.subject).toContain("{{days_remaining}}");
   });
@@ -142,9 +159,13 @@ describe("updateGymNotificationSettings", () => {
   });
 
   function formWithChannels(
-    overrides: Partial<{ paymentEnabled: boolean }> = {},
+    overrides: Partial<{ paymentEnabled: boolean; automaticEnabled: boolean }> = {},
   ) {
     const form = new FormData();
+    form.set(
+      "automaticEmailNotificationsEnabled",
+      overrides.automaticEnabled === false ? "false" : "true",
+    );
     form.set(
       "paymentReceiptEmail.enabled",
       overrides.paymentEnabled === false ? "false" : "true",
@@ -274,6 +295,23 @@ describe("notifyPaymentLogged payment receipt toggle", () => {
       ...defaultGymNotificationSettings("gym-a"),
       paymentReceiptEmail: {
         enabled: false,
+        subject: "",
+        body: "",
+      },
+    });
+
+    const { notifyPaymentLogged } = await import("@/lib/notifications");
+    await notifyPaymentLogged("gym-a", "pay-1");
+
+    expect(deliverPaymentReceiptEmailsMock).not.toHaveBeenCalled();
+  });
+
+  it("does not deliver payment receipt email when automatic master switch is off", async () => {
+    getGymNotificationSettingsMock.mockResolvedValue({
+      ...defaultGymNotificationSettings("gym-a"),
+      automaticEmailNotificationsEnabled: false,
+      paymentReceiptEmail: {
+        enabled: true,
         subject: "",
         body: "",
       },

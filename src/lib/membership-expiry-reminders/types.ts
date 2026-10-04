@@ -29,7 +29,10 @@ export type ExpiryReminderDeliveryRecord = {
 
 export type MembershipExpiryReminderSettingsKey = Exclude<
   keyof GymNotificationSettingsData,
-  "gymId" | "paymentReceiptEmail"
+  | "gymId"
+  | "automaticEmailNotificationsEnabled"
+  | "paymentReceiptEmail"
+  | "manualRenewalReminder"
 >;
 
 export type ExpiryReminderScheduleEntry = {

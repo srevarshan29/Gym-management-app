@@ -246,8 +246,24 @@ export type MemberDoc = {
   currentEndDate: Timestamp | null;
   currentPackageName: string | null;
   addedByName: string | null;
+  /** Latest successful check-in (never moved backwards). */
+  lastAttendanceAt?: Timestamp | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+};
+
+export type AttendanceMethod = "manual" | "biometric" | "qr";
+
+export type AttendanceDoc = {
+  gymId: string;
+  memberId: string;
+  memberNumber: number;
+  /** Denormalized for front-desk lists without member lookups. */
+  memberName: string;
+  checkedInAt: Timestamp;
+  /** YYYY-MM-DD in the gym's local timezone. */
+  dateKey: string;
+  method: AttendanceMethod;
 };
 
 export type PackageDoc = {
@@ -347,6 +363,7 @@ export type NotificationChannelSettingsDoc = {
 
 export type GymNotificationSettingsDoc = {
   gymId: string;
+  automaticEmailNotificationsEnabled?: boolean;
   paymentReceiptEmail: NotificationChannelSettingsDoc;
   membershipExpiry7Day: NotificationChannelSettingsDoc;
   membershipExpiry3Day: NotificationChannelSettingsDoc;

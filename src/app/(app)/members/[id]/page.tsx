@@ -168,6 +168,8 @@ export default async function MemberProfilePage({
             memberId={member.id}
             packages={options}
             canRecordPayment={canLog}
+            membershipStatus={status}
+            currentMembershipEndDate={current?.endDate ?? null}
           />
           {canLog && current ? (
             <PaymentDialog

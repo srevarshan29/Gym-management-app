@@ -2,6 +2,7 @@ import { getRepositories, platformContext } from "@/lib/firestore";
 import { getGymProfilePlatform } from "@/lib/gym-profile";
 import { sendTransactionalEmail } from "@/lib/email/send-transactional-email";
 import { getGymNotificationSettings } from "@/lib/notification-settings/get-settings";
+import { areAutomaticEmailNotificationsEnabled } from "@/lib/notification-settings/automatic-email";
 
 import { memberDocToExpiryCandidate } from "./candidate";
 import { processExpiryReminderCandidate } from "./process-candidate";
@@ -48,6 +49,10 @@ export async function runMembershipExpiryRemindersJob(
         getGymNotificationSettings(gymId),
       ]);
       const gymName = profile.name;
+
+      if (!areAutomaticEmailNotificationsEnabled(notificationSettings)) {
+        continue;
+      }
 
       for (const entry of MEMBERSHIP_EXPIRY_REMINDER_SCHEDULE) {
         const channelSettings = channelSettingsForReminderType(

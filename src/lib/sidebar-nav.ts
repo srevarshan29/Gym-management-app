@@ -5,6 +5,7 @@ import {
   QrCode,
   Dumbbell,
   UserCheck,
+  CalendarCheck,
   CreditCard,
   Clock,
   Repeat,
@@ -126,6 +127,11 @@ export const SIDEBAR_SECTIONS: SidebarNavSection[] = [
     id: "operations",
     label: "Operations",
     items: [
+      {
+        href: "/operations/attendance",
+        label: "Attendance",
+        icon: CalendarCheck,
+      },
       {
         href: "/operations/admins",
         label: "Admins",

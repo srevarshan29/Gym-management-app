@@ -390,4 +390,65 @@ describe("Firestore security rules — tenant isolation", () => {
       ),
     );
   });
+
+  async function seedAttendance(
+    id: string,
+    gymId: string,
+    overrides: Record<string, unknown> = {},
+  ) {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), `attendance/${id}`), {
+        gymId,
+        memberId: "m1",
+        memberNumber: 72,
+        memberName: "Test Member",
+        checkedInAt: new Date(),
+        dateKey: "2026-10-04",
+        method: "manual",
+        ...overrides,
+      });
+    });
+  }
+
+  it("allows staff to read attendance in their gym", async () => {
+    await seedAttendance("att-1", "gym-a");
+    const staff = staffContext("staff-a", "gym-a", "STAFF");
+    await assertSucceeds(getDoc(doc(staff.firestore(), "attendance/att-1")));
+  });
+
+  it("denies staff from reading another gym's attendance", async () => {
+    await seedAttendance("att-1", "gym-b");
+    const staff = staffContext("staff-a", "gym-a", "STAFF");
+    await assertFails(getDoc(doc(staff.firestore(), "attendance/att-1")));
+  });
+
+  it("denies members from creating attendance records", async () => {
+    const member = memberContext("mem-1", "gym-a", "m1");
+    await assertFails(
+      setDoc(doc(member.firestore(), "attendance/att-new"), {
+        gymId: "gym-a",
+        memberId: "m1",
+        memberNumber: 72,
+        memberName: "Test",
+        checkedInAt: new Date(),
+        dateKey: "2026-10-04",
+        method: "manual",
+      }),
+    );
+  });
+
+  it("denies staff client SDK creates on attendance", async () => {
+    const staff = staffContext("staff-a", "gym-a", "STAFF");
+    await assertFails(
+      setDoc(doc(staff.firestore(), "attendance/att-new"), {
+        gymId: "gym-a",
+        memberId: "m1",
+        memberNumber: 72,
+        memberName: "Test",
+        checkedInAt: new Date(),
+        dateKey: "2026-10-04",
+        method: "manual",
+      }),
+    );
+  });
 });

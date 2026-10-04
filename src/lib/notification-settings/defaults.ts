@@ -133,6 +133,7 @@ export const DEFAULT_MANUAL_RENEWAL_REMINDER: NotificationChannelSettings = {
 export function defaultGymNotificationSettings(gymId: string) {
   return {
     gymId,
+    automaticEmailNotificationsEnabled: true,
     paymentReceiptEmail: { ...DEFAULT_PAYMENT_RECEIPT_EMAIL },
     membershipExpiry7Day: { ...DEFAULT_MEMBERSHIP_EXPIRY_7_DAY },
     membershipExpiry3Day: { ...DEFAULT_MEMBERSHIP_EXPIRY_3_DAY },

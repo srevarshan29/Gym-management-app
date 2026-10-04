@@ -3,6 +3,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 
 import { getGymProfile } from "@/lib/gym-profile";
 import { getGymNotificationSettings } from "@/lib/notification-settings/get-settings";
+import { areAutomaticEmailNotificationsEnabled } from "@/lib/notification-settings/automatic-email";
 import { buildPaymentReceiptEmailContent } from "@/lib/notification-settings/payment-receipt-email";
 import {
   deliverPaymentReceiptEmails,
@@ -149,7 +150,9 @@ export async function notifyPaymentLogged(gymId: string, paymentId: string): Pro
       smsJobs.push(sendSms(gymProfile.ownerNotifyPhone, ownerMsg));
     }
 
-    const emailJob = notificationSettings.paymentReceiptEmail.enabled
+    const emailJob =
+      areAutomaticEmailNotificationsEnabled(notificationSettings) &&
+      notificationSettings.paymentReceiptEmail.enabled
       ? deliverPaymentReceiptEmails({
           receipt,
           ownerNotifyEmail: gymProfile.ownerNotifyEmail,
@@ -162,7 +165,9 @@ export async function notifyPaymentLogged(gymId: string, paymentId: string): Pro
         })
       : Promise.resolve().then(() => {
           console.log(
-            "[notifications] Payment receipt email skipped (disabled in gym notification settings).",
+            areAutomaticEmailNotificationsEnabled(notificationSettings)
+              ? "[notifications] Payment receipt email skipped (disabled in gym notification settings)."
+              : "[notifications] Payment receipt email skipped (automatic email notifications are off).",
           );
         });
 

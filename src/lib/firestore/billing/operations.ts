@@ -26,8 +26,15 @@ import { adjustPtMemberCounter } from "@/lib/firestore/pt-member-counter";
 import { ReceiptsRepository } from "@/lib/firestore/repositories/receipts";
 import { SubscriptionsRepository } from "@/lib/firestore/repositories/subscriptions";
 import { getFirestoreDb } from "@/lib/firebase/admin";
-import type { FitnessGoal } from "@/lib/firestore/types";
+import type {
+  FitnessGoal,
+  DurationUnit,
+} from "@/lib/firestore/types";
 import { normalizeMemberPhoneDigits } from "@/lib/utils";
+import {
+  assertRenewalDoesNotOverlap,
+  computeRenewalPeriod,
+} from "@/lib/subscription-renewal";
 
 export type CreateMemberBillingInput = {
   gymId: string;
@@ -85,8 +92,8 @@ export type RenewBillingInput = {
   packageId: string;
   packageName: string;
   packagePrice: number;
-  startDate: Date;
-  endDate: Date;
+  durationValue: number;
+  durationUnit: DurationUnit;
   createdById: string;
   logPayment: boolean;
   paymentAmount?: number;
@@ -290,6 +297,31 @@ export async function renewWithSubscription(
     const member = memberSnap.data() as MemberDoc;
     if (member.gymId !== input.gymId) throw new Error("Member not found.");
 
+    const existingSnap = await btx.tx.get(
+      btx.db
+        .collection(COLLECTIONS.subscriptions)
+        .where("gymId", "==", input.gymId)
+        .where("memberId", "==", input.memberId)
+        .orderBy("endDate", "desc"),
+    );
+    const existingPeriods = existingSnap.docs.map((doc) => {
+      const data = doc.data() as SubscriptionDoc;
+      return {
+        startDate: data.startDate.toDate(),
+        endDate: data.endDate.toDate(),
+      };
+    });
+
+    const now = new Date();
+    const { startDate, endDate } = computeRenewalPeriod(
+      existingPeriods,
+      input.durationValue,
+      input.durationUnit,
+      now,
+    );
+
+    assertRenewalDoesNotOverlap(existingPeriods, startDate, endDate);
+
     let receiptNumber: number | null = null;
     if (input.logPayment) {
       receiptNumber = await bumpReceiptSeq(btx);
@@ -301,8 +333,8 @@ export async function renewWithSubscription(
       packageName: input.packageName,
       memberName: input.memberName,
       memberNumber: input.memberNumber,
-      startDate: input.startDate,
-      endDate: input.endDate,
+      startDate,
+      endDate,
       priceAtPurchase: input.packagePrice,
       createdById: input.createdById,
       initialPaidTotal: input.logPayment ? (input.paymentAmount ?? 0) : 0,

@@ -2,7 +2,8 @@ import type { NotificationChannelSettings } from "@/lib/notification-settings/ty
 
 export const DEFAULT_PAYMENT_RECEIPT_EMAIL: NotificationChannelSettings = {
   enabled: true,
-  subject: "Payment receipt {{receipt_number}} - {{gym_name}}",
+  subject:
+    "Payment receipt {{receipt_number}} for {{member_name}} — {{gym_name}}",
   body: "",
 };
 

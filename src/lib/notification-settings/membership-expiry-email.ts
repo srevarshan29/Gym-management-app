@@ -1,5 +1,5 @@
-import { formatDate } from "@/lib/utils";
 import {
+  buildCoreNotificationTemplateVariables,
   plainTextToHtml,
   substituteNotificationTemplate,
 } from "@/lib/notification-settings/template-variables";
@@ -14,12 +14,12 @@ export function buildMembershipExpiryEmailFromSettings(
     daysRemaining: number;
   },
 ): { subject: string; html: string; text: string } {
-  const vars = {
-    member_name: params.memberName,
-    gym_name: params.gymName,
-    expiry_date: formatDate(params.expiryDate),
-    days_remaining: String(params.daysRemaining),
-  };
+  const vars = buildCoreNotificationTemplateVariables({
+    memberName: params.memberName,
+    gymName: params.gymName,
+    expiryDate: params.expiryDate,
+    daysRemaining: params.daysRemaining,
+  });
 
   const subject = substituteNotificationTemplate(template.subject, vars);
   const text = substituteNotificationTemplate(template.body, vars);

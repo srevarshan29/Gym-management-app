@@ -1,46 +1,59 @@
 import { formatReceiptNumber } from "@/lib/receipt-display";
 import {
+  buildCoreNotificationTemplateVariables,
+  computeCalendarDaysRemaining,
   plainTextToHtml,
   substituteNotificationTemplate,
+  PAYMENT_RECEIPT_EXTRA_TEMPLATE_VARIABLES,
 } from "@/lib/notification-settings/template-variables";
 import type { NotificationChannelSettings } from "@/lib/notification-settings/types";
-import {
-  buildReceiptEmailHtml,
-} from "@/lib/payment-email-notifications";
+import { buildReceiptEmailHtml } from "@/lib/payment-email-notifications";
 import type { ReceiptData } from "@/lib/receipts";
-import { formatCurrency, formatDate } from "@/lib/utils";
+
+function paymentReceiptTemplateVariables(receipt: ReceiptData) {
+  const daysRemaining = receipt.periodEnd
+    ? computeCalendarDaysRemaining(receipt.periodEnd, receipt.paidAt)
+    : null;
+
+  return {
+    ...buildCoreNotificationTemplateVariables({
+      memberName: receipt.memberName,
+      gymName: receipt.gymName,
+      expiryDate: receipt.periodEnd,
+      daysRemaining,
+    }),
+    receipt_number: formatReceiptNumber(receipt.number),
+  };
+}
 
 export function buildPaymentReceiptEmailContent(
   receipt: ReceiptData,
   template: NotificationChannelSettings,
 ): { subject: string; html: string } {
-  const receiptNumber = formatReceiptNumber(receipt.number);
-  const subject = substituteNotificationTemplate(template.subject, {
-    receipt_number: receiptNumber,
-    gym_name: receipt.gymName,
-    member_name: receipt.memberName,
-  });
+  const vars = paymentReceiptTemplateVariables(receipt);
+  const substituteOptions = {
+    extraAllowedVariables: PAYMENT_RECEIPT_EXTRA_TEMPLATE_VARIABLES,
+  };
+
+  const subject = substituteNotificationTemplate(
+    template.subject,
+    vars,
+    substituteOptions,
+  );
 
   if (!template.body.trim()) {
     return {
       subject,
-      html: buildReceiptEmailHtml(receipt, receiptNumber),
+      html: buildReceiptEmailHtml(receipt, vars.receipt_number),
     };
   }
 
-  const validity =
-    receipt.periodStart && receipt.periodEnd
-      ? `${formatDate(receipt.periodStart)} to ${formatDate(receipt.periodEnd)}`
-      : "";
-
-  const bodyText = substituteNotificationTemplate(template.body, {
-    receipt_number: receiptNumber,
-    gym_name: receipt.gymName,
-    member_name: receipt.memberName,
-    payment_amount: formatCurrency(receipt.amount),
-    paid_at: formatDate(receipt.paidAt),
-    validity_period: validity,
-  });
+  const bodyText = substituteNotificationTemplate(
+    template.body,
+    vars,
+    substituteOptions,
+  );
+  const receiptNumber = vars.receipt_number;
 
   const html = `
   <div style="font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 480px; margin: 0 auto; color: #111827;">

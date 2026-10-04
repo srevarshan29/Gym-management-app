@@ -15,7 +15,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
-import { NOTIFICATION_TEMPLATE_VARIABLES } from "@/lib/notification-settings/template-variables";
+import {
+  NOTIFICATION_TEMPLATE_VARIABLE_DESCRIPTIONS,
+  PAYMENT_RECEIPT_EXTRA_TEMPLATE_VARIABLES,
+} from "@/lib/notification-settings/template-variables";
 import type {
   GymNotificationSettingsData,
   NotificationChannelSettings,
@@ -90,16 +93,38 @@ export function NotificationSettingsForm({ settings, defaults }: Props) {
   }
 
   const variableHint = [
-    ...NOTIFICATION_TEMPLATE_VARIABLES,
-    "receipt_number (payment receipt only)",
-  ].join(", ");
+    ...NOTIFICATION_TEMPLATE_VARIABLE_DESCRIPTIONS,
+    {
+      name: "receipt_number" as const,
+      token: "{{receipt_number}}",
+      meaning: "Receipt number (payment receipt email only)",
+    },
+  ];
 
   return (
     <form action={formAction} className="space-y-6">
-      <p className="text-xs text-muted-foreground">
-        Template variables (Phase 3):{" "}
-        <span className="font-mono">{variableHint}</span>
-      </p>
+      <div className="rounded-lg border bg-muted/30 p-4">
+        <p className="mb-2 text-sm font-medium">Personalization variables</p>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Type these tokens in the subject or message. They are replaced with each
+          member&apos;s details when an email is sent. One template applies to all
+          members.
+        </p>
+        <ul className="space-y-2 text-xs text-muted-foreground">
+          {variableHint.map((item) => (
+            <li key={item.token} className="flex flex-col gap-0.5 sm:flex-row sm:gap-2">
+              <code className="shrink-0 font-mono text-foreground">{item.token}</code>
+              <span>{item.meaning}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Payment receipt only:{" "}
+          <code className="font-mono text-foreground">
+            {`{{${PAYMENT_RECEIPT_EXTRA_TEMPLATE_VARIABLES[0]}}}`}
+          </code>
+        </p>
+      </div>
 
       {(Object.keys(CHANNEL_META) as ChannelKey[]).map((key) => {
         const meta = CHANNEL_META[key];

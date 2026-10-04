@@ -24,6 +24,7 @@ export const COLLECTIONS = {
   cardioSessions: "cardioSessions",
   memberGoals: "memberGoals",
   notificationDeliveries: "notificationDeliveries",
+  gymNotificationSettings: "gymNotificationSettings",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];

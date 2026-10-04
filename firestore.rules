@@ -132,6 +132,17 @@ service cloud.firestore {
       allow delete: if staffTenantDelete(gymId);
     }
 
+    match /gymNotificationSettings/{gymId} {
+      allow read: if staffTenantRead(gymId)
+        && authRole() == 'OWNER';
+      allow create, update: if staffTenantCreate()
+        && hasRequiredGymId()
+        && authRole() == 'OWNER'
+        && request.resource.data.gymId == gymId;
+      allow delete: if staffTenantDelete(gymId)
+        && authRole() == 'OWNER';
+    }
+
     // ── Staff users ──────────────────────────────────────────────────────
 
     match /users/{userId} {

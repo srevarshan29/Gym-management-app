@@ -42,6 +42,12 @@ export function canDeleteMembers(role: Role | undefined | null): boolean {
   return role === "OWNER";
 }
 
+export function canManageNotificationSettings(
+  role: Role | undefined | null,
+): boolean {
+  return role === "OWNER";
+}
+
 export function canManageStaff(role: Role | undefined | null): boolean {
   return role === "OWNER";
 }

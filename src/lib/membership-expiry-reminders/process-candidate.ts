@@ -1,4 +1,5 @@
-import { buildMembershipExpiryReminderEmail } from "@/lib/membership-expiry-reminders/template";
+import { buildMembershipExpiryEmailFromSettings } from "@/lib/notification-settings/membership-expiry-email";
+import type { NotificationChannelSettings } from "@/lib/notification-settings/types";
 import { isEligibleForExpiryReminder } from "@/lib/membership-expiry-reminders/window";
 
 import type {
@@ -10,6 +11,7 @@ import { reminderTypeForDays } from "./types";
 
 export type ProcessExpiryReminderResult =
   | "skipped_ineligible"
+  | "skipped_disabled"
   | "skipped_duplicate"
   | "sent"
   | "send_failed";
@@ -35,8 +37,13 @@ export async function processExpiryReminderCandidate(
   reminderDays: ExpiryReminderDays,
   gymName: string,
   now: Date,
+  channelSettings: NotificationChannelSettings,
   deps: ExpiryReminderProcessorDeps,
 ): Promise<ProcessExpiryReminderResult> {
+  if (!channelSettings.enabled) {
+    return "skipped_disabled";
+  }
+
   if (!isEligibleForExpiryReminder(candidate, reminderDays, now)) {
     return "skipped_ineligible";
   }
@@ -57,12 +64,15 @@ export async function processExpiryReminderCandidate(
     return "skipped_duplicate";
   }
 
-  const { subject, html, text } = buildMembershipExpiryReminderEmail({
-    memberName: candidate.memberName,
-    gymName,
-    expiryDate: candidate.currentEndDate!,
-    daysRemaining: reminderDays,
-  });
+  const { subject, html, text } = buildMembershipExpiryEmailFromSettings(
+    channelSettings,
+    {
+      memberName: candidate.memberName,
+      gymName,
+      expiryDate: candidate.currentEndDate!,
+      daysRemaining: reminderDays,
+    },
+  );
 
   try {
     await deps.sendEmail({ to: recipientEmail, subject, html, text });

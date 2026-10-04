@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { verifyCronSecret } from "@/lib/cron-auth";
+import { DEFAULT_MEMBERSHIP_EXPIRY_7_DAY } from "@/lib/notification-settings/defaults";
 import { buildMembershipExpiryDeliveryId } from "@/lib/membership-expiry-reminders/delivery-id";
 import { processExpiryReminderCandidate } from "@/lib/membership-expiry-reminders/process-candidate";
 import type { ExpiryReminderCandidate } from "@/lib/membership-expiry-reminders/types";
@@ -100,6 +101,7 @@ describe("processExpiryReminderCandidate", () => {
       7,
       "Iron Gym",
       now,
+      DEFAULT_MEMBERSHIP_EXPIRY_7_DAY,
       {
         claimDelivery,
         releaseDelivery: vi.fn(),
@@ -131,6 +133,7 @@ describe("processExpiryReminderCandidate", () => {
       7,
       "Iron Gym",
       now,
+      DEFAULT_MEMBERSHIP_EXPIRY_7_DAY,
       {
         claimDelivery,
         releaseDelivery: vi.fn(),
@@ -151,6 +154,7 @@ describe("processExpiryReminderCandidate", () => {
       7,
       "Iron Gym",
       now,
+      DEFAULT_MEMBERSHIP_EXPIRY_7_DAY,
       {
         claimDelivery: vi.fn().mockResolvedValue(true),
         releaseDelivery: vi.fn(),

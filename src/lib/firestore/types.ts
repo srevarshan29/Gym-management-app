@@ -332,6 +332,20 @@ export type NotificationDeliveryDoc = {
   sentAt: Timestamp;
 };
 
+export type NotificationChannelSettingsDoc = {
+  enabled: boolean;
+  subject: string;
+  body: string;
+};
+
+export type GymNotificationSettingsDoc = {
+  gymId: string;
+  paymentReceiptEmail: NotificationChannelSettingsDoc;
+  membershipExpiry7Day: NotificationChannelSettingsDoc;
+  membershipExpiry3Day: NotificationChannelSettingsDoc;
+  updatedAt: Timestamp;
+};
+
 // ── Embedded workout plan structure ──────────────────────────────────────
 
 export type WorkoutPlanExerciseEmbedded = {

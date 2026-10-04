@@ -1,6 +1,7 @@
 import { getRepositories, platformContext } from "@/lib/firestore";
 import { getGymProfilePlatform } from "@/lib/gym-profile";
 import { sendTransactionalEmail } from "@/lib/email/send-transactional-email";
+import { getGymNotificationSettings } from "@/lib/notification-settings/get-settings";
 
 import { memberDocToExpiryCandidate } from "./candidate";
 import { processExpiryReminderCandidate } from "./process-candidate";
@@ -41,10 +42,21 @@ export async function runMembershipExpiryRemindersJob(
 
     for (const gymId of page.gymIds) {
       stats.gymsProcessed += 1;
-      const profile = await getGymProfilePlatform(gymId);
+      const [profile, notificationSettings] = await Promise.all([
+        getGymProfilePlatform(gymId),
+        getGymNotificationSettings(gymId),
+      ]);
       const gymName = profile.name;
 
       for (const reminderDays of REMINDER_DAYS) {
+        const channelSettings =
+          reminderDays === 7
+            ? notificationSettings.membershipExpiry7Day
+            : notificationSettings.membershipExpiry3Day;
+        if (!channelSettings.enabled) {
+          continue;
+        }
+
         const range = expiryCalendarDayRange(reminderDays, now);
         const memberDocs = await members.listWithCurrentEndDateInRange(
           platformContext,
@@ -61,6 +73,7 @@ export async function runMembershipExpiryRemindersJob(
             reminderDays,
             gymName,
             now,
+            channelSettings,
             {
               claimDelivery: (record) =>
                 notificationDeliveries.claimMembershipExpiryReminder(record),

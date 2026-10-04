@@ -59,6 +59,7 @@ export async function deliverPaymentReceiptEmails(params: {
   ownerNotifyEmail: string | null;
   sendEmail: ReceiptEmailSender;
   renderPdf: ReceiptPdfRenderer;
+  emailContent?: { subject: string; html: string };
 }): Promise<void> {
   const memberEmail = normalizeEmail(params.receipt.memberEmail);
   const ownerEmail = normalizeEmail(params.ownerNotifyEmail);
@@ -83,8 +84,12 @@ export async function deliverPaymentReceiptEmails(params: {
 
   const receiptNumber = formatReceiptNumber(params.receipt.number);
   const attachmentFilename = `${receiptNumber}.pdf`;
-  const baseSubject = `Payment receipt ${receiptNumber} - ${params.receipt.gymName}`;
-  const html = buildReceiptEmailHtml(params.receipt, receiptNumber);
+  const baseSubject =
+    params.emailContent?.subject ??
+    `Payment receipt ${receiptNumber} - ${params.receipt.gymName}`;
+  const html =
+    params.emailContent?.html ??
+    buildReceiptEmailHtml(params.receipt, receiptNumber);
 
   const basePayload = {
     html,

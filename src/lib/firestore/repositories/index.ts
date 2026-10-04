@@ -6,6 +6,7 @@ import { EmployeesRepository } from "@/lib/firestore/repositories/employees";
 import { EventsRepository } from "@/lib/firestore/repositories/events";
 import { ExerciseCatalogRepository } from "@/lib/firestore/repositories/exercise-catalog";
 import { GymProfilesRepository } from "@/lib/firestore/repositories/gym-profiles";
+import { GymNotificationSettingsRepository } from "@/lib/firestore/repositories/gym-notification-settings";
 import { GymsRepository } from "@/lib/firestore/repositories/gyms";
 import { MembersRepository } from "@/lib/firestore/repositories/members";
 import { NotificationDeliveriesRepository } from "@/lib/firestore/repositories/notification-deliveries";
@@ -22,6 +23,7 @@ import { WorkoutSessionsRepository } from "@/lib/firestore/repositories/workout-
 export type FirestoreRepositories = {
   gyms: GymsRepository;
   gymProfiles: GymProfilesRepository;
+  gymNotificationSettings: GymNotificationSettingsRepository;
   users: UsersRepository;
   members: MembersRepository;
   packages: PackagesRepository;
@@ -44,6 +46,7 @@ export function createRepositories(db: Firestore): FirestoreRepositories {
   return {
     gyms: new GymsRepository(db),
     gymProfiles: new GymProfilesRepository(db),
+    gymNotificationSettings: new GymNotificationSettingsRepository(db),
     users: new UsersRepository(db),
     members: new MembersRepository(db),
     packages: new PackagesRepository(db),
@@ -68,6 +71,7 @@ export { DietPlansRepository } from "@/lib/firestore/repositories/diet-plans";
 export { ExerciseCatalogRepository } from "@/lib/firestore/repositories/exercise-catalog";
 export { EmployeesRepository } from "@/lib/firestore/repositories/employees";
 export { EventsRepository } from "@/lib/firestore/repositories/events";
+export { GymNotificationSettingsRepository } from "@/lib/firestore/repositories/gym-notification-settings";
 export { GymProfilesRepository } from "@/lib/firestore/repositories/gym-profiles";
 export { GymsRepository } from "@/lib/firestore/repositories/gyms";
 export { MembersRepository } from "@/lib/firestore/repositories/members";

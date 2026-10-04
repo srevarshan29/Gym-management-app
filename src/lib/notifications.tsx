@@ -2,6 +2,8 @@ import { Resend } from "resend";
 import { renderToBuffer } from "@react-pdf/renderer";
 
 import { getGymProfile } from "@/lib/gym-profile";
+import { getGymNotificationSettings } from "@/lib/notification-settings/get-settings";
+import { buildPaymentReceiptEmailContent } from "@/lib/notification-settings/payment-receipt-email";
 import {
   deliverPaymentReceiptEmails,
   type ReceiptEmailPayload,
@@ -123,9 +125,10 @@ async function renderReceiptPdf(receipt: ReceiptData): Promise<Buffer> {
  */
 export async function notifyPaymentLogged(gymId: string, paymentId: string): Promise<void> {
   try {
-    const [receipt, gymProfile] = await Promise.all([
+    const [receipt, gymProfile, notificationSettings] = await Promise.all([
       getOrCreateReceiptByPayment(gymId, paymentId),
       getGymProfile(gymId),
+      getGymNotificationSettings(gymId),
     ]);
 
     const receiptNumber = formatReceiptNumber(receipt.number);
@@ -146,15 +149,24 @@ export async function notifyPaymentLogged(gymId: string, paymentId: string): Pro
       smsJobs.push(sendSms(gymProfile.ownerNotifyPhone, ownerMsg));
     }
 
-    await Promise.all([
-      ...smsJobs,
-      deliverPaymentReceiptEmails({
-        receipt,
-        ownerNotifyEmail: gymProfile.ownerNotifyEmail,
-        sendEmail: sendReceiptEmail,
-        renderPdf: renderReceiptPdf,
-      }),
-    ]);
+    const emailJob = notificationSettings.paymentReceiptEmail.enabled
+      ? deliverPaymentReceiptEmails({
+          receipt,
+          ownerNotifyEmail: gymProfile.ownerNotifyEmail,
+          sendEmail: sendReceiptEmail,
+          renderPdf: renderReceiptPdf,
+          emailContent: buildPaymentReceiptEmailContent(
+            receipt,
+            notificationSettings.paymentReceiptEmail,
+          ),
+        })
+      : Promise.resolve().then(() => {
+          console.log(
+            "[notifications] Payment receipt email skipped (disabled in gym notification settings).",
+          );
+        });
+
+    await Promise.all([...smsJobs, emailJob]);
   } catch (err) {
     console.error("[notifications] notifyPaymentLogged failed:", err);
   }

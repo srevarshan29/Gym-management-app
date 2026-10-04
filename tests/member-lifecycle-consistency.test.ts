@@ -6,6 +6,7 @@ import type { MemberDoc } from "@/lib/firestore/types";
 import { normalizeMemberEmail } from "@/lib/member-portal/constants";
 import { adjustMemberPendingTotal } from "@/lib/firestore/pending-sync";
 import { computeSubscriptionBalance } from "@/lib/subscription-balance";
+import { normalizeMemberPhoneDigits } from "@/lib/utils";
 
 const gymId = "gym-a";
 const ctx = { kind: "platform" } as FirestoreContext;
@@ -63,7 +64,7 @@ describe("MembersRepository.findByPhoneDigits", () => {
   }
 
   it("matches duplicates when only formatting differs", async () => {
-    get.mockResolvedValueOnce({
+    get.mockResolvedValueOnce({ docs: [], empty: true }).mockResolvedValueOnce({
       docs: [
         {
           id: "member-2",
@@ -75,7 +76,12 @@ describe("MembersRepository.findByPhoneDigits", () => {
 
     const found = await repo().findByPhoneDigits(ctx, gymId, "+91 9876543210");
     expect(found?.id).toBe("member-2");
-    expect(where).toHaveBeenCalledWith("phoneDigits", "==", "919876543210");
+    expect(where).toHaveBeenCalledWith("phoneDigits", "==", "9876543210");
+  });
+
+  it("stores and matches phones using the last 10 digits", () => {
+    expect(normalizeMemberPhoneDigits("+91 9876543210")).toBe("9876543210");
+    expect(normalizeMemberPhoneDigits("9876543210")).toBe("9876543210");
   });
 
   it("allows a member to keep their own number on edit", async () => {

@@ -27,6 +27,7 @@ import { ReceiptsRepository } from "@/lib/firestore/repositories/receipts";
 import { SubscriptionsRepository } from "@/lib/firestore/repositories/subscriptions";
 import { getFirestoreDb } from "@/lib/firebase/admin";
 import type { FitnessGoal } from "@/lib/firestore/types";
+import { normalizeMemberPhoneDigits } from "@/lib/utils";
 
 export type CreateMemberBillingInput = {
   gymId: string;
@@ -210,7 +211,7 @@ export async function createMemberWithSubscription(
       name: input.name,
       nameLower: input.name.trim().toLowerCase(),
       phone: input.phone,
-      phoneDigits: input.phone.replace(/\D/g, ""),
+      phoneDigits: normalizeMemberPhoneDigits(input.phone),
       searchTokens,
       email: input.email,
       photoUrl: null,
@@ -358,23 +359,32 @@ export async function renewWithSubscription(
   });
 }
 
-export async function logPaymentWithReceipt(
+export async function findRecentDuplicatePaymentId(
+  db: ReturnType<typeof getFirestoreDb>,
   input: LogPaymentBillingInput,
-): Promise<LogPaymentBillingResult> {
-  const db = getFirestoreDb();
+): Promise<string | null> {
   const windowStart = new Date(input.paidAt.getTime() - 60_000);
   const dupSnap = await db
     .collection(COLLECTIONS.payments)
     .where("gymId", "==", input.gymId)
     .where("memberId", "==", input.memberId)
+    .where("subscriptionId", "==", input.subscriptionId ?? null)
     .where("amount", "==", input.amount)
     .where("method", "==", input.method)
     .where("paidAt", ">=", Timestamp.fromDate(windowStart))
     .where("paidAt", "<=", Timestamp.fromDate(input.paidAt))
     .limit(1)
     .get();
-  if (!dupSnap.empty) {
-    return { paymentId: dupSnap.docs[0]!.id, isDuplicate: true };
+  return dupSnap.empty ? null : dupSnap.docs[0]!.id;
+}
+
+export async function logPaymentWithReceipt(
+  input: LogPaymentBillingInput,
+): Promise<LogPaymentBillingResult> {
+  const db = getFirestoreDb();
+  const duplicatePaymentId = await findRecentDuplicatePaymentId(db, input);
+  if (duplicatePaymentId) {
+    return { paymentId: duplicatePaymentId, isDuplicate: true };
   }
 
   const gymProfile = await loadGymProfile(input.gymId);

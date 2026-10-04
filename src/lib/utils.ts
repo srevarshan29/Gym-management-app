@@ -45,3 +45,13 @@ export function initials(name: string): string {
 export function phoneDigits(value: string): string {
   return value.replace(/\D/g, "");
 }
+
+/**
+ * Canonical member phone key for duplicate checks within a gym.
+ * Uses the last 10 digits when enough digits are present (Indian mobile numbers).
+ */
+export function normalizeMemberPhoneDigits(value: string): string {
+  const digits = phoneDigits(value);
+  if (digits.length >= 10) return digits.slice(-10);
+  return digits;
+}

@@ -17,7 +17,10 @@ import { omitUndefined, touchUpdatedAt } from "@/lib/firestore/serialize";
 import { queryPageByNumber } from "@/lib/firestore/pagination";
 import type { FitnessGoal, MemberDoc, MemberGender } from "@/lib/firestore/types";
 import { normalizeMemberEmail } from "@/lib/member-portal/constants";
-import { phoneDigits as digitsOnlyPhone } from "@/lib/utils";
+import {
+  normalizeMemberPhoneDigits,
+  phoneDigits as digitsOnlyPhone,
+} from "@/lib/utils";
 import { statusFromEndDate } from "@/lib/subscription";
 import type { MemberListItem } from "@/lib/queries";
 import type { MemberGender as PrismaMemberGender } from "@prisma/client";
@@ -134,17 +137,29 @@ export class MembersRepository {
     excludeMemberId?: string,
   ): Promise<DocWithId<MemberDoc> | null> {
     assertTenantAccess(ctx, gymId);
-    const digits = digitsOnlyPhone(phone);
-    if (!digits) return null;
-    const snap = await this.col()
-      .where("gymId", "==", gymId)
-      .where("phoneDigits", "==", digits)
-      .limit(1)
-      .get();
-    const doc = snap.docs[0];
-    if (!doc) return null;
-    if (excludeMemberId && doc.id === excludeMemberId) return null;
-    return { id: doc.id, ...(doc.data() as MemberDoc) };
+    const rawDigits = digitsOnlyPhone(phone);
+    if (!rawDigits) return null;
+
+    const keys = new Set<string>([normalizeMemberPhoneDigits(phone)]);
+    keys.add(rawDigits);
+    const normalized = normalizeMemberPhoneDigits(phone);
+    if (normalized.length === 10) {
+      keys.add(`91${normalized}`);
+    }
+
+    for (const phoneDigitsKey of keys) {
+      const snap = await this.col()
+        .where("gymId", "==", gymId)
+        .where("phoneDigits", "==", phoneDigitsKey)
+        .limit(1)
+        .get();
+      const doc = snap.docs[0];
+      if (!doc) continue;
+      if (excludeMemberId && doc.id === excludeMemberId) continue;
+      return { id: doc.id, ...(doc.data() as MemberDoc) };
+    }
+
+    return null;
   }
 
   async countByGym(_ctx: FirestoreContext, gymId: string): Promise<number> {
@@ -256,7 +271,7 @@ export class MembersRepository {
           name: input.name,
           nameLower: input.name.trim().toLowerCase(),
           phone: input.phone,
-          phoneDigits: input.phone.replace(/\D/g, ""),
+          phoneDigits: normalizeMemberPhoneDigits(input.phone),
           searchTokens,
           email: input.email,
           gender: input.gender,

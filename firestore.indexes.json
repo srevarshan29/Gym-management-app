@@ -439,6 +439,14 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "gymId", "order": "ASCENDING" },
+        { "fieldPath": "currentEndDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "members",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gymId", "order": "ASCENDING" },
         { "fieldPath": "isPt", "order": "ASCENDING" },
         { "fieldPath": "name", "order": "ASCENDING" }
       ]

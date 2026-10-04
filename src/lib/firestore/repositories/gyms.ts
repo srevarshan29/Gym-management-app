@@ -89,6 +89,29 @@ export class GymsRepository {
     return snap.docs.map((d) => ({ id: d.id, ...(d.data() as GymDoc) }));
   }
 
+  /** Platform cron — page through gym ids without loading full tenant graphs. */
+  async listGymIdsPage(options: {
+    limit?: number;
+    startAfterId?: string | null;
+  }): Promise<{ gymIds: string[]; nextStartAfterId: string | null }> {
+    const limit = Math.min(Math.max(options.limit ?? 100, 1), 500);
+    let query = this.col().orderBy("createdAt", "asc");
+    if (options.startAfterId) {
+      const cursor = await this.col().doc(options.startAfterId).get();
+      if (cursor.exists) {
+        query = query.startAfter(cursor);
+      }
+    }
+    const snap = await query.limit(limit + 1).get();
+    const docs = snap.docs;
+    const hasMore = docs.length > limit;
+    const page = hasMore ? docs.slice(0, limit) : docs;
+    return {
+      gymIds: page.map((d) => d.id),
+      nextStartAfterId: hasMore ? page[page.length - 1]!.id : null,
+    };
+  }
+
   async create(
     ctx: FirestoreContext,
     input: CreateGymInput,

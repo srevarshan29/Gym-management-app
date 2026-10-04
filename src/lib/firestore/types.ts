@@ -318,6 +318,20 @@ export type ReceiptDoc = {
   createdAt: Timestamp;
 };
 
+export type MembershipExpiryReminderType = "EXPIRY_7_DAY" | "EXPIRY_3_DAY";
+
+/** Durable idempotency record for automated notification delivery. */
+export type NotificationDeliveryDoc = {
+  gymId: string;
+  memberId: string;
+  subscriptionId: string;
+  kind: "MEMBERSHIP_EXPIRY";
+  reminderType: MembershipExpiryReminderType;
+  channel: "EMAIL";
+  recipientEmail: string;
+  sentAt: Timestamp;
+};
+
 // ── Embedded workout plan structure ──────────────────────────────────────
 
 export type WorkoutPlanExerciseEmbedded = {

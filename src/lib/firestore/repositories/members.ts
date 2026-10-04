@@ -522,4 +522,27 @@ export class MembersRepository {
       this.toListItem({ id: d.id, ...(d.data() as MemberDoc) }, null),
     );
   }
+
+  /**
+   * Members whose denormalized current membership ends on the given calendar day (tenant-scoped).
+   */
+  async listWithCurrentEndDateInRange(
+    ctx: FirestoreContext,
+    gymId: string,
+    range: { start: Date; end: Date },
+    options?: { limit?: number },
+  ): Promise<DocWithId<MemberDoc>[]> {
+    assertTenantAccess(ctx, gymId);
+    const limit = Math.min(Math.max(options?.limit ?? 500, 1), 500);
+    const snap = await this.col()
+      .where("gymId", "==", gymId)
+      .where("currentEndDate", ">=", Timestamp.fromDate(range.start))
+      .where("currentEndDate", "<", Timestamp.fromDate(range.end))
+      .limit(limit)
+      .get();
+    return snap.docs.map((d) => ({
+      id: d.id,
+      ...(d.data() as MemberDoc),
+    }));
+  }
 }

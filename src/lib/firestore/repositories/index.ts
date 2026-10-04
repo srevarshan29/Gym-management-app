@@ -8,6 +8,7 @@ import { ExerciseCatalogRepository } from "@/lib/firestore/repositories/exercise
 import { GymProfilesRepository } from "@/lib/firestore/repositories/gym-profiles";
 import { GymsRepository } from "@/lib/firestore/repositories/gyms";
 import { MembersRepository } from "@/lib/firestore/repositories/members";
+import { NotificationDeliveriesRepository } from "@/lib/firestore/repositories/notification-deliveries";
 import { PackagesRepository } from "@/lib/firestore/repositories/packages";
 import { PaymentsRepository } from "@/lib/firestore/repositories/payments";
 import { ReceiptsRepository } from "@/lib/firestore/repositories/receipts";
@@ -27,6 +28,7 @@ export type FirestoreRepositories = {
   subscriptions: SubscriptionsRepository;
   payments: PaymentsRepository;
   receipts: ReceiptsRepository;
+  notificationDeliveries: NotificationDeliveriesRepository;
   staffLoginThrottles: StaffLoginThrottlesRepository;
   visitors: VisitorsRepository;
   employees: EmployeesRepository;
@@ -48,6 +50,7 @@ export function createRepositories(db: Firestore): FirestoreRepositories {
     subscriptions: new SubscriptionsRepository(db),
     payments: new PaymentsRepository(db),
     receipts: new ReceiptsRepository(db),
+    notificationDeliveries: new NotificationDeliveriesRepository(db),
     staffLoginThrottles: new StaffLoginThrottlesRepository(db),
     visitors: new VisitorsRepository(db),
     employees: new EmployeesRepository(db),
@@ -70,6 +73,7 @@ export { GymsRepository } from "@/lib/firestore/repositories/gyms";
 export { MembersRepository } from "@/lib/firestore/repositories/members";
 export { PackagesRepository } from "@/lib/firestore/repositories/packages";
 export { PaymentsRepository } from "@/lib/firestore/repositories/payments";
+export { NotificationDeliveriesRepository } from "@/lib/firestore/repositories/notification-deliveries";
 export { ReceiptsRepository } from "@/lib/firestore/repositories/receipts";
 export { StaffLoginThrottlesRepository } from "@/lib/firestore/repositories/staff-login-throttles";
 export { SubscriptionsRepository } from "@/lib/firestore/repositories/subscriptions";

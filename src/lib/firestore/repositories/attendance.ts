@@ -1,6 +1,5 @@
 import { Timestamp, type Firestore } from "firebase-admin/firestore";
 
-import { buildAttendanceDayDocId } from "@/lib/attendance/delivery-id";
 import { attendanceDateKey } from "@/lib/attendance/date-key";
 import { maxLastAttendanceAt, shouldUpdateLastAttendanceAt } from "@/lib/attendance/last-attendance";
 import type {
@@ -90,23 +89,9 @@ export class AttendanceRepository {
       throw new Error("Member does not belong to this gym.");
     }
 
-    const docId = buildAttendanceDayDocId(gymId, member.id, dateKey);
-    const attendanceRef = this.col().doc(docId);
     const memberRef = this.db.collection(COLLECTIONS.members).doc(member.id);
 
     return this.db.runTransaction(async (tx) => {
-      const existing = await tx.get(attendanceRef);
-      if (existing.exists) {
-        const data = existing.data() as AttendanceDoc;
-        return {
-          status: "already_checked_in" as const,
-          memberId: member.id,
-          memberNumber: member.memberNumber,
-          memberName: member.name,
-          checkedInAt: data.checkedInAt.toDate(),
-        };
-      }
-
       const memberSnap = await tx.get(memberRef);
       if (!memberSnap.exists) {
         throw new Error("Member not found.");
@@ -117,6 +102,7 @@ export class AttendanceRepository {
       }
 
       const checkedTs = Timestamp.fromDate(checkedInAt);
+      const attendanceRef = this.col().doc();
       const doc: AttendanceDoc = {
         gymId,
         memberId: member.id,
@@ -143,6 +129,8 @@ export class AttendanceRepository {
         memberNumber: member.memberNumber,
         memberName: member.name,
         checkedInAt,
+        photoUrl: memberData.photoUrl ?? null,
+        gender: memberData.gender,
       };
     });
   }

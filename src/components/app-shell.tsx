@@ -37,14 +37,14 @@ export function AppShell({
   return (
     <SidebarProvider>
       <NavigationLockProvider>
-        <div className="flex min-h-dvh min-w-0 bg-background">
+        <div className="flex h-dvh min-h-0 min-w-0 bg-background">
         <Sidebar
           isOwner={isOwner}
           isOwnerOrAdmin={isOwnerOrAdmin}
           canLogPayments={canLogPayments}
         />
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <header className="app-shell-header safe-area-top safe-area-x sticky top-0 z-30 flex shrink-0 items-center justify-between gap-2 border-b bg-card sm:gap-3">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <SidebarToggle />
@@ -70,7 +70,7 @@ export function AppShell({
             </div>
           </header>
 
-          <main className="safe-area-x min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:py-6">
+          <main className="safe-area-x flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto py-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:py-6">
             {children}
           </main>
         </div>

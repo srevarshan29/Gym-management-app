@@ -23,20 +23,6 @@ export function AttendanceResultBanner({ result }: AttendanceResultBannerProps) 
           </p>
         </div>
       );
-    case "already_checked_in":
-      return (
-        <div
-          className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-50"
-          role="status"
-        >
-          <p className="font-semibold">⚠️ Already checked in today</p>
-          <p className="mt-1">{result.memberName}</p>
-          <p className="text-sm opacity-90">
-            Today&apos;s attendance was already recorded (
-            {formatDateTime(result.checkedInAt)}).
-          </p>
-        </div>
-      );
     case "not_found":
       return (
         <div

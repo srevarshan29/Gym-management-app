@@ -129,8 +129,13 @@ export const SIDEBAR_SECTIONS: SidebarNavSection[] = [
     items: [
       {
         href: "/operations/attendance",
-        label: "Attendance",
+        label: "Check-In Kiosk",
         icon: CalendarCheck,
+      },
+      {
+        href: "/operations/attendance/log",
+        label: "Attendance Log",
+        icon: ClipboardList,
       },
       {
         href: "/operations/admins",

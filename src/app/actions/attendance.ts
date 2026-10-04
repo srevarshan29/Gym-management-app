@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { checkInMemberByNumber } from "@/lib/attendance/check-in";
@@ -25,9 +24,7 @@ const historySchema = z.object({
   memberNumber: z.string().trim().min(1, "Enter a member number."),
 });
 
-export type CheckInActionData = AttendanceCheckInResult & {
-  recentHistory?: AttendanceListItem[];
-};
+export type CheckInActionData = AttendanceCheckInResult;
 
 export async function checkInByMemberNumberAction(
   _prev: ActionResult<CheckInActionData> | undefined,
@@ -56,13 +53,7 @@ export async function checkInByMemberNumberAction(
     parsed.data.memberNumber,
   );
 
-  let recentHistory: AttendanceListItem[] | undefined;
-  if (result.status === "success" || result.status === "already_checked_in") {
-    recentHistory = await getMemberAttendanceHistory(user.gymId, result.memberId);
-  }
-
-  revalidatePath("/operations/attendance");
-  return actionOk(undefined, { ...result, recentHistory });
+  return actionOk(undefined, result);
 }
 
 export type MemberAttendanceHistoryData = {

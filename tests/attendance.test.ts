@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { attendanceDateKey } from "@/lib/attendance/date-key";
 import { checkInMemberByNumber } from "@/lib/attendance/check-in";
-import { buildAttendanceDayDocId } from "@/lib/attendance/delivery-id";
+import { buildLegacyAttendanceDayDocId } from "@/lib/attendance/delivery-id";
 import {
   maxLastAttendanceAt,
   shouldUpdateLastAttendanceAt,
@@ -59,9 +59,9 @@ describe("isMembershipActiveForAttendance", () => {
   });
 });
 
-describe("buildAttendanceDayDocId", () => {
-  it("is deterministic per gym member and date", () => {
-    expect(buildAttendanceDayDocId("gym-a", "m1", "2026-10-04")).toBe(
+describe("buildLegacyAttendanceDayDocId", () => {
+  it("documents legacy deterministic ids", () => {
+    expect(buildLegacyAttendanceDayDocId("gym-a", "m1", "2026-10-04")).toBe(
       "gym-a__m1__2026-10-04",
     );
   });
@@ -110,12 +110,14 @@ describe("checkInMemberByNumber", () => {
     vi.clearAllMocks();
   });
 
-  it("checks in a valid member by number", async () => {
+  it("checks in a valid member by number (Enter submits the same FormData as the button)", async () => {
     findByMemberNumber.mockResolvedValue({
       id: "m1",
       gymId: "gym-a",
       memberNumber: 72,
       name: "Rahul Kumar",
+      gender: "MALE",
+      photoUrl: null,
       currentEndDate: Timestamp.fromDate(new Date("2026-12-01T00:00:00.000Z")),
     });
     recordManualCheckIn.mockResolvedValue({
@@ -124,6 +126,8 @@ describe("checkInMemberByNumber", () => {
       memberNumber: 72,
       memberName: "Rahul Kumar",
       checkedInAt: new Date("2026-10-04T18:15:00.000Z"),
+      photoUrl: null,
+      gender: "MALE",
     });
 
     const result = await checkInMemberByNumber(
@@ -135,8 +139,58 @@ describe("checkInMemberByNumber", () => {
     );
 
     expect(findByMemberNumber).toHaveBeenCalledWith(ctx, "gym-a", 72);
-    expect(recordManualCheckIn).toHaveBeenCalled();
+    expect(recordManualCheckIn).toHaveBeenCalledTimes(1);
     expect(result.status).toBe("success");
+  });
+
+  it("allows multiple check-ins on the same calendar day", async () => {
+    findByMemberNumber.mockResolvedValue({
+      id: "m1",
+      gymId: "gym-a",
+      memberNumber: 1,
+      name: "Rahul Kumar",
+      gender: "MALE",
+      photoUrl: null,
+      currentEndDate: Timestamp.fromDate(new Date("2026-12-01T00:00:00.000Z")),
+    });
+    recordManualCheckIn
+      .mockResolvedValueOnce({
+        status: "success",
+        memberId: "m1",
+        memberNumber: 1,
+        memberName: "Rahul Kumar",
+        checkedInAt: new Date("2026-10-04T07:00:00.000Z"),
+        photoUrl: null,
+        gender: "MALE",
+      })
+      .mockResolvedValueOnce({
+        status: "success",
+        memberId: "m1",
+        memberNumber: 1,
+        memberName: "Rahul Kumar",
+        checkedInAt: new Date("2026-10-04T17:30:00.000Z"),
+        photoUrl: null,
+        gender: "MALE",
+      });
+
+    const morning = await checkInMemberByNumber(
+      { members, attendance } as never,
+      ctx,
+      "gym-a",
+      "1",
+      new Date("2026-10-04T07:00:00.000Z"),
+    );
+    const evening = await checkInMemberByNumber(
+      { members, attendance } as never,
+      ctx,
+      "gym-a",
+      "1",
+      new Date("2026-10-04T17:30:00.000Z"),
+    );
+
+    expect(morning.status).toBe("success");
+    expect(evening.status).toBe("success");
+    expect(recordManualCheckIn).toHaveBeenCalledTimes(2);
   });
 
   it("scopes member lookup by gymId", async () => {
@@ -175,6 +229,7 @@ describe("checkInMemberByNumber", () => {
       gymId: "gym-a",
       memberNumber: 72,
       name: "Rahul Kumar",
+      gender: "MALE",
       currentEndDate: Timestamp.fromDate(new Date("2026-09-01T00:00:00.000Z")),
     });
 
@@ -189,60 +244,37 @@ describe("checkInMemberByNumber", () => {
     expect(result.status).toBe("membership_expired");
     expect(recordManualCheckIn).not.toHaveBeenCalled();
   });
-
-  it("returns duplicate same-day check-in from repository", async () => {
-    findByMemberNumber.mockResolvedValue({
-      id: "m1",
-      gymId: "gym-a",
-      memberNumber: 72,
-      name: "Rahul Kumar",
-      currentEndDate: Timestamp.fromDate(new Date("2026-12-01T00:00:00.000Z")),
-    });
-    recordManualCheckIn.mockResolvedValue({
-      status: "already_checked_in",
-      memberId: "m1",
-      memberNumber: 72,
-      memberName: "Rahul Kumar",
-      checkedInAt: new Date("2026-10-04T18:15:00.000Z"),
-    });
-
-    const result = await checkInMemberByNumber(
-      { members, attendance } as never,
-      ctx,
-      "gym-a",
-      "72",
-    );
-    expect(result.status).toBe("already_checked_in");
-  });
 });
 
 describe("recordManualCheckIn transaction", () => {
-  it("stores memberNumber on attendance records", async () => {
+  it("creates a new attendance document on each visit", async () => {
     const set = vi.fn();
     const update = vi.fn();
-    const attendanceRef = { path: "attendance/id" };
+    const attendanceRefs: { id: string }[] = [];
     const memberRef = { path: "members/m1" };
 
     const tx = {
-      get: vi
-        .fn()
-        .mockResolvedValueOnce({ exists: false })
-        .mockResolvedValueOnce({
-          exists: true,
-          data: () => ({
-            gymId: "gym-a",
-            lastAttendanceAt: null,
-          }),
+      get: vi.fn().mockResolvedValue({
+        exists: true,
+        data: () => ({
+          gymId: "gym-a",
+          lastAttendanceAt: null,
+          photoUrl: null,
+          gender: "MALE",
         }),
+      }),
       set,
       update,
     };
 
     const db = {
       collection: vi.fn((name: string) => ({
-        doc: vi.fn((id: string) =>
-          name === "attendance" ? attendanceRef : memberRef,
-        ),
+        doc: vi.fn((id?: string) => {
+          if (name !== "attendance") return memberRef;
+          const ref = { path: `attendance/${id ?? `auto-${attendanceRefs.length}`}`, id: id ?? `auto-${attendanceRefs.length}` };
+          if (!id) attendanceRefs.push(ref);
+          return ref;
+        }),
       })),
       runTransaction: vi.fn(async (fn: (t: typeof tx) => Promise<unknown>) =>
         fn(tx),
@@ -265,8 +297,9 @@ describe("recordManualCheckIn transaction", () => {
     );
 
     expect(result.status).toBe("success");
+    expect(set).toHaveBeenCalledTimes(1);
     expect(set).toHaveBeenCalledWith(
-      attendanceRef,
+      expect.objectContaining({ path: "attendance/auto-0" }),
       expect.objectContaining({
         memberNumber: 72,
         method: "manual",
@@ -279,5 +312,101 @@ describe("recordManualCheckIn transaction", () => {
         lastAttendanceAt: Timestamp.fromDate(checkedInAt),
       }),
     );
+  });
+
+  it("creates separate records for two check-ins the same day", async () => {
+    const set = vi.fn();
+    const update = vi.fn();
+    let autoId = 0;
+    const memberRef = { path: "members/m1" };
+
+    const tx = {
+      get: vi.fn().mockResolvedValue({
+        exists: true,
+        data: () => ({
+          gymId: "gym-a",
+          lastAttendanceAt: Timestamp.fromDate(new Date("2026-10-04T07:00:00.000Z")),
+          photoUrl: null,
+          gender: "MALE",
+        }),
+      }),
+      set,
+      update,
+    };
+
+    const db = {
+      collection: vi.fn((name: string) => ({
+        doc: vi.fn((id?: string) => {
+          if (name !== "attendance") return memberRef;
+          const docId = id ?? `visit-${autoId++}`;
+          return { path: `attendance/${docId}`, id: docId };
+        }),
+      })),
+      runTransaction: vi.fn(async (fn: (t: typeof tx) => Promise<unknown>) =>
+        fn(tx),
+      ),
+    };
+
+    const repo = new AttendanceRepository(db as never);
+    const ctx = { kind: "staff" as const, gymId: "gym-a", userId: "s1", role: "STAFF" as const };
+    const member = {
+      id: "m1",
+      gymId: "gym-a",
+      memberNumber: 1,
+      name: "Rahul Kumar",
+    };
+
+    await repo.recordManualCheckIn(
+      ctx,
+      "gym-a",
+      member,
+      new Date("2026-10-04T17:30:00.000Z"),
+      "2026-10-04",
+    );
+    await repo.recordManualCheckIn(
+      ctx,
+      "gym-a",
+      member,
+      new Date("2026-10-04T20:15:00.000Z"),
+      "2026-10-04",
+    );
+
+    expect(set).toHaveBeenCalledTimes(2);
+    const secondUpdate = update.mock.calls[1]?.[1];
+    expect(secondUpdate.lastAttendanceAt).toEqual(
+      Timestamp.fromDate(new Date("2026-10-04T20:15:00.000Z")),
+    );
+  });
+});
+
+describe("AttendanceRepository list queries", () => {
+  it("maps today's rows including multiple visits per member", () => {
+    const repo = new AttendanceRepository({} as never);
+    const rows = repo.mapListItems([
+      {
+        id: "a1",
+        gymId: "gym-a",
+        memberId: "m1",
+        memberNumber: 1,
+        memberName: "Rahul",
+        checkedInAt: Timestamp.fromDate(new Date("2026-10-04T07:00:00.000Z")),
+        dateKey: "2026-10-04",
+        method: "manual",
+      },
+      {
+        id: "a2",
+        gymId: "gym-a",
+        memberId: "m1",
+        memberNumber: 1,
+        memberName: "Rahul",
+        checkedInAt: Timestamp.fromDate(new Date("2026-10-04T17:30:00.000Z")),
+        dateKey: "2026-10-04",
+        method: "manual",
+      },
+    ]);
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.id).toBe("a1");
+    expect(rows[1]?.id).toBe("a2");
   });
 });

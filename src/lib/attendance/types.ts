@@ -1,3 +1,5 @@
+import type { MemberGender } from "@/lib/firestore/types";
+
 export type AttendanceCheckInResult =
   | {
       status: "success";
@@ -5,13 +7,8 @@ export type AttendanceCheckInResult =
       memberNumber: number;
       memberName: string;
       checkedInAt: Date;
-    }
-  | {
-      status: "already_checked_in";
-      memberId: string;
-      memberNumber: number;
-      memberName: string;
-      checkedInAt: Date;
+      photoUrl: string | null;
+      gender: MemberGender;
     }
   | {
       status: "not_found";

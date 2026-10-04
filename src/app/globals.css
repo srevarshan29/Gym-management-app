@@ -170,4 +170,17 @@
       min-height: calc(4rem + env(safe-area-inset-top, 0px));
     }
   }
+
+  /* Attendance kiosk: less main padding so content sits closer to the app header. */
+  main:has([data-kiosk-route]) {
+    padding-top: 0.5rem;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 640px) {
+    main:has([data-kiosk-route]) {
+      padding-top: 0.75rem;
+      padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+    }
+  }
 }

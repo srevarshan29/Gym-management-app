@@ -151,6 +151,9 @@ describe("updateGymNotificationSettings", () => {
     );
     form.set("paymentReceiptEmail.subject", "Receipt {{receipt_number}}");
     form.set("paymentReceiptEmail.body", "");
+    form.set("manualRenewalReminder.enabled", "true");
+    form.set("manualRenewalReminder.subject", "Manual");
+    form.set("manualRenewalReminder.body", "Body manual");
     form.set("membershipExpiry7Day.enabled", "true");
     form.set("membershipExpiry7Day.subject", "7 day");
     form.set("membershipExpiry7Day.body", "Body 7");

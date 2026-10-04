@@ -117,6 +117,19 @@ export const DEFAULT_MEMBERSHIP_EXPIRY_30_DAYS_AFTER: NotificationChannelSetting
     ].join("\n"),
   };
 
+export const DEFAULT_MANUAL_RENEWAL_REMINDER: NotificationChannelSettings = {
+  enabled: true,
+  subject: "Membership reminder - {{gym_name}}",
+  body: [
+    "Hi {{member_name}},",
+    "",
+    "Your membership at {{gym_name}} needs your attention. Please contact the gym to renew your membership.",
+    "",
+    "Thank you,",
+    "{{gym_name}}",
+  ].join("\n"),
+};
+
 export function defaultGymNotificationSettings(gymId: string) {
   return {
     gymId,
@@ -128,5 +141,6 @@ export function defaultGymNotificationSettings(gymId: string) {
     membershipExpiry7DaysAfter: { ...DEFAULT_MEMBERSHIP_EXPIRY_7_DAYS_AFTER },
     membershipExpiry14DaysAfter: { ...DEFAULT_MEMBERSHIP_EXPIRY_14_DAYS_AFTER },
     membershipExpiry30DaysAfter: { ...DEFAULT_MEMBERSHIP_EXPIRY_30_DAYS_AFTER },
+    manualRenewalReminder: { ...DEFAULT_MANUAL_RENEWAL_REMINDER },
   };
 }

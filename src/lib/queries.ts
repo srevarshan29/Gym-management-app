@@ -20,6 +20,7 @@ export type MemberListItem = {
   phone: string;
   photoUrl: string | null;
   gender: MemberGender;
+  email: string | null;
   createdAt: Date;
   packageName: string | null;
   currentSubscriptionId: string | null;
@@ -77,6 +78,7 @@ function toMembershipRenewalRow(
     memberNumber: m.memberNumber,
     name: m.name,
     phone: m.phone,
+    email: m.email,
     photoUrl: m.photoUrl,
     gender: m.gender,
     packageName: m.packageName ?? "—",

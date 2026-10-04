@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 
 import { requireGym } from "@/lib/session";
+import { canManageNotificationSettings } from "@/lib/permissions";
+import { listManualRenewalReminderTargets } from "@/lib/manual-renewal-reminders/targets";
 import {
   getUpcomingRenewalsPage,
   MEMBERSHIP_RENEWAL_PAGE_SIZE,
@@ -18,10 +20,16 @@ export default async function UpcomingRenewalsPage({
   const user = await requireGym();
   const page = Number(searchParams?.page ?? "1");
   const q = searchParams?.q ?? "";
+  const showManualReminders = canManageNotificationSettings(user.role);
 
   return (
     <Suspense fallback={<UpcomingRenewalsPageSkeleton />}>
-      <UpcomingRenewalsPageContent gymId={user.gymId} page={page} q={q} />
+      <UpcomingRenewalsPageContent
+        gymId={user.gymId}
+        page={page}
+        q={q}
+        showManualReminders={showManualReminders}
+      />
     </Suspense>
   );
 }
@@ -42,16 +50,25 @@ async function UpcomingRenewalsPageContent({
   gymId,
   page,
   q,
+  showManualReminders,
 }: {
   gymId: string;
   page: number;
   q: string;
+  showManualReminders: boolean;
 }) {
   const result = await getUpcomingRenewalsPage(gymId, {
     page,
     pageSize: MEMBERSHIP_RENEWAL_PAGE_SIZE,
     q,
   });
+
+  const bulkTargets = showManualReminders
+    ? await listManualRenewalReminderTargets(gymId, "upcoming", q)
+    : [];
+  const bulkEmailRecipientCount = bulkTargets.filter((t) =>
+    t.email?.trim(),
+  ).length;
 
   const items = result.rows.map((row) => ({
     ...row,
@@ -80,6 +97,8 @@ async function UpcomingRenewalsPageContent({
         matchingCount={result.matchingCount}
         bucketCount={result.bucketCount}
         searchAction="/renewals"
+        showManualReminders={showManualReminders}
+        bulkEmailRecipientCount={bulkEmailRecipientCount}
       />
     </div>
   );

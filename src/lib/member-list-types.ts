@@ -23,6 +23,7 @@ export type MembershipRenewalRow = {
   memberNumber: number;
   name: string;
   phone: string;
+  email: string | null;
   photoUrl: string | null;
   gender: MemberGender;
   packageName: string;

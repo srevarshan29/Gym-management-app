@@ -50,6 +50,7 @@ export class GymNotificationSettingsRepository {
       membershipExpiry7DaysAfter: input.membershipExpiry7DaysAfter,
       membershipExpiry14DaysAfter: input.membershipExpiry14DaysAfter,
       membershipExpiry30DaysAfter: input.membershipExpiry30DaysAfter,
+      manualRenewalReminder: input.manualRenewalReminder,
       updatedAt: now,
     };
 

@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  MembershipRenewalBulkReminderButton,
+  MembershipRenewalRowReminderButton,
+} from "@/components/membership-renewal-manual-reminders";
 import { LockedLink } from "@/components/navigation/locked-link";
 import { PaginationBar } from "@/components/pagination-bar";
 import { ArrowRight, Search } from "lucide-react";
@@ -26,6 +30,7 @@ export type MembershipRenewalListItem = {
   memberNumber: number;
   name: string;
   phone: string;
+  email: string | null;
   photoUrl: string | null;
   gender: MemberGender;
   packageName: string;
@@ -43,6 +48,8 @@ type MembershipRenewalListProps = {
   matchingCount: number;
   bucketCount: number;
   searchAction: string;
+  showManualReminders?: boolean;
+  bulkEmailRecipientCount?: number;
 };
 
 function pageSearchHref(basePath: string, page: number, q: string): string {
@@ -64,12 +71,16 @@ export function MembershipRenewalList({
   matchingCount,
   bucketCount,
   searchAction,
+  showManualReminders = false,
+  bulkEmailRecipientCount = 0,
 }: MembershipRenewalListProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const manualVariant = variant === "expired" ? "expired" : "upcoming";
 
   return (
     <div className="space-y-4">
-      <form action={searchAction} className="relative max-w-md">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <form action={searchAction} className="relative max-w-md flex-1">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="search"
@@ -80,6 +91,14 @@ export function MembershipRenewalList({
           aria-label="Search members"
         />
       </form>
+        {showManualReminders ? (
+          <MembershipRenewalBulkReminderButton
+            variant={manualVariant}
+            query={query}
+            bulkEmailRecipientCount={bulkEmailRecipientCount}
+          />
+        ) : null}
+      </div>
 
       <Card>
         <CardContent className="p-0">
@@ -140,17 +159,28 @@ export function MembershipRenewalList({
                         </TableCell>
                       ) : null}
                       <TableCell className="px-3 py-3 text-right">
-                        <Button
-                          asChild
-                          variant="outline"
-                          size="sm"
-                          className="gap-1 hover-lift"
-                        >
-                          <LockedLink href={`/members/${item.id}`}>
-                            View profile
-                            <ArrowRight className="h-3.5 w-3.5" />
-                          </LockedLink>
-                        </Button>
+                        <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">
+                          {showManualReminders ? (
+                            <MembershipRenewalRowReminderButton
+                              memberId={item.id}
+                              memberName={item.name}
+                              endDateIso={item.endDate}
+                              email={item.email}
+                              variant={manualVariant}
+                            />
+                          ) : null}
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="gap-1 hover-lift"
+                          >
+                            <LockedLink href={`/members/${item.id}`}>
+                              View profile
+                              <ArrowRight className="h-3.5 w-3.5" />
+                            </LockedLink>
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -182,9 +212,20 @@ export function MembershipRenewalList({
                           </p>
                         ) : null}
                       </div>
-                      <Button asChild variant="outline" size="sm" className="shrink-0">
-                        <LockedLink href={`/members/${item.id}`}>View</LockedLink>
-                      </Button>
+                      <div className="flex shrink-0 flex-col gap-2">
+                        {showManualReminders ? (
+                          <MembershipRenewalRowReminderButton
+                            memberId={item.id}
+                            memberName={item.name}
+                            endDateIso={item.endDate}
+                            email={item.email}
+                            variant={manualVariant}
+                          />
+                        ) : null}
+                        <Button asChild variant="outline" size="sm" className="shrink-0">
+                          <LockedLink href={`/members/${item.id}`}>View</LockedLink>
+                        </Button>
+                      </div>
                     </div>
                   </li>
                 );

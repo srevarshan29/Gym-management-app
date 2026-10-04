@@ -7,6 +7,7 @@ import {
   DEFAULT_MEMBERSHIP_EXPIRY_7_DAY,
   DEFAULT_MEMBERSHIP_EXPIRY_7_DAYS_AFTER,
   DEFAULT_MEMBERSHIP_EXPIRY_DAY,
+  DEFAULT_MANUAL_RENEWAL_REMINDER,
   DEFAULT_PAYMENT_RECEIPT_EMAIL,
   defaultGymNotificationSettings,
 } from "@/lib/notification-settings/defaults";
@@ -74,6 +75,10 @@ export function mergeGymNotificationSettings(
     membershipExpiry30DaysAfter: mergeChannel(
       DEFAULT_MEMBERSHIP_EXPIRY_30_DAYS_AFTER,
       stored.membershipExpiry30DaysAfter,
+    ),
+    manualRenewalReminder: mergeChannel(
+      DEFAULT_MANUAL_RENEWAL_REMINDER,
+      stored.manualRenewalReminder,
     ),
   };
 }

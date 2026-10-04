@@ -18,6 +18,7 @@ function member(
     memberNumber: 1,
     name: "Test",
     phone: "999",
+    email: null,
     photoUrl: null,
     gender: "MALE",
     createdAt: new Date("2026-01-01"),

@@ -36,6 +36,7 @@ const settingsSchema = z.object({
   membershipExpiry7DaysAfter: channelSchema,
   membershipExpiry14DaysAfter: channelSchema,
   membershipExpiry30DaysAfter: channelSchema,
+  manualRenewalReminder: channelSchema,
 });
 
 function toStaffContext(user: {
@@ -74,6 +75,10 @@ export async function updateGymNotificationSettings(
 
   const payload = {
     paymentReceiptEmail: parseChannelFromForm(formData, "paymentReceiptEmail"),
+    manualRenewalReminder: parseChannelFromForm(
+      formData,
+      "manualRenewalReminder",
+    ),
     ...Object.fromEntries(
       MEMBERSHIP_EXPIRY_CHANNEL_KEYS.map((key) => [
         key,

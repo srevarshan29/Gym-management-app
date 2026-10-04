@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 
 import { requireGym } from "@/lib/session";
+import { canManageNotificationSettings } from "@/lib/permissions";
+import { listManualRenewalReminderTargets } from "@/lib/manual-renewal-reminders/targets";
 import {
   getExpiredMembershipsPage,
   MEMBERSHIP_RENEWAL_PAGE_SIZE,
@@ -17,10 +19,16 @@ export default async function ExpiredMembershipsPage({
   const user = await requireGym();
   const page = Number(searchParams?.page ?? "1");
   const q = searchParams?.q ?? "";
+  const showManualReminders = canManageNotificationSettings(user.role);
 
   return (
     <Suspense fallback={<ExpiredMembershipsPageSkeleton />}>
-      <ExpiredMembershipsPageContent gymId={user.gymId} page={page} q={q} />
+      <ExpiredMembershipsPageContent
+        gymId={user.gymId}
+        page={page}
+        q={q}
+        showManualReminders={showManualReminders}
+      />
     </Suspense>
   );
 }
@@ -41,16 +49,25 @@ async function ExpiredMembershipsPageContent({
   gymId,
   page,
   q,
+  showManualReminders,
 }: {
   gymId: string;
   page: number;
   q: string;
+  showManualReminders: boolean;
 }) {
   const result = await getExpiredMembershipsPage(gymId, {
     page,
     pageSize: MEMBERSHIP_RENEWAL_PAGE_SIZE,
     q,
   });
+
+  const bulkTargets = showManualReminders
+    ? await listManualRenewalReminderTargets(gymId, "expired", q)
+    : [];
+  const bulkEmailRecipientCount = bulkTargets.filter((t) =>
+    t.email?.trim(),
+  ).length;
 
   const items = result.rows.map((row) => ({
     ...row,
@@ -79,6 +96,8 @@ async function ExpiredMembershipsPageContent({
         matchingCount={result.matchingCount}
         bucketCount={result.bucketCount}
         searchAction="/expired"
+        showManualReminders={showManualReminders}
+        bulkEmailRecipientCount={bulkEmailRecipientCount}
       />
     </div>
   );

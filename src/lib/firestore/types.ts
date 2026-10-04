@@ -355,6 +355,7 @@ export type GymNotificationSettingsDoc = {
   membershipExpiry7DaysAfter?: NotificationChannelSettingsDoc;
   membershipExpiry14DaysAfter?: NotificationChannelSettingsDoc;
   membershipExpiry30DaysAfter?: NotificationChannelSettingsDoc;
+  manualRenewalReminder?: NotificationChannelSettingsDoc;
   updatedAt: Timestamp;
 };
 

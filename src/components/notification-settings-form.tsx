@@ -35,6 +35,11 @@ const CHANNEL_META: Record<
     description:
       "Sent to the member (and owner copy when configured) after a payment is logged. SMS is not affected.",
   },
+  manualRenewalReminder: {
+    title: "Manual renewal reminder",
+    description:
+      "Email sent when you use Send reminder on Expired or Upcoming Renewals. Not part of automated expiry reminders.",
+  },
   membershipExpiry7Day: {
     title: "Membership expiry — 7 days before",
     description: "Email reminder sent 7 days before the member's end date.",
@@ -81,6 +86,7 @@ export function NotificationSettingsForm({ settings, defaults }: Props) {
     Record<ChannelKey, NotificationChannelSettings>
   >({
     paymentReceiptEmail: settings.paymentReceiptEmail,
+    manualRenewalReminder: settings.manualRenewalReminder,
     membershipExpiry7Day: settings.membershipExpiry7Day,
     membershipExpiry3Day: settings.membershipExpiry3Day,
     membershipExpiryDay: settings.membershipExpiryDay,
@@ -199,7 +205,13 @@ export function NotificationSettingsForm({ settings, defaults }: Props) {
                 name={`${key}.body`}
                 value={channel.body}
                 onChange={(e) => setChannelField(key, "body", e.target.value)}
-                rows={key === "paymentReceiptEmail" ? 6 : 10}
+                rows={
+                  key === "paymentReceiptEmail"
+                    ? 6
+                    : key === "manualRenewalReminder"
+                      ? 10
+                      : 10
+                }
                 disabled={!channel.enabled}
                 placeholder={
                   key === "paymentReceiptEmail"

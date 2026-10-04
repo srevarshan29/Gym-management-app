@@ -378,9 +378,10 @@ export class MembersRepository {
     return {
       id: m.id,
       memberNumber: m.memberNumber,
-      name: m.name,
-      phone: m.phone,
-      photoUrl: m.photoUrl,
+    name: m.name,
+    phone: m.phone,
+    email: m.email ?? null,
+    photoUrl: m.photoUrl,
       gender: m.gender as PrismaMemberGender,
       createdAt: m.createdAt.toDate(),
       packageName: m.currentPackageName,

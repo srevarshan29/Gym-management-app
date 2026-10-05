@@ -1,9 +1,13 @@
 import Link from "next/link";
-import { User, Building2, Mail, ChevronRight } from "lucide-react";
+import { User, Building2, Mail, ChevronRight, QrCode } from "lucide-react";
 
 import { getRepositories, type StaffContext } from "@/lib/firestore";
 import { getGymProfile } from "@/lib/gym-profile";
-import { canManageNotificationSettings, canManageStaff } from "@/lib/permissions";
+import {
+  canManageMembers,
+  canManageNotificationSettings,
+  canManageStaff,
+} from "@/lib/permissions";
 import { requireGym } from "@/lib/session";
 import { PageHeader } from "@/components/page-header";
 import { AccountSettingsForm } from "@/components/account-settings-form";
@@ -21,6 +25,7 @@ export default async function SettingsPage() {
   const user = await requireGym();
   const isOwner = canManageStaff(user.role);
   const canEditEmailAutomation = canManageNotificationSettings(user.role);
+  const canShowMemberPortalQr = canManageMembers(user.role);
 
   const ctx: StaffContext = {
     kind: "staff",
@@ -77,6 +82,26 @@ export default async function SettingsPage() {
             <GymProfileForm profile={gymProfile} />
           </CardContent>
         </Card>
+      ) : null}
+
+      {canShowMemberPortalQr ? (
+        <Link href="/settings/member-portal" className="mb-6 block">
+          <Card className="transition-colors hover:bg-muted/40">
+            <CardHeader className="flex flex-row items-start justify-between space-y-0">
+              <div className="space-y-1">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <QrCode className="h-5 w-5 text-muted-foreground" />
+                  Member Portal QR
+                </CardTitle>
+                <CardDescription>
+                  View and share the permanent QR code members scan to sign in to
+                  their portal.
+                </CardDescription>
+              </div>
+              <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" />
+            </CardHeader>
+          </Card>
+        </Link>
       ) : null}
 
       {canEditEmailAutomation ? (

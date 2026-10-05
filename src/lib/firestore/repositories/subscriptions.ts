@@ -292,9 +292,32 @@ export class SubscriptionsRepository {
     return { pendingTotal, pendingMemberCount: memberIds.size };
   }
 
+  /** Earliest subscription start for one member (single-document read). */
+  async findEarliestStartDateByMember(
+    ctx: FirestoreContext,
+    gymId: string,
+    memberId: string,
+  ): Promise<Date | null> {
+    assertTenantAccess(ctx, gymId);
+    const snap = await this.col()
+      .where("gymId", "==", gymId)
+      .where("memberId", "==", memberId)
+      .orderBy("startDate", "asc")
+      .limit(1)
+      .get();
+    const doc = snap.docs[0];
+    if (!doc) return null;
+    const data = doc.data() as SubscriptionDoc;
+    return data.startDate.toDate();
+  }
+
   /**
    * Earliest subscription startDate per member, filtered to members whose
    * first join falls on or after `since` (matches Prisma groupBy analytics).
+   *
+   * Only members with at least one subscription in `[since, ∞)` can qualify.
+   * For each candidate, loads the true earliest cycle (one doc) instead of
+   * scanning the gym's full subscription history.
    */
   async listEarliestJoinStartsSince(
     ctx: FirestoreContext,
@@ -302,19 +325,38 @@ export class SubscriptionsRepository {
     since: Date,
   ): Promise<Date[]> {
     assertTenantAccess(ctx, gymId);
-    const snap = await this.col().where("gymId", "==", gymId).get();
-    const earliestByMember = new Map<string, Date>();
+    const sinceTs = Timestamp.fromDate(since);
+    const recentSnap = await this.col()
+      .where("gymId", "==", gymId)
+      .where("startDate", ">=", sinceTs)
+      .get();
 
-    for (const doc of snap.docs) {
-      const data = doc.data() as SubscriptionDoc;
-      const start = data.startDate.toDate();
-      const existing = earliestByMember.get(data.memberId);
-      if (!existing || start < existing) {
-        earliestByMember.set(data.memberId, start);
+    const candidateMemberIds = new Set<string>();
+    for (const doc of recentSnap.docs) {
+      candidateMemberIds.add((doc.data() as SubscriptionDoc).memberId);
+    }
+
+    if (candidateMemberIds.size === 0) return [];
+
+    const memberIds = [...candidateMemberIds];
+    const CHUNK_SIZE = 50;
+    const results: Date[] = [];
+
+    for (let i = 0; i < memberIds.length; i += CHUNK_SIZE) {
+      const chunk = memberIds.slice(i, i + CHUNK_SIZE);
+      const earliestStarts = await Promise.all(
+        chunk.map((memberId) =>
+          this.findEarliestStartDateByMember(ctx, gymId, memberId),
+        ),
+      );
+      for (const start of earliestStarts) {
+        if (start && start >= since) {
+          results.push(start);
+        }
       }
     }
 
-    return [...earliestByMember.values()].filter((start) => start >= since);
+    return results;
   }
 
   /** All subscriptions for a gym (used by operations reports; tenant-scoped). */

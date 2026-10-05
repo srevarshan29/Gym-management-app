@@ -4,11 +4,6 @@ import * as React from "react";
 import { Dumbbell } from "lucide-react";
 
 import type { ExerciseMediaMetadata } from "@/lib/exercises/catalog-types";
-import {
-  resolveDemonstrationImageUrl,
-  resolveListPreviewImageUrl,
-  resolveSecondaryDemonstrationImageUrl,
-} from "@/lib/exercises/media-validation";
 import { cn } from "@/lib/utils";
 
 type ExerciseMediaProps = {
@@ -21,6 +16,39 @@ type ExerciseMediaProps = {
   compact?: boolean;
 };
 
+/** Non-empty URL from metadata (read paths already sanitized media before display). */
+function trimmedMediaUrl(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+function pickListPreviewUrl(media?: ExerciseMediaMetadata | null): string | null {
+  if (!media) return null;
+  return (
+    trimmedMediaUrl(media.thumbnailUrl) ??
+    trimmedMediaUrl(media.primaryImageUrl) ??
+    trimmedMediaUrl(media.secondaryImageUrl)
+  );
+}
+
+function pickDemonstrationUrl(media?: ExerciseMediaMetadata | null): string | null {
+  if (!media) return null;
+  return (
+    trimmedMediaUrl(media.primaryImageUrl) ??
+    trimmedMediaUrl(media.secondaryImageUrl) ??
+    trimmedMediaUrl(media.thumbnailUrl)
+  );
+}
+
+function pickSecondaryUrl(
+  media?: ExerciseMediaMetadata | null,
+  excludeUrl?: string | null,
+): string | null {
+  const secondary = trimmedMediaUrl(media?.secondaryImageUrl ?? null);
+  if (!secondary || secondary === excludeUrl) return null;
+  return secondary;
+}
+
 export function ExerciseMedia({
   media,
   alt,
@@ -31,10 +59,8 @@ export function ExerciseMedia({
   compact = false,
 }: ExerciseMediaProps) {
   const primaryUrl =
-    variant === "thumbnail"
-      ? resolveListPreviewImageUrl(media)
-      : resolveDemonstrationImageUrl(media);
-  const secondaryUrl = resolveSecondaryDemonstrationImageUrl(media, primaryUrl);
+    variant === "thumbnail" ? pickListPreviewUrl(media) : pickDemonstrationUrl(media);
+  const secondaryUrl = pickSecondaryUrl(media, primaryUrl);
 
   const [primaryFailed, setPrimaryFailed] = React.useState(false);
   const [secondaryFailed, setSecondaryFailed] = React.useState(false);

@@ -82,6 +82,7 @@ vi.mock("@/lib/workout-tracking/exercise-library", () => ({
         thumbnailUrl: null,
       },
       hasMedia: false,
+      youtubeUrl: null,
     })),
   ),
 }));

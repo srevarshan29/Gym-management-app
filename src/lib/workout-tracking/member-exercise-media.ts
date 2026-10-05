@@ -5,11 +5,13 @@ import { getExercisesByIds } from "@/lib/workout-tracking/exercise-library";
 export type MemberExerciseMediaEntry = {
   media: ExerciseMediaMetadata;
   hasMedia: boolean;
+  youtubeUrl: string | null;
 };
 
 export const EMPTY_MEMBER_EXERCISE_MEDIA: MemberExerciseMediaEntry = {
   media: emptyExerciseMediaMetadata(),
   hasMedia: false,
+  youtubeUrl: null,
 };
 
 /** Loads gym-scoped exercise media already sanitized for member read surfaces. */
@@ -28,6 +30,7 @@ export async function loadMemberExerciseMediaByIds(
       {
         media: item.media ?? emptyExerciseMediaMetadata(),
         hasMedia: item.hasMedia,
+        youtubeUrl: item.youtubeUrl,
       },
     ]),
   );

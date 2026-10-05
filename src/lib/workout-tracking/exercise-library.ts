@@ -51,6 +51,7 @@ function toListItem(
     importedCatalogVersion: doc.importedCatalogVersion ?? null,
     media,
     hasMedia: hasDemonstrationMedia(media),
+    youtubeUrl: doc.youtubeUrl?.trim() || null,
   };
 }
 

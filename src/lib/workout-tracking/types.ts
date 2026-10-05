@@ -61,6 +61,7 @@ export type WorkoutPlanExerciseView = {
   targetWeightKg: number | null;
   media: ExerciseMediaMetadata | null;
   hasMedia: boolean;
+  youtubeUrl: string | null;
 };
 
 export type WorkoutPlanDayView = {
@@ -98,6 +99,7 @@ export type ExerciseListItem = {
   importedCatalogVersion: string | null;
   media: ExerciseMediaMetadata | null;
   hasMedia: boolean;
+  youtubeUrl: string | null;
 };
 
 export type ExerciseTrackingType = "WEIGHTED" | "TIME" | "BODYWEIGHT";
@@ -126,6 +128,7 @@ export type ActiveWorkoutSession = {
     restSeconds: number | null;
     media: ExerciseMediaMetadata | null;
     hasMedia: boolean;
+    youtubeUrl: string | null;
     sets: ActiveWorkoutSetLog[];
   }[];
 };

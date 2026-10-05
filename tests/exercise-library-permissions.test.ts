@@ -27,7 +27,9 @@ import type { CustomExerciseDoc } from "@/lib/firestore/types";
 import {
   canDeleteLibraryExercise,
   canEditExerciseDefaults,
+  canEditExerciseYouTubeUrl,
   canImportExerciseCatalog,
+  canOpenExerciseLibraryEditDialog,
   isCatalogLinkedExercise,
 } from "@/lib/permissions";
 
@@ -154,6 +156,14 @@ describe("catalog exercise library permissions", () => {
       expect(canEditExerciseDefaults(role, seededExercise)).toBe(false);
       expect(canDeleteLibraryExercise(role, seededExercise)).toBe(false);
     }
+  });
+
+  it("allows Owner and Admin to open edit for seeded YouTube links only", () => {
+    expect(canEditExerciseYouTubeUrl("OWNER", seededExercise)).toBe(true);
+    expect(canEditExerciseYouTubeUrl("ADMIN", seededExercise)).toBe(true);
+    expect(canEditExerciseYouTubeUrl("STAFF", seededExercise)).toBe(false);
+    expect(canOpenExerciseLibraryEditDialog("OWNER", seededExercise)).toBe(true);
+    expect(canOpenExerciseLibraryEditDialog("STAFF", seededExercise)).toBe(false);
   });
 });
 
@@ -315,19 +325,41 @@ describe("updateExerciseDefaults action", () => {
     expect(updateExerciseDefaults).toHaveBeenCalled();
   });
 
-  it("blocks seeded exercise edits for Admin", async () => {
+  it("allows Admin to update YouTube on seeded exercises without changing defaults", async () => {
     requireGym.mockResolvedValue({ gymId: "gym-a", role: "ADMIN" });
+    getById.mockResolvedValue(
+      exerciseDoc({
+        isSeeded: true,
+        exerciseSource: "SEEDED",
+        defaultSets: 3,
+        defaultReps: "10",
+      }),
+    );
+
+    const result = await updateExerciseDefaultsAction({
+      id: "seed-1",
+      youtubeUrl: "https://youtu.be/dQw4w9WgXcQ",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(updateExerciseDefaults).toHaveBeenCalledWith(
+      expect.anything(),
+      "gym-a",
+      "seed-1",
+      {
+        youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      },
+    );
+  });
+
+  it("blocks Staff from updating seeded exercises", async () => {
     getById.mockResolvedValue(
       exerciseDoc({ isSeeded: true, exerciseSource: "SEEDED" }),
     );
 
     const result = await updateExerciseDefaultsAction({
       id: "seed-1",
-      defaultSets: 4,
-      defaultReps: "8",
-      defaultTempo: "",
-      defaultRestSeconds: 90,
-      trackingType: "WEIGHTED",
+      youtubeUrl: "https://youtu.be/dQw4w9WgXcQ",
     });
 
     expect(result.ok).toBe(false);

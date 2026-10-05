@@ -145,6 +145,8 @@ export type CustomExerciseDoc = {
   media?: ExerciseMediaMetadata | null;
   provider?: ExerciseProviderMetadata | null;
   enrichedAt?: Timestamp | null;
+  /** Optional YouTube demonstration link (https watch URL only). */
+  youtubeUrl?: string | null;
 };
 
 /**

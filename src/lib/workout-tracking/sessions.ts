@@ -53,6 +53,7 @@ export function buildActiveWorkoutSessionView(
       {
         media: item.media ?? emptyExerciseMediaMetadata(),
         hasMedia: item.hasMedia,
+        youtubeUrl: item.youtubeUrl,
       },
     ]),
   );
@@ -82,6 +83,7 @@ export function buildActiveWorkoutSessionView(
             restSeconds: null,
             media: null,
             hasMedia: false,
+            youtubeUrl: null,
             sets: row.sets.map((set) => ({
               setNumber: set.setNumber,
               weightKg: set.weightKg,
@@ -114,6 +116,7 @@ export function buildActiveWorkoutSessionView(
           restSeconds: exerciseContext.restSeconds,
           media: mediaEntry.media,
           hasMedia: mediaEntry.hasMedia,
+          youtubeUrl: mediaEntry.youtubeUrl ?? null,
           sets: row.sets.map((set) => ({
             setNumber: set.setNumber,
             weightKg: set.weightKg,

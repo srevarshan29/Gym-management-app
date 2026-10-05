@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/card";
 import type { WorkoutPlanDetail } from "@/lib/workout-tracking/types";
 import { MemberExerciseDemonstrationDialog } from "@/components/member-portal/workout/member-exercise-demonstration-dialog";
+import { MemberExerciseWatchDemoLink } from "@/components/member-portal/workout/member-exercise-watch-demo-link";
 
 type MemberWorkoutPlanViewProps = {
   plan: WorkoutPlanDetail | null;
@@ -84,12 +85,19 @@ export function MemberWorkoutPlanView({ plan }: MemberWorkoutPlanViewProps) {
                       </p>
                     ) : null}
                   </div>
-                  {exercise.exerciseId ? (
-                    <MemberExerciseDemonstrationDialog
-                      exerciseName={exercise.displayName}
-                      media={exercise.media}
-                      hasMedia={exercise.hasMedia}
-                    />
+                  {exercise.exerciseId || exercise.youtubeUrl ? (
+                    <div className="flex flex-wrap items-center justify-end gap-1">
+                      {exercise.youtubeUrl ? (
+                        <MemberExerciseWatchDemoLink youtubeUrl={exercise.youtubeUrl} />
+                      ) : null}
+                      {exercise.exerciseId ? (
+                        <MemberExerciseDemonstrationDialog
+                          exerciseName={exercise.displayName}
+                          media={exercise.media}
+                          hasMedia={exercise.hasMedia}
+                        />
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-muted-foreground">

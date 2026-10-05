@@ -63,6 +63,7 @@ describe("workout tracking correctness helpers", () => {
           thumbnailUrl: null,
         },
         hasMedia: false,
+        youtubeUrl: null,
       },
     ]);
 

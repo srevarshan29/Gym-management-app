@@ -150,6 +150,35 @@ export function canEditExerciseDefaults(
 }
 
 /**
+ * Optional YouTube demo URL on gym library exercises.
+ * Starter and catalog-linked entries: Owner/Admin only. Custom: Owner/Admin/Staff.
+ */
+export function canEditExerciseYouTubeUrl(
+  role: Role | undefined | null,
+  exercise: ExerciseLibraryPermissionInput,
+): boolean {
+  if (!canManageExerciseLibrary(role)) return false;
+  if (resolveExerciseSource(exercise) === "SEEDED") {
+    return canImportExerciseCatalog(role);
+  }
+  if (isCatalogLinkedExercise(exercise)) {
+    return canImportExerciseCatalog(role);
+  }
+  return true;
+}
+
+/** Show the library edit dialog (full defaults and/or YouTube-only). */
+export function canOpenExerciseLibraryEditDialog(
+  role: Role | undefined | null,
+  exercise: ExerciseLibraryPermissionInput,
+): boolean {
+  return (
+    canEditExerciseDefaults(role, exercise) ||
+    canEditExerciseYouTubeUrl(role, exercise)
+  );
+}
+
+/**
  * Remove a gym library exercise. Custom exercises: Owner/Admin/Staff.
  * Catalog imports: Owner/Admin only (also clears import lock).
  */

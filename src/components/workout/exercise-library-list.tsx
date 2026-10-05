@@ -15,6 +15,8 @@ import { useActionLock } from "@/hooks/use-action-lock";
 import {
   canDeleteLibraryExercise,
   canEditExerciseDefaults,
+  canEditExerciseYouTubeUrl,
+  canOpenExerciseLibraryEditDialog,
   isCatalogLinkedExercise,
 } from "@/lib/permissions";
 import { Badge } from "@/components/ui/badge";
@@ -168,14 +170,25 @@ export function ExerciseLibraryList({
                   </div>
                   {canManage ? (
                     <div className="flex flex-col gap-1 sm:items-end">
-                      {canEditExerciseDefaults(userRole, item) ||
+                      {canOpenExerciseLibraryEditDialog(userRole, item) ||
                       canDeleteLibraryExercise(userRole, item) ||
                       (canRefreshCatalog && item.exerciseSource === "CATALOG") ? (
                         <div className="flex flex-wrap items-center gap-1 sm:justify-end">
-                          {canEditExerciseDefaults(userRole, item) ? (
+                          {canOpenExerciseLibraryEditDialog(userRole, item) ? (
                             <EditExerciseDefaultsDialog
                               exercise={item}
-                              canUploadMedia={canUploadMedia}
+                              canUploadMedia={
+                                canUploadMedia &&
+                                canEditExerciseDefaults(userRole, item)
+                              }
+                              canEditDefaults={canEditExerciseDefaults(
+                                userRole,
+                                item,
+                              )}
+                              canEditYouTube={canEditExerciseYouTubeUrl(
+                                userRole,
+                                item,
+                              )}
                             />
                           ) : null}
                           {canRefreshCatalog && isCatalogLinkedExercise(item) ? (

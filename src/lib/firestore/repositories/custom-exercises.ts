@@ -37,6 +37,7 @@ export type CreateCustomExerciseInput = {
   defaultRestSeconds?: number | null;
   trackingType?: ExerciseTrackingType;
   isSeeded?: boolean;
+  youtubeUrl?: string | null;
 };
 
 export type UpdateExerciseDefaultsInput = {
@@ -45,6 +46,7 @@ export type UpdateExerciseDefaultsInput = {
   defaultTempo?: string | null;
   defaultRestSeconds?: number | null;
   trackingType?: ExerciseTrackingType;
+  youtubeUrl?: string | null;
 };
 
 export const BUILDER_LIBRARY_SEARCH_LIMIT = 30;
@@ -302,6 +304,7 @@ export class CustomExercisesRepository extends TenantRepository<CustomExerciseDo
       defaultTempo: input.defaultTempo,
       defaultRestSeconds: input.defaultRestSeconds,
       trackingType: input.trackingType,
+      youtubeUrl: input.youtubeUrl,
     }) as Partial<WithFieldValue<CustomExerciseDoc>>);
   }
 
@@ -323,6 +326,7 @@ export class CustomExercisesRepository extends TenantRepository<CustomExerciseDo
       defaultRestSeconds: input.defaultRestSeconds ?? null,
       trackingType: input.trackingType ?? "WEIGHTED",
       isSeeded: input.isSeeded ?? false,
+      youtubeUrl: input.youtubeUrl ?? null,
     } as WithFieldValue<CustomExerciseDoc>);
   }
 

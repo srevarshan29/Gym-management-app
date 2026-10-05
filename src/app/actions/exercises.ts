@@ -13,10 +13,12 @@ import { requireGym } from "@/lib/session";
 import {
   canDeleteLibraryExercise,
   canEditExerciseDefaults,
+  canEditExerciseYouTubeUrl,
   canManageExerciseLibrary,
 } from "@/lib/permissions";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
 import { resolveExerciseSource } from "@/lib/exercises/source";
+import { parseOptionalYouTubeUrl } from "@/lib/exercises/youtube-url";
 import {
   BUILDER_LIBRARY_SEARCH_LIMIT,
   browseExerciseLibrary,
@@ -52,6 +54,7 @@ const createExerciseSchema = z.object({
   defaultReps: z.string().trim().max(40).optional().or(z.literal("")),
   defaultTempo: z.string().trim().max(20).optional().or(z.literal("")),
   defaultRestSeconds: z.coerce.number().int().min(0).max(600).optional().nullable(),
+  youtubeUrl: z.string().trim().max(2048).optional().or(z.literal("")),
 });
 
 const updateExerciseDefaultsSchema = z.object({
@@ -61,6 +64,7 @@ const updateExerciseDefaultsSchema = z.object({
   defaultTempo: z.string().trim().max(20).optional().or(z.literal("")),
   defaultRestSeconds: z.coerce.number().int().min(0).max(600).optional().nullable(),
   trackingType: z.enum(["WEIGHTED", "TIME", "BODYWEIGHT"]).optional(),
+  youtubeUrl: z.string().trim().max(2048).optional().or(z.literal("")),
 });
 
 function assertCanManage(role: Parameters<typeof canManageExerciseLibrary>[0]) {
@@ -111,6 +115,13 @@ export async function createExercise(
     return actionError("An exercise with this name already exists.");
   }
 
+  const youtubeParsed = parseOptionalYouTubeUrl(
+    typeof data.youtubeUrl === "string" ? data.youtubeUrl : "",
+  );
+  if (!youtubeParsed.ok) {
+    return actionError(youtubeParsed.error);
+  }
+
   await customExercises.createExercise(
     platformContext,
     user.gymId,
@@ -123,6 +134,7 @@ export async function createExercise(
       defaultTempo: data.defaultTempo?.trim() || null,
       defaultRestSeconds: data.defaultRestSeconds ?? null,
       isSeeded: false,
+      youtubeUrl: youtubeParsed.normalizedUrl,
     },
   );
 
@@ -203,13 +215,39 @@ export async function updateExerciseDefaults(
   }
 
   const source = resolveExerciseSource(existing);
-  if (source === "SEEDED") {
-    return actionError("Starter exercises cannot be edited.");
-  }
-  if (!canEditExerciseDefaults(user.role, existing)) {
+  const defaultsEditable = canEditExerciseDefaults(user.role, existing);
+  const youtubeEditable = canEditExerciseYouTubeUrl(user.role, existing);
+
+  if (!defaultsEditable && !youtubeEditable) {
+    if (source === "SEEDED") {
+      return actionError("Starter exercises cannot be edited.");
+    }
     return actionError(
       "Catalog exercises can only be edited by an owner or admin.",
     );
+  }
+
+  const youtubeParsed = parseOptionalYouTubeUrl(parsed.data.youtubeUrl);
+  if (!youtubeParsed.ok) {
+    return actionError(youtubeParsed.error);
+  }
+
+  if (defaultsEditable) {
+    await customExercises.updateExerciseDefaults(
+      platformContext,
+      user.gymId,
+      parsed.data.id,
+      {
+        defaultSets: parsed.data.defaultSets ?? null,
+        defaultReps: parsed.data.defaultReps?.trim() || null,
+        defaultTempo: parsed.data.defaultTempo?.trim() || null,
+        defaultRestSeconds: parsed.data.defaultRestSeconds ?? null,
+        trackingType: parsed.data.trackingType ?? existing.trackingType,
+        youtubeUrl: youtubeParsed.normalizedUrl,
+      },
+    );
+    revalidateExercisePaths();
+    return actionOk("Exercise defaults updated.");
   }
 
   await customExercises.updateExerciseDefaults(
@@ -217,16 +255,12 @@ export async function updateExerciseDefaults(
     user.gymId,
     parsed.data.id,
     {
-      defaultSets: parsed.data.defaultSets ?? null,
-      defaultReps: parsed.data.defaultReps?.trim() || null,
-      defaultTempo: parsed.data.defaultTempo?.trim() || null,
-      defaultRestSeconds: parsed.data.defaultRestSeconds ?? null,
-      trackingType: parsed.data.trackingType ?? existing.trackingType,
+      youtubeUrl: youtubeParsed.normalizedUrl,
     },
   );
 
   revalidateExercisePaths();
-  return actionOk("Exercise defaults updated.");
+  return actionOk("YouTube demo link updated.");
 }
 
 export async function searchExerciseLibraryAction(

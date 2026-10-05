@@ -105,6 +105,19 @@ export function AddExerciseDialog() {
               <Input id="default-reps" name="defaultReps" placeholder="8-12" />
             </div>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="exercise-youtube-url">YouTube video URL (optional)</Label>
+            <Input
+              id="exercise-youtube-url"
+              name="youtubeUrl"
+              type="url"
+              inputMode="url"
+              placeholder="https://www.youtube.com/watch?v=…"
+            />
+            <p className="text-xs text-muted-foreground">
+              Members can open this link as a &quot;Watch Demo&quot; from their workout plan.
+            </p>
+          </div>
           <DialogFooter>
             <SubmitButton />
           </DialogFooter>

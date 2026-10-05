@@ -78,6 +78,7 @@ function mapExerciseRow(
     targetWeightKg: row.targetWeightKg,
     media: mediaEntry.media,
     hasMedia: mediaEntry.hasMedia,
+    youtubeUrl: exercise?.youtubeUrl ?? null,
   };
 }
 

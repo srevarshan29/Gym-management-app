@@ -347,9 +347,11 @@ export type MembershipExpiryReminderType =
 export type NotificationDeliveryDoc = {
   gymId: string;
   memberId: string;
-  subscriptionId: string;
-  kind: "MEMBERSHIP_EXPIRY";
-  reminderType: MembershipExpiryReminderType;
+  subscriptionId?: string;
+  kind: "MEMBERSHIP_EXPIRY" | "INACTIVE_MEMBER";
+  reminderType?: MembershipExpiryReminderType;
+  inactiveAfterDays?: number;
+  lastAttendancePeriodMs?: number;
   channel: "EMAIL";
   recipientEmail: string;
   sentAt: Timestamp;
@@ -373,6 +375,8 @@ export type GymNotificationSettingsDoc = {
   membershipExpiry14DaysAfter?: NotificationChannelSettingsDoc;
   membershipExpiry30DaysAfter?: NotificationChannelSettingsDoc;
   manualRenewalReminder?: NotificationChannelSettingsDoc;
+  inactiveMemberEmail?: NotificationChannelSettingsDoc;
+  inactiveAfterDays?: number;
   updatedAt: Timestamp;
 };
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { verifyCronSecret } from "@/lib/cron-auth";
+import { runInactiveMemberRemindersJob } from "@/lib/inactive-member-reminders/send";
 import { runMembershipExpiryRemindersJob } from "@/lib/membership-expiry-reminders/run-job";
 
 export const runtime = "nodejs";
@@ -13,8 +14,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    const stats = await runMembershipExpiryRemindersJob();
-    return NextResponse.json({ ok: true, stats });
+    const expiryStats = await runMembershipExpiryRemindersJob();
+    const inactiveStats = await runInactiveMemberRemindersJob();
+    return NextResponse.json({ ok: true, stats: { expiry: expiryStats, inactive: inactiveStats } });
   } catch (err) {
     console.error("[cron/membership-expiry-reminders] job failed:", err);
     return NextResponse.json({ error: "Job failed." }, { status: 500 });

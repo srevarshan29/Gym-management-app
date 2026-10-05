@@ -28,12 +28,15 @@ import {
 } from "@/lib/notification-settings/template-variables";
 import type {
   GymNotificationSettingsData,
+  InactiveMemberAfterDays,
   NotificationChannelSettings,
 } from "@/lib/notification-settings/types";
+import { INACTIVE_MEMBER_AFTER_DAY_OPTIONS } from "@/lib/notification-settings/types";
+import { InactiveMemberManualSendButton } from "@/components/inactive-member-manual-send";
 
 type ChannelKey = Exclude<
   keyof GymNotificationSettingsFormDefaults,
-  "automaticEmailNotificationsEnabled"
+  "automaticEmailNotificationsEnabled" | "inactiveAfterDays"
 >;
 
 const CHANNEL_META: Record<
@@ -78,6 +81,11 @@ const CHANNEL_META: Record<
     title: "30 days after",
     description: "Follow-up email sent 30 days after the membership end date.",
   },
+  inactiveMemberEmail: {
+    title: "Inactive member email",
+    description:
+      "Sent when a member with an active membership has not checked in for the selected number of days.",
+  },
 };
 
 const EXPIRY_CHANNEL_KEYS: ChannelKey[] = [
@@ -93,9 +101,14 @@ const EXPIRY_CHANNEL_KEYS: ChannelKey[] = [
 type Props = {
   settings: GymNotificationSettingsData;
   defaults: GymNotificationSettingsFormDefaults;
+  inactiveBulkRecipientCount?: number;
 };
 
-export function EmailAutomationSettingsForm({ settings, defaults }: Props) {
+export function EmailAutomationSettingsForm({
+  settings,
+  defaults,
+  inactiveBulkRecipientCount = 0,
+}: Props) {
   const guardedAction = useGuardedFormAction(updateGymNotificationSettings);
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
     guardedAction,
@@ -118,7 +131,11 @@ export function EmailAutomationSettingsForm({ settings, defaults }: Props) {
     membershipExpiry7DaysAfter: settings.membershipExpiry7DaysAfter,
     membershipExpiry14DaysAfter: settings.membershipExpiry14DaysAfter,
     membershipExpiry30DaysAfter: settings.membershipExpiry30DaysAfter,
+    inactiveMemberEmail: settings.inactiveMemberEmail,
   });
+
+  const [inactiveAfterDays, setInactiveAfterDays] =
+    React.useState<InactiveMemberAfterDays>(settings.inactiveAfterDays);
 
   React.useEffect(() => {
     if (!state) return;
@@ -159,9 +176,9 @@ export function EmailAutomationSettingsForm({ settings, defaults }: Props) {
         <CardHeader>
           <CardTitle className="text-base">Automatic email notifications</CardTitle>
           <CardDescription>
-            When off, automated payment receipt emails and membership expiry reminder
-            jobs will not send email. Manual Send reminder on renewals pages still
-            works when its own toggle is on.
+            When off, automated payment receipt emails, membership expiry reminders,
+            and inactive member emails will not send. Manual Send reminder on renewals
+            and Send to all inactive members still work when their own toggles are on.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -238,6 +255,52 @@ export function EmailAutomationSettingsForm({ settings, defaults }: Props) {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-base">Inactive members</CardTitle>
+          <CardDescription>
+            Email members with an active membership who have not checked in recently.
+            Uses attendance check-in data (last visit).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="inactiveAfterDays">Inactive after</Label>
+            <select
+              id="inactiveAfterDays"
+              name="inactiveAfterDays"
+              value={inactiveAfterDays}
+              onChange={(e) =>
+                setInactiveAfterDays(
+                  Number(e.target.value) as InactiveMemberAfterDays,
+                )
+              }
+              className="flex h-10 w-full max-w-xs rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {INACTIVE_MEMBER_AFTER_DAY_OPTIONS.map((days) => (
+                <option key={days} value={days}>
+                  {days} day{days === 1 ? "" : "s"}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <ChannelEditor
+            channelKey="inactiveMemberEmail"
+            channel={channels.inactiveMemberEmail}
+            meta={CHANNEL_META.inactiveMemberEmail}
+            onFieldChange={setChannelField}
+            onRestoreDefault={() => restoreDefault("inactiveMemberEmail")}
+            bodyRows={10}
+          />
+
+          <InactiveMemberManualSendButton
+            initialRecipientCount={inactiveBulkRecipientCount}
+            channelEnabled={channels.inactiveMemberEmail.enabled}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base">Manual renewal reminder</CardTitle>
           <CardDescription>
             Template for the Send reminder action on Expired and Upcoming Renewals.
@@ -277,6 +340,10 @@ export function EmailAutomationSettingsForm({ settings, defaults }: Props) {
                 <span>{item.meaning}</span>
               </li>
             ))}
+            <li className="flex flex-col gap-0.5 sm:flex-row sm:gap-2">
+              <code className="shrink-0 font-mono text-foreground">{`{{days_inactive}}`}</code>
+              <span>Days since the member&apos;s last check-in (inactive member email only)</span>
+            </li>
           </ul>
           <p className="mt-3 text-xs text-muted-foreground">
             Payment receipt only:{" "}

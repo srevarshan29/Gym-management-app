@@ -130,6 +130,23 @@ export const DEFAULT_MANUAL_RENEWAL_REMINDER: NotificationChannelSettings = {
   ].join("\n"),
 };
 
+export const DEFAULT_INACTIVE_MEMBER_EMAIL: NotificationChannelSettings = {
+  enabled: false,
+  subject: "We miss you at {{gym_name}}",
+  body: [
+    "Hi {{member_name}},",
+    "",
+    "We have not seen you at {{gym_name}} for {{days_inactive}} days.",
+    "",
+    "Your membership is still active — we would love to see you back whenever you are ready.",
+    "",
+    "Thank you,",
+    "{{gym_name}}",
+  ].join("\n"),
+};
+
+export const DEFAULT_INACTIVE_AFTER_DAYS = 7 as const;
+
 export function defaultGymNotificationSettings(gymId: string) {
   return {
     gymId,
@@ -143,5 +160,7 @@ export function defaultGymNotificationSettings(gymId: string) {
     membershipExpiry14DaysAfter: { ...DEFAULT_MEMBERSHIP_EXPIRY_14_DAYS_AFTER },
     membershipExpiry30DaysAfter: { ...DEFAULT_MEMBERSHIP_EXPIRY_30_DAYS_AFTER },
     manualRenewalReminder: { ...DEFAULT_MANUAL_RENEWAL_REMINDER },
+    inactiveMemberEmail: { ...DEFAULT_INACTIVE_MEMBER_EMAIL },
+    inactiveAfterDays: DEFAULT_INACTIVE_AFTER_DAYS,
   };
 }

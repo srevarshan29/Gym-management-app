@@ -1,5 +1,7 @@
 import type { GymNotificationSettingsDoc } from "@/lib/firestore/types";
 import {
+  DEFAULT_INACTIVE_AFTER_DAYS,
+  DEFAULT_INACTIVE_MEMBER_EMAIL,
   DEFAULT_MEMBERSHIP_EXPIRY_14_DAYS_AFTER,
   DEFAULT_MEMBERSHIP_EXPIRY_2_DAYS_AFTER,
   DEFAULT_MEMBERSHIP_EXPIRY_30_DAYS_AFTER,
@@ -13,8 +15,10 @@ import {
 } from "@/lib/notification-settings/defaults";
 import type {
   GymNotificationSettingsData,
+  InactiveMemberAfterDays,
   NotificationChannelSettings,
 } from "@/lib/notification-settings/types";
+import { INACTIVE_MEMBER_AFTER_DAY_OPTIONS } from "@/lib/notification-settings/types";
 
 function mergeChannel(
   defaults: NotificationChannelSettings,
@@ -31,6 +35,18 @@ function mergeChannel(
         ? stored.body
         : defaults.body,
   };
+}
+
+function mergeInactiveAfterDays(
+  stored: number | undefined,
+): InactiveMemberAfterDays {
+  if (
+    stored !== undefined &&
+    (INACTIVE_MEMBER_AFTER_DAY_OPTIONS as readonly number[]).includes(stored)
+  ) {
+    return stored as InactiveMemberAfterDays;
+  }
+  return DEFAULT_INACTIVE_AFTER_DAYS;
 }
 
 export function mergeGymNotificationSettings(
@@ -82,5 +98,10 @@ export function mergeGymNotificationSettings(
       DEFAULT_MANUAL_RENEWAL_REMINDER,
       stored.manualRenewalReminder,
     ),
+    inactiveMemberEmail: mergeChannel(
+      DEFAULT_INACTIVE_MEMBER_EMAIL,
+      stored.inactiveMemberEmail,
+    ),
+    inactiveAfterDays: mergeInactiveAfterDays(stored.inactiveAfterDays),
   };
 }

@@ -33,6 +33,8 @@ export type MembershipExpiryReminderSettingsKey = Exclude<
   | "automaticEmailNotificationsEnabled"
   | "paymentReceiptEmail"
   | "manualRenewalReminder"
+  | "inactiveMemberEmail"
+  | "inactiveAfterDays"
 >;
 
 export type ExpiryReminderScheduleEntry = {

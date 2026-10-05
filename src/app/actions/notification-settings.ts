@@ -7,6 +7,7 @@ import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
 import { getRepositories, type StaffContext } from "@/lib/firestore";
 import { canManageNotificationSettings } from "@/lib/permissions";
 import type { GymNotificationSettingsData } from "@/lib/notification-settings/types";
+import type { InactiveMemberAfterDays } from "@/lib/notification-settings/types";
 import { requireGym } from "@/lib/session";
 
 const channelSchema = z.object({
@@ -40,6 +41,12 @@ const settingsSchema = z.object({
   membershipExpiry14DaysAfter: channelSchema,
   membershipExpiry30DaysAfter: channelSchema,
   manualRenewalReminder: channelSchema,
+  inactiveMemberEmail: channelSchema,
+  inactiveAfterDays: z.coerce
+    .number()
+    .refine((n): n is InactiveMemberAfterDays =>
+      ([1, 3, 7, 14, 30] as const).includes(n as InactiveMemberAfterDays),
+    ),
 });
 
 function toStaffContext(user: {
@@ -85,6 +92,8 @@ export async function updateGymNotificationSettings(
       formData,
       "manualRenewalReminder",
     ),
+    inactiveMemberEmail: parseChannelFromForm(formData, "inactiveMemberEmail"),
+    inactiveAfterDays: Number(formData.get("inactiveAfterDays") ?? "7"),
     ...Object.fromEntries(
       MEMBERSHIP_EXPIRY_CHANNEL_KEYS.map((key) => [
         key,

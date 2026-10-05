@@ -9,6 +9,7 @@ import { canManageNotificationSettings } from "@/lib/permissions";
 import { requireGym } from "@/lib/session";
 import { PageHeader } from "@/components/page-header";
 import { EmailAutomationSettingsForm } from "@/components/notification-settings-form";
+import { countInactiveMemberEmailRecipients } from "@/lib/inactive-member-reminders/targets";
 
 export default async function EmailAutomationSettingsPage() {
   const user = await requireGym();
@@ -18,13 +19,16 @@ export default async function EmailAutomationSettingsPage() {
 
   const notificationSettings = await getGymNotificationSettings(user.gymId);
   const notificationDefaults = defaultGymNotificationSettings(user.gymId);
+  const inactiveBulkRecipientCount = await countInactiveMemberEmailRecipients(
+    user.gymId,
+  );
   const { gymId: _gymId, ...formDefaults } = notificationDefaults;
 
   return (
     <div>
       <PageHeader
         title="Email Automation"
-        description="Payment receipts, membership expiry reminders, and manual renewal reminder templates."
+        description="Payment receipts, membership expiry reminders, inactive member emails, and manual renewal templates."
       >
         <Link
           href="/settings"
@@ -38,6 +42,7 @@ export default async function EmailAutomationSettingsPage() {
       <EmailAutomationSettingsForm
         settings={notificationSettings}
         defaults={formDefaults}
+        inactiveBulkRecipientCount={inactiveBulkRecipientCount}
       />
     </div>
   );

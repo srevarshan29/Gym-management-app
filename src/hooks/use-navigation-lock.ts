@@ -1,11 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-
-function routeKey(pathname: string, search: string): string {
-  return search ? `${pathname}?${search}` : pathname;
-}
+import { usePathname, useRouter } from "next/navigation";
 
 export function hrefRouteKey(href: string): string {
   const [path, query] = href.split("?");
@@ -35,13 +31,12 @@ export type NavigationLockOptions = {
 
 export function useNavigationLock() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
   const [, startTransition] = React.useTransition();
   const [pendingHref, setPendingHref] = React.useState<string | null>(null);
   const lockRef = React.useRef(false);
 
-  const currentRoute = routeKey(pathname, searchParams.toString());
+  const currentRoute = pathname;
   const isLocked = pendingHref !== null;
 
   React.useEffect(() => {
@@ -56,7 +51,9 @@ export function useNavigationLock() {
       options?: NavigationLockOptions,
     ): boolean => {
       const target = hrefRouteKey(href);
+      const targetPath = target.split("?")[0] ?? target;
       if (target === currentRoute) return false;
+      if (!target.includes("?") && targetPath === pathname) return false;
       e?.preventDefault();
       if (lockRef.current) return false;
 
@@ -74,7 +71,7 @@ export function useNavigationLock() {
       });
       return true;
     },
-    [currentRoute, router],
+    [currentRoute, pathname, router],
   );
 
   return {

@@ -30,7 +30,9 @@ export function AccountSettingsForm({
     if (!state) return;
     if (state.ok) {
       toast.success(state.message ?? "Profile updated.");
-      router.refresh();
+      React.startTransition(() => {
+        router.refresh();
+      });
     } else {
       toast.error(state.error);
     }

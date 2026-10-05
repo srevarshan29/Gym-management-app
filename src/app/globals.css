@@ -99,13 +99,16 @@
     @apply border-border;
   }
   html {
+    @apply bg-background;
     overflow-x: clip;
+    min-height: 100dvh;
   }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
     overflow-x: clip;
     min-width: 0;
+    min-height: 100dvh;
   }
   ::selection {
     background-color: hsl(var(--primary) / 0.25);

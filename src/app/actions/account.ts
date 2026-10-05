@@ -61,10 +61,8 @@ export async function updateMyProfile(
     return actionError("Could not update profile.");
   }
 
-  revalidatePath("/", "layout");
   revalidatePath("/settings");
-  revalidatePath("/members");
-  revalidatePath("/payments");
+  revalidatePath("/", "layout");
 
   return actionOk("Display name updated.");
 }

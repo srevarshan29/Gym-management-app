@@ -10,7 +10,7 @@ import {
   logWorkoutSet,
 } from "@/app/actions/workout-sessions";
 import { RestTimer } from "@/components/member-portal/workout/rest-timer";
-import { MemberExerciseDemonstrationDialog } from "@/components/member-portal/workout/member-exercise-demonstration-dialog";
+import { ExerciseMedia } from "@/components/exercise-media";
 import { MemberExerciseWatchDemoLink } from "@/components/member-portal/workout/member-exercise-watch-demo-link";
 import { clearRestTimersForSession } from "@/lib/workout-tracking/rest-timer-storage";
 import { SessionTimer } from "@/components/member-portal/workout/session-timer";
@@ -323,22 +323,22 @@ export function WorkoutSessionView({
         <h2 className="break-words text-center font-display text-2xl font-bold leading-tight">
           {exercise.displayName}
         </h2>
-        {exercise.exerciseId || exercise.youtubeUrl ? (
-          <div className="flex flex-wrap items-center justify-center gap-1 overflow-x-hidden">
-            {exercise.youtubeUrl ? (
-              <MemberExerciseWatchDemoLink
-                youtubeUrl={exercise.youtubeUrl}
-                compact
-              />
-            ) : null}
-            {exercise.exerciseId ? (
-              <MemberExerciseDemonstrationDialog
-                exerciseName={exercise.displayName}
-                media={exercise.media}
-                hasMedia={exercise.hasMedia}
-                compact
-              />
-            ) : null}
+        {exercise.exerciseId ? (
+          <ExerciseMedia
+            media={exercise.media}
+            alt={`${exercise.displayName} demonstration`}
+            variant="thumbnail"
+            compact
+            emptyLabel=""
+            className="mx-auto h-28 w-full max-w-[11rem] sm:max-w-[12rem]"
+          />
+        ) : null}
+        {exercise.youtubeUrl ? (
+          <div className="flex justify-center overflow-x-hidden">
+            <MemberExerciseWatchDemoLink
+              youtubeUrl={exercise.youtubeUrl}
+              compact
+            />
           </div>
         ) : null}
         <RestTimer

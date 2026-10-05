@@ -5,8 +5,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ExerciseMedia } from "@/components/exercise-media";
 import type { WorkoutPlanDetail } from "@/lib/workout-tracking/types";
-import { MemberExerciseDemonstrationDialog } from "@/components/member-portal/workout/member-exercise-demonstration-dialog";
 import { MemberExerciseWatchDemoLink } from "@/components/member-portal/workout/member-exercise-watch-demo-link";
 
 type MemberWorkoutPlanViewProps = {
@@ -76,31 +76,33 @@ export function MemberWorkoutPlanView({ plan }: MemberWorkoutPlanViewProps) {
                 key={exercise.id}
                 className="rounded-xl border border-border bg-muted/20 p-4"
               >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="break-words font-medium">{exercise.displayName}</p>
-                    {exercise.muscleGroup ? (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {exercise.muscleGroup}
-                      </p>
-                    ) : null}
-                  </div>
-                  {exercise.exerciseId || exercise.youtubeUrl ? (
-                    <div className="flex flex-wrap items-center justify-end gap-1">
-                      {exercise.youtubeUrl ? (
-                        <MemberExerciseWatchDemoLink youtubeUrl={exercise.youtubeUrl} />
-                      ) : null}
-                      {exercise.exerciseId ? (
-                        <MemberExerciseDemonstrationDialog
-                          exerciseName={exercise.displayName}
-                          media={exercise.media}
-                          hasMedia={exercise.hasMedia}
-                        />
+                <div className="flex gap-3">
+                  {exercise.exerciseId ? (
+                    <ExerciseMedia
+                      media={exercise.media}
+                      alt={`${exercise.displayName} demonstration`}
+                      variant="thumbnail"
+                      compact
+                      emptyLabel=""
+                      className="h-[4.5rem] w-[4.5rem] shrink-0 sm:h-20 sm:w-20"
+                    />
+                  ) : null}
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div>
+                      <p className="break-words font-medium">{exercise.displayName}</p>
+                      {exercise.muscleGroup ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {exercise.muscleGroup}
+                        </p>
                       ) : null}
                     </div>
-                  ) : null}
-                </div>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                    {exercise.youtubeUrl ? (
+                      <MemberExerciseWatchDemoLink
+                        youtubeUrl={exercise.youtubeUrl}
+                        compact
+                      />
+                    ) : null}
+                    <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
                   <span>
                     {exercise.targetSets} sets × {exercise.targetReps} reps
                   </span>
@@ -113,6 +115,8 @@ export function MemberWorkoutPlanView({ plan }: MemberWorkoutPlanViewProps) {
                   {exercise.restSeconds != null ? (
                     <span>Rest: {exercise.restSeconds}s</span>
                   ) : null}
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}

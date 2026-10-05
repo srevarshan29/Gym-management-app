@@ -542,6 +542,16 @@ export class MembersRepository {
     );
   }
 
+  /** Full member roster for tenant-scoped reports (not paginated). */
+  async listAllByGym(
+    ctx: FirestoreContext,
+    gymId: string,
+  ): Promise<DocWithId<MemberDoc>[]> {
+    assertTenantAccess(ctx, gymId);
+    const snap = await this.col().where("gymId", "==", gymId).get();
+    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as MemberDoc) }));
+  }
+
   /**
    * Members whose denormalized current membership ends on the given calendar day (tenant-scoped).
    */

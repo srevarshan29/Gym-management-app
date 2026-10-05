@@ -504,7 +504,24 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "gymId", "order": "ASCENDING" },
+        { "fieldPath": "dateKey", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "attendance",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gymId", "order": "ASCENDING" },
         { "fieldPath": "dateKey", "order": "ASCENDING" },
+        { "fieldPath": "checkedInAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "attendance",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gymId", "order": "ASCENDING" },
+        { "fieldPath": "dateKey", "order": "DESCENDING" },
         { "fieldPath": "checkedInAt", "order": "DESCENDING" }
       ]
     },

@@ -230,3 +230,15 @@ export function ReportsPageSkeleton() {
     </div>
   );
 }
+
+export function OperationsReportsPageSkeleton() {
+  return (
+    <div className="animate-pulse space-y-3">
+      <div className="h-20 rounded-lg bg-muted/40 border border-border/40" />
+      <KpiGridSkeleton count={4} className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4" />
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="h-32 rounded-lg bg-muted/30 border border-border/40" />
+      ))}
+    </div>
+  );
+}

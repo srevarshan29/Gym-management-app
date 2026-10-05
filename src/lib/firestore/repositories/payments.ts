@@ -423,4 +423,81 @@ export class PaymentsRepository {
       .get();
     return snap.docs.map((d) => ({ id: d.id, ...(d.data() as PaymentDoc) }));
   }
+
+  async listPaidInRange(
+    ctx: FirestoreContext,
+    gymId: string,
+    start: Date,
+    end: Date,
+    options: { limit: number; startAfterId?: string | null },
+  ): Promise<{ rows: DocWithId<PaymentDoc>[]; nextCursor: string | null }> {
+    assertTenantAccess(ctx, gymId);
+    let query = this.col()
+      .where("gymId", "==", gymId)
+      .where("paidAt", ">=", Timestamp.fromDate(start))
+      .where("paidAt", "<", Timestamp.fromDate(end))
+      .orderBy("paidAt", "desc");
+
+    if (options.startAfterId) {
+      const cursor = await this.col().doc(options.startAfterId).get();
+      if (cursor.exists) {
+        query = query.startAfter(cursor);
+      }
+    }
+
+    const snap = await query.limit(options.limit + 1).get();
+    const docs = snap.docs.map((d) => ({
+      id: d.id,
+      ...(d.data() as PaymentDoc),
+    }));
+    const hasMore = docs.length > options.limit;
+    const rows = hasMore ? docs.slice(0, options.limit) : docs;
+    return {
+      rows,
+      nextCursor: hasMore ? rows[rows.length - 1]!.id : null,
+    };
+  }
+
+  async listAllPaidInRange(
+    ctx: FirestoreContext,
+    gymId: string,
+    start: Date,
+    end: Date,
+  ): Promise<DocWithId<PaymentDoc>[]> {
+    assertTenantAccess(ctx, gymId);
+    const rows: DocWithId<PaymentDoc>[] = [];
+    let startAfterId: string | null = null;
+    for (;;) {
+      const batch = await this.listPaidInRange(ctx, gymId, start, end, {
+        limit: 200,
+        startAfterId,
+      });
+      rows.push(...batch.rows);
+      if (!batch.nextCursor) break;
+      startAfterId = batch.nextCursor;
+    }
+    return rows;
+  }
+
+  async *iteratePaidInRange(
+    ctx: FirestoreContext,
+    gymId: string,
+    start: Date,
+    end: Date,
+    batchSize = 200,
+  ): AsyncGenerator<DocWithId<PaymentDoc>, void, unknown> {
+    let startAfterId: string | null = null;
+    for (;;) {
+      const batch = await this.listPaidInRange(ctx, gymId, start, end, {
+        limit: batchSize,
+        startAfterId,
+      });
+      if (batch.rows.length === 0) return;
+      for (const row of batch.rows) {
+        yield row;
+      }
+      if (!batch.nextCursor) return;
+      startAfterId = batch.nextCursor;
+    }
+  }
 }

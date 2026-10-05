@@ -14,14 +14,39 @@ type ReportModuleCardProps = {
   module: ReportModuleMeta;
   count: number;
   canDownload: boolean;
+  compact?: boolean;
 };
 
 export function ReportModuleCard({
   module,
   count,
   canDownload,
+  compact = false,
 }: ReportModuleCardProps) {
   const downloadHref = `/operations/reports/download?module=${encodeURIComponent(module.id)}`;
+
+  if (compact) {
+    return (
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground">{module.title}</p>
+          <p className="truncate text-xs text-muted-foreground">{module.description}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="font-mono text-sm tabular-nums text-muted-foreground">
+            {count.toLocaleString("en-IN")}
+          </span>
+          {canDownload ? (
+            <ReportDownloadLink href={downloadHref} />
+          ) : (
+            <Button disabled size="sm" className="gap-1 shrink-0">
+              <Download className="h-4 w-4" /> Download CSV
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm">

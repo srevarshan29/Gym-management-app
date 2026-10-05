@@ -139,6 +139,82 @@ export class AttendanceRepository {
     return rows.map((row) => this.toListItem(row));
   }
 
+  async countForDateKeyRange(
+    ctx: FirestoreContext,
+    gymId: string,
+    startDateKey: string,
+    endDateKey: string,
+  ): Promise<number> {
+    assertTenantAccess(ctx, gymId);
+    const snap = await this.col()
+      .where("gymId", "==", gymId)
+      .where("dateKey", ">=", startDateKey)
+      .where("dateKey", "<=", endDateKey)
+      .count()
+      .get();
+    return snap.data().count;
+  }
+
+  async listForDateKeyRange(
+    ctx: FirestoreContext,
+    gymId: string,
+    startDateKey: string,
+    endDateKey: string,
+    options: { limit: number; startAfterId?: string | null },
+  ): Promise<{ rows: DocWithId<AttendanceDoc>[]; nextCursor: string | null }> {
+    assertTenantAccess(ctx, gymId);
+    let query = this.col()
+      .where("gymId", "==", gymId)
+      .where("dateKey", ">=", startDateKey)
+      .where("dateKey", "<=", endDateKey)
+      .orderBy("dateKey", "desc")
+      .orderBy("checkedInAt", "desc");
+
+    if (options.startAfterId) {
+      const cursor = await this.col().doc(options.startAfterId).get();
+      if (cursor.exists) {
+        query = query.startAfter(cursor);
+      }
+    }
+
+    const snap = await query.limit(options.limit + 1).get();
+    const docs = snap.docs.map((d) => ({
+      id: d.id,
+      ...(d.data() as AttendanceDoc),
+    }));
+    const hasMore = docs.length > options.limit;
+    const rows = hasMore ? docs.slice(0, options.limit) : docs;
+    return {
+      rows,
+      nextCursor: hasMore ? rows[rows.length - 1]!.id : null,
+    };
+  }
+
+  async *iterateForDateKeyRange(
+    ctx: FirestoreContext,
+    gymId: string,
+    startDateKey: string,
+    endDateKey: string,
+    batchSize = 200,
+  ): AsyncGenerator<DocWithId<AttendanceDoc>, void, unknown> {
+    let startAfterId: string | null = null;
+    for (;;) {
+      const batch = await this.listForDateKeyRange(
+        ctx,
+        gymId,
+        startDateKey,
+        endDateKey,
+        { limit: batchSize, startAfterId },
+      );
+      if (batch.rows.length === 0) return;
+      for (const row of batch.rows) {
+        yield row;
+      }
+      if (!batch.nextCursor) return;
+      startAfterId = batch.nextCursor;
+    }
+  }
+
   /** Validates attendance method values without persisting (model extensibility). */
   static supportedMethods(): AttendanceMethod[] {
     return ["manual", "biometric", "qr"];

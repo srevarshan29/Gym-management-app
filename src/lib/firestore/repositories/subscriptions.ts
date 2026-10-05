@@ -316,4 +316,14 @@ export class SubscriptionsRepository {
 
     return [...earliestByMember.values()].filter((start) => start >= since);
   }
+
+  /** All subscriptions for a gym (used by operations reports; tenant-scoped). */
+  async listAllByGym(
+    ctx: FirestoreContext,
+    gymId: string,
+  ): Promise<DocWithId<SubscriptionDoc>[]> {
+    assertTenantAccess(ctx, gymId);
+    const snap = await this.col().where("gymId", "==", gymId).get();
+    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as SubscriptionDoc) }));
+  }
 }

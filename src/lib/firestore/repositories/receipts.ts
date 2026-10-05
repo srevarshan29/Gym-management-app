@@ -106,6 +106,31 @@ export class ReceiptsRepository {
     return { id: doc.id, ...(doc.data() as ReceiptDoc) };
   }
 
+  async mapReceiptNumbersByPaymentIds(
+    ctx: FirestoreContext,
+    gymId: string,
+    paymentIds: string[],
+  ): Promise<Map<string, number>> {
+    assertTenantAccess(ctx, gymId);
+    const map = new Map<string, number>();
+    const unique = [...new Set(paymentIds)].filter(Boolean);
+    if (unique.length === 0) return map;
+
+    const CHUNK = 30;
+    for (let i = 0; i < unique.length; i += CHUNK) {
+      const chunk = unique.slice(i, i + CHUNK);
+      const snap = await this.col()
+        .where("gymId", "==", gymId)
+        .where("paymentId", "in", chunk)
+        .get();
+      for (const doc of snap.docs) {
+        const data = doc.data() as ReceiptDoc;
+        map.set(data.paymentId, data.number);
+      }
+    }
+    return map;
+  }
+
   /**
    * Create immutable receipt inside a billing transaction.
    * Payment, member, and subscription must already exist in the transaction.

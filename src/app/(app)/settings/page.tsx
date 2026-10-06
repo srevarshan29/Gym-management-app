@@ -34,9 +34,17 @@ export default async function SettingsPage() {
     role: user.role,
   };
   const { users } = getRepositories();
-  const dbUser = await users.findById(ctx, user.id);
+  let dbUser: Awaited<ReturnType<typeof users.findById>>;
+  let gymProfile: Awaited<ReturnType<typeof getGymProfile>> | null = null;
 
-  const gymProfile = isOwner ? await getGymProfile(user.gymId) : null;
+  if (isOwner) {
+    [dbUser, gymProfile] = await Promise.all([
+      users.findById(ctx, user.id),
+      getGymProfile(user.gymId),
+    ]);
+  } else {
+    dbUser = await users.findById(ctx, user.id);
+  }
 
   return (
     <div>

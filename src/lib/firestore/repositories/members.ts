@@ -433,25 +433,32 @@ export class MembersRepository {
     const page = Math.max(1, Math.floor(options.page ?? 1));
     const tokens = tokenizeSearchQuery(options.q ?? "");
 
-    const totalMembers = await this.countByGym(ctx, gymId);
-
+    let totalMembers: number;
     let candidates: DocWithId<MemberDoc>[];
 
     if (tokens.length === 0) {
-      const pageSnaps = await queryPageByNumber(
-        this.col().where("gymId", "==", gymId).orderBy("createdAt", "desc"),
-        page,
-        pageSize,
-      );
+      const [resolvedTotalMembers, pageSnaps] = await Promise.all([
+        this.countByGym(ctx, gymId),
+        queryPageByNumber(
+          this.col().where("gymId", "==", gymId).orderBy("createdAt", "desc"),
+          page,
+          pageSize,
+        ),
+      ]);
+      totalMembers = resolvedTotalMembers;
       candidates = pageSnaps.map((d) => ({
         id: d.id,
         ...(d.data() as MemberDoc),
       }));
     } else {
-      const snap = await this.col()
-        .where("gymId", "==", gymId)
-        .where("searchTokens", "array-contains", tokens[0]!)
-        .get();
+      const [resolvedTotalMembers, snap] = await Promise.all([
+        this.countByGym(ctx, gymId),
+        this.col()
+          .where("gymId", "==", gymId)
+          .where("searchTokens", "array-contains", tokens[0]!)
+          .get(),
+      ]);
+      totalMembers = resolvedTotalMembers;
       candidates = snap.docs
         .map((d) => ({ id: d.id, ...(d.data() as MemberDoc) }))
         .filter((m) =>

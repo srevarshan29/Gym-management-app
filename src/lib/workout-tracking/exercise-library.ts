@@ -166,12 +166,19 @@ export async function browseExerciseLibrary(
     });
   }
 
-  const totalCount =
-    isFirstPage && page.items.length > 0
-      ? await customExercises.countByGym(platformContext, tenantGymId)
-      : isFirstPage
-        ? page.items.length
-        : 0;
+  if (isFirstPage && page.items.length > 0) {
+    const [totalCount, items] = await Promise.all([
+      customExercises.countByGym(platformContext, tenantGymId),
+      mapDocsToListItems(page.items),
+    ]);
+    return {
+      items,
+      nextCursor: page.nextCursor,
+      totalCount,
+    };
+  }
+
+  const totalCount = isFirstPage ? page.items.length : 0;
 
   return {
     items: await mapDocsToListItems(page.items),

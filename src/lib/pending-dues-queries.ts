@@ -1,4 +1,8 @@
+import { getFirestoreDb } from "@/lib/firebase/admin";
+import { batchGetByIds } from "@/lib/firestore/batch-get";
+import { COLLECTIONS } from "@/lib/firestore/collections";
 import { getRepositories, platformContext } from "@/lib/firestore";
+import type { MemberDoc } from "@/lib/firestore/types";
 import type { PendingMember } from "@/lib/member-list-types";
 import { statusFromEndDate } from "@/lib/subscription";
 import type { MemberGender } from "@prisma/client";
@@ -56,23 +60,23 @@ export async function getPendingDuesPage(
     status: statusFromEndDate(s.endDate.toDate()),
   }));
 
-  const { members } = getRepositories();
-  const enriched = await Promise.all(
-    rows.map(async (row) => {
-      const member = await members.findByIdAndGym(
-        platformContext,
-        row.memberId,
-        tenantGymId,
-      );
-      if (!member) return row;
-      return {
-        ...row,
-        phone: member.phone,
-        photoUrl: member.photoUrl,
-        gender: member.gender as MemberGender,
-      };
-    }),
+  const memberIds = [...new Set(rows.map((row) => row.memberId))];
+  const membersById = await batchGetByIds<MemberDoc>(
+    getFirestoreDb(),
+    COLLECTIONS.members,
+    memberIds,
   );
+
+  const enriched = rows.map((row) => {
+    const member = membersById.get(row.memberId);
+    if (!member || member.gymId !== tenantGymId) return row;
+    return {
+      ...row,
+      phone: member.phone,
+      photoUrl: member.photoUrl,
+      gender: member.gender as MemberGender,
+    };
+  });
 
   return {
     rows: enriched,

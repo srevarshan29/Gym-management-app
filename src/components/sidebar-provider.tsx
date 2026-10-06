@@ -30,14 +30,17 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     setHydrated(true);
   }, []);
 
+  const closeMobile = React.useCallback(() => setMobileOpen(false), []);
+
   React.useEffect(() => {
-    if (!mobileOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
+    const mq = window.matchMedia("(min-width: 768px)");
+    const onViewportChange = () => {
+      if (mq.matches) closeMobile();
     };
-  }, [mobileOpen]);
+    onViewportChange();
+    mq.addEventListener("change", onViewportChange);
+    return () => mq.removeEventListener("change", onViewportChange);
+  }, [closeMobile]);
 
   const toggleCollapsed = React.useCallback(() => {
     setCollapsed((prev) => {
@@ -52,7 +55,6 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const openMobile = React.useCallback(() => setMobileOpen(true), []);
-  const closeMobile = React.useCallback(() => setMobileOpen(false), []);
   const toggleMobile = React.useCallback(
     () => setMobileOpen((open) => !open),
     [],

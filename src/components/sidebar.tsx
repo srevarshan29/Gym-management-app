@@ -40,6 +40,7 @@ function NavLink({
   return (
     <Link
       href={item.href}
+      prefetch={true}
       onClick={(e) => onNavigate(item.href, e)}
       aria-busy={isNavigating}
       aria-disabled={isLocked}

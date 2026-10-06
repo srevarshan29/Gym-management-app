@@ -22,4 +22,18 @@ describe("navigation lock route keys", () => {
       "/members/register-qr",
     );
   });
+
+  it("pending default href is not equal to query view route keys", () => {
+    const pending = hrefRouteKey("/members/register-qr");
+    const converted = buildRouteKey(
+      "/members/register-qr",
+      new URLSearchParams("view=converted"),
+    );
+    const all = buildRouteKey(
+      "/members/register-qr",
+      new URLSearchParams("view=all"),
+    );
+    expect(pending).not.toBe(converted);
+    expect(pending).not.toBe(all);
+  });
 });

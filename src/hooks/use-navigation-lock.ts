@@ -81,18 +81,28 @@ export function useNavigationLock() {
       options?: NavigationLockOptions,
     ): boolean => {
       const target = hrefRouteKey(href);
-      const targetPath = target.split("?")[0] ?? target;
-      if (target === routeKey) return false;
-      if (!target.includes("?") && targetPath === pathname) return false;
-      e?.preventDefault();
+      if (target === routeKey) {
+        e?.preventDefault();
+        return false;
+      }
 
       if (lockRef.current && pendingHrefRef.current === target) {
+        e?.preventDefault();
         return false;
       }
 
       lockRef.current = true;
       pendingHrefRef.current = target;
       setPendingHref(target);
+
+      // Let Next.js <Link> handle default navigations so viewport prefetch can apply.
+      const useProgrammaticNavigation =
+        !e || options?.replace || options?.refresh;
+      if (!useProgrammaticNavigation) {
+        return true;
+      }
+
+      e?.preventDefault();
       startTransition(() => {
         if (options?.replace) {
           router.replace(href);
@@ -105,7 +115,7 @@ export function useNavigationLock() {
       });
       return true;
     },
-    [pathname, routeKey, router],
+    [routeKey, router],
   );
 
   return {

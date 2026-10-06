@@ -1,11 +1,20 @@
 "use client";
 
 import * as React from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export function hrefRouteKey(href: string): string {
   const [path, query] = href.split("?");
   return query ? `${path}?${query}` : path;
+}
+
+/** Full client route key (pathname + query), used to detect navigation completion. */
+export function buildRouteKey(
+  pathname: string,
+  searchParams: { toString(): string },
+): string {
+  const query = searchParams.toString();
+  return query ? `${pathname}?${query}` : pathname;
 }
 
 export function resolveLinkHref(
@@ -29,20 +38,41 @@ export type NavigationLockOptions = {
   refresh?: boolean;
 };
 
+const NAVIGATION_LOCK_TIMEOUT_MS = 10_000;
+
 export function useNavigationLock() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [, startTransition] = React.useTransition();
   const [pendingHref, setPendingHref] = React.useState<string | null>(null);
   const lockRef = React.useRef(false);
+  const pendingHrefRef = React.useRef<string | null>(null);
 
-  const currentRoute = pathname;
+  const routeKey = React.useMemo(
+    () => buildRouteKey(pathname, searchParams),
+    [pathname, searchParams],
+  );
+
   const isLocked = pendingHref !== null;
 
-  React.useEffect(() => {
+  const releaseLock = React.useCallback(() => {
     lockRef.current = false;
+    pendingHrefRef.current = null;
     setPendingHref(null);
-  }, [currentRoute]);
+  }, []);
+
+  React.useEffect(() => {
+    releaseLock();
+  }, [routeKey, releaseLock]);
+
+  React.useEffect(() => {
+    if (!pendingHref) return;
+    const timeoutId = window.setTimeout(() => {
+      releaseLock();
+    }, NAVIGATION_LOCK_TIMEOUT_MS);
+    return () => clearTimeout(timeoutId);
+  }, [pendingHref, releaseLock]);
 
   const navigate = React.useCallback(
     (
@@ -52,12 +82,16 @@ export function useNavigationLock() {
     ): boolean => {
       const target = hrefRouteKey(href);
       const targetPath = target.split("?")[0] ?? target;
-      if (target === currentRoute) return false;
+      if (target === routeKey) return false;
       if (!target.includes("?") && targetPath === pathname) return false;
       e?.preventDefault();
-      if (lockRef.current) return false;
+
+      if (lockRef.current && pendingHrefRef.current === target) {
+        return false;
+      }
 
       lockRef.current = true;
+      pendingHrefRef.current = target;
       setPendingHref(target);
       startTransition(() => {
         if (options?.replace) {
@@ -71,14 +105,14 @@ export function useNavigationLock() {
       });
       return true;
     },
-    [currentRoute, pathname, router],
+    [pathname, routeKey, router],
   );
 
   return {
     navigate,
     pendingHref,
     isLocked,
-    currentRoute,
+    currentRoute: routeKey,
     pathname,
   };
 }

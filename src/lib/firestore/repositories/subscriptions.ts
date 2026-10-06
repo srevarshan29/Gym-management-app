@@ -359,6 +359,38 @@ export class SubscriptionsRepository {
     return results;
   }
 
+  /** Subscriptions whose `createdAt` falls in [start, end) (half-open). */
+  async listWithCreatedAtInRange(
+    ctx: FirestoreContext,
+    gymId: string,
+    start: Date,
+    end: Date,
+  ): Promise<DocWithId<SubscriptionDoc>[]> {
+    assertTenantAccess(ctx, gymId);
+    const snap = await this.col()
+      .where("gymId", "==", gymId)
+      .where("createdAt", ">=", Timestamp.fromDate(start))
+      .where("createdAt", "<", Timestamp.fromDate(end))
+      .get();
+    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as SubscriptionDoc) }));
+  }
+
+  /** Subscriptions whose `startDate` falls in [start, end) (half-open). */
+  async listWithStartDateInRange(
+    ctx: FirestoreContext,
+    gymId: string,
+    start: Date,
+    end: Date,
+  ): Promise<DocWithId<SubscriptionDoc>[]> {
+    assertTenantAccess(ctx, gymId);
+    const snap = await this.col()
+      .where("gymId", "==", gymId)
+      .where("startDate", ">=", Timestamp.fromDate(start))
+      .where("startDate", "<", Timestamp.fromDate(end))
+      .get();
+    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as SubscriptionDoc) }));
+  }
+
   /** All subscriptions for a gym (used by operations reports; tenant-scoped). */
   async listAllByGym(
     ctx: FirestoreContext,

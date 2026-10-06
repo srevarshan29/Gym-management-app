@@ -2,8 +2,10 @@ import { csvDataLine } from "@/lib/csv";
 import { getRepositories, platformContext } from "@/lib/firestore";
 import { batchGetByIds } from "@/lib/firestore/batch-get";
 import { COLLECTIONS } from "@/lib/firestore/collections";
+import type { FirestoreContext } from "@/lib/firestore/context";
 import { getFirestoreDb } from "@/lib/firebase/admin";
-import type { MemberDoc } from "@/lib/firestore/types";
+import type { DocWithId } from "@/lib/firestore/repositories/base";
+import type { MemberDoc, SubscriptionDoc } from "@/lib/firestore/types";
 import {
   formatReportDateRangeLabel,
   type ResolvedReportDateRange,
@@ -30,11 +32,7 @@ export const OPERATIONS_REPORT_ATTENDANCE_PAGE_SIZE = 50;
 export const OPERATIONS_REPORT_PAYMENTS_PAGE_SIZE = 50;
 
 function mapSubscriptions(
-  rows: Awaited<
-    ReturnType<
-      ReturnType<typeof getRepositories>["subscriptions"]["listAllByGym"]
-    >
-  >,
+  rows: DocWithId<SubscriptionDoc>[],
 ): SubscriptionRowForReport[] {
   return rows.map((sub) => ({
     id: sub.id,
@@ -46,6 +44,65 @@ function mapSubscriptions(
     endDate: sub.endDate.toDate(),
     createdAt: sub.createdAt.toDate(),
   }));
+}
+
+/**
+ * Loads the subscription rows needed for report metrics/tables without scanning
+ * the gym's full subscription history. Members who can affect the selected
+ * range are those with a subscription created in range or a cycle start in
+ * range; each candidate's full per-member history is loaded for earliest vs
+ * renewal classification.
+ */
+export async function loadReportSubscriptionDocs(
+  ctx: FirestoreContext,
+  tenantGymId: string,
+  range: ResolvedReportDateRange,
+): Promise<DocWithId<SubscriptionDoc>[]> {
+  const { subscriptions } = getRepositories();
+  const [createdInRange, startsInRange] = await Promise.all([
+    subscriptions.listWithCreatedAtInRange(
+      ctx,
+      tenantGymId,
+      range.startInstant,
+      range.endInstant,
+    ),
+    subscriptions.listWithStartDateInRange(
+      ctx,
+      tenantGymId,
+      range.startInstant,
+      range.endInstant,
+    ),
+  ]);
+
+  const memberIds = new Set<string>();
+  for (const sub of createdInRange) {
+    memberIds.add(sub.memberId);
+  }
+  for (const sub of startsInRange) {
+    memberIds.add(sub.memberId);
+  }
+
+  if (memberIds.size === 0) return [];
+
+  const ids = [...memberIds];
+  const CHUNK_SIZE = 50;
+  const byId = new Map<string, DocWithId<SubscriptionDoc>>();
+
+  for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + CHUNK_SIZE);
+    const lists = await Promise.all(
+      chunk.map((memberId) =>
+        subscriptions.listByMember(ctx, tenantGymId, memberId),
+      ),
+    );
+    for (const list of lists) {
+      for (const sub of list) {
+        byId.set(sub.id, sub);
+      }
+    }
+  }
+
+  return [...byId.values()];
 }
 
 function mapMembers(
@@ -179,7 +236,7 @@ export async function loadOperationsReportDashboard(
       },
     ),
     members.listAllByGym(ctx, tenantGymId),
-    subscriptions.listAllByGym(ctx, tenantGymId),
+    loadReportSubscriptionDocs(ctx, tenantGymId, range),
     options.canViewFinancials
       ? payments.listAllPaidInRange(
           ctx,
@@ -420,7 +477,11 @@ export async function* iterateOperationsReportCsvRows(
   const memberDocs = await members.listAllByGym(ctx, tenantGymId);
   const memberDocMap = new Map(memberDocs.map((m) => [m.id, m]));
   const memberRows = mapMembers(memberDocs);
-  const subscriptionDocs = await subscriptions.listAllByGym(ctx, tenantGymId);
+  const subscriptionDocs = await loadReportSubscriptionDocs(
+    ctx,
+    tenantGymId,
+    range,
+  );
   const subscriptionRows = mapSubscriptions(subscriptionDocs);
 
   if (dataset === "members") {

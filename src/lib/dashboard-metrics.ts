@@ -47,9 +47,12 @@ export type DashboardMetrics = {
   sparklines: DashboardSparklines;
 };
 
-const SPARKLINE_WEEKS = 6;
+export const DASHBOARD_SPARKLINE_WEEKS = 6;
 
-function lastNWeekBuckets(count: number, reference = new Date()): WeekBucket[] {
+export function lastNWeekBuckets(
+  count: number,
+  reference = new Date(),
+): WeekBucket[] {
   const buckets: WeekBucket[] = [];
   for (let i = count - 1; i >= 0; i--) {
     const end = new Date(reference);
@@ -105,13 +108,13 @@ export async function getFinancialSparklines(
   pendingTotal: number,
   monthlyRevenue: number[],
   monthCount = 6,
+  weeklyPaymentCounts?: number[],
 ): Promise<FinancialSparklines> {
-  const weekBuckets = lastNWeekBuckets(SPARKLINE_WEEKS);
+  const weekBuckets = lastNWeekBuckets(DASHBOARD_SPARKLINE_WEEKS);
 
-  const weeklyPaymentCounts = await queryWeeklyPaymentCounts(
-    tenantGymId,
-    weekBuckets,
-  );
+  const resolvedWeeklyCounts =
+    weeklyPaymentCounts ??
+    (await queryWeeklyPaymentCounts(tenantGymId, weekBuckets));
 
   const revenue =
     monthlyRevenue.length > 0
@@ -129,8 +132,8 @@ export async function getFinancialSparklines(
         : 0,
   );
 
-  const maxWeekly = Math.max(...weeklyPaymentCounts, 1);
-  const pending = weeklyPaymentCounts.map((count) => {
+  const maxWeekly = Math.max(...resolvedWeeklyCounts, 1);
+  const pending = resolvedWeeklyCounts.map((count) => {
     const factor = 0.55 + 0.45 * (1 - count / maxWeekly);
     return Math.round(pendingTotal * factor);
   });
@@ -144,7 +147,7 @@ export async function getDashboardMetrics(
   const now = new Date();
   const { startThisMonth, startLastMonth } = monthBounds(now);
   const cutoffs = statusCutoffs(now);
-  const weekBuckets = lastNWeekBuckets(SPARKLINE_WEEKS, now);
+  const weekBuckets = lastNWeekBuckets(DASHBOARD_SPARKLINE_WEEKS, now);
 
   const {
     status,

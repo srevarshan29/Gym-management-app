@@ -23,8 +23,15 @@ import {
   getDashboardMetrics,
   getFinancialSparklines,
   formatTrendLabel,
+  lastNWeekBuckets,
+  DASHBOARD_SPARKLINE_WEEKS,
 } from "@/lib/dashboard-metrics";
-import { getMonthlyRevenueTrend } from "@/lib/revenue";
+import { buildWeeklyPaymentCountsFromPayments } from "@/lib/dashboard-queries";
+import {
+  buildMonthlyRevenueTrendFromPayments,
+  loadPaymentsSinceRevenueTrendStart,
+  type MonthlyRevenuePoint,
+} from "@/lib/revenue";
 import { formatCurrency } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { RevenueTrendChart } from "@/components/revenue-trend-chart";
@@ -86,7 +93,7 @@ async function DashboardBody({
   const metricsPromise = getDashboardMetrics(tenantGymId);
 
   let monthRevenue = 0;
-  let revenueTrend: Awaited<ReturnType<typeof getMonthlyRevenueTrend>> = [];
+  let revenueTrend: MonthlyRevenuePoint[] = [];
   let financialSparklines: Awaited<ReturnType<typeof getFinancialSparklines>> | null =
     null;
   let revenueTrendLabel: string | undefined;
@@ -97,11 +104,29 @@ async function DashboardBody({
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-    const [resolvedMetrics, trend] = await Promise.all([
+    const revenueMonthCount = 6;
+    const revenuePaymentsPromise = loadPaymentsSinceRevenueTrendStart(
+      tenantGymId,
+      revenueMonthCount,
+      now,
+    );
+
+    const [resolvedMetrics, revenuePaymentRows] = await Promise.all([
       metricsPromise,
-      getMonthlyRevenueTrend(tenantGymId),
+      revenuePaymentsPromise,
     ]);
     metrics = resolvedMetrics;
+
+    revenueTrend = buildMonthlyRevenueTrendFromPayments(
+      revenuePaymentRows,
+      revenueMonthCount,
+      now,
+    );
+    const weekBuckets = lastNWeekBuckets(DASHBOARD_SPARKLINE_WEEKS);
+    const weeklyPaymentCounts = buildWeeklyPaymentCountsFromPayments(
+      revenuePaymentRows.map((p) => p.paidAt),
+      weekBuckets,
+    );
 
     const [monthRevenueSum, finSparklines] = await Promise.all([
       getRepositories().payments.sumPaidInRange(
@@ -114,11 +139,12 @@ async function DashboardBody({
         tenantGymId,
         metrics.collectionExpected,
         metrics.pendingTotal,
-        trend.map((point) => point.revenue),
+        revenueTrend.map((point) => point.revenue),
+        revenueMonthCount,
+        weeklyPaymentCounts,
       ),
     ]);
     monthRevenue = monthRevenueSum;
-    revenueTrend = trend;
     financialSparklines = finSparklines;
     const rev = finSparklines.revenue;
     if (rev.length >= 2) {

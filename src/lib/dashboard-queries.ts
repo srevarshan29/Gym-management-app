@@ -269,6 +269,20 @@ export async function loadDashboardMemberMetrics(
   });
 }
 
+/** Pure weekly payment counts from paid-at timestamps (matches queryWeeklyPaymentCounts). */
+export function buildWeeklyPaymentCountsFromPayments(
+  paidAtDates: Date[],
+  buckets: WeekBucket[],
+): number[] {
+  if (buckets.length === 0) return [];
+  const rangeEnd = buckets[buckets.length - 1]!.end;
+  const pays = paidAtDates.filter((paidAt) => paidAt <= rangeEnd);
+
+  return buckets.map((bucket) =>
+    pays.filter((p) => p >= bucket.start && p <= bucket.end).length,
+  );
+}
+
 export async function queryWeeklyPaymentCounts(
   tenantGymId: string,
   buckets: WeekBucket[],
@@ -276,13 +290,7 @@ export async function queryWeeklyPaymentCounts(
   if (buckets.length === 0) return [];
   const { payments } = getRepositories();
   const rangeStart = buckets[0]!.start;
-  const rangeEnd = buckets[buckets.length - 1]!.end;
   const rows = await payments.listSince(platformContext, tenantGymId, rangeStart);
-  const pays = rows
-    .map((p) => p.paidAt.toDate())
-    .filter((paidAt) => paidAt <= rangeEnd);
-
-  return buckets.map((bucket) =>
-    pays.filter((p) => p >= bucket.start && p <= bucket.end).length,
-  );
+  const paidAtDates = rows.map((p) => p.paidAt.toDate());
+  return buildWeeklyPaymentCountsFromPayments(paidAtDates, buckets);
 }

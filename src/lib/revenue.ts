@@ -1,12 +1,21 @@
 import { getRepositories, platformContext } from "@/lib/firestore";
+import { measureServerPhase } from "@/lib/server-perf";
 import type { MonthlyRevenuePoint } from "@/lib/chart-types";
 
 export type { MonthlyRevenuePoint } from "@/lib/chart-types";
 
-type RevenuePaymentRow = {
+export type RevenuePaymentRow = {
   amount: { toString(): string } | number;
   paidAt: Date;
 };
+
+/** First calendar day of the oldest month included in the revenue trend. */
+export function revenueTrendRangeStart(
+  monthCount: number,
+  now = new Date(),
+): Date {
+  return new Date(now.getFullYear(), now.getMonth() - (monthCount - 1), 1);
+}
 
 export function buildMonthlyRevenueBuckets(
   monthCount: number,
@@ -50,6 +59,29 @@ export function buildMonthlyRevenueTrendFromPayments(
 }
 
 /**
+ * Loads all gym payments since the revenue-trend window start (one Firestore query).
+ */
+export async function loadPaymentsSinceRevenueTrendStart(
+  tenantGymId: string,
+  monthCount = 6,
+  now = new Date(),
+): Promise<RevenuePaymentRow[]> {
+  return measureServerPhase("staff.dashboard.revenuePayments", async () => {
+    const { payments } = getRepositories();
+    const startMonth = revenueTrendRangeStart(monthCount, now);
+    const rows = await payments.listSince(
+      platformContext,
+      tenantGymId,
+      startMonth,
+    );
+    return rows.map((p) => ({
+      amount: p.amount,
+      paidAt: p.paidAt.toDate(),
+    }));
+  });
+}
+
+/**
  * Sum of Payment.amount per calendar month for the last N months,
  * scoped to a single gym. Months with no payments return revenue 0.
  */
@@ -57,23 +89,12 @@ export async function getMonthlyRevenueTrend(
   tenantGymId: string,
   monthCount = 6,
 ): Promise<MonthlyRevenuePoint[]> {
-  const { payments } = getRepositories();
   const now = new Date();
-  const startMonth = new Date(
-    now.getFullYear(),
-    now.getMonth() - (monthCount - 1),
-    1,
-  );
-
-  const rows = await payments.listSince(
-    platformContext,
+  const rows = await loadPaymentsSinceRevenueTrendStart(
     tenantGymId,
-    startMonth,
-  );
-
-  return buildMonthlyRevenueTrendFromPayments(
-    rows.map((p) => ({ amount: p.amount, paidAt: p.paidAt.toDate() })),
     monthCount,
     now,
   );
+
+  return buildMonthlyRevenueTrendFromPayments(rows, monthCount, now);
 }

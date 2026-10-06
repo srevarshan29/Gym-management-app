@@ -67,7 +67,11 @@ export default async function MemberProfilePage({
   const canDelete = canDeleteMembers(user.role);
   const canWriteOff = canWriteOffDues(user.role);
 
-  const member = await getMemberDetail(user.gymId, params.id);
+  const { packages: packagesRepo } = getRepositories();
+  const [member, packages] = await Promise.all([
+    getMemberDetail(user.gymId, params.id),
+    packagesRepo.listActive(platformContext, user.gymId),
+  ]);
   if (!member) notFound();
 
   const portalActive = !!member.portalEnabledAt;
@@ -87,8 +91,6 @@ export default async function MemberProfilePage({
   )[0];
   const addedByName = firstSubscription?.createdBy?.name ?? null;
 
-  const { packages: packagesRepo } = getRepositories();
-  const packages = await packagesRepo.listActive(platformContext, user.gymId);
   const options: PackageOption[] = packages.map((p) => ({
     id: p.id,
     name: p.name,

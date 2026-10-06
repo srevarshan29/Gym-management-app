@@ -159,11 +159,6 @@ export class VisitorsRepository extends TenantRepository<VisitorDoc> {
     const page = Math.max(1, Math.floor(options.page ?? 1));
     const status = options.status ?? "pending";
 
-    const total = await this.countByGym(ctx, gymId, {
-      source: "walk_in",
-      ...(status !== "all" ? { status } : {}),
-    });
-
     let query = this.collection()
       .where("gymId", "==", gymId)
       .where("source", "==", "walk_in");
@@ -173,7 +168,13 @@ export class VisitorsRepository extends TenantRepository<VisitorDoc> {
     query = query.orderBy("visitDate", "desc");
 
     const fetchLimit = page * pageSize;
-    const snap = await query.limit(fetchLimit).get();
+    const [total, snap] = await Promise.all([
+      this.countByGym(ctx, gymId, {
+        source: "walk_in",
+        ...(status !== "all" ? { status } : {}),
+      }),
+      query.limit(fetchLimit).get(),
+    ]);
     const docs = snap.docs
       .map((d) => this.fromSnapshot(d.id, d.data()))
       .filter((d): d is DocWithId<VisitorDoc> => d !== null);

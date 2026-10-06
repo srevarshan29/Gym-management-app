@@ -121,26 +121,39 @@ export async function getMemberDetail(tenantGymId: string, id: string) {
     payments.listByMember(platformContext, tenantGymId, id),
   ]);
 
+  const relatedUserIds = new Set<string>();
+  if (member.trainerId) relatedUserIds.add(member.trainerId);
+  for (const sub of subs) {
+    if (sub.createdById) relatedUserIds.add(sub.createdById);
+  }
+  for (const payment of pays) {
+    if (payment.recordedById) relatedUserIds.add(payment.recordedById);
+  }
+
+  const usersById = new Map<string, { id: string; name: string; gymId: string | null }>();
+  await Promise.all(
+    [...relatedUserIds].map(async (userId) => {
+      const u = await users.findById(platformContext, userId);
+      if (u) {
+        usersById.set(userId, { id: u.id, name: u.name, gymId: u.gymId });
+      }
+    }),
+  );
+
   let trainer: { id: string; name: string } | null = null;
   if (member.trainerId) {
-    const t = await users.findById(platformContext, member.trainerId);
+    const t = usersById.get(member.trainerId);
     if (t && t.gymId === tenantGymId) {
       trainer = { id: t.id, name: t.name };
     }
   }
 
-  const creatorIds = [
-    ...new Set(
-      subs.map((s) => s.createdById).filter((id): id is string => !!id),
-    ),
-  ];
   const creators = new Map<string, string>();
-  await Promise.all(
-    creatorIds.map(async (id) => {
-      const u = await users.findById(platformContext, id);
-      if (u) creators.set(id, u.name);
-    }),
-  );
+  for (const sub of subs) {
+    if (!sub.createdById) continue;
+    const u = usersById.get(sub.createdById);
+    if (u) creators.set(sub.createdById, u.name);
+  }
 
   const subscriptionsWithPayments = subs.map((sub) => {
     const subPayments = pays.filter((p) => p.subscriptionId === sub.id);
@@ -165,32 +178,28 @@ export async function getMemberDetail(tenantGymId: string, id: string) {
     };
   });
 
-  const paymentsWithMeta = await Promise.all(
-    pays.map(async (p) => {
-      let packageName: string | null = null;
-      if (p.subscriptionId) {
-        const sub = subs.find((s) => s.id === p.subscriptionId);
-        packageName = sub?.packageName ?? null;
-      }
-      let recordedByName: string | null = null;
-      if (p.recordedById) {
-        const u = await users.findById(platformContext, p.recordedById);
-        recordedByName = u?.name ?? null;
-      }
-      return {
-        id: p.id,
-        amount: p.amount,
-        method: p.method,
-        paidAt: p.paidAt.toDate(),
-        note: p.note,
-        subscriptionId: p.subscriptionId,
-        recordedBy: recordedByName ? { name: recordedByName } : null,
-        subscription: packageName
-          ? { package: { name: packageName } }
-          : null,
-      };
-    }),
-  );
+  const paymentsWithMeta = pays.map((p) => {
+    let packageName: string | null = null;
+    if (p.subscriptionId) {
+      const sub = subs.find((s) => s.id === p.subscriptionId);
+      packageName = sub?.packageName ?? null;
+    }
+    const recordedByName = p.recordedById
+      ? usersById.get(p.recordedById)?.name ?? null
+      : null;
+    return {
+      id: p.id,
+      amount: p.amount,
+      method: p.method,
+      paidAt: p.paidAt.toDate(),
+      note: p.note,
+      subscriptionId: p.subscriptionId,
+      recordedBy: recordedByName ? { name: recordedByName } : null,
+      subscription: packageName
+        ? { package: { name: packageName } }
+        : null,
+    };
+  });
 
   return {
     id: member.id,

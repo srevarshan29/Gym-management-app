@@ -72,5 +72,10 @@ ui-debug.log
 /uploads/
 /tmp/
 
+# USDA FoodData Central downloads (do not commit)
+/data/Foundation_Foods.json
+/data/Foundation_Foods.zip
+/data/Foundation_Foods/
+
 # tenant reconcile CLI dry-run captures (local only)
 tenant-reconcile-dry-run.txt

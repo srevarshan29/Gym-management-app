@@ -8,7 +8,11 @@ import {
 } from "@/lib/firestore/context";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
 import { TenantRepository } from "@/lib/firestore/repositories/base";
-import { omitUndefined, serverTimestamps } from "@/lib/firestore/serialize";
+import {
+  omitUndefined,
+  serverTimestamps,
+  touchUpdatedAt,
+} from "@/lib/firestore/serialize";
 import type { NutritionLogDoc, NutritionMealType } from "@/lib/firestore/types";
 
 export type CreateNutritionLogInput = {
@@ -97,5 +101,43 @@ export class NutritionLogsRepository extends TenantRepository<NutritionLogDoc> {
     }
 
     await this.docRef(logId).delete();
+  }
+
+  async updateLogMacros(
+    ctx: FirestoreContext,
+    gymId: string,
+    memberId: string,
+    logId: string,
+    update: {
+      quantityGrams: number;
+      calories: number;
+      proteinGrams: number;
+      carbsGrams: number;
+      fatGrams: number;
+      fiberGrams: number;
+    },
+  ): Promise<DocWithId<NutritionLogDoc>> {
+    assertTenantAccess(ctx, gymId);
+    assertMemberSelfAccess(ctx, memberId);
+
+    const existing = await this.getById(ctx, gymId, logId);
+    const doc = this.assertDocBelongsToGym(ctx, existing, gymId);
+    if (doc.memberId !== memberId) {
+      throw new Error("Member isolation violation: memberId mismatch.");
+    }
+
+    const payload = omitUndefined({
+      quantityGrams: update.quantityGrams,
+      calories: update.calories,
+      proteinGrams: update.proteinGrams,
+      carbsGrams: update.carbsGrams,
+      fatGrams: update.fatGrams,
+      fiberGrams: update.fiberGrams,
+      ...touchUpdatedAt(),
+    });
+
+    await this.docRef(logId).update(payload);
+    const updated = await this.getById(ctx, gymId, logId);
+    return this.assertDocBelongsToGym(ctx, updated, gymId);
   }
 }

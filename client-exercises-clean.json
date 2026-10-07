@@ -1,0 +1,2592 @@
+[
+  {
+    "name": "Ab Wheel Rollout",
+    "category": "Abs/Core",
+    "subcategory": "Deep Core (Transverse Abdominis)"
+  },
+  {
+    "name": "Bear Crawl Hold",
+    "category": "Abs/Core",
+    "subcategory": "Deep Core (Transverse Abdominis)"
+  },
+  {
+    "name": "Dead Bug",
+    "category": "Abs/Core",
+    "subcategory": "Deep Core (Transverse Abdominis)"
+  },
+  {
+    "name": "Forearm Plank",
+    "category": "Abs/Core",
+    "subcategory": "Deep Core (Transverse Abdominis)"
+  },
+  {
+    "name": "High Plank",
+    "category": "Abs/Core",
+    "subcategory": "Deep Core (Transverse Abdominis)"
+  },
+  {
+    "name": "Hollow Body Hold",
+    "category": "Abs/Core",
+    "subcategory": "Deep Core (Transverse Abdominis)"
+  },
+  {
+    "name": "Pallof Press",
+    "category": "Abs/Core",
+    "subcategory": "Deep Core (Transverse Abdominis)"
+  },
+  {
+    "name": "Plank",
+    "category": "Abs/Core",
+    "subcategory": "Deep Core (Transverse Abdominis)"
+  },
+  {
+    "name": "Stability Ball Rollout",
+    "category": "Abs/Core",
+    "subcategory": "Deep Core (Transverse Abdominis)"
+  },
+  {
+    "name": "Stomach Vacuum",
+    "category": "Abs/Core",
+    "subcategory": "Deep Core (Transverse Abdominis)"
+  },
+  {
+    "name": "Battle Ropes",
+    "category": "Abs/Core",
+    "subcategory": "Full-Core Exercises"
+  },
+  {
+    "name": "Burpees",
+    "category": "Abs/Core",
+    "subcategory": "Full-Core Exercises"
+  },
+  {
+    "name": "Kettlebell Swings",
+    "category": "Abs/Core",
+    "subcategory": "Full-Core Exercises"
+  },
+  {
+    "name": "Medicine Ball Slams",
+    "category": "Abs/Core",
+    "subcategory": "Full-Core Exercises"
+  },
+  {
+    "name": "Mountain Climbers",
+    "category": "Abs/Core",
+    "subcategory": "Full-Core Exercises"
+  },
+  {
+    "name": "Renegade Rows",
+    "category": "Abs/Core",
+    "subcategory": "Full-Core Exercises"
+  },
+  {
+    "name": "TRX Knee Tucks",
+    "category": "Abs/Core",
+    "subcategory": "Full-Core Exercises"
+  },
+  {
+    "name": "TRX Pike",
+    "category": "Abs/Core",
+    "subcategory": "Full-Core Exercises"
+  },
+  {
+    "name": "Dragon Flag",
+    "category": "Abs/Core",
+    "subcategory": "Lower Abs"
+  },
+  {
+    "name": "Flutter Kicks",
+    "category": "Abs/Core",
+    "subcategory": "Lower Abs"
+  },
+  {
+    "name": "Garhammer Raises",
+    "category": "Abs/Core",
+    "subcategory": "Lower Abs"
+  },
+  {
+    "name": "Hanging Knee Raises",
+    "category": "Abs/Core",
+    "subcategory": "Lower Abs"
+  },
+  {
+    "name": "Hanging Leg Raises",
+    "category": "Abs/Core",
+    "subcategory": "Lower Abs"
+  },
+  {
+    "name": "Leg Raises",
+    "category": "Abs/Core",
+    "subcategory": "Lower Abs"
+  },
+  {
+    "name": "Lying Leg Raises",
+    "category": "Abs/Core",
+    "subcategory": "Lower Abs"
+  },
+  {
+    "name": "Reverse Crunches",
+    "category": "Abs/Core",
+    "subcategory": "Lower Abs"
+  },
+  {
+    "name": "Scissor Kicks",
+    "category": "Abs/Core",
+    "subcategory": "Lower Abs"
+  },
+  {
+    "name": "V-Ups",
+    "category": "Abs/Core",
+    "subcategory": "Lower Abs"
+  },
+  {
+    "name": "Bicycle Crunches",
+    "category": "Abs/Core",
+    "subcategory": "Obliques (Sides)"
+  },
+  {
+    "name": "Cable Woodchoppers",
+    "category": "Abs/Core",
+    "subcategory": "Obliques (Sides)"
+  },
+  {
+    "name": "Cross-Body Mountain Climbers",
+    "category": "Abs/Core",
+    "subcategory": "Obliques (Sides)"
+  },
+  {
+    "name": "Heel Touches",
+    "category": "Abs/Core",
+    "subcategory": "Obliques (Sides)"
+  },
+  {
+    "name": "Landmine Twists",
+    "category": "Abs/Core",
+    "subcategory": "Obliques (Sides)"
+  },
+  {
+    "name": "Oblique Crunches",
+    "category": "Abs/Core",
+    "subcategory": "Obliques (Sides)"
+  },
+  {
+    "name": "Russian Twists",
+    "category": "Abs/Core",
+    "subcategory": "Obliques (Sides)"
+  },
+  {
+    "name": "Seated Twists",
+    "category": "Abs/Core",
+    "subcategory": "Obliques (Sides)"
+  },
+  {
+    "name": "Side Plank",
+    "category": "Abs/Core",
+    "subcategory": "Obliques (Sides)"
+  },
+  {
+    "name": "Side Plank Hip Dips",
+    "category": "Abs/Core",
+    "subcategory": "Obliques (Sides)"
+  },
+  {
+    "name": "Standing Side Bends",
+    "category": "Abs/Core",
+    "subcategory": "Obliques (Sides)"
+  },
+  {
+    "name": "Windshield Wipers",
+    "category": "Abs/Core",
+    "subcategory": "Obliques (Sides)"
+  },
+  {
+    "name": "Ab Mat Sit-Ups",
+    "category": "Abs/Core",
+    "subcategory": "Upper Abs"
+  },
+  {
+    "name": "Cable Crunches",
+    "category": "Abs/Core",
+    "subcategory": "Upper Abs"
+  },
+  {
+    "name": "Crunches",
+    "category": "Abs/Core",
+    "subcategory": "Upper Abs"
+  },
+  {
+    "name": "Decline Crunches",
+    "category": "Abs/Core",
+    "subcategory": "Upper Abs"
+  },
+  {
+    "name": "Jackknife Sit-Ups",
+    "category": "Abs/Core",
+    "subcategory": "Upper Abs"
+  },
+  {
+    "name": "Machine Crunches",
+    "category": "Abs/Core",
+    "subcategory": "Upper Abs"
+  },
+  {
+    "name": "Sit-Ups",
+    "category": "Abs/Core",
+    "subcategory": "Upper Abs"
+  },
+  {
+    "name": "Stability Ball Crunches",
+    "category": "Abs/Core",
+    "subcategory": "Upper Abs"
+  },
+  {
+    "name": "Toe Touch Crunches",
+    "category": "Abs/Core",
+    "subcategory": "Upper Abs"
+  },
+  {
+    "name": "Weighted Crunches",
+    "category": "Abs/Core",
+    "subcategory": "Upper Abs"
+  },
+  {
+    "name": "Archer pull-up",
+    "category": "Back",
+    "subcategory": "Bodyweight Back Exercises"
+  },
+  {
+    "name": "Australian pull-up",
+    "category": "Back",
+    "subcategory": "Bodyweight Back Exercises"
+  },
+  {
+    "name": "Commando pull-up",
+    "category": "Back",
+    "subcategory": "Bodyweight Back Exercises"
+  },
+  {
+    "name": "Front lever progression",
+    "category": "Back",
+    "subcategory": "Bodyweight Back Exercises"
+  },
+  {
+    "name": "Muscle-up",
+    "category": "Back",
+    "subcategory": "Bodyweight Back Exercises"
+  },
+  {
+    "name": "Scapular pull-up",
+    "category": "Back",
+    "subcategory": "Bodyweight Back Exercises"
+  },
+  {
+    "name": "Cable pullover",
+    "category": "Back",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "High cable row",
+    "category": "Back",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Kneeling cable row",
+    "category": "Back",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Low cable row",
+    "category": "Back",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Single-arm cable row",
+    "category": "Back",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Conventional deadlift",
+    "category": "Back",
+    "subcategory": "Deadlift Variations (Lower Back & Entire Posterior Chain)"
+  },
+  {
+    "name": "Deficit deadlift",
+    "category": "Back",
+    "subcategory": "Deadlift Variations (Lower Back & Entire Posterior Chain)"
+  },
+  {
+    "name": "Good morning",
+    "category": "Back",
+    "subcategory": "Deadlift Variations (Lower Back & Entire Posterior Chain)"
+  },
+  {
+    "name": "Rack pull",
+    "category": "Back",
+    "subcategory": "Deadlift Variations (Lower Back & Entire Posterior Chain)"
+  },
+  {
+    "name": "Romanian deadlift (RDL)",
+    "category": "Back",
+    "subcategory": "Deadlift Variations (Lower Back & Entire Posterior Chain)"
+  },
+  {
+    "name": "Snatch-grip deadlift",
+    "category": "Back",
+    "subcategory": "Deadlift Variations (Lower Back & Entire Posterior Chain)"
+  },
+  {
+    "name": "Stiff-leg deadlift",
+    "category": "Back",
+    "subcategory": "Deadlift Variations (Lower Back & Entire Posterior Chain)"
+  },
+  {
+    "name": "Sumo deadlift",
+    "category": "Back",
+    "subcategory": "Deadlift Variations (Lower Back & Entire Posterior Chain)"
+  },
+  {
+    "name": "Trap bar deadlift",
+    "category": "Back",
+    "subcategory": "Deadlift Variations (Lower Back & Entire Posterior Chain)"
+  },
+  {
+    "name": "Barbell row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Bent-over barbell row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Chest-supported dumbbell row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Close-grip cable row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Dumbbell row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Inverted row (bodyweight)",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Landmine row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Machine row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Meadows row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "One-arm cable row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Pendlay row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Ring row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Seal row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Seated cable row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Single-arm dumbbell row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "T-bar row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "TRX row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Wide-grip cable row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Yates row",
+    "category": "Back",
+    "subcategory": "Horizontal Row (Mid Back & Rhomboids)"
+  },
+  {
+    "name": "Kettlebell deadlift",
+    "category": "Back",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Kettlebell row",
+    "category": "Back",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Renegade row",
+    "category": "Back",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Suitcase carry",
+    "category": "Back",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Back extension",
+    "category": "Back",
+    "subcategory": "Lower Back Isolation"
+  },
+  {
+    "name": "Bird dog",
+    "category": "Back",
+    "subcategory": "Lower Back Isolation"
+  },
+  {
+    "name": "Hyperextension",
+    "category": "Back",
+    "subcategory": "Lower Back Isolation"
+  },
+  {
+    "name": "Reverse hyperextension",
+    "category": "Back",
+    "subcategory": "Lower Back Isolation"
+  },
+  {
+    "name": "Stability ball back extension",
+    "category": "Back",
+    "subcategory": "Lower Back Isolation"
+  },
+  {
+    "name": "Superman",
+    "category": "Back",
+    "subcategory": "Lower Back Isolation"
+  },
+  {
+    "name": "Assisted pull-up machine",
+    "category": "Back",
+    "subcategory": "Machine Exercises"
+  },
+  {
+    "name": "Back extension machine",
+    "category": "Back",
+    "subcategory": "Machine Exercises"
+  },
+  {
+    "name": "Chest-supported row machine",
+    "category": "Back",
+    "subcategory": "Machine Exercises"
+  },
+  {
+    "name": "High row machine",
+    "category": "Back",
+    "subcategory": "Machine Exercises"
+  },
+  {
+    "name": "Iso-lateral row machine",
+    "category": "Back",
+    "subcategory": "Machine Exercises"
+  },
+  {
+    "name": "Lat pulldown machine",
+    "category": "Back",
+    "subcategory": "Machine Exercises"
+  },
+  {
+    "name": "Seated row machine",
+    "category": "Back",
+    "subcategory": "Machine Exercises"
+  },
+  {
+    "name": "Band pull-apart",
+    "category": "Back",
+    "subcategory": "Rear Delts & Upper Back"
+  },
+  {
+    "name": "Bent-over reverse fly",
+    "category": "Back",
+    "subcategory": "Rear Delts & Upper Back"
+  },
+  {
+    "name": "Cable reverse fly",
+    "category": "Back",
+    "subcategory": "Rear Delts & Upper Back"
+  },
+  {
+    "name": "Face pull",
+    "category": "Back",
+    "subcategory": "Rear Delts & Upper Back"
+  },
+  {
+    "name": "High row",
+    "category": "Back",
+    "subcategory": "Rear Delts & Upper Back"
+  },
+  {
+    "name": "Rear delt row",
+    "category": "Back",
+    "subcategory": "Rear Delts & Upper Back"
+  },
+  {
+    "name": "Reverse pec deck",
+    "category": "Back",
+    "subcategory": "Rear Delts & Upper Back"
+  },
+  {
+    "name": "T-raise",
+    "category": "Back",
+    "subcategory": "Rear Delts & Upper Back"
+  },
+  {
+    "name": "W-raise",
+    "category": "Back",
+    "subcategory": "Rear Delts & Upper Back"
+  },
+  {
+    "name": "Y-raise",
+    "category": "Back",
+    "subcategory": "Rear Delts & Upper Back"
+  },
+  {
+    "name": "Band face pull",
+    "category": "Back",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band pulldown",
+    "category": "Back",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band reverse fly",
+    "category": "Back",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band row",
+    "category": "Back",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band straight-arm pulldown",
+    "category": "Back",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Barbell shrug",
+    "category": "Back",
+    "subcategory": "Trap-Focused Exercises"
+  },
+  {
+    "name": "Cable shrug",
+    "category": "Back",
+    "subcategory": "Trap-Focused Exercises"
+  },
+  {
+    "name": "Dumbbell shrug",
+    "category": "Back",
+    "subcategory": "Trap-Focused Exercises"
+  },
+  {
+    "name": "Farmer's carry",
+    "category": "Back",
+    "subcategory": "Trap-Focused Exercises"
+  },
+  {
+    "name": "Overhead carry",
+    "category": "Back",
+    "subcategory": "Trap-Focused Exercises"
+  },
+  {
+    "name": "Smith machine shrug",
+    "category": "Back",
+    "subcategory": "Trap-Focused Exercises"
+  },
+  {
+    "name": "Trap bar shrug",
+    "category": "Back",
+    "subcategory": "Trap-Focused Exercises"
+  },
+  {
+    "name": "Upright row",
+    "category": "Back",
+    "subcategory": "Trap-Focused Exercises"
+  },
+  {
+    "name": "Assisted pull-up",
+    "category": "Back",
+    "subcategory": "Vertical Pull (Lats & Upper Back)"
+  },
+  {
+    "name": "Chin-up",
+    "category": "Back",
+    "subcategory": "Vertical Pull (Lats & Upper Back)"
+  },
+  {
+    "name": "Close-grip pull-up",
+    "category": "Back",
+    "subcategory": "Vertical Pull (Lats & Upper Back)"
+  },
+  {
+    "name": "Lat pulldown",
+    "category": "Back",
+    "subcategory": "Vertical Pull (Lats & Upper Back)"
+  },
+  {
+    "name": "Neutral-grip pull-up",
+    "category": "Back",
+    "subcategory": "Vertical Pull (Lats & Upper Back)"
+  },
+  {
+    "name": "Pull-up",
+    "category": "Back",
+    "subcategory": "Vertical Pull (Lats & Upper Back)"
+  },
+  {
+    "name": "Reverse-grip lat pulldown",
+    "category": "Back",
+    "subcategory": "Vertical Pull (Lats & Upper Back)"
+  },
+  {
+    "name": "Rope pulldown",
+    "category": "Back",
+    "subcategory": "Vertical Pull (Lats & Upper Back)"
+  },
+  {
+    "name": "Single-arm lat pulldown",
+    "category": "Back",
+    "subcategory": "Vertical Pull (Lats & Upper Back)"
+  },
+  {
+    "name": "Straight-arm pulldown",
+    "category": "Back",
+    "subcategory": "Vertical Pull (Lats & Upper Back)"
+  },
+  {
+    "name": "Weighted pull-up",
+    "category": "Back",
+    "subcategory": "Vertical Pull (Lats & Upper Back)"
+  },
+  {
+    "name": "Wide-grip lat pulldown",
+    "category": "Back",
+    "subcategory": "Vertical Pull (Lats & Upper Back)"
+  },
+  {
+    "name": "Wide-grip pull-up",
+    "category": "Back",
+    "subcategory": "Vertical Pull (Lats & Upper Back)"
+  },
+  {
+    "name": "Barbell Curl",
+    "category": "Biceps",
+    "subcategory": "Barbell Exercises"
+  },
+  {
+    "name": "Cheat Curl (advanced)",
+    "category": "Biceps",
+    "subcategory": "Barbell Exercises"
+  },
+  {
+    "name": "Close-Grip Barbell Curl",
+    "category": "Biceps",
+    "subcategory": "Barbell Exercises"
+  },
+  {
+    "name": "Drag Curl",
+    "category": "Biceps",
+    "subcategory": "Barbell Exercises"
+  },
+  {
+    "name": "EZ-Bar Curl",
+    "category": "Biceps",
+    "subcategory": "Barbell Exercises"
+  },
+  {
+    "name": "Reverse EZ-Bar Curl",
+    "category": "Biceps",
+    "subcategory": "Barbell Exercises"
+  },
+  {
+    "name": "Standing Barbell Curl",
+    "category": "Biceps",
+    "subcategory": "Barbell Exercises"
+  },
+  {
+    "name": "Wide-Grip Barbell Curl",
+    "category": "Biceps",
+    "subcategory": "Barbell Exercises"
+  },
+  {
+    "name": "Preacher Curl",
+    "category": "Biceps",
+    "subcategory": "Bench-Based Exercises"
+  },
+  {
+    "name": "Scott Curl",
+    "category": "Biceps",
+    "subcategory": "Bench-Based Exercises"
+  },
+  {
+    "name": "Chin-Up (Underhand Grip)",
+    "category": "Biceps",
+    "subcategory": "Bodyweight Exercises"
+  },
+  {
+    "name": "Close-Grip Chin-Up",
+    "category": "Biceps",
+    "subcategory": "Bodyweight Exercises"
+  },
+  {
+    "name": "Inverted Underhand Row",
+    "category": "Biceps",
+    "subcategory": "Bodyweight Exercises"
+  },
+  {
+    "name": "Ring Chin-Up",
+    "category": "Biceps",
+    "subcategory": "Bodyweight Exercises"
+  },
+  {
+    "name": "Towel Chin-Up",
+    "category": "Biceps",
+    "subcategory": "Bodyweight Exercises"
+  },
+  {
+    "name": "Bayesian Cable Curl",
+    "category": "Biceps",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Cable Preacher Curl",
+    "category": "Biceps",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "High Cable Curl",
+    "category": "Biceps",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Low Cable Curl",
+    "category": "Biceps",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Overhead Cable Curl",
+    "category": "Biceps",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Reverse Cable Curl",
+    "category": "Biceps",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Rope Hammer Curl",
+    "category": "Biceps",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Single-Arm Cable Curl",
+    "category": "Biceps",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Standing Cable Curl",
+    "category": "Biceps",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Alternating Dumbbell Curl",
+    "category": "Biceps",
+    "subcategory": "Dumbbell Exercises"
+  },
+  {
+    "name": "Bayesian Dumbbell Curl",
+    "category": "Biceps",
+    "subcategory": "Dumbbell Exercises"
+  },
+  {
+    "name": "Concentration Curl",
+    "category": "Biceps",
+    "subcategory": "Dumbbell Exercises"
+  },
+  {
+    "name": "Cross-Body Hammer Curl",
+    "category": "Biceps",
+    "subcategory": "Dumbbell Exercises"
+  },
+  {
+    "name": "Hammer Curl",
+    "category": "Biceps",
+    "subcategory": "Dumbbell Exercises"
+  },
+  {
+    "name": "Incline Dumbbell Curl",
+    "category": "Biceps",
+    "subcategory": "Dumbbell Exercises"
+  },
+  {
+    "name": "Offset-Grip Dumbbell Curl",
+    "category": "Biceps",
+    "subcategory": "Dumbbell Exercises"
+  },
+  {
+    "name": "Preacher Dumbbell Curl",
+    "category": "Biceps",
+    "subcategory": "Dumbbell Exercises"
+  },
+  {
+    "name": "Seated Dumbbell Curl",
+    "category": "Biceps",
+    "subcategory": "Dumbbell Exercises"
+  },
+  {
+    "name": "Spider Curl",
+    "category": "Biceps",
+    "subcategory": "Dumbbell Exercises"
+  },
+  {
+    "name": "Standing Dumbbell Curl",
+    "category": "Biceps",
+    "subcategory": "Dumbbell Exercises"
+  },
+  {
+    "name": "Zottman Curl",
+    "category": "Biceps",
+    "subcategory": "Dumbbell Exercises"
+  },
+  {
+    "name": "21s Curl",
+    "category": "Biceps",
+    "subcategory": "Isometric & Specialty Variations"
+  },
+  {
+    "name": "Isometric Curl Hold",
+    "category": "Biceps",
+    "subcategory": "Isometric & Specialty Variations"
+  },
+  {
+    "name": "One-and-a-Half Rep Curl",
+    "category": "Biceps",
+    "subcategory": "Isometric & Specialty Variations"
+  },
+  {
+    "name": "Partial-Range Curl",
+    "category": "Biceps",
+    "subcategory": "Isometric & Specialty Variations"
+  },
+  {
+    "name": "Tempo Curl (slow eccentric)",
+    "category": "Biceps",
+    "subcategory": "Isometric & Specialty Variations"
+  },
+  {
+    "name": "Bottoms-Up Curl",
+    "category": "Biceps",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Hammer Curl with Kettlebell",
+    "category": "Biceps",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Kettlebell Curl",
+    "category": "Biceps",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Assisted Chin-Up Machine (underhand grip)",
+    "category": "Biceps",
+    "subcategory": "Machine Exercises"
+  },
+  {
+    "name": "Biceps Curl Machine",
+    "category": "Biceps",
+    "subcategory": "Machine Exercises"
+  },
+  {
+    "name": "Cable Curl Machine",
+    "category": "Biceps",
+    "subcategory": "Machine Exercises"
+  },
+  {
+    "name": "Preacher Curl Machine",
+    "category": "Biceps",
+    "subcategory": "Machine Exercises"
+  },
+  {
+    "name": "Band Curl",
+    "category": "Biceps",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band Hammer Curl",
+    "category": "Biceps",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "High Anchor Band Curl",
+    "category": "Biceps",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Reverse Band Curl",
+    "category": "Biceps",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Single-Arm Band Curl",
+    "category": "Biceps",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Reverse Barbell Curl",
+    "category": "Biceps",
+    "subcategory": "Reverse & Forearm-Focused Variations"
+  },
+  {
+    "name": "Reverse Dumbbell Curl",
+    "category": "Biceps",
+    "subcategory": "Reverse & Forearm-Focused Variations"
+  },
+  {
+    "name": "Abductor Machine",
+    "category": "Legs",
+    "subcategory": "Abductor (Outer Hip) Exercises"
+  },
+  {
+    "name": "Band Lateral Walk",
+    "category": "Legs",
+    "subcategory": "Abductor (Outer Hip) Exercises"
+  },
+  {
+    "name": "Cable Hip Abduction",
+    "category": "Legs",
+    "subcategory": "Abductor (Outer Hip) Exercises"
+  },
+  {
+    "name": "Clamshell",
+    "category": "Legs",
+    "subcategory": "Abductor (Outer Hip) Exercises"
+  },
+  {
+    "name": "Monster Walk",
+    "category": "Legs",
+    "subcategory": "Abductor (Outer Hip) Exercises"
+  },
+  {
+    "name": "Side-Lying Leg Raise",
+    "category": "Legs",
+    "subcategory": "Abductor (Outer Hip) Exercises"
+  },
+  {
+    "name": "Standing Band Hip Abduction",
+    "category": "Legs",
+    "subcategory": "Abductor (Outer Hip) Exercises"
+  },
+  {
+    "name": "Adductor Machine",
+    "category": "Legs",
+    "subcategory": "Adductor (Inner Thigh) Exercises"
+  },
+  {
+    "name": "Band Hip Adduction",
+    "category": "Legs",
+    "subcategory": "Adductor (Inner Thigh) Exercises"
+  },
+  {
+    "name": "Cable Hip Adduction",
+    "category": "Legs",
+    "subcategory": "Adductor (Inner Thigh) Exercises"
+  },
+  {
+    "name": "Copenhagen Plank",
+    "category": "Legs",
+    "subcategory": "Adductor (Inner Thigh) Exercises"
+  },
+  {
+    "name": "Cossack Squat",
+    "category": "Legs",
+    "subcategory": "Adductor (Inner Thigh) Exercises"
+  },
+  {
+    "name": "Side Lunge",
+    "category": "Legs",
+    "subcategory": "Adductor (Inner Thigh) Exercises"
+  },
+  {
+    "name": "Air Squat",
+    "category": "Legs",
+    "subcategory": "Bodyweight Leg Exercises"
+  },
+  {
+    "name": "Calf Raise",
+    "category": "Legs",
+    "subcategory": "Bodyweight Leg Exercises"
+  },
+  {
+    "name": "Nordic Curl",
+    "category": "Legs",
+    "subcategory": "Bodyweight Leg Exercises"
+  },
+  {
+    "name": "Pistol Squat",
+    "category": "Legs",
+    "subcategory": "Bodyweight Leg Exercises"
+  },
+  {
+    "name": "Shrimp Squat",
+    "category": "Legs",
+    "subcategory": "Bodyweight Leg Exercises"
+  },
+  {
+    "name": "Single-Leg Calf Raise",
+    "category": "Legs",
+    "subcategory": "Bodyweight Leg Exercises"
+  },
+  {
+    "name": "Cable Reverse Lunge",
+    "category": "Legs",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Cable Squat",
+    "category": "Legs",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Barbell Calf Raise",
+    "category": "Legs",
+    "subcategory": "Calf Exercises Standing (Gastrocnemius Focus)"
+  },
+  {
+    "name": "Donkey Calf Raise",
+    "category": "Legs",
+    "subcategory": "Calf Exercises Standing (Gastrocnemius Focus)"
+  },
+  {
+    "name": "Dumbbell Calf Raise",
+    "category": "Legs",
+    "subcategory": "Calf Exercises Standing (Gastrocnemius Focus)"
+  },
+  {
+    "name": "Leg Press Calf Raise",
+    "category": "Legs",
+    "subcategory": "Calf Exercises Standing (Gastrocnemius Focus)"
+  },
+  {
+    "name": "Single-Leg Standing Calf Raise",
+    "category": "Legs",
+    "subcategory": "Calf Exercises Standing (Gastrocnemius Focus)"
+  },
+  {
+    "name": "Smith Machine Calf Raise",
+    "category": "Legs",
+    "subcategory": "Calf Exercises Standing (Gastrocnemius Focus)"
+  },
+  {
+    "name": "Standing Calf Raise",
+    "category": "Legs",
+    "subcategory": "Calf Exercises Standing (Gastrocnemius Focus)"
+  },
+  {
+    "name": "Single-Leg Romanian Deadlift",
+    "category": "Legs",
+    "subcategory": "Deadlift Variations (Hamstrings & Glutes)"
+  },
+  {
+    "name": "Barbell Hip Thrust",
+    "category": "Legs",
+    "subcategory": "Glute Exercises"
+  },
+  {
+    "name": "Donkey Kick",
+    "category": "Legs",
+    "subcategory": "Glute Exercises"
+  },
+  {
+    "name": "Fire Hydrant",
+    "category": "Legs",
+    "subcategory": "Glute Exercises"
+  },
+  {
+    "name": "Frog Pump",
+    "category": "Legs",
+    "subcategory": "Glute Exercises"
+  },
+  {
+    "name": "Glute Bridge",
+    "category": "Legs",
+    "subcategory": "Glute Exercises"
+  },
+  {
+    "name": "Hip Thrust",
+    "category": "Legs",
+    "subcategory": "Glute Exercises"
+  },
+  {
+    "name": "Kettlebell Swing",
+    "category": "Legs",
+    "subcategory": "Glute Exercises"
+  },
+  {
+    "name": "Single-Leg Glute Bridge",
+    "category": "Legs",
+    "subcategory": "Glute Exercises"
+  },
+  {
+    "name": "Step-Up",
+    "category": "Legs",
+    "subcategory": "Glute Exercises"
+  },
+  {
+    "name": "Band Leg Curl",
+    "category": "Legs",
+    "subcategory": "Hamstring Isolation Exercises"
+  },
+  {
+    "name": "Cable Leg Curl",
+    "category": "Legs",
+    "subcategory": "Hamstring Isolation Exercises"
+  },
+  {
+    "name": "Glute-Ham Raise (GHR)",
+    "category": "Legs",
+    "subcategory": "Hamstring Isolation Exercises"
+  },
+  {
+    "name": "Lying Leg Curl",
+    "category": "Legs",
+    "subcategory": "Hamstring Isolation Exercises"
+  },
+  {
+    "name": "Nordic Hamstring Curl",
+    "category": "Legs",
+    "subcategory": "Hamstring Isolation Exercises"
+  },
+  {
+    "name": "Seated Leg Curl",
+    "category": "Legs",
+    "subcategory": "Hamstring Isolation Exercises"
+  },
+  {
+    "name": "Sliding Leg Curl",
+    "category": "Legs",
+    "subcategory": "Hamstring Isolation Exercises"
+  },
+  {
+    "name": "Stability Ball Leg Curl",
+    "category": "Legs",
+    "subcategory": "Hamstring Isolation Exercises"
+  },
+  {
+    "name": "Standing Leg Curl",
+    "category": "Legs",
+    "subcategory": "Hamstring Isolation Exercises"
+  },
+  {
+    "name": "Romanian Deadlift",
+    "category": "Legs",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Single-Leg Deadlift",
+    "category": "Legs",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Bulgarian Split Squat",
+    "category": "Legs",
+    "subcategory": "Lunge Variations"
+  },
+  {
+    "name": "Curtsy Lunge",
+    "category": "Legs",
+    "subcategory": "Lunge Variations"
+  },
+  {
+    "name": "Deficit Lunge",
+    "category": "Legs",
+    "subcategory": "Lunge Variations"
+  },
+  {
+    "name": "Forward Lunge",
+    "category": "Legs",
+    "subcategory": "Lunge Variations"
+  },
+  {
+    "name": "Landmine Lunge",
+    "category": "Legs",
+    "subcategory": "Lunge Variations"
+  },
+  {
+    "name": "Lateral Lunge",
+    "category": "Legs",
+    "subcategory": "Lunge Variations"
+  },
+  {
+    "name": "Reverse Lunge",
+    "category": "Legs",
+    "subcategory": "Lunge Variations"
+  },
+  {
+    "name": "Smith Machine Split Squat",
+    "category": "Legs",
+    "subcategory": "Lunge Variations"
+  },
+  {
+    "name": "Step-Back Lunge",
+    "category": "Legs",
+    "subcategory": "Lunge Variations"
+  },
+  {
+    "name": "Walking Lunge",
+    "category": "Legs",
+    "subcategory": "Lunge Variations"
+  },
+  {
+    "name": "Hack Squat Machine",
+    "category": "Legs",
+    "subcategory": "Machine Leg Exercises"
+  },
+  {
+    "name": "Hip Thrust Machine",
+    "category": "Legs",
+    "subcategory": "Machine Leg Exercises"
+  },
+  {
+    "name": "Leg Press",
+    "category": "Legs",
+    "subcategory": "Machine Leg Exercises"
+  },
+  {
+    "name": "Seated Calf Raise Machine",
+    "category": "Legs",
+    "subcategory": "Machine Leg Exercises"
+  },
+  {
+    "name": "Standing Calf Raise Machine",
+    "category": "Legs",
+    "subcategory": "Machine Leg Exercises"
+  },
+  {
+    "name": "Box Jump",
+    "category": "Legs",
+    "subcategory": "Plyometric Leg Exercises"
+  },
+  {
+    "name": "Broad Jump",
+    "category": "Legs",
+    "subcategory": "Plyometric Leg Exercises"
+  },
+  {
+    "name": "Depth Jump",
+    "category": "Legs",
+    "subcategory": "Plyometric Leg Exercises"
+  },
+  {
+    "name": "Jump Squat",
+    "category": "Legs",
+    "subcategory": "Plyometric Leg Exercises"
+  },
+  {
+    "name": "Lateral Bounds",
+    "category": "Legs",
+    "subcategory": "Plyometric Leg Exercises"
+  },
+  {
+    "name": "Skater Jump",
+    "category": "Legs",
+    "subcategory": "Plyometric Leg Exercises"
+  },
+  {
+    "name": "Split Squat Jump",
+    "category": "Legs",
+    "subcategory": "Plyometric Leg Exercises"
+  },
+  {
+    "name": "Tuck Jump",
+    "category": "Legs",
+    "subcategory": "Plyometric Leg Exercises"
+  },
+  {
+    "name": "Leg Extension",
+    "category": "Legs",
+    "subcategory": "Quad Isolation Exercises"
+  },
+  {
+    "name": "Peterson Step-Up",
+    "category": "Legs",
+    "subcategory": "Quad Isolation Exercises"
+  },
+  {
+    "name": "Sissy Squat",
+    "category": "Legs",
+    "subcategory": "Quad Isolation Exercises"
+  },
+  {
+    "name": "Spanish Squat",
+    "category": "Legs",
+    "subcategory": "Quad Isolation Exercises"
+  },
+  {
+    "name": "Terminal Knee Extension (TKE)",
+    "category": "Legs",
+    "subcategory": "Quad Isolation Exercises"
+  },
+  {
+    "name": "Wall Sit",
+    "category": "Legs",
+    "subcategory": "Quad Isolation Exercises"
+  },
+  {
+    "name": "Band Calf Raise",
+    "category": "Legs",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band Glute Bridge",
+    "category": "Legs",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band Hip Abduction",
+    "category": "Legs",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band Lunge",
+    "category": "Legs",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band Monster Walk",
+    "category": "Legs",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band Squat",
+    "category": "Legs",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Bodyweight Single-Leg Calf Raise",
+    "category": "Legs",
+    "subcategory": "Seated (Soleus Focus)"
+  },
+  {
+    "name": "Dumbbell Seated Calf Raise",
+    "category": "Legs",
+    "subcategory": "Seated (Soleus Focus)"
+  },
+  {
+    "name": "Machine Seated Calf Raise",
+    "category": "Legs",
+    "subcategory": "Seated (Soleus Focus)"
+  },
+  {
+    "name": "Seated Calf Raise",
+    "category": "Legs",
+    "subcategory": "Seated (Soleus Focus)"
+  },
+  {
+    "name": "Stair Calf Raise",
+    "category": "Legs",
+    "subcategory": "Seated (Soleus Focus)"
+  },
+  {
+    "name": "Back Squat",
+    "category": "Legs",
+    "subcategory": "Squat Variations (Quads, Glutes, Core)"
+  },
+  {
+    "name": "Box Squat",
+    "category": "Legs",
+    "subcategory": "Squat Variations (Quads, Glutes, Core)"
+  },
+  {
+    "name": "Front Squat",
+    "category": "Legs",
+    "subcategory": "Squat Variations (Quads, Glutes, Core)"
+  },
+  {
+    "name": "Goblet Squat",
+    "category": "Legs",
+    "subcategory": "Squat Variations (Quads, Glutes, Core)"
+  },
+  {
+    "name": "Hack Squat",
+    "category": "Legs",
+    "subcategory": "Squat Variations (Quads, Glutes, Core)"
+  },
+  {
+    "name": "Overhead Squat",
+    "category": "Legs",
+    "subcategory": "Squat Variations (Quads, Glutes, Core)"
+  },
+  {
+    "name": "Pause Squat",
+    "category": "Legs",
+    "subcategory": "Squat Variations (Quads, Glutes, Core)"
+  },
+  {
+    "name": "Safety Bar Squat",
+    "category": "Legs",
+    "subcategory": "Squat Variations (Quads, Glutes, Core)"
+  },
+  {
+    "name": "Smith Machine Squat",
+    "category": "Legs",
+    "subcategory": "Squat Variations (Quads, Glutes, Core)"
+  },
+  {
+    "name": "Split Squat",
+    "category": "Legs",
+    "subcategory": "Squat Variations (Quads, Glutes, Core)"
+  },
+  {
+    "name": "Sumo Squat",
+    "category": "Legs",
+    "subcategory": "Squat Variations (Quads, Glutes, Core)"
+  },
+  {
+    "name": "Zercher Squat",
+    "category": "Legs",
+    "subcategory": "Squat Variations (Quads, Glutes, Core)"
+  },
+  {
+    "name": "Barbell Step-Up",
+    "category": "Legs",
+    "subcategory": "Step-Up Variations"
+  },
+  {
+    "name": "Box Step-Up",
+    "category": "Legs",
+    "subcategory": "Step-Up Variations"
+  },
+  {
+    "name": "Dumbbell Step-Up",
+    "category": "Legs",
+    "subcategory": "Step-Up Variations"
+  },
+  {
+    "name": "High Knee Step-Up",
+    "category": "Legs",
+    "subcategory": "Step-Up Variations"
+  },
+  {
+    "name": "Lateral Step-Up",
+    "category": "Legs",
+    "subcategory": "Step-Up Variations"
+  },
+  {
+    "name": "Heel Walk",
+    "category": "Legs",
+    "subcategory": "Tibialis (Shin) Exercises"
+  },
+  {
+    "name": "Resistance Band Dorsiflexion",
+    "category": "Legs",
+    "subcategory": "Tibialis (Shin) Exercises"
+  },
+  {
+    "name": "Tibialis Raise",
+    "category": "Legs",
+    "subcategory": "Tibialis (Shin) Exercises"
+  },
+  {
+    "name": "Toe Raise",
+    "category": "Legs",
+    "subcategory": "Tibialis (Shin) Exercises"
+  },
+  {
+    "name": "Arnold Press",
+    "category": "Shoulders",
+    "subcategory": "Barbell Overhead Press (Military Press)"
+  },
+  {
+    "name": "Behind-the-Neck Press (advanced)",
+    "category": "Shoulders",
+    "subcategory": "Barbell Overhead Press (Military Press)"
+  },
+  {
+    "name": "Bradford Press",
+    "category": "Shoulders",
+    "subcategory": "Barbell Overhead Press (Military Press)"
+  },
+  {
+    "name": "Dumbbell Shoulder Press",
+    "category": "Shoulders",
+    "subcategory": "Barbell Overhead Press (Military Press)"
+  },
+  {
+    "name": "Kettlebell Overhead Press",
+    "category": "Shoulders",
+    "subcategory": "Barbell Overhead Press (Military Press)"
+  },
+  {
+    "name": "Machine Shoulder Press",
+    "category": "Shoulders",
+    "subcategory": "Barbell Overhead Press (Military Press)"
+  },
+  {
+    "name": "Push Press",
+    "category": "Shoulders",
+    "subcategory": "Barbell Overhead Press (Military Press)"
+  },
+  {
+    "name": "Seated Barbell Press",
+    "category": "Shoulders",
+    "subcategory": "Barbell Overhead Press (Military Press)"
+  },
+  {
+    "name": "Single-Arm Dumbbell Press",
+    "category": "Shoulders",
+    "subcategory": "Barbell Overhead Press (Military Press)"
+  },
+  {
+    "name": "Single-Arm Landmine Press",
+    "category": "Shoulders",
+    "subcategory": "Barbell Overhead Press (Military Press)"
+  },
+  {
+    "name": "Smith Machine Shoulder Press",
+    "category": "Shoulders",
+    "subcategory": "Barbell Overhead Press (Military Press)"
+  },
+  {
+    "name": "Standing Barbell Press",
+    "category": "Shoulders",
+    "subcategory": "Barbell Overhead Press (Military Press)"
+  },
+  {
+    "name": "Z Press",
+    "category": "Shoulders",
+    "subcategory": "Barbell Overhead Press (Military Press)"
+  },
+  {
+    "name": "Bear Crawl",
+    "category": "Shoulders",
+    "subcategory": "Bodyweight Shoulder Exercises"
+  },
+  {
+    "name": "Crab Walk",
+    "category": "Shoulders",
+    "subcategory": "Bodyweight Shoulder Exercises"
+  },
+  {
+    "name": "Decline Pike Push-Up",
+    "category": "Shoulders",
+    "subcategory": "Bodyweight Shoulder Exercises"
+  },
+  {
+    "name": "Handstand Push-Up",
+    "category": "Shoulders",
+    "subcategory": "Bodyweight Shoulder Exercises"
+  },
+  {
+    "name": "Hindu Push-Up",
+    "category": "Shoulders",
+    "subcategory": "Bodyweight Shoulder Exercises"
+  },
+  {
+    "name": "Pike Push-Up",
+    "category": "Shoulders",
+    "subcategory": "Bodyweight Shoulder Exercises"
+  },
+  {
+    "name": "Planche Lean",
+    "category": "Shoulders",
+    "subcategory": "Bodyweight Shoulder Exercises"
+  },
+  {
+    "name": "Wall Handstand Push-Up",
+    "category": "Shoulders",
+    "subcategory": "Bodyweight Shoulder Exercises"
+  },
+  {
+    "name": "Wall Walk",
+    "category": "Shoulders",
+    "subcategory": "Bodyweight Shoulder Exercises"
+  },
+  {
+    "name": "Cable Shoulder Press",
+    "category": "Shoulders",
+    "subcategory": "Cable Shoulder Exercises"
+  },
+  {
+    "name": "Cable Upright Row",
+    "category": "Shoulders",
+    "subcategory": "Cable Shoulder Exercises"
+  },
+  {
+    "name": "Single-Arm Cable Press",
+    "category": "Shoulders",
+    "subcategory": "Cable Shoulder Exercises"
+  },
+  {
+    "name": "Alternating Front Raise",
+    "category": "Shoulders",
+    "subcategory": "Front Deltoid (Anterior Delts)"
+  },
+  {
+    "name": "Barbell Front Raise",
+    "category": "Shoulders",
+    "subcategory": "Front Deltoid (Anterior Delts)"
+  },
+  {
+    "name": "Cable Front Raise",
+    "category": "Shoulders",
+    "subcategory": "Front Deltoid (Anterior Delts)"
+  },
+  {
+    "name": "Dumbbell Front Raise",
+    "category": "Shoulders",
+    "subcategory": "Front Deltoid (Anterior Delts)"
+  },
+  {
+    "name": "Incline Front Raise",
+    "category": "Shoulders",
+    "subcategory": "Front Deltoid (Anterior Delts)"
+  },
+  {
+    "name": "Kettlebell Front Raise",
+    "category": "Shoulders",
+    "subcategory": "Front Deltoid (Anterior Delts)"
+  },
+  {
+    "name": "Landmine Front Raise",
+    "category": "Shoulders",
+    "subcategory": "Front Deltoid (Anterior Delts)"
+  },
+  {
+    "name": "Plate Front Raise",
+    "category": "Shoulders",
+    "subcategory": "Front Deltoid (Anterior Delts)"
+  },
+  {
+    "name": "Rope Front Raise",
+    "category": "Shoulders",
+    "subcategory": "Front Deltoid (Anterior Delts)"
+  },
+  {
+    "name": "Bottoms-Up Kettlebell Press",
+    "category": "Shoulders",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Kettlebell High Pull",
+    "category": "Shoulders",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Kettlebell Push Press",
+    "category": "Shoulders",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Kettlebell Shoulder Press",
+    "category": "Shoulders",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Kettlebell Windmill",
+    "category": "Shoulders",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Single-Arm Kettlebell Press",
+    "category": "Shoulders",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Turkish Get-Up",
+    "category": "Shoulders",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Lateral Raise Machine",
+    "category": "Shoulders",
+    "subcategory": "Machine Shoulder Exercises"
+  },
+  {
+    "name": "Shoulder Press Machine",
+    "category": "Shoulders",
+    "subcategory": "Machine Shoulder Exercises"
+  },
+  {
+    "name": "Smith Machine Press",
+    "category": "Shoulders",
+    "subcategory": "Machine Shoulder Exercises"
+  },
+  {
+    "name": "Bent-Over Dumbbell Reverse Fly",
+    "category": "Shoulders",
+    "subcategory": "Rear Deltoid (Posterior Delts)"
+  },
+  {
+    "name": "Incline Rear Delt Fly",
+    "category": "Shoulders",
+    "subcategory": "Rear Deltoid (Posterior Delts)"
+  },
+  {
+    "name": "Ring Reverse Fly",
+    "category": "Shoulders",
+    "subcategory": "Rear Deltoid (Posterior Delts)"
+  },
+  {
+    "name": "TRX Reverse Fly",
+    "category": "Shoulders",
+    "subcategory": "Rear Deltoid (Posterior Delts)"
+  },
+  {
+    "name": "Band Front Raise",
+    "category": "Shoulders",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band Lateral Raise",
+    "category": "Shoulders",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band Shoulder Press",
+    "category": "Shoulders",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band External Rotation",
+    "category": "Shoulders",
+    "subcategory": "Rotator Cuff Exercises"
+  },
+  {
+    "name": "Cable External Rotation",
+    "category": "Shoulders",
+    "subcategory": "Rotator Cuff Exercises"
+  },
+  {
+    "name": "Cuban Press",
+    "category": "Shoulders",
+    "subcategory": "Rotator Cuff Exercises"
+  },
+  {
+    "name": "Dumbbell External Rotation",
+    "category": "Shoulders",
+    "subcategory": "Rotator Cuff Exercises"
+  },
+  {
+    "name": "Internal Rotation with Band",
+    "category": "Shoulders",
+    "subcategory": "Rotator Cuff Exercises"
+  },
+  {
+    "name": "Internal Rotation with Cable",
+    "category": "Shoulders",
+    "subcategory": "Rotator Cuff Exercises"
+  },
+  {
+    "name": "Prone T Raise",
+    "category": "Shoulders",
+    "subcategory": "Rotator Cuff Exercises"
+  },
+  {
+    "name": "Prone W Raise",
+    "category": "Shoulders",
+    "subcategory": "Rotator Cuff Exercises"
+  },
+  {
+    "name": "Prone Y Raise",
+    "category": "Shoulders",
+    "subcategory": "Rotator Cuff Exercises"
+  },
+  {
+    "name": "Scaption Raise",
+    "category": "Shoulders",
+    "subcategory": "Rotator Cuff Exercises"
+  },
+  {
+    "name": "Side-Lying External Rotation",
+    "category": "Shoulders",
+    "subcategory": "Rotator Cuff Exercises"
+  },
+  {
+    "name": "Behind-the-Back Cable Lateral Raise",
+    "category": "Shoulders",
+    "subcategory": "Side Deltoid (Lateral Delts)"
+  },
+  {
+    "name": "Cable Lateral Raise",
+    "category": "Shoulders",
+    "subcategory": "Side Deltoid (Lateral Delts)"
+  },
+  {
+    "name": "Dumbbell Lateral Raise",
+    "category": "Shoulders",
+    "subcategory": "Side Deltoid (Lateral Delts)"
+  },
+  {
+    "name": "Incline Lateral Raise",
+    "category": "Shoulders",
+    "subcategory": "Side Deltoid (Lateral Delts)"
+  },
+  {
+    "name": "Lean-Away Cable Lateral Raise",
+    "category": "Shoulders",
+    "subcategory": "Side Deltoid (Lateral Delts)"
+  },
+  {
+    "name": "Machine Lateral Raise",
+    "category": "Shoulders",
+    "subcategory": "Side Deltoid (Lateral Delts)"
+  },
+  {
+    "name": "One-Arm Lateral Raise",
+    "category": "Shoulders",
+    "subcategory": "Side Deltoid (Lateral Delts)"
+  },
+  {
+    "name": "Resistance Band Lateral Raise",
+    "category": "Shoulders",
+    "subcategory": "Side Deltoid (Lateral Delts)"
+  },
+  {
+    "name": "Seated Lateral Raise",
+    "category": "Shoulders",
+    "subcategory": "Side Deltoid (Lateral Delts)"
+  },
+  {
+    "name": "Standing Lateral Raise",
+    "category": "Shoulders",
+    "subcategory": "Side Deltoid (Lateral Delts)"
+  },
+  {
+    "name": "Upright Row (wide grip)",
+    "category": "Shoulders",
+    "subcategory": "Side Deltoid (Lateral Delts)"
+  },
+  {
+    "name": "Hanging Leg Raise",
+    "category": "Sports/Fitness",
+    "subcategory": "Core Stability Exercises"
+  },
+  {
+    "name": "L-Sit Hold",
+    "category": "Sports/Fitness",
+    "subcategory": "Core Stability Exercises"
+  },
+  {
+    "name": "Russian Twist",
+    "category": "Sports/Fitness",
+    "subcategory": "Core Stability Exercises"
+  },
+  {
+    "name": "Bear Crawls",
+    "category": "Sports/Fitness",
+    "subcategory": "Endurance & Conditioning Exercises"
+  },
+  {
+    "name": "Cycling",
+    "category": "Sports/Fitness",
+    "subcategory": "Endurance & Conditioning Exercises"
+  },
+  {
+    "name": "Interval Running",
+    "category": "Sports/Fitness",
+    "subcategory": "Endurance & Conditioning Exercises"
+  },
+  {
+    "name": "Jump Rope",
+    "category": "Sports/Fitness",
+    "subcategory": "Endurance & Conditioning Exercises"
+  },
+  {
+    "name": "Long-Distance Running",
+    "category": "Sports/Fitness",
+    "subcategory": "Endurance & Conditioning Exercises"
+  },
+  {
+    "name": "Rowing",
+    "category": "Sports/Fitness",
+    "subcategory": "Endurance & Conditioning Exercises"
+  },
+  {
+    "name": "Swimming",
+    "category": "Sports/Fitness",
+    "subcategory": "Endurance & Conditioning Exercises"
+  },
+  {
+    "name": "Battle Rope Waves",
+    "category": "Sports/Fitness",
+    "subcategory": "Explosive & Athletic Exercises"
+  },
+  {
+    "name": "Bounding",
+    "category": "Sports/Fitness",
+    "subcategory": "Explosive & Athletic Exercises"
+  },
+  {
+    "name": "Box Jumps",
+    "category": "Sports/Fitness",
+    "subcategory": "Explosive & Athletic Exercises"
+  },
+  {
+    "name": "Broad Jumps",
+    "category": "Sports/Fitness",
+    "subcategory": "Explosive & Athletic Exercises"
+  },
+  {
+    "name": "Depth Jumps",
+    "category": "Sports/Fitness",
+    "subcategory": "Explosive & Athletic Exercises"
+  },
+  {
+    "name": "Hill Sprints",
+    "category": "Sports/Fitness",
+    "subcategory": "Explosive & Athletic Exercises"
+  },
+  {
+    "name": "Medicine Ball Throws",
+    "category": "Sports/Fitness",
+    "subcategory": "Explosive & Athletic Exercises"
+  },
+  {
+    "name": "Plyometric Push-Ups",
+    "category": "Sports/Fitness",
+    "subcategory": "Explosive & Athletic Exercises"
+  },
+  {
+    "name": "Power Skips",
+    "category": "Sports/Fitness",
+    "subcategory": "Explosive & Athletic Exercises"
+  },
+  {
+    "name": "Sled Pull",
+    "category": "Sports/Fitness",
+    "subcategory": "Explosive & Athletic Exercises"
+  },
+  {
+    "name": "Sled Push",
+    "category": "Sports/Fitness",
+    "subcategory": "Explosive & Athletic Exercises"
+  },
+  {
+    "name": "Squat Jumps",
+    "category": "Sports/Fitness",
+    "subcategory": "Explosive & Athletic Exercises"
+  },
+  {
+    "name": "Tuck Jumps",
+    "category": "Sports/Fitness",
+    "subcategory": "Explosive & Athletic Exercises"
+  },
+  {
+    "name": "Arm Circles",
+    "category": "Sports/Fitness",
+    "subcategory": "Mobility & Flexibility Exercises"
+  },
+  {
+    "name": "Cat-Cow Stretch",
+    "category": "Sports/Fitness",
+    "subcategory": "Mobility & Flexibility Exercises"
+  },
+  {
+    "name": "Deep Squat Hold",
+    "category": "Sports/Fitness",
+    "subcategory": "Mobility & Flexibility Exercises"
+  },
+  {
+    "name": "Dynamic Stretching",
+    "category": "Sports/Fitness",
+    "subcategory": "Mobility & Flexibility Exercises"
+  },
+  {
+    "name": "Hamstring Stretch",
+    "category": "Sports/Fitness",
+    "subcategory": "Mobility & Flexibility Exercises"
+  },
+  {
+    "name": "Hip Flexor Stretch",
+    "category": "Sports/Fitness",
+    "subcategory": "Mobility & Flexibility Exercises"
+  },
+  {
+    "name": "Hip Mobility Drills",
+    "category": "Sports/Fitness",
+    "subcategory": "Mobility & Flexibility Exercises"
+  },
+  {
+    "name": "Leg Swings",
+    "category": "Sports/Fitness",
+    "subcategory": "Mobility & Flexibility Exercises"
+  },
+  {
+    "name": "Shoulder Mobility Drills",
+    "category": "Sports/Fitness",
+    "subcategory": "Mobility & Flexibility Exercises"
+  },
+  {
+    "name": "World's Greatest Stretch",
+    "category": "Sports/Fitness",
+    "subcategory": "Mobility & Flexibility Exercises"
+  },
+  {
+    "name": "5-10-5 Pro Agility Drill",
+    "category": "Sports/Fitness",
+    "subcategory": "Speed & Agility Exercises"
+  },
+  {
+    "name": "Acceleration Sprints",
+    "category": "Sports/Fitness",
+    "subcategory": "Speed & Agility Exercises"
+  },
+  {
+    "name": "Change of Direction Drills",
+    "category": "Sports/Fitness",
+    "subcategory": "Speed & Agility Exercises"
+  },
+  {
+    "name": "Cone Drills",
+    "category": "Sports/Fitness",
+    "subcategory": "Speed & Agility Exercises"
+  },
+  {
+    "name": "Deceleration Drills",
+    "category": "Sports/Fitness",
+    "subcategory": "Speed & Agility Exercises"
+  },
+  {
+    "name": "Ladder Drills",
+    "category": "Sports/Fitness",
+    "subcategory": "Speed & Agility Exercises"
+  },
+  {
+    "name": "Reaction Sprints",
+    "category": "Sports/Fitness",
+    "subcategory": "Speed & Agility Exercises"
+  },
+  {
+    "name": "Shuttle Runs",
+    "category": "Sports/Fitness",
+    "subcategory": "Speed & Agility Exercises"
+  },
+  {
+    "name": "Sprint Intervals",
+    "category": "Sports/Fitness",
+    "subcategory": "Speed & Agility Exercises"
+  },
+  {
+    "name": "Zig-Zag Runs",
+    "category": "Sports/Fitness",
+    "subcategory": "Speed & Agility Exercises"
+  },
+  {
+    "name": "Agility Ladder Training",
+    "category": "Sports/Fitness",
+    "subcategory": "Sports-Specific Training Drills"
+  },
+  {
+    "name": "Balance Training",
+    "category": "Sports/Fitness",
+    "subcategory": "Sports-Specific Training Drills"
+  },
+  {
+    "name": "Coordination Drills",
+    "category": "Sports/Fitness",
+    "subcategory": "Sports-Specific Training Drills"
+  },
+  {
+    "name": "Defensive Slides",
+    "category": "Sports/Fitness",
+    "subcategory": "Sports-Specific Training Drills"
+  },
+  {
+    "name": "Footwork Drills",
+    "category": "Sports/Fitness",
+    "subcategory": "Sports-Specific Training Drills"
+  },
+  {
+    "name": "Jump Training",
+    "category": "Sports/Fitness",
+    "subcategory": "Sports-Specific Training Drills"
+  },
+  {
+    "name": "Lateral Shuffle",
+    "category": "Sports/Fitness",
+    "subcategory": "Sports-Specific Training Drills"
+  },
+  {
+    "name": "Plyometric Training",
+    "category": "Sports/Fitness",
+    "subcategory": "Sports-Specific Training Drills"
+  },
+  {
+    "name": "Reaction Ball Drills",
+    "category": "Sports/Fitness",
+    "subcategory": "Sports-Specific Training Drills"
+  },
+  {
+    "name": "Sprint Starts",
+    "category": "Sports/Fitness",
+    "subcategory": "Sports-Specific Training Drills"
+  },
+  {
+    "name": "Back Squats",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Barbell Rows",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Bulgarian Split Squats",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Chin-Ups",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Clean and Jerks",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Deadlifts",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Dips",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Front Squats",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Hip Thrusts",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Lunges",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Overhead Press",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Power Cleans",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Pull-Ups",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Push-Ups",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Romanian Deadlifts",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Snatches",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Squats",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Walking Lunges",
+    "category": "Sports/Fitness",
+    "subcategory": "Strength & Power Exercises"
+  },
+  {
+    "name": "Bench Dip",
+    "category": "Triceps",
+    "subcategory": "Bodyweight Exercises"
+  },
+  {
+    "name": "Handstand Push-Up (advanced)",
+    "category": "Triceps",
+    "subcategory": "Bodyweight Exercises"
+  },
+  {
+    "name": "Straight-Bar Dip",
+    "category": "Triceps",
+    "subcategory": "Bodyweight Exercises"
+  },
+  {
+    "name": "Tiger Bend Push-Up",
+    "category": "Triceps",
+    "subcategory": "Bodyweight Exercises"
+  },
+  {
+    "name": "Cable Kickback",
+    "category": "Triceps",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Cable Overhead Extension",
+    "category": "Triceps",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Cross-Body Cable Extension",
+    "category": "Triceps",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Rope Pushdown",
+    "category": "Triceps",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Single-Arm Cable Extension",
+    "category": "Triceps",
+    "subcategory": "Cable Exercises"
+  },
+  {
+    "name": "Bench Press",
+    "category": "Triceps",
+    "subcategory": "Compound Exercises"
+  },
+  {
+    "name": "Close-Grip Bench Press",
+    "category": "Triceps",
+    "subcategory": "Compound Exercises"
+  },
+  {
+    "name": "Close-Grip Push-Up",
+    "category": "Triceps",
+    "subcategory": "Compound Exercises"
+  },
+  {
+    "name": "Decline Bench Press",
+    "category": "Triceps",
+    "subcategory": "Compound Exercises"
+  },
+  {
+    "name": "Diamond Push-Up",
+    "category": "Triceps",
+    "subcategory": "Compound Exercises"
+  },
+  {
+    "name": "Floor Press",
+    "category": "Triceps",
+    "subcategory": "Compound Exercises"
+  },
+  {
+    "name": "Incline Bench Press",
+    "category": "Triceps",
+    "subcategory": "Compound Exercises"
+  },
+  {
+    "name": "JM Press",
+    "category": "Triceps",
+    "subcategory": "Compound Exercises"
+  },
+  {
+    "name": "Machine Dip",
+    "category": "Triceps",
+    "subcategory": "Compound Exercises"
+  },
+  {
+    "name": "Parallel Bar Dip",
+    "category": "Triceps",
+    "subcategory": "Compound Exercises"
+  },
+  {
+    "name": "Ring Dip",
+    "category": "Triceps",
+    "subcategory": "Compound Exercises"
+  },
+  {
+    "name": "Smith Machine Close-Grip Bench Press",
+    "category": "Triceps",
+    "subcategory": "Compound Exercises"
+  },
+  {
+    "name": "Weighted Dip",
+    "category": "Triceps",
+    "subcategory": "Compound Exercises"
+  },
+  {
+    "name": "Kettlebell Close-Grip Press",
+    "category": "Triceps",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Kettlebell Floor Press",
+    "category": "Triceps",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Kettlebell Tate Press",
+    "category": "Triceps",
+    "subcategory": "Kettlebell Exercises"
+  },
+  {
+    "name": "Cable Triceps Kickback",
+    "category": "Triceps",
+    "subcategory": "Kickback Variations"
+  },
+  {
+    "name": "Dumbbell Triceps Kickback",
+    "category": "Triceps",
+    "subcategory": "Kickback Variations"
+  },
+  {
+    "name": "Resistance Band Kickback",
+    "category": "Triceps",
+    "subcategory": "Kickback Variations"
+  },
+  {
+    "name": "Single-Arm Kickback",
+    "category": "Triceps",
+    "subcategory": "Kickback Variations"
+  },
+  {
+    "name": "Assisted Dip Machine",
+    "category": "Triceps",
+    "subcategory": "Machine Exercises"
+  },
+  {
+    "name": "Cable Triceps Machine",
+    "category": "Triceps",
+    "subcategory": "Machine Exercises"
+  },
+  {
+    "name": "Triceps Extension Machine",
+    "category": "Triceps",
+    "subcategory": "Machine Exercises"
+  },
+  {
+    "name": "Barbell Overhead Extension",
+    "category": "Triceps",
+    "subcategory": "Overhead Exercises (Long Head Focus)"
+  },
+  {
+    "name": "Cable Overhead Triceps Extension",
+    "category": "Triceps",
+    "subcategory": "Overhead Exercises (Long Head Focus)"
+  },
+  {
+    "name": "EZ-Bar Overhead Extension",
+    "category": "Triceps",
+    "subcategory": "Overhead Exercises (Long Head Focus)"
+  },
+  {
+    "name": "Kettlebell Overhead Extension",
+    "category": "Triceps",
+    "subcategory": "Overhead Exercises (Long Head Focus)"
+  },
+  {
+    "name": "Overhead Dumbbell Triceps Extension",
+    "category": "Triceps",
+    "subcategory": "Overhead Exercises (Long Head Focus)"
+  },
+  {
+    "name": "Resistance Band Overhead Extension",
+    "category": "Triceps",
+    "subcategory": "Overhead Exercises (Long Head Focus)"
+  },
+  {
+    "name": "Rope Overhead Triceps Extension",
+    "category": "Triceps",
+    "subcategory": "Overhead Exercises (Long Head Focus)"
+  },
+  {
+    "name": "Single-Arm Cable Overhead Extension",
+    "category": "Triceps",
+    "subcategory": "Overhead Exercises (Long Head Focus)"
+  },
+  {
+    "name": "Single-Arm Overhead Dumbbell Extension",
+    "category": "Triceps",
+    "subcategory": "Overhead Exercises (Long Head Focus)"
+  },
+  {
+    "name": "Two-Arm Overhead Dumbbell Extension",
+    "category": "Triceps",
+    "subcategory": "Overhead Exercises (Long Head Focus)"
+  },
+  {
+    "name": "Dual Cable Pushdown",
+    "category": "Triceps",
+    "subcategory": "Pushdown Variations"
+  },
+  {
+    "name": "Resistance Band Pushdown",
+    "category": "Triceps",
+    "subcategory": "Pushdown Variations"
+  },
+  {
+    "name": "Reverse-Grip Pushdown",
+    "category": "Triceps",
+    "subcategory": "Pushdown Variations"
+  },
+  {
+    "name": "Rope Triceps Pushdown",
+    "category": "Triceps",
+    "subcategory": "Pushdown Variations"
+  },
+  {
+    "name": "Single-Arm Pushdown",
+    "category": "Triceps",
+    "subcategory": "Pushdown Variations"
+  },
+  {
+    "name": "Straight-Bar Pushdown",
+    "category": "Triceps",
+    "subcategory": "Pushdown Variations"
+  },
+  {
+    "name": "V-Bar Pushdown",
+    "category": "Triceps",
+    "subcategory": "Pushdown Variations"
+  },
+  {
+    "name": "Band Close-Grip Press",
+    "category": "Triceps",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band Kickback",
+    "category": "Triceps",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band Overhead Extension",
+    "category": "Triceps",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Band Pushdown",
+    "category": "Triceps",
+    "subcategory": "Resistance Band Exercises"
+  },
+  {
+    "name": "Barbell Skull Crusher",
+    "category": "Triceps",
+    "subcategory": "Skull Crusher Variations"
+  },
+  {
+    "name": "Cable Skull Crusher",
+    "category": "Triceps",
+    "subcategory": "Skull Crusher Variations"
+  },
+  {
+    "name": "Decline Skull Crusher",
+    "category": "Triceps",
+    "subcategory": "Skull Crusher Variations"
+  },
+  {
+    "name": "Dumbbell Skull Crusher",
+    "category": "Triceps",
+    "subcategory": "Skull Crusher Variations"
+  },
+  {
+    "name": "EZ-Bar Skull Crusher",
+    "category": "Triceps",
+    "subcategory": "Skull Crusher Variations"
+  },
+  {
+    "name": "Floor Skull Crusher",
+    "category": "Triceps",
+    "subcategory": "Skull Crusher Variations"
+  },
+  {
+    "name": "Incline Skull Crusher",
+    "category": "Triceps",
+    "subcategory": "Skull Crusher Variations"
+  },
+  {
+    "name": "Cross-Body Triceps Extension",
+    "category": "Triceps",
+    "subcategory": "Specialty Variations"
+  },
+  {
+    "name": "Isometric Triceps Hold",
+    "category": "Triceps",
+    "subcategory": "Specialty Variations"
+  },
+  {
+    "name": "One-and-a-Half Rep Extension",
+    "category": "Triceps",
+    "subcategory": "Specialty Variations"
+  },
+  {
+    "name": "PJR Pullover",
+    "category": "Triceps",
+    "subcategory": "Specialty Variations"
+  },
+  {
+    "name": "Rolling Dumbbell Extension",
+    "category": "Triceps",
+    "subcategory": "Specialty Variations"
+  },
+  {
+    "name": "Tate Press",
+    "category": "Triceps",
+    "subcategory": "Specialty Variations"
+  },
+  {
+    "name": "Tempo Triceps Extension",
+    "category": "Triceps",
+    "subcategory": "Specialty Variations"
+  }
+]

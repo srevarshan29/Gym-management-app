@@ -1,0 +1,789 @@
+{
+  "Back": {
+    "Vertical Pull (Lats & Upper Back)": [
+      "Pull-up",
+      "Chin-up",
+      "Neutral-grip pull-up",
+      "Wide-grip pull-up",
+      "Close-grip pull-up",
+      "Assisted pull-up",
+      "Weighted pull-up",
+      "Lat pulldown",
+      "Wide-grip lat pulldown",
+      "Reverse-grip lat pulldown",
+      "Single-arm lat pulldown",
+      "Straight-arm pulldown",
+      "Rope pulldown"
+    ],
+    "Horizontal Row (Mid Back & Rhomboids)": [
+      "Barbell row",
+      "Bent-over barbell row",
+      "Pendlay row",
+      "Yates row",
+      "Dumbbell row",
+      "Single-arm dumbbell row",
+      "Chest-supported dumbbell row",
+      "Seal row",
+      "T-bar row",
+      "Landmine row",
+      "Machine row",
+      "Seated cable row",
+      "Close-grip cable row",
+      "Wide-grip cable row",
+      "One-arm cable row",
+      "Inverted row (bodyweight)",
+      "TRX row",
+      "Ring row",
+      "Meadows row"
+    ],
+    "Deadlift Variations (Lower Back & Entire Posterior Chain)": [
+      "Conventional deadlift",
+      "Romanian deadlift (RDL)",
+      "Stiff-leg deadlift",
+      "Rack pull",
+      "Deficit deadlift",
+      "Snatch-grip deadlift",
+      "Trap bar deadlift",
+      "Sumo deadlift",
+      "Good morning"
+    ],
+    "Lower Back Isolation": [
+      "Back extension",
+      "Hyperextension",
+      "Reverse hyperextension",
+      "Superman",
+      "Bird dog",
+      "Stability ball back extension"
+    ],
+    "Trap-Focused Exercises": [
+      "Barbell shrug",
+      "Dumbbell shrug",
+      "Trap bar shrug",
+      "Cable shrug",
+      "Smith machine shrug",
+      "Upright row",
+      "Farmer's carry",
+      "Overhead carry"
+    ],
+    "Rear Delts & Upper Back": [
+      "Face pull",
+      "Reverse pec deck",
+      "Bent-over reverse fly",
+      "Cable reverse fly",
+      "Rear delt row",
+      "Band pull-apart",
+      "High row",
+      "Y-raise",
+      "T-raise",
+      "W-raise"
+    ],
+    "Bodyweight Back Exercises": [
+      "Pull-up",
+      "Chin-up",
+      "Australian pull-up",
+      "Archer pull-up",
+      "Commando pull-up",
+      "Muscle-up",
+      "Front lever progression",
+      "Scapular pull-up",
+      "Superman",
+      "Bird dog"
+    ],
+    "Cable Exercises": [
+      "Seated cable row",
+      "Straight-arm pulldown",
+      "Face pull",
+      "Cable pullover",
+      "Single-arm cable row",
+      "Kneeling cable row",
+      "High cable row",
+      "Low cable row"
+    ],
+    "Machine Exercises": [
+      "Lat pulldown machine",
+      "Seated row machine",
+      "Iso-lateral row machine",
+      "High row machine",
+      "Chest-supported row machine",
+      "Assisted pull-up machine",
+      "Reverse pec deck",
+      "Back extension machine"
+    ],
+    "Resistance Band Exercises": [
+      "Band row",
+      "Band pulldown",
+      "Band face pull",
+      "Band pull-apart",
+      "Band straight-arm pulldown",
+      "Band reverse fly"
+    ],
+    "Kettlebell Exercises": [
+      "Kettlebell row",
+      "Renegade row",
+      "Kettlebell deadlift",
+      "Suitcase carry",
+      "Farmer's carry"
+    ]
+  },
+  "Shoulders": {
+    "Barbell Overhead Press (Military Press)": [
+      "Standing Barbell Press",
+      "Seated Barbell Press",
+      "Dumbbell Shoulder Press",
+      "Arnold Press",
+      "Push Press",
+      "Behind-the-Neck Press (advanced)",
+      "Machine Shoulder Press",
+      "Smith Machine Shoulder Press",
+      "Kettlebell Overhead Press",
+      "Single-Arm Dumbbell Press",
+      "Single-Arm Landmine Press",
+      "Z Press",
+      "Bradford Press"
+    ],
+    "Front Deltoid (Anterior Delts)": [
+      "Dumbbell Front Raise",
+      "Barbell Front Raise",
+      "Plate Front Raise",
+      "Cable Front Raise",
+      "Rope Front Raise",
+      "Alternating Front Raise",
+      "Incline Front Raise",
+      "Landmine Front Raise",
+      "Kettlebell Front Raise"
+    ],
+    "Side Deltoid (Lateral Delts)": [
+      "Dumbbell Lateral Raise",
+      "Cable Lateral Raise",
+      "Lean-Away Cable Lateral Raise",
+      "Machine Lateral Raise",
+      "Seated Lateral Raise",
+      "Standing Lateral Raise",
+      "One-Arm Lateral Raise",
+      "Incline Lateral Raise",
+      "Behind-the-Back Cable Lateral Raise",
+      "Resistance Band Lateral Raise",
+      "Upright Row (wide grip)"
+    ],
+    "Rear Deltoid (Posterior Delts)": [
+      "Reverse Pec Deck",
+      "Bent-Over Dumbbell Reverse Fly",
+      "Cable Reverse Fly",
+      "Face Pull",
+      "Rear Delt Row",
+      "High Row",
+      "Incline Rear Delt Fly",
+      "Band Pull-Apart",
+      "TRX Reverse Fly",
+      "Ring Reverse Fly"
+    ],
+    "Rotator Cuff Exercises": [
+      "Cable External Rotation",
+      "Dumbbell External Rotation",
+      "Band External Rotation",
+      "Internal Rotation with Cable",
+      "Internal Rotation with Band",
+      "Cuban Press",
+      "Side-Lying External Rotation",
+      "Prone Y Raise",
+      "Prone T Raise",
+      "Prone W Raise",
+      "Scaption Raise"
+    ],
+    "Trap Exercises (Often Trained with Shoulders)": [
+      "Barbell Shrug",
+      "Dumbbell Shrug",
+      "Trap Bar Shrug",
+      "Cable Shrug",
+      "Smith Machine Shrug",
+      "Farmer's Carry",
+      "Overhead Carry",
+      "Upright Row"
+    ],
+    "Cable Shoulder Exercises": [
+      "Cable Shoulder Press",
+      "Cable Front Raise",
+      "Cable Lateral Raise",
+      "Cable Reverse Fly",
+      "Face Pull",
+      "Cable Upright Row",
+      "Single-Arm Cable Press"
+    ],
+    "Machine Shoulder Exercises": [
+      "Shoulder Press Machine",
+      "Lateral Raise Machine",
+      "Reverse Pec Deck",
+      "Smith Machine Press"
+    ],
+    "Resistance Band Exercises": [
+      "Band Shoulder Press",
+      "Band Front Raise",
+      "Band Lateral Raise",
+      "Band Reverse Fly",
+      "Band Face Pull",
+      "Band External Rotation",
+      "Band Pull-Apart"
+    ],
+    "Bodyweight Shoulder Exercises": [
+      "Pike Push-Up",
+      "Decline Pike Push-Up",
+      "Handstand Push-Up",
+      "Wall Handstand Push-Up",
+      "Hindu Push-Up",
+      "Planche Lean",
+      "Wall Walk",
+      "Bear Crawl",
+      "Crab Walk"
+    ],
+    "Kettlebell Exercises": [
+      "Kettlebell Shoulder Press",
+      "Single-Arm Kettlebell Press",
+      "Bottoms-Up Kettlebell Press",
+      "Kettlebell Push Press",
+      "Kettlebell High Pull",
+      "Turkish Get-Up",
+      "Kettlebell Windmill"
+    ]
+  },
+  "Biceps": {
+    "Barbell Exercises": [
+      "Barbell Curl",
+      "Standing Barbell Curl",
+      "Wide-Grip Barbell Curl",
+      "Close-Grip Barbell Curl",
+      "EZ-Bar Curl",
+      "Reverse EZ-Bar Curl",
+      "Drag Curl",
+      "Cheat Curl (advanced)"
+    ],
+    "Dumbbell Exercises": [
+      "Alternating Dumbbell Curl",
+      "Standing Dumbbell Curl",
+      "Seated Dumbbell Curl",
+      "Incline Dumbbell Curl",
+      "Concentration Curl",
+      "Hammer Curl",
+      "Cross-Body Hammer Curl",
+      "Zottman Curl",
+      "Spider Curl",
+      "Preacher Dumbbell Curl",
+      "Bayesian Dumbbell Curl",
+      "Offset-Grip Dumbbell Curl"
+    ],
+    "Cable Exercises": [
+      "Standing Cable Curl",
+      "Single-Arm Cable Curl",
+      "Rope Hammer Curl",
+      "High Cable Curl",
+      "Low Cable Curl",
+      "Cable Preacher Curl",
+      "Bayesian Cable Curl",
+      "Reverse Cable Curl",
+      "Overhead Cable Curl"
+    ],
+    "Machine Exercises": [
+      "Preacher Curl Machine",
+      "Biceps Curl Machine",
+      "Cable Curl Machine",
+      "Assisted Chin-Up Machine (underhand grip)"
+    ],
+    "Bench-Based Exercises": [
+      "Preacher Curl",
+      "Spider Curl",
+      "Incline Dumbbell Curl",
+      "Scott Curl"
+    ],
+    "Bodyweight Exercises": [
+      "Chin-Up (Underhand Grip)",
+      "Close-Grip Chin-Up",
+      "Towel Chin-Up",
+      "Ring Chin-Up",
+      "Commando Pull-Up",
+      "Inverted Underhand Row"
+    ],
+    "Resistance Band Exercises": [
+      "Band Curl",
+      "Single-Arm Band Curl",
+      "Band Hammer Curl",
+      "Reverse Band Curl",
+      "High Anchor Band Curl"
+    ],
+    "Kettlebell Exercises": [
+      "Kettlebell Curl",
+      "Hammer Curl with Kettlebell",
+      "Bottoms-Up Curl"
+    ],
+    "Reverse & Forearm-Focused Variations": [
+      "Reverse Barbell Curl",
+      "Reverse EZ-Bar Curl",
+      "Reverse Dumbbell Curl",
+      "Reverse Cable Curl",
+      "Reverse Band Curl",
+      "Hammer Curl",
+      "Cross-Body Hammer Curl",
+      "Rope Hammer Curl",
+      "Zottman Curl"
+    ],
+    "Isometric & Specialty Variations": [
+      "Isometric Curl Hold",
+      "21s Curl",
+      "Tempo Curl (slow eccentric)",
+      "Partial-Range Curl",
+      "One-and-a-Half Rep Curl"
+    ]
+  },
+  "Triceps": {
+    "Compound Exercises": [
+      "Close-Grip Bench Press",
+      "Close-Grip Push-Up",
+      "Bench Press",
+      "Incline Bench Press",
+      "Decline Bench Press",
+      "Weighted Dip",
+      "Parallel Bar Dip",
+      "Ring Dip",
+      "Diamond Push-Up",
+      "JM Press",
+      "Floor Press",
+      "Machine Dip",
+      "Smith Machine Close-Grip Bench Press"
+    ],
+    "Overhead Exercises (Long Head Focus)": [
+      "Overhead Dumbbell Triceps Extension",
+      "Single-Arm Overhead Dumbbell Extension",
+      "Two-Arm Overhead Dumbbell Extension",
+      "EZ-Bar Overhead Extension",
+      "Barbell Overhead Extension",
+      "Cable Overhead Triceps Extension",
+      "Rope Overhead Triceps Extension",
+      "Single-Arm Cable Overhead Extension",
+      "Resistance Band Overhead Extension",
+      "Kettlebell Overhead Extension"
+    ],
+    "Pushdown Variations": [
+      "Rope Triceps Pushdown",
+      "Straight-Bar Pushdown",
+      "V-Bar Pushdown",
+      "Reverse-Grip Pushdown",
+      "Single-Arm Pushdown",
+      "Dual Cable Pushdown",
+      "Resistance Band Pushdown"
+    ],
+    "Skull Crusher Variations": [
+      "EZ-Bar Skull Crusher",
+      "Barbell Skull Crusher",
+      "Dumbbell Skull Crusher",
+      "Incline Skull Crusher",
+      "Decline Skull Crusher",
+      "Cable Skull Crusher",
+      "Floor Skull Crusher"
+    ],
+    "Kickback Variations": [
+      "Dumbbell Triceps Kickback",
+      "Cable Triceps Kickback",
+      "Resistance Band Kickback",
+      "Single-Arm Kickback"
+    ],
+    "Cable Exercises": [
+      "Rope Pushdown",
+      "Straight-Bar Pushdown",
+      "V-Bar Pushdown",
+      "Reverse-Grip Pushdown",
+      "Cable Overhead Extension",
+      "Single-Arm Cable Extension",
+      "Cable Kickback",
+      "Cross-Body Cable Extension"
+    ],
+    "Machine Exercises": [
+      "Triceps Extension Machine",
+      "Assisted Dip Machine",
+      "Machine Dip",
+      "Cable Triceps Machine"
+    ],
+    "Bodyweight Exercises": [
+      "Diamond Push-Up",
+      "Close-Grip Push-Up",
+      "Bench Dip",
+      "Parallel Bar Dip",
+      "Ring Dip",
+      "Tiger Bend Push-Up",
+      "Handstand Push-Up (advanced)",
+      "Straight-Bar Dip"
+    ],
+    "Resistance Band Exercises": [
+      "Band Pushdown",
+      "Band Overhead Extension",
+      "Band Kickback",
+      "Band Close-Grip Press"
+    ],
+    "Kettlebell Exercises": [
+      "Kettlebell Overhead Extension",
+      "Kettlebell Floor Press",
+      "Kettlebell Close-Grip Press",
+      "Kettlebell Tate Press"
+    ],
+    "Specialty Variations": [
+      "Tate Press",
+      "Rolling Dumbbell Extension",
+      "PJR Pullover",
+      "Cross-Body Triceps Extension",
+      "One-and-a-Half Rep Extension",
+      "Isometric Triceps Hold",
+      "Tempo Triceps Extension"
+    ]
+  },
+  "Legs": {
+    "Squat Variations (Quads, Glutes, Core)": [
+      "Back Squat",
+      "Front Squat",
+      "Goblet Squat",
+      "Zercher Squat",
+      "Overhead Squat",
+      "Box Squat",
+      "Pause Squat",
+      "Safety Bar Squat",
+      "Smith Machine Squat",
+      "Hack Squat",
+      "Sumo Squat",
+      "Split Squat"
+    ],
+    "Lunge Variations": [
+      "Forward Lunge",
+      "Reverse Lunge",
+      "Walking Lunge",
+      "Lateral Lunge",
+      "Curtsy Lunge",
+      "Deficit Lunge",
+      "Bulgarian Split Squat",
+      "Step-Back Lunge",
+      "Landmine Lunge",
+      "Smith Machine Split Squat"
+    ],
+    "Deadlift Variations (Hamstrings & Glutes)": [
+      "Romanian Deadlift (RDL)",
+      "Conventional Deadlift",
+      "Stiff-Leg Deadlift",
+      "Sumo Deadlift",
+      "Trap Bar Deadlift",
+      "Single-Leg Romanian Deadlift",
+      "Deficit Deadlift",
+      "Snatch-Grip Deadlift"
+    ],
+    "Quad Isolation Exercises": [
+      "Leg Extension",
+      "Sissy Squat",
+      "Spanish Squat",
+      "Wall Sit",
+      "Peterson Step-Up",
+      "Terminal Knee Extension (TKE)"
+    ],
+    "Hamstring Isolation Exercises": [
+      "Lying Leg Curl",
+      "Seated Leg Curl",
+      "Standing Leg Curl",
+      "Nordic Hamstring Curl",
+      "Glute-Ham Raise (GHR)",
+      "Stability Ball Leg Curl",
+      "Sliding Leg Curl",
+      "Cable Leg Curl",
+      "Band Leg Curl"
+    ],
+    "Glute Exercises": [
+      "Hip Thrust",
+      "Barbell Hip Thrust",
+      "Glute Bridge",
+      "Single-Leg Glute Bridge",
+      "Frog Pump",
+      "Cable Kickback",
+      "Donkey Kick",
+      "Fire Hydrant",
+      "Step-Up",
+      "Bulgarian Split Squat",
+      "Kettlebell Swing",
+      "Reverse Hyperextension"
+    ],
+    "Adductor (Inner Thigh) Exercises": [
+      "Adductor Machine",
+      "Copenhagen Plank",
+      "Sumo Squat",
+      "Cossack Squat",
+      "Side Lunge",
+      "Cable Hip Adduction",
+      "Band Hip Adduction"
+    ],
+    "Abductor (Outer Hip) Exercises": [
+      "Abductor Machine",
+      "Band Lateral Walk",
+      "Clamshell",
+      "Side-Lying Leg Raise",
+      "Cable Hip Abduction",
+      "Monster Walk",
+      "Standing Band Hip Abduction"
+    ],
+    "Step-Up Variations": [
+      "Dumbbell Step-Up",
+      "Barbell Step-Up",
+      "Lateral Step-Up",
+      "Box Step-Up",
+      "High Knee Step-Up"
+    ],
+    "Calf Exercises Standing (Gastrocnemius Focus)": [
+      "Standing Calf Raise",
+      "Smith Machine Calf Raise",
+      "Leg Press Calf Raise",
+      "Donkey Calf Raise",
+      "Single-Leg Standing Calf Raise",
+      "Barbell Calf Raise",
+      "Dumbbell Calf Raise"
+    ],
+    "Seated (Soleus Focus)": [
+      "Seated Calf Raise",
+      "Dumbbell Seated Calf Raise",
+      "Machine Seated Calf Raise",
+      "Bodyweight Single-Leg Calf Raise",
+      "Stair Calf Raise"
+    ],
+    "Tibialis (Shin) Exercises": [
+      "Tibialis Raise",
+      "Toe Raise",
+      "Resistance Band Dorsiflexion",
+      "Heel Walk"
+    ],
+    "Plyometric Leg Exercises": [
+      "Box Jump",
+      "Broad Jump",
+      "Jump Squat",
+      "Split Squat Jump",
+      "Lateral Bounds",
+      "Skater Jump",
+      "Depth Jump",
+      "Tuck Jump"
+    ],
+    "Machine Leg Exercises": [
+      "Leg Press",
+      "Hack Squat Machine",
+      "Leg Extension",
+      "Lying Leg Curl",
+      "Seated Leg Curl",
+      "Standing Leg Curl",
+      "Hip Thrust Machine",
+      "Smith Machine Squat",
+      "Adductor Machine",
+      "Abductor Machine",
+      "Standing Calf Raise Machine",
+      "Seated Calf Raise Machine"
+    ],
+    "Cable Exercises": [
+      "Cable Kickback",
+      "Cable Squat",
+      "Cable Reverse Lunge",
+      "Cable Hip Abduction",
+      "Cable Hip Adduction",
+      "Cable Leg Curl"
+    ],
+    "Resistance Band Exercises": [
+      "Band Squat",
+      "Band Lunge",
+      "Band Leg Curl",
+      "Band Hip Abduction",
+      "Band Hip Adduction",
+      "Band Glute Bridge",
+      "Band Lateral Walk",
+      "Band Monster Walk",
+      "Band Calf Raise"
+    ],
+    "Bodyweight Leg Exercises": [
+      "Air Squat",
+      "Jump Squat",
+      "Bulgarian Split Squat",
+      "Walking Lunge",
+      "Reverse Lunge",
+      "Step-Up",
+      "Wall Sit",
+      "Glute Bridge",
+      "Single-Leg Glute Bridge",
+      "Nordic Curl",
+      "Calf Raise",
+      "Single-Leg Calf Raise",
+      "Pistol Squat",
+      "Shrimp Squat",
+      "Cossack Squat"
+    ],
+    "Kettlebell Exercises": [
+      "Goblet Squat",
+      "Kettlebell Swing",
+      "Romanian Deadlift",
+      "Bulgarian Split Squat",
+      "Reverse Lunge",
+      "Step-Up",
+      "Single-Leg Deadlift",
+      "Suitcase Carry"
+    ]
+  },
+  "Abs/Core": {
+    "Upper Abs": [
+      "Crunches",
+      "Sit-Ups",
+      "Decline Crunches",
+      "Stability Ball Crunches",
+      "Toe Touch Crunches",
+      "Cable Crunches",
+      "Weighted Crunches",
+      "Machine Crunches",
+      "Ab Mat Sit-Ups",
+      "Jackknife Sit-Ups"
+    ],
+    "Lower Abs": [
+      "Leg Raises",
+      "Reverse Crunches",
+      "Hanging Knee Raises",
+      "Hanging Leg Raises",
+      "Lying Leg Raises",
+      "Flutter Kicks",
+      "Scissor Kicks",
+      "V-Ups",
+      "Garhammer Raises",
+      "Dragon Flag"
+    ],
+    "Obliques (Sides)": [
+      "Russian Twists",
+      "Bicycle Crunches",
+      "Side Plank",
+      "Side Plank Hip Dips",
+      "Standing Side Bends",
+      "Cable Woodchoppers",
+      "Landmine Twists",
+      "Heel Touches",
+      "Windshield Wipers",
+      "Oblique Crunches",
+      "Cross-Body Mountain Climbers",
+      "Seated Twists"
+    ],
+    "Deep Core (Transverse Abdominis)": [
+      "Plank",
+      "Forearm Plank",
+      "High Plank",
+      "Dead Bug",
+      "Bird Dog",
+      "Hollow Body Hold",
+      "Pallof Press",
+      "Bear Crawl Hold",
+      "Stomach Vacuum",
+      "Stability Ball Rollout",
+      "Ab Wheel Rollout",
+      "Farmer's Carry"
+    ],
+    "Full-Core Exercises": [
+      "Mountain Climbers",
+      "Burpees",
+      "Turkish Get-Up",
+      "Renegade Rows",
+      "Medicine Ball Slams",
+      "Kettlebell Swings",
+      "Battle Ropes",
+      "TRX Pike",
+      "TRX Knee Tucks"
+    ]
+  },
+  "Sports/Fitness": {
+    "Strength & Power Exercises": [
+      "Squats",
+      "Front Squats",
+      "Back Squats",
+      "Lunges",
+      "Walking Lunges",
+      "Bulgarian Split Squats",
+      "Deadlifts",
+      "Romanian Deadlifts",
+      "Hip Thrusts",
+      "Power Cleans",
+      "Clean and Jerks",
+      "Snatches",
+      "Push Press",
+      "Bench Press",
+      "Overhead Press",
+      "Pull-Ups",
+      "Chin-Ups",
+      "Dips",
+      "Push-Ups",
+      "Barbell Rows"
+    ],
+    "Explosive & Athletic Exercises": [
+      "Box Jumps",
+      "Broad Jumps",
+      "Tuck Jumps",
+      "Squat Jumps",
+      "Depth Jumps",
+      "Medicine Ball Slams",
+      "Medicine Ball Throws",
+      "Kettlebell Swings",
+      "Battle Rope Waves",
+      "Sled Push",
+      "Sled Pull",
+      "Hill Sprints",
+      "Power Skips",
+      "Bounding",
+      "Plyometric Push-Ups"
+    ],
+    "Speed & Agility Exercises": [
+      "Sprint Intervals",
+      "Acceleration Sprints",
+      "Deceleration Drills",
+      "Shuttle Runs",
+      "5-10-5 Pro Agility Drill",
+      "Ladder Drills",
+      "Cone Drills",
+      "Zig-Zag Runs",
+      "Reaction Sprints",
+      "Change of Direction Drills"
+    ],
+    "Endurance & Conditioning Exercises": [
+      "Long-Distance Running",
+      "Interval Running",
+      "Cycling",
+      "Swimming",
+      "Rowing",
+      "Jump Rope",
+      "Burpees",
+      "Mountain Climbers",
+      "Bear Crawls",
+      "Farmer's Carry"
+    ],
+    "Core Stability Exercises": [
+      "Plank",
+      "Side Plank",
+      "Dead Bug",
+      "Bird Dog",
+      "Hollow Body Hold",
+      "L-Sit Hold",
+      "Ab Wheel Rollout",
+      "Hanging Leg Raise",
+      "Russian Twist",
+      "Pallof Press"
+    ],
+    "Mobility & Flexibility Exercises": [
+      "Dynamic Stretching",
+      "Hip Mobility Drills",
+      "Shoulder Mobility Drills",
+      "Leg Swings",
+      "Arm Circles",
+      "World's Greatest Stretch",
+      "Cat-Cow Stretch",
+      "Deep Squat Hold",
+      "Hamstring Stretch",
+      "Hip Flexor Stretch"
+    ],
+    "Sports-Specific Training Drills": [
+      "Reaction Ball Drills",
+      "Footwork Drills",
+      "Defensive Slides",
+      "Lateral Shuffle",
+      "Sprint Starts",
+      "Jump Training",
+      "Balance Training",
+      "Coordination Drills",
+      "Agility Ladder Training",
+      "Plyometric Training"
+    ]
+  }
+}

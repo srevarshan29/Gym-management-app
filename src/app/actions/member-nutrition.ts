@@ -5,7 +5,9 @@ import { z } from "zod";
 import {
   addMemberNutritionLogEntry,
   removeMemberNutritionLogEntry,
+  updateMemberNutritionLogEntry,
 } from "@/lib/firestore/nutrition-log-operations";
+import { getRepositories, platformContext } from "@/lib/firestore";
 import type { MemberContext } from "@/lib/firestore/context";
 import { isNutritionMealType } from "@/lib/nutrition/meal-types";
 import {
@@ -53,6 +55,16 @@ const removeSchema = z.object({
   logId: z.string().trim().min(1).max(128),
 });
 
+const updateSchema = z.object({
+  logDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/),
+  logId: z.string().trim().min(1).max(128),
+  quantityGrams: z.coerce.number().min(0.1).max(10_000),
+});
+
+const foodIdSchema = z.object({
+  foodId: z.string().trim().min(1).max(128),
+});
+
 export async function searchMemberNutritionFoods(
   payload: unknown,
 ): Promise<ActionResult<NutritionFoodSearchResult[]>> {
@@ -95,6 +107,64 @@ export async function addMemberNutritionLog(
     return actionOk(undefined, day);
   } catch (error) {
     return actionErrorFromUnknown(error, "Could not add food.");
+  }
+}
+
+export async function updateMemberNutritionLog(
+  payload: unknown,
+): Promise<ActionResult<MemberNutritionDayView>> {
+  try {
+    const member = await requireMember();
+    const parsed = updateSchema.safeParse(payload);
+    if (!parsed.success) {
+      return actionError("Invalid quantity.");
+    }
+
+    const day = await updateMemberNutritionLogEntry(
+      memberContextFromSession(member),
+      {
+        logDate: parseNutritionLogDate(parsed.data.logDate),
+        logId: parsed.data.logId,
+        quantityGrams: parsed.data.quantityGrams,
+      },
+    );
+    return actionOk(undefined, day);
+  } catch (error) {
+    return actionErrorFromUnknown(error, "Could not update food.");
+  }
+}
+
+export async function getMemberNutritionFood(
+  payload: unknown,
+): Promise<ActionResult<NutritionFoodSearchResult>> {
+  try {
+    await requireMember();
+    const parsed = foodIdSchema.safeParse(payload);
+    if (!parsed.success) {
+      return actionError("Invalid food.");
+    }
+    const { nutritionFoodCatalog } = getRepositories();
+    const row = await nutritionFoodCatalog.getByFoodId(
+      platformContext,
+      parsed.data.foodId,
+    );
+    if (!row) {
+      return actionError("Food not found.");
+    }
+    return actionOk(undefined, {
+      foodId: row.foodId,
+      name: row.name,
+      category: row.category,
+      caloriesPer100g: row.caloriesPer100g,
+      proteinPer100g: row.proteinPer100g,
+      carbsPer100g: row.carbsPer100g,
+      fatPer100g: row.fatPer100g,
+      fiberPer100g: row.fiberPer100g,
+      servingSizeGrams: row.servingSizeGrams,
+      servingSizeLabel: row.servingSizeLabel,
+    });
+  } catch (error) {
+    return actionErrorFromUnknown(error, "Could not load food.");
   }
 }
 

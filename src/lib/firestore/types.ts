@@ -478,6 +478,12 @@ export type NutritionFoodCatalogDoc = {
   sourceFoodId: string;
   name: string;
   nameLower: string;
+  /** Stable dedup identity (import + search grouping). */
+  canonicalKey?: string;
+  /** Shorter member-facing label for search results. */
+  displayName?: string;
+  /** Higher values rank earlier in food search (0–100 typical). */
+  searchBoost?: number;
   category: string | null;
   caloriesPer100g: number;
   proteinPer100g: number;

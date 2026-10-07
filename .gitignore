@@ -76,6 +76,8 @@ ui-debug.log
 /data/Foundation_Foods.json
 /data/Foundation_Foods.zip
 /data/Foundation_Foods/
+/data/sr_legacy.zip
+/data/sr_legacy_extract/
 
 # tenant reconcile CLI dry-run captures (local only)
 tenant-reconcile-dry-run.txt

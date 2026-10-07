@@ -1,166 +1,125 @@
 /**
- * Import a USDA FoodData Central JSON subset into Firestore nutritionFoodCatalog.
+ * Import USDA FoodData Central JSON into Firestore nutritionFoodCatalog.
  *
- * Download Foundation Foods (recommended) from:
- * https://fdc.nal.usda.gov/download-datasets.html
+ * Download datasets from https://fdc.nal.usda.gov/download-datasets.html
  *
  * Usage:
- *   npm run db:import:usda-nutrition -- --file ./data/Foundation_Foods.json --max 2500
- *   npm run db:import:usda-nutrition -- --file ./data/FNDDS.json --dataset FNDDS --max 1500
+ *   node --env-file=.env --import tsx scripts/import-usda-nutrition-catalog.ts \
+ *     --file ./data/Foundation_Foods.json --file ./data/sr_legacy_extract/FoodData_Central_sr_legacy_food_json_2018-04.json
  *
  * Options:
- *   --file <path>     Required JSON file (array or { FoundationFoods: [] } style)
- *   --max <n>         Max foods to import (default 2000)
- *   --dry-run         Parse only, no writes
- *   --dataset <name>  Attribution dataset label (default Foundation Foods)
+ *   --file <path>     JSON file (repeat for multiple sources)
+ *   --dataset <name>  Dataset label for the most recent --file (default Foundation Foods)
+ *   --max <n>         Max unique canonical foods to write (default unlimited)
+ *   --dry-run         Parse and dedupe only, no writes
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Timestamp } from "firebase-admin/firestore";
 
-import { getFirestoreDb } from "@/lib/firebase/admin";
-import { COLLECTIONS } from "@/lib/firestore/collections";
-import { omitUndefined } from "@/lib/firestore/serialize";
-import type { NutritionFoodCatalogDoc } from "@/lib/firestore/types";
 import {
   buildCatalogSearchPrefixes,
   normalizeCatalogName,
 } from "@/lib/exercises/catalog-search";
+import { getFirestoreDb } from "@/lib/firebase/admin";
+import { COLLECTIONS } from "@/lib/firestore/collections";
+import { omitUndefined } from "@/lib/firestore/serialize";
+import type { NutritionFoodCatalogDoc } from "@/lib/firestore/types";
 import { USDA_FOODDATA_CENTRAL_ATTRIBUTION } from "@/lib/nutrition/attribution";
+import {
+  loadUsdaFoodRowsFromJson,
+  mergeUsdaCatalogSources,
+  type ParsedUsdaCatalogCandidate,
+  usdaImportQualityScore,
+} from "@/lib/nutrition/usda-catalog";
 
-const NUTRIENT_ENERGY_KCAL = 1008;
-const NUTRIENT_PROTEIN = 1003;
-const NUTRIENT_CARBS = 1005;
-const NUTRIENT_FAT = 1004;
-const NUTRIENT_FIBER = 1079;
-
-type UsdaNutrientRow = {
-  nutrient?: { id?: number; name?: string; unitName?: string };
-  amount?: number;
-};
-
-type UsdaFoodPortion = {
-  gramWeight?: number;
-  portionDescription?: string;
-  modifier?: string;
-};
-
-type UsdaFoodRow = {
-  fdcId?: number;
-  description?: string;
-  foodCategory?: string | { description?: string };
-  foodNutrients?: UsdaNutrientRow[];
-  foodPortions?: UsdaFoodPortion[];
-};
+type FileSource = { path: string; dataset: string };
 
 function parseArgs(argv: string[]) {
-  const args = new Map<string, string>();
+  const files: FileSource[] = [];
   let dryRun = false;
+  let max: number | null = null;
+  let pendingDataset = "Foundation Foods";
+
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
     if (token === "--dry-run") {
       dryRun = true;
       continue;
     }
-    if (token?.startsWith("--")) {
+    if (token === "--file") {
       const value = argv[i + 1];
-      if (value && !value.startsWith("--")) {
-        args.set(token.slice(2), value);
-        i += 1;
+      if (!value || value.startsWith("--")) {
+        throw new Error("Missing path after --file");
       }
+      files.push({ path: value, dataset: pendingDataset });
+      i += 1;
+      continue;
+    }
+    if (token === "--dataset") {
+      const value = argv[i + 1];
+      if (!value || value.startsWith("--")) {
+        throw new Error("Missing value after --dataset");
+      }
+      pendingDataset = value;
+      i += 1;
+      continue;
+    }
+    if (token === "--max") {
+      const value = argv[i + 1];
+      if (!value || value.startsWith("--")) {
+        throw new Error("Missing value after --max");
+      }
+      max = Number(value);
+      i += 1;
     }
   }
-  return {
-    file: args.get("file"),
-    max: Number(args.get("max") ?? "2000"),
-    dataset: args.get("dataset") ?? "Foundation Foods",
-    dryRun,
-  };
+
+  return { files, dryRun, max };
 }
 
-function nutrientAmount(
-  rows: UsdaNutrientRow[] | undefined,
-  nutrientId: number,
-): number {
-  if (!rows) return 0;
-  for (const row of rows) {
-    if (row.nutrient?.id === nutrientId && row.amount != null) {
-      return Number(row.amount);
+function buildFoodSearchPrefixes(
+  name: string,
+  displayName: string,
+  aliases: string[],
+): string[] {
+  const prefixes = new Set<string>();
+  for (const label of [name, displayName, ...aliases]) {
+    for (const prefix of buildCatalogSearchPrefixes(label)) {
+      prefixes.add(prefix);
     }
   }
-  return 0;
+  return [...prefixes].sort();
 }
 
-function foodCategoryLabel(food: UsdaFoodRow): string | null {
-  if (!food.foodCategory) return null;
-  if (typeof food.foodCategory === "string") {
-    return food.foodCategory.trim() || null;
-  }
-  return food.foodCategory.description?.trim() || null;
-}
-
-function pickServing(food: UsdaFoodRow): {
-  servingSizeGrams: number | null;
-  servingSizeLabel: string | null;
-} {
-  const portions = food.foodPortions ?? [];
-  const withWeight = portions.filter((p) => p.gramWeight && p.gramWeight > 0);
-  if (withWeight.length === 0) {
-    return { servingSizeGrams: null, servingSizeLabel: null };
-  }
-  const portion = withWeight[0]!;
-  const label =
-    [portion.portionDescription, portion.modifier].filter(Boolean).join(" ") ||
-    null;
-  return {
-    servingSizeGrams: portion.gramWeight ?? null,
-    servingSizeLabel: label,
-  };
-}
-
-function loadFoodRows(filePath: string): UsdaFoodRow[] {
-  const raw = JSON.parse(readFileSync(filePath, "utf8")) as unknown;
-  if (Array.isArray(raw)) return raw as UsdaFoodRow[];
-  if (raw && typeof raw === "object") {
-    const record = raw as Record<string, unknown>;
-    for (const value of Object.values(record)) {
-      if (Array.isArray(value)) return value as UsdaFoodRow[];
-    }
-  }
-  throw new Error("Unrecognized USDA JSON structure.");
-}
-
-function toCatalogDoc(
-  food: UsdaFoodRow,
+function toFirestoreDoc(
+  candidate: ParsedUsdaCatalogCandidate,
   dataset: string,
-): NutritionFoodCatalogDoc | null {
-  const fdcId = food.fdcId;
-  const name = food.description?.trim();
-  if (!fdcId || !name) return null;
-
-  const caloriesPer100g = nutrientAmount(food.foodNutrients, NUTRIENT_ENERGY_KCAL);
-  if (caloriesPer100g <= 0) return null;
-
-  const serving = pickServing(food);
+): NutritionFoodCatalogDoc {
   const now = Timestamp.now();
-  const foodId = `usda:${fdcId}`;
-
   return omitUndefined({
-    foodId,
+    foodId: candidate.foodId,
     source: "USDA",
-    sourceFoodId: String(fdcId),
-    name,
-    nameLower: normalizeCatalogName(name),
-    category: foodCategoryLabel(food),
-    caloriesPer100g,
-    proteinPer100g: nutrientAmount(food.foodNutrients, NUTRIENT_PROTEIN),
-    carbsPer100g: nutrientAmount(food.foodNutrients, NUTRIENT_CARBS),
-    fatPer100g: nutrientAmount(food.foodNutrients, NUTRIENT_FAT),
-    fiberPer100g: nutrientAmount(food.foodNutrients, NUTRIENT_FIBER),
-    servingSizeGrams: serving.servingSizeGrams,
-    servingSizeLabel: serving.servingSizeLabel,
+    sourceFoodId: String(candidate.fdcId),
+    name: candidate.name,
+    nameLower: normalizeCatalogName(candidate.name),
+    canonicalKey: candidate.canonicalKey,
+    displayName: candidate.displayName,
+    searchBoost: candidate.searchBoost,
+    category: candidate.category,
+    caloriesPer100g: candidate.caloriesPer100g,
+    proteinPer100g: candidate.proteinPer100g,
+    carbsPer100g: candidate.carbsPer100g,
+    fatPer100g: candidate.fatPer100g,
+    fiberPer100g: candidate.fiberPer100g,
+    servingSizeGrams: candidate.servingSizeGrams,
+    servingSizeLabel: candidate.servingSizeLabel,
     aliases: [],
-    searchPrefixes: buildCatalogSearchPrefixes(name),
+    searchPrefixes: buildFoodSearchPrefixes(
+      candidate.name,
+      candidate.displayName,
+      [],
+    ),
     sourceAttribution: {
       dataset,
       version: null,
@@ -174,23 +133,46 @@ function toCatalogDoc(
 }
 
 async function main() {
-  const { file, max, dataset, dryRun } = parseArgs(process.argv.slice(2));
-  if (!file) {
-    console.error("Missing --file <path>");
+  const { files, dryRun, max } = parseArgs(process.argv.slice(2));
+  if (files.length === 0) {
+    console.error("Missing --file <path> (repeat for multiple files)");
     process.exit(1);
   }
 
-  const filePath = resolve(process.cwd(), file);
-  const rows = loadFoodRows(filePath);
-  const docs: NutritionFoodCatalogDoc[] = [];
+  const sources = files.map((file) => {
+    const filePath = resolve(process.cwd(), file.path);
+    const raw = JSON.parse(readFileSync(filePath, "utf8")) as unknown;
+    const rows = loadUsdaFoodRowsFromJson(raw);
+    console.log(`Loaded ${rows.length} rows from ${filePath} (${file.dataset})`);
+    return { rows, dataset: file.dataset };
+  });
 
-  for (const row of rows) {
-    if (docs.length >= max) break;
-    const doc = toCatalogDoc(row, dataset);
-    if (doc) docs.push(doc);
+  const merged = mergeUsdaCatalogSources(sources);
+  let winnerRows = merged.winners.sort(
+    (a, b) =>
+      usdaImportQualityScore(b.candidate) - usdaImportQualityScore(a.candidate),
+  );
+
+  if (max != null && max > 0 && winnerRows.length > max) {
+    winnerRows = winnerRows.slice(0, max);
   }
 
-  console.log(`Prepared ${docs.length} foods from ${filePath}`);
+  const docs = winnerRows.map((w) => toFirestoreDoc(w.candidate, w.dataset));
+
+  console.log(
+    JSON.stringify(
+      {
+        uniqueFoods: docs.length,
+        duplicatesSkipped: merged.duplicatesSkipped,
+        lowValueSkipped: merged.lowValueSkipped,
+        invalidSkipped: merged.invalidSkipped,
+        dryRun,
+      },
+      null,
+      2,
+    ),
+  );
+
   if (dryRun) {
     console.log("Dry run — no Firestore writes.");
     return;

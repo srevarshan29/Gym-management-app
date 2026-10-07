@@ -13,12 +13,11 @@ import { COLLECTIONS } from "@/lib/firestore/collections";
 import type { FirestoreContext } from "@/lib/firestore/context";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
 import type { NutritionFoodCatalogDoc } from "@/lib/firestore/types";
-
-const MAX_FOOD_SEARCH_RESULTS = 25;
+import { NUTRITION_SEARCH_CANDIDATE_LIMIT } from "@/lib/nutrition/food-search";
 
 function clampFoodSearchLimit(limit?: number): number {
-  if (limit === undefined || limit <= 0) return MAX_FOOD_SEARCH_RESULTS;
-  return Math.min(limit, MAX_FOOD_SEARCH_RESULTS);
+  if (limit === undefined || limit <= 0) return NUTRITION_SEARCH_CANDIDATE_LIMIT;
+  return Math.min(limit, NUTRITION_SEARCH_CANDIDATE_LIMIT);
 }
 
 /**

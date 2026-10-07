@@ -2,6 +2,12 @@ import { getRepositories, platformContext } from "@/lib/firestore";
 import type { MemberContext } from "@/lib/firestore/context";
 import type { NutritionLogDoc, NutritionMealType } from "@/lib/firestore/types";
 import { sumMacroTotals, type NutritionMacroTotals } from "@/lib/nutrition/calculations";
+import {
+  NUTRITION_SEARCH_CANDIDATE_LIMIT,
+  NUTRITION_SEARCH_RESULT_LIMIT,
+  rankNutritionFoodSearchResults,
+} from "@/lib/nutrition/food-search";
+import { nutritionDisplayNameFromDoc } from "@/lib/nutrition/nutrition-canonical";
 import { NUTRITION_MEAL_TYPES } from "@/lib/nutrition/meal-types";
 
 export type NutritionLogEntryView = {
@@ -117,12 +123,18 @@ export async function searchNutritionFoodCatalog(
   const { nutritionFoodCatalog } = getRepositories();
   const rows = await nutritionFoodCatalog.searchByQuery(platformContext, {
     query,
-    limit: 25,
+    limit: NUTRITION_SEARCH_CANDIDATE_LIMIT,
   });
 
-  return rows.map((row) => ({
+  const ranked = rankNutritionFoodSearchResults(
+    query,
+    rows,
+    NUTRITION_SEARCH_RESULT_LIMIT,
+  );
+
+  return ranked.map((row) => ({
     foodId: row.foodId,
-    name: row.name,
+    name: nutritionDisplayNameFromDoc(row),
     category: row.category,
     caloriesPer100g: row.caloriesPer100g,
     proteinPer100g: row.proteinPer100g,

@@ -11,10 +11,18 @@ import { getRepositories, platformContext } from "@/lib/firestore";
 import type { MemberContext } from "@/lib/firestore/context";
 import { isNutritionMealType } from "@/lib/nutrition/meal-types";
 import {
+  isMemberNutritionFoodFavorite,
+  loadMemberNutritionAddFoodShortcuts,
+  setMemberNutritionFoodFavorite,
+  type NutritionAddFoodShortcuts,
+} from "@/lib/nutrition/member-food-shortcut-operations";
+import {
+  catalogDocToSearchResult,
   loadMemberNutritionDay,
   parseNutritionLogDate,
   searchNutritionFoodCatalog,
   type MemberNutritionDayView,
+  type NutritionFoodDetailResult,
   type NutritionFoodSearchResult,
 } from "@/lib/nutrition/member-day";
 import { requireMember } from "@/lib/member-session";
@@ -63,6 +71,11 @@ const updateSchema = z.object({
 
 const foodIdSchema = z.object({
   foodId: z.string().trim().min(1).max(128),
+});
+
+const favoriteSchema = z.object({
+  foodId: z.string().trim().min(1).max(128),
+  isFavorite: z.boolean(),
 });
 
 export async function searchMemberNutritionFoods(
@@ -136,9 +149,9 @@ export async function updateMemberNutritionLog(
 
 export async function getMemberNutritionFood(
   payload: unknown,
-): Promise<ActionResult<NutritionFoodSearchResult>> {
+): Promise<ActionResult<NutritionFoodDetailResult>> {
   try {
-    await requireMember();
+    const member = await requireMember();
     const parsed = foodIdSchema.safeParse(payload);
     if (!parsed.success) {
       return actionError("Invalid food.");
@@ -151,20 +164,50 @@ export async function getMemberNutritionFood(
     if (!row) {
       return actionError("Food not found.");
     }
+    const isFavorite = await isMemberNutritionFoodFavorite(
+      memberContextFromSession(member),
+      parsed.data.foodId,
+    );
     return actionOk(undefined, {
-      foodId: row.foodId,
-      name: row.name,
-      category: row.category,
-      caloriesPer100g: row.caloriesPer100g,
-      proteinPer100g: row.proteinPer100g,
-      carbsPer100g: row.carbsPer100g,
-      fatPer100g: row.fatPer100g,
-      fiberPer100g: row.fiberPer100g,
-      servingSizeGrams: row.servingSizeGrams,
-      servingSizeLabel: row.servingSizeLabel,
+      ...catalogDocToSearchResult(row),
+      isFavorite,
     });
   } catch (error) {
     return actionErrorFromUnknown(error, "Could not load food.");
+  }
+}
+
+export async function getMemberNutritionAddFoodShortcuts(): Promise<
+  ActionResult<NutritionAddFoodShortcuts>
+> {
+  try {
+    const member = await requireMember();
+    const shortcuts = await loadMemberNutritionAddFoodShortcuts(
+      memberContextFromSession(member),
+    );
+    return actionOk(undefined, shortcuts);
+  } catch (error) {
+    return actionErrorFromUnknown(error, "Could not load shortcuts.");
+  }
+}
+
+export async function setMemberNutritionFoodFavoriteAction(
+  payload: unknown,
+): Promise<ActionResult<{ isFavorite: boolean }>> {
+  try {
+    const member = await requireMember();
+    const parsed = favoriteSchema.safeParse(payload);
+    if (!parsed.success) {
+      return actionError("Invalid favorite request.");
+    }
+    const isFavorite = await setMemberNutritionFoodFavorite(
+      memberContextFromSession(member),
+      parsed.data.foodId,
+      parsed.data.isFavorite,
+    );
+    return actionOk(undefined, { isFavorite });
+  } catch (error) {
+    return actionErrorFromUnknown(error, "Could not update favorite.");
   }
 }
 

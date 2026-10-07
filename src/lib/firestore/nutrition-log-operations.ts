@@ -11,6 +11,7 @@ import {
   parseNutritionLogDate,
   type MemberNutritionDayView,
 } from "@/lib/nutrition/member-day";
+import { recordMemberNutritionFoodLogged } from "@/lib/nutrition/member-food-shortcut-operations";
 
 async function macrosForFoodQuantity(foodId: string, quantityGrams: number) {
   const { nutritionFoodCatalog } = getRepositories();
@@ -51,11 +52,13 @@ export async function addMemberNutritionLogEntry(
   );
 
   if (existing) {
-    return updateMemberNutritionLogEntry(ctx, {
+    const day = await updateMemberNutritionLogEntry(ctx, {
       logDate,
       logId: existing.id,
       quantityGrams: existing.quantityGrams + grams,
     });
+    await recordMemberNutritionFoodLogged(ctx, food.foodId);
+    return day;
   }
 
   const logId = newDocId();
@@ -73,6 +76,7 @@ export async function addMemberNutritionLogEntry(
     fiberGrams: macros.fiberGrams,
   });
 
+  await recordMemberNutritionFoodLogged(ctx, food.foodId);
   return loadMemberNutritionDay(ctx, logDate);
 }
 

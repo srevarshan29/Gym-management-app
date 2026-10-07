@@ -22,6 +22,7 @@ export const COLLECTIONS = {
   staffLoginThrottles: "staffLoginThrottles",
   nutritionFoodCatalog: "nutritionFoodCatalog",
   nutritionLogs: "nutritionLogs",
+  nutritionMemberFoods: "nutritionMemberFoods",
   cardioSessions: "cardioSessions",
   memberGoals: "memberGoals",
   notificationDeliveries: "notificationDeliveries",

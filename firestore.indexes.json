@@ -586,6 +586,25 @@
         { "fieldPath": "memberId", "order": "ASCENDING" },
         { "fieldPath": "logDate", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "nutritionMemberFoods",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gymId", "order": "ASCENDING" },
+        { "fieldPath": "memberId", "order": "ASCENDING" },
+        { "fieldPath": "lastLoggedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "nutritionMemberFoods",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gymId", "order": "ASCENDING" },
+        { "fieldPath": "memberId", "order": "ASCENDING" },
+        { "fieldPath": "isFavorite", "order": "ASCENDING" },
+        { "fieldPath": "favoritedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

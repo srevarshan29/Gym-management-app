@@ -1,13 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, Loader2, Search } from "lucide-react";
+import { ArrowLeft, Loader2, Search, Star } from "lucide-react";
 import { toast } from "sonner";
 
 import {
   addMemberNutritionLog,
+  getMemberNutritionAddFoodShortcuts,
+  getMemberNutritionFood,
   searchMemberNutritionFoods,
+  setMemberNutritionFoodFavoriteAction,
 } from "@/app/actions/member-nutrition";
+import { NutritionFoodPickerRow } from "@/components/member-portal/nutrition/nutrition-food-picker-row";
 import {
   initialAmountForFood,
   NutritionQuantityEditor,
@@ -26,10 +30,7 @@ import type {
   MemberNutritionDayView,
   NutritionFoodSearchResult,
 } from "@/lib/nutrition/member-day";
-import {
-  gramsFromQuantityInput,
-  resolveQuantityMode,
-} from "@/lib/nutrition/quantity-ui";
+import { gramsFromQuantityInput } from "@/lib/nutrition/quantity-ui";
 import { cn } from "@/lib/utils";
 
 const SHEET_CLASS =
@@ -45,6 +46,32 @@ type NutritionAddFoodSheetProps = {
   onDayUpdated: (day: MemberNutritionDayView) => void;
 };
 
+function ShortcutSection({
+  title,
+  foods,
+  onSelect,
+}: {
+  title: string;
+  foods: NutritionFoodSearchResult[];
+  onSelect: (food: NutritionFoodSearchResult) => void;
+}) {
+  if (foods.length === 0) return null;
+  return (
+    <div className="mb-4">
+      <h3 className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </h3>
+      <ul className="space-y-1">
+        {foods.map((food) => (
+          <li key={food.foodId}>
+            <NutritionFoodPickerRow food={food} onSelect={onSelect} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function NutritionAddFoodSheet({
   open,
   onOpenChange,
@@ -56,21 +83,54 @@ export function NutritionAddFoodSheet({
   const [query, setQuery] = React.useState("");
   const [debouncedQuery, setDebouncedQuery] = React.useState("");
   const [results, setResults] = React.useState<NutritionFoodSearchResult[]>([]);
+  const [recent, setRecent] = React.useState<NutritionFoodSearchResult[]>([]);
+  const [favorites, setFavorites] = React.useState<NutritionFoodSearchResult[]>(
+    [],
+  );
+  const [shortcutsLoading, setShortcutsLoading] = React.useState(false);
   const [searching, setSearching] = React.useState(false);
   const [selected, setSelected] =
     React.useState<NutritionFoodSearchResult | null>(null);
+  const [isFavorite, setIsFavorite] = React.useState(false);
   const [amount, setAmount] = React.useState(1);
   const [adding, setAdding] = React.useState(false);
+  const [favoriting, setFavoriting] = React.useState(false);
   const addingRef = React.useRef(false);
+  const favoritingRef = React.useRef(false);
 
-  const mode = selected ? resolveQuantityMode(selected) : "grams";
+  const mode = selected ? resolveFoodQuantityMode(selected) : "grams";
   const mealLabel = NUTRITION_MEAL_LABELS[mealType];
+  const showSearchResults = debouncedQuery.length >= 3;
 
   React.useEffect(() => {
     if (!open) return;
     const handle = window.setTimeout(() => setDebouncedQuery(query.trim()), 300);
     return () => window.clearTimeout(handle);
   }, [open, query]);
+
+  React.useEffect(() => {
+    if (!open) return;
+
+    let cancelled = false;
+    setShortcutsLoading(true);
+    void getMemberNutritionAddFoodShortcuts()
+      .then((result) => {
+        if (cancelled) return;
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+        setRecent(result.data?.recent ?? []);
+        setFavorites(result.data?.favorites ?? []);
+      })
+      .finally(() => {
+        if (!cancelled) setShortcutsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -107,16 +167,57 @@ export function NutritionAddFoodSheet({
       setQuery("");
       setDebouncedQuery("");
       setResults([]);
+      setRecent([]);
+      setFavorites([]);
       setSelected(null);
+      setIsFavorite(false);
       setAmount(1);
       setAdding(false);
+      setFavoriting(false);
     }
   }, [open]);
 
   function selectFood(food: NutritionFoodSearchResult) {
     setSelected(food);
     setAmount(initialAmountForFood(food));
+    setIsFavorite(false);
     setStep("detail");
+    void getMemberNutritionFood({ foodId: food.foodId }).then((result) => {
+      if (result.ok && result.data) {
+        setIsFavorite(result.data.isFavorite);
+      }
+    });
+  }
+
+  async function onToggleFavorite() {
+    if (!selected || favoriting || favoritingRef.current) return;
+    const next = !isFavorite;
+    favoritingRef.current = true;
+    setFavoriting(true);
+    try {
+      const result = await setMemberNutritionFoodFavoriteAction({
+        foodId: selected.foodId,
+        isFavorite: next,
+      });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      const saved = result.data?.isFavorite === true;
+      setIsFavorite(saved);
+
+      const shortcuts = await getMemberNutritionAddFoodShortcuts();
+      if (shortcuts.ok && shortcuts.data) {
+        setRecent(shortcuts.data.recent);
+        setFavorites(shortcuts.data.favorites);
+      }
+    } catch (error) {
+      console.error("[nutrition] favorite failed:", error);
+      toast.error("Could not update favorite.");
+    } finally {
+      favoritingRef.current = false;
+      setFavoriting(false);
+    }
   }
 
   async function onAdd() {
@@ -158,6 +259,8 @@ export function NutritionAddFoodSheet({
     }
   }
 
+  const hasShortcuts = recent.length > 0 || favorites.length > 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -190,38 +293,58 @@ export function NutritionAddFoodSheet({
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2">
-              {searching ? (
-                <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+              {shortcutsLoading ? (
+                <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Searching…
+                  Loading…
                 </div>
-              ) : results.length === 0 ? (
-                <p className="py-10 text-center text-sm text-muted-foreground">
-                  {debouncedQuery.length >= 3
-                    ? "No foods found."
-                    : "Search the catalog to log food."}
-                </p>
               ) : (
-                <ul className="space-y-1">
-                  {results.map((food) => (
-                    <li key={food.foodId}>
-                      <button
-                        type="button"
-                        onClick={() => selectFood(food)}
-                        className="w-full rounded-xl px-3 py-3 text-left active:bg-muted"
-                      >
-                        <p className="font-medium leading-snug">{food.name}</p>
-                        <p className="mt-0.5 text-sm text-muted-foreground">
-                          {food.caloriesPer100g} kcal / 100g
-                          {food.servingSizeLabel
-                            ? ` · ${food.servingSizeLabel}`
-                            : ""}
-                        </p>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <ShortcutSection
+                    title="Recent Foods"
+                    foods={recent}
+                    onSelect={selectFood}
+                  />
+                  <ShortcutSection
+                    title="Favorites"
+                    foods={favorites}
+                    onSelect={selectFood}
+                  />
+                </>
               )}
+
+              {showSearchResults ? (
+                searching ? (
+                  <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Searching…
+                  </div>
+                ) : results.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    No foods found.
+                  </p>
+                ) : (
+                  <div>
+                    <h3 className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Search results
+                    </h3>
+                    <ul className="space-y-1">
+                      {results.map((food) => (
+                        <li key={food.foodId}>
+                          <NutritionFoodPickerRow
+                            food={food}
+                            onSelect={selectFood}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              ) : !shortcutsLoading && !hasShortcuts ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  Search the catalog to log food.
+                </p>
+              ) : null}
             </div>
           </div>
         ) : selected ? (
@@ -237,13 +360,36 @@ export function NutritionAddFoodSheet({
                 <ArrowLeft className="h-4 w-4" />
                 Back to search
               </Button>
-              <p className="text-sm text-muted-foreground">{mealLabel}</p>
-              <h2 className="font-display text-lg font-bold leading-tight">
-                {selected.name}
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {selected.caloriesPer100g} kcal per 100g
-              </p>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm text-muted-foreground">{mealLabel}</p>
+                  <h2 className="font-display text-lg font-bold leading-tight">
+                    {selected.name}
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {selected.caloriesPer100g} kcal per 100g
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-11 w-11 shrink-0"
+                  disabled={favoriting}
+                  aria-pressed={isFavorite}
+                  aria-label={isFavorite ? "Remove favorite" : "Add favorite"}
+                  onClick={() => void onToggleFavorite()}
+                >
+                  <Star
+                    className={cn(
+                      "h-5 w-5",
+                      isFavorite
+                        ? "fill-amber-400 text-amber-500"
+                        : "text-muted-foreground",
+                    )}
+                  />
+                </Button>
+              </div>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">

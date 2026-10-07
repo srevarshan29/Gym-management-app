@@ -11,6 +11,7 @@ import { GymsRepository } from "@/lib/firestore/repositories/gyms";
 import { MembersRepository } from "@/lib/firestore/repositories/members";
 import { NutritionFoodCatalogRepository } from "@/lib/firestore/repositories/nutrition-food-catalog";
 import { NutritionLogsRepository } from "@/lib/firestore/repositories/nutrition-logs";
+import { NutritionMemberFoodsRepository } from "@/lib/firestore/repositories/nutrition-member-foods";
 import { NotificationDeliveriesRepository } from "@/lib/firestore/repositories/notification-deliveries";
 import { PackagesRepository } from "@/lib/firestore/repositories/packages";
 import { PaymentsRepository } from "@/lib/firestore/repositories/payments";
@@ -46,6 +47,7 @@ export type FirestoreRepositories = {
   attendance: AttendanceRepository;
   nutritionFoodCatalog: NutritionFoodCatalogRepository;
   nutritionLogs: NutritionLogsRepository;
+  nutritionMemberFoods: NutritionMemberFoodsRepository;
 };
 
 export function createRepositories(db: Firestore): FirestoreRepositories {
@@ -72,6 +74,7 @@ export function createRepositories(db: Firestore): FirestoreRepositories {
     attendance: new AttendanceRepository(db),
     nutritionFoodCatalog: new NutritionFoodCatalogRepository(db),
     nutritionLogs: new NutritionLogsRepository(db),
+    nutritionMemberFoods: new NutritionMemberFoodsRepository(db),
   };
 }
 
@@ -86,6 +89,7 @@ export { GymsRepository } from "@/lib/firestore/repositories/gyms";
 export { MembersRepository } from "@/lib/firestore/repositories/members";
 export { NutritionFoodCatalogRepository } from "@/lib/firestore/repositories/nutrition-food-catalog";
 export { NutritionLogsRepository } from "@/lib/firestore/repositories/nutrition-logs";
+export { NutritionMemberFoodsRepository } from "@/lib/firestore/repositories/nutrition-member-foods";
 export { PackagesRepository } from "@/lib/firestore/repositories/packages";
 export { PaymentsRepository } from "@/lib/firestore/repositories/payments";
 export { NotificationDeliveriesRepository } from "@/lib/firestore/repositories/notification-deliveries";

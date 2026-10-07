@@ -1,6 +1,10 @@
 import { getRepositories, platformContext } from "@/lib/firestore";
 import type { MemberContext } from "@/lib/firestore/context";
-import type { NutritionLogDoc, NutritionMealType } from "@/lib/firestore/types";
+import type {
+  NutritionFoodCatalogDoc,
+  NutritionLogDoc,
+  NutritionMealType,
+} from "@/lib/firestore/types";
 import { sumMacroTotals, type NutritionMacroTotals } from "@/lib/nutrition/calculations";
 import {
   NUTRITION_SEARCH_CANDIDATE_LIMIT,
@@ -117,6 +121,42 @@ export type NutritionFoodSearchResult = {
   servingSizeLabel: string | null;
 };
 
+export type NutritionFoodDetailResult = NutritionFoodSearchResult & {
+  isFavorite: boolean;
+};
+
+export function catalogDocToSearchResult(
+  row: Pick<
+    NutritionFoodCatalogDoc,
+    | "foodId"
+    | "name"
+    | "nameLower"
+    | "canonicalKey"
+    | "displayName"
+    | "category"
+    | "caloriesPer100g"
+    | "proteinPer100g"
+    | "carbsPer100g"
+    | "fatPer100g"
+    | "fiberPer100g"
+    | "servingSizeGrams"
+    | "servingSizeLabel"
+  >,
+): NutritionFoodSearchResult {
+  return {
+    foodId: row.foodId,
+    name: nutritionDisplayNameFromDoc(row),
+    category: row.category,
+    caloriesPer100g: row.caloriesPer100g,
+    proteinPer100g: row.proteinPer100g,
+    carbsPer100g: row.carbsPer100g,
+    fatPer100g: row.fatPer100g,
+    fiberPer100g: row.fiberPer100g,
+    servingSizeGrams: row.servingSizeGrams,
+    servingSizeLabel: row.servingSizeLabel,
+  };
+}
+
 export async function searchNutritionFoodCatalog(
   query: string,
 ): Promise<NutritionFoodSearchResult[]> {
@@ -132,16 +172,5 @@ export async function searchNutritionFoodCatalog(
     NUTRITION_SEARCH_RESULT_LIMIT,
   );
 
-  return ranked.map((row) => ({
-    foodId: row.foodId,
-    name: nutritionDisplayNameFromDoc(row),
-    category: row.category,
-    caloriesPer100g: row.caloriesPer100g,
-    proteinPer100g: row.proteinPer100g,
-    carbsPer100g: row.carbsPer100g,
-    fatPer100g: row.fatPer100g,
-    fiberPer100g: row.fiberPer100g,
-    servingSizeGrams: row.servingSizeGrams,
-    servingSizeLabel: row.servingSizeLabel,
-  }));
+  return ranked.map((row) => catalogDocToSearchResult(row));
 }

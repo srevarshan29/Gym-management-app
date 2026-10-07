@@ -302,6 +302,15 @@ service cloud.firestore {
         && resource.data.memberId == authMemberId();
     }
 
+    match /nutritionMemberFoods/{docId} {
+      allow read: if staffTenantRead(resource.data.gymId)
+        || (memberOwnsGym(resource.data.gymId)
+            && resource.data.memberId == authMemberId());
+      allow create, update: if memberOwnsGym(request.resource.data.gymId)
+        && request.resource.data.memberId == authMemberId();
+      allow delete: if false;
+    }
+
     match /cardioSessions/{sessionId} {
       allow read: if staffTenantRead(resource.data.gymId)
         || (memberOwnsGym(resource.data.gymId)

@@ -502,6 +502,18 @@ export type NutritionFoodCatalogDoc = {
 
 export type NutritionMealType = "breakfast" | "lunch" | "dinner" | "snack";
 
+/** Per-member nutrition shortcuts (recent log + favorite), keyed by foodId. */
+export type NutritionMemberFoodDoc = {
+  gymId: string;
+  memberId: string;
+  foodId: string;
+  lastLoggedAt: Timestamp | null;
+  isFavorite: boolean;
+  favoritedAt: Timestamp | null;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+};
+
 export type NutritionLogDoc = {
   gymId: string;
   memberId: string;

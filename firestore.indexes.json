@@ -558,6 +558,34 @@
         { "fieldPath": "memberId", "order": "ASCENDING" },
         { "fieldPath": "checkedInAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "nutritionFoodCatalog",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isActive", "order": "ASCENDING" },
+        { "fieldPath": "nameLower", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "nutritionFoodCatalog",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isActive", "order": "ASCENDING" },
+        { "fieldPath": "searchPrefixes", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "nameLower", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "nutritionLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gymId", "order": "ASCENDING" },
+        { "fieldPath": "memberId", "order": "ASCENDING" },
+        { "fieldPath": "logDate", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

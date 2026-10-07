@@ -462,5 +462,57 @@ export type DietPlanDoc = {
   updatedAt: Timestamp;
 };
 
+export type NutritionFoodSource = "USDA";
+
+export type NutritionFoodSourceAttribution = {
+  dataset: string;
+  version: string | null;
+  url: string;
+  license: string;
+};
+
+/** Platform-global read-only food catalog (Admin SDK writes via import scripts). */
+export type NutritionFoodCatalogDoc = {
+  foodId: string;
+  source: NutritionFoodSource;
+  sourceFoodId: string;
+  name: string;
+  nameLower: string;
+  category: string | null;
+  caloriesPer100g: number;
+  proteinPer100g: number;
+  carbsPer100g: number;
+  fatPer100g: number;
+  fiberPer100g: number;
+  servingSizeGrams: number | null;
+  servingSizeLabel: string | null;
+  aliases: string[];
+  searchPrefixes: string[];
+  sourceAttribution: NutritionFoodSourceAttribution;
+  isActive: boolean;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+};
+
+export type NutritionMealType = "breakfast" | "lunch" | "dinner" | "snack";
+
+export type NutritionLogDoc = {
+  gymId: string;
+  memberId: string;
+  /** Calendar day in member-local YYYY-MM-DD. */
+  logDate: string;
+  mealType: NutritionMealType;
+  foodId: string;
+  foodName: string;
+  quantityGrams: number;
+  calories: number;
+  proteinGrams: number;
+  carbsGrams: number;
+  fatGrams: number;
+  fiberGrams: number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+};
+
 /** Every tenant-scoped document carries gymId. */
 export type TenantDocument = { gymId: string };

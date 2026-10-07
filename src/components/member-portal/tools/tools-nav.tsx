@@ -39,6 +39,11 @@ const HUB_LINKS = [
     description: "Your assigned diet plan.",
   },
   {
+    href: "/member/nutrition",
+    title: "Nutrition",
+    description: "Log food and track daily macros.",
+  },
+  {
     href: "/member/events",
     title: "Events",
     description: "Upcoming gym events.",

@@ -38,7 +38,9 @@ function isTabActive(pathname: string, match: (typeof TABS)[number]["match"]) {
         pathname === "/member/diet" ||
         pathname.startsWith("/member/diet/") ||
         pathname === "/member/events" ||
-        pathname.startsWith("/member/events/")
+        pathname.startsWith("/member/events/") ||
+        pathname === "/member/nutrition" ||
+        pathname.startsWith("/member/nutrition/")
       );
     default:
       return false;

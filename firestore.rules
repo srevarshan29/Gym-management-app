@@ -104,6 +104,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /nutritionFoodCatalog/{foodId} {
+      allow read, write: if false;
+    }
+
     match /catalogSyncMeta/{metaId} {
       allow read, write: if false;
     }

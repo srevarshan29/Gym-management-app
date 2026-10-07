@@ -9,6 +9,8 @@ import { GymProfilesRepository } from "@/lib/firestore/repositories/gym-profiles
 import { GymNotificationSettingsRepository } from "@/lib/firestore/repositories/gym-notification-settings";
 import { GymsRepository } from "@/lib/firestore/repositories/gyms";
 import { MembersRepository } from "@/lib/firestore/repositories/members";
+import { NutritionFoodCatalogRepository } from "@/lib/firestore/repositories/nutrition-food-catalog";
+import { NutritionLogsRepository } from "@/lib/firestore/repositories/nutrition-logs";
 import { NotificationDeliveriesRepository } from "@/lib/firestore/repositories/notification-deliveries";
 import { PackagesRepository } from "@/lib/firestore/repositories/packages";
 import { PaymentsRepository } from "@/lib/firestore/repositories/payments";
@@ -42,6 +44,8 @@ export type FirestoreRepositories = {
   workoutPlans: WorkoutPlansRepository;
   workoutSessions: WorkoutSessionsRepository;
   attendance: AttendanceRepository;
+  nutritionFoodCatalog: NutritionFoodCatalogRepository;
+  nutritionLogs: NutritionLogsRepository;
 };
 
 export function createRepositories(db: Firestore): FirestoreRepositories {
@@ -66,6 +70,8 @@ export function createRepositories(db: Firestore): FirestoreRepositories {
     workoutPlans: new WorkoutPlansRepository(db),
     workoutSessions: new WorkoutSessionsRepository(db),
     attendance: new AttendanceRepository(db),
+    nutritionFoodCatalog: new NutritionFoodCatalogRepository(db),
+    nutritionLogs: new NutritionLogsRepository(db),
   };
 }
 
@@ -78,6 +84,8 @@ export { GymNotificationSettingsRepository } from "@/lib/firestore/repositories/
 export { GymProfilesRepository } from "@/lib/firestore/repositories/gym-profiles";
 export { GymsRepository } from "@/lib/firestore/repositories/gyms";
 export { MembersRepository } from "@/lib/firestore/repositories/members";
+export { NutritionFoodCatalogRepository } from "@/lib/firestore/repositories/nutrition-food-catalog";
+export { NutritionLogsRepository } from "@/lib/firestore/repositories/nutrition-logs";
 export { PackagesRepository } from "@/lib/firestore/repositories/packages";
 export { PaymentsRepository } from "@/lib/firestore/repositories/payments";
 export { NotificationDeliveriesRepository } from "@/lib/firestore/repositories/notification-deliveries";

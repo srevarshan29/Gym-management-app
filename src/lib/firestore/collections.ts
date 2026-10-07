@@ -20,6 +20,7 @@ export const COLLECTIONS = {
   workoutSessions: "workoutSessions",
   dietPlans: "dietPlans",
   staffLoginThrottles: "staffLoginThrottles",
+  nutritionFoodCatalog: "nutritionFoodCatalog",
   nutritionLogs: "nutritionLogs",
   cardioSessions: "cardioSessions",
   memberGoals: "memberGoals",

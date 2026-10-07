@@ -1,6 +1,9 @@
+import { cache } from "react";
+
 import { getRepositories } from "@/lib/firestore";
 import type { MemberContext } from "@/lib/firestore/context";
-import type { WorkoutPlanDoc, WorkoutPlanExerciseEmbedded } from "@/lib/firestore/types";
+import type { DocWithId } from "@/lib/firestore/repositories/base";
+import type { WorkoutPlanDoc, WorkoutSessionDoc } from "@/lib/firestore/types";
 import {
   buildPlanExerciseMap,
   collectLibraryExerciseIdsFromPlan,
@@ -15,6 +18,7 @@ import {
   resolveSessionExerciseContext,
 } from "@/lib/workout-tracking/session-exercise-identity";
 import { getExerciseLibraryMapByIds } from "@/lib/workout-tracking/exercise-library";
+import type { ExerciseLibraryMap } from "@/lib/workout-tracking/session-plan";
 import { parseTargetReps } from "@/lib/workout-tracking/progress-format";
 import type {
   ExerciseProgressData,
@@ -31,9 +35,69 @@ export type {
   ProgressGrouping,
 } from "@/lib/workout-tracking/types";
 
+export type MemberExerciseProgressData = ExerciseProgressData & {
+  pointsByGrouping: Record<ProgressGrouping, ExerciseProgressPoint[]>;
+};
+
+type SessionMaxEntry = {
+  date: Date;
+  maxWeightKg: number | null;
+  maxDurationSeconds: number | null;
+};
+
+type MemberProgressContext = {
+  plan: DocWithId<WorkoutPlanDoc> | null;
+  completedSessions: DocWithId<WorkoutSessionDoc>[];
+  library: ExerciseLibraryMap;
+  planExerciseMap: ReturnType<typeof buildPlanExerciseMap> | null;
+};
+
 function memberContext(gymId: string, memberId: string): MemberContext {
   return { kind: "member", gymId, memberId };
 }
+
+const loadMemberProgressContext = (
+  typeof cache === "function" ? cache : <T extends (...args: never[]) => unknown>(fn: T) => fn
+)(
+  async (
+    tenantGymId: string,
+    memberId: string,
+  ): Promise<MemberProgressContext> => {
+    const ctx = memberContext(tenantGymId, memberId);
+    const { workoutPlans, workoutSessions } = getRepositories();
+
+    const [plan, completedSessions] = await Promise.all([
+      workoutPlans.findByMemberId(ctx, tenantGymId, memberId),
+      workoutSessions.listCompletedForMember(ctx, tenantGymId, memberId),
+    ]);
+
+    const library = plan
+      ? await getExerciseLibraryMapByIds(
+          tenantGymId,
+          [
+            ...new Set([
+              ...collectLibraryExerciseIdsFromPlan(plan),
+              ...completedSessions.flatMap((session) =>
+                collectLibraryExerciseIdsFromSessionExercises(
+                  session.exercises,
+                ),
+              ),
+            ]),
+          ],
+        )
+      : new Map();
+
+    return {
+      plan,
+      completedSessions,
+      library,
+      planExerciseMap: plan ? buildPlanExerciseMap(plan) : null,
+    };
+  },
+) as (
+  tenantGymId: string,
+  memberId: string,
+) => Promise<MemberProgressContext>;
 
 function bucketKey(date: Date, grouping: ProgressGrouping): string {
   const year = date.getFullYear();
@@ -74,73 +138,68 @@ function parseExerciseKey(exerciseKey: string): {
   };
 }
 
-export async function getExerciseProgressData(
-  tenantGymId: string,
-  memberId: string,
-  exerciseKey: string,
-  grouping: ProgressGrouping = "weekly",
-): Promise<ExerciseProgressData | null> {
-  const { exerciseId, customName } = parseExerciseKey(exerciseKey);
-  if (!exerciseId && (customName == null || customName === "")) {
-    return {
-      exerciseName: customName ?? "Exercise",
-      trackingType: "WEIGHTED",
-      targetWeightKg: null,
-      points: [],
-    };
+function bucketSessionMax(
+  sessionMax: Map<string, SessionMaxEntry>,
+  displayTrackingType: ExerciseTrackingType,
+  grouping: ProgressGrouping,
+): ExerciseProgressPoint[] {
+  const bucketed = new Map<string, SessionMaxEntry>();
+
+  for (const entry of sessionMax.values()) {
+    const key = bucketKey(entry.date, grouping);
+    const current = bucketed.get(key);
+    const entryValue =
+      displayTrackingType === "TIME"
+        ? (entry.maxDurationSeconds ?? 0)
+        : (entry.maxWeightKg ?? 0);
+    const currentValue =
+      displayTrackingType === "TIME"
+        ? (current?.maxDurationSeconds ?? 0)
+        : (current?.maxWeightKg ?? 0);
+    if (!current || entryValue > currentValue) {
+      bucketed.set(key, entry);
+    }
   }
 
-  const ctx = memberContext(tenantGymId, memberId);
-  const { workoutPlans, workoutSessions } = getRepositories();
+  return [...bucketed.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => ({
+      label: bucketLabel(key, grouping),
+      maxWeightKg: value.maxWeightKg,
+      maxDurationSeconds: value.maxDurationSeconds,
+      sessionDate: value.date.toISOString(),
+    }));
+}
 
-  const [plan, completedSessions] = await Promise.all([
-    workoutPlans.findByMemberId(ctx, tenantGymId, memberId),
-    workoutSessions.listCompletedForMember(ctx, tenantGymId, memberId),
-  ]);
+function emptyProgressPayload(
+  exerciseName: string,
+  trackingType: ExerciseTrackingType,
+  targetWeightKg: number | null,
+): MemberExerciseProgressData {
+  return {
+    exerciseName,
+    trackingType,
+    targetWeightKg,
+    points: [],
+    pointsByGrouping: { weekly: [], monthly: [] },
+  };
+}
 
-  const library = plan
-    ? await getExerciseLibraryMapByIds(
-        tenantGymId,
-        [
-          ...new Set([
-            ...collectLibraryExerciseIdsFromPlan(plan),
-            ...completedSessions.flatMap((session) =>
-              collectLibraryExerciseIdsFromSessionExercises(session.exercises),
-            ),
-          ]),
-        ],
-      )
-    : new Map();
-
-  const planMatches = plan
-    ? findPlanExercisesByIdentity(plan, exerciseId, customName)
-    : [];
-  const planExercise = planMatches[0] ?? null;
-
-  const exerciseName = planExercise
-    ? planExerciseDisplayName(planExercise, library)
-    : (customName ?? "Exercise");
-  const trackingType: ExerciseTrackingType = resolveProgressTrackingType(
-    planMatches,
-    library,
-    exerciseId,
-  );
-
-  if (!plan || completedSessions.length === 0) {
-    return {
-      exerciseName,
-      trackingType,
-      targetWeightKg: planExercise?.targetWeightKg ?? null,
-      points: [],
-    };
-  }
-
-  const planExerciseMap = buildPlanExerciseMap(plan);
+function scanSessionMaxForExercise(
+  context: MemberProgressContext,
+  exerciseId: string | null,
+  customName: string | null,
+): {
+  sessionMax: Map<string, SessionMaxEntry>;
+  observedSessionTypes: ExerciseTrackingType[];
+} {
+  const { plan, completedSessions, library, planExerciseMap } = context;
+  const sessionMax = new Map<string, SessionMaxEntry>();
   const observedSessionTypes: ExerciseTrackingType[] = [];
-  const sessionMax = new Map<
-    string,
-    { date: Date; maxWeightKg: number | null; maxDurationSeconds: number | null }
-  >();
+
+  if (!plan || !planExerciseMap || completedSessions.length === 0) {
+    return { sessionMax, observedSessionTypes };
+  }
 
   for (const session of completedSessions) {
     const sessionDate =
@@ -230,6 +289,48 @@ export async function getExerciseProgressData(
     }
   }
 
+  return { sessionMax, observedSessionTypes };
+}
+
+function buildExerciseProgressFromContext(
+  context: MemberProgressContext,
+  exerciseKey: string,
+  grouping: ProgressGrouping,
+): MemberExerciseProgressData | null {
+  const { exerciseId, customName } = parseExerciseKey(exerciseKey);
+  if (!exerciseId && (customName == null || customName === "")) {
+    return emptyProgressPayload(customName ?? "Exercise", "WEIGHTED", null);
+  }
+
+  const { plan, library } = context;
+  const planMatches = plan
+    ? findPlanExercisesByIdentity(plan, exerciseId, customName)
+    : [];
+  const planExercise = planMatches[0] ?? null;
+
+  const exerciseName = planExercise
+    ? planExerciseDisplayName(planExercise, library)
+    : (customName ?? "Exercise");
+  const trackingType: ExerciseTrackingType = resolveProgressTrackingType(
+    planMatches,
+    library,
+    exerciseId,
+  );
+
+  if (!plan || context.completedSessions.length === 0) {
+    return emptyProgressPayload(
+      exerciseName,
+      trackingType,
+      planExercise?.targetWeightKg ?? null,
+    );
+  }
+
+  const { sessionMax, observedSessionTypes } = scanSessionMaxForExercise(
+    context,
+    exerciseId,
+    customName,
+  );
+
   const displayTrackingType = resolveProgressTrackingType(
     planMatches,
     library,
@@ -238,84 +339,41 @@ export async function getExerciseProgressData(
   );
 
   if (sessionMax.size === 0) {
-    return {
+    return emptyProgressPayload(
       exerciseName,
-      trackingType: displayTrackingType,
-      targetWeightKg: planExercise?.targetWeightKg ?? null,
-      points: [],
-    };
+      displayTrackingType,
+      planExercise?.targetWeightKg ?? null,
+    );
   }
 
-  const bucketed = new Map<
-    string,
-    { date: Date; maxWeightKg: number | null; maxDurationSeconds: number | null }
-  >();
-
-  for (const entry of sessionMax.values()) {
-    const key = bucketKey(entry.date, grouping);
-    const current = bucketed.get(key);
-    const entryValue =
-      displayTrackingType === "TIME"
-        ? (entry.maxDurationSeconds ?? 0)
-        : (entry.maxWeightKg ?? 0);
-    const currentValue =
-      displayTrackingType === "TIME"
-        ? (current?.maxDurationSeconds ?? 0)
-        : (current?.maxWeightKg ?? 0);
-    if (!current || entryValue > currentValue) {
-      bucketed.set(key, entry);
-    }
-  }
-
-  const points: ExerciseProgressPoint[] = [...bucketed.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => ({
-      label: bucketLabel(key, grouping),
-      maxWeightKg: value.maxWeightKg,
-      maxDurationSeconds: value.maxDurationSeconds,
-      sessionDate: value.date.toISOString(),
-    }));
+  const pointsByGrouping: Record<ProgressGrouping, ExerciseProgressPoint[]> = {
+    weekly: bucketSessionMax(sessionMax, displayTrackingType, "weekly"),
+    monthly: bucketSessionMax(sessionMax, displayTrackingType, "monthly"),
+  };
 
   return {
     exerciseName,
     trackingType: displayTrackingType,
     targetWeightKg: planExercise?.targetWeightKg ?? null,
-    points,
+    points: pointsByGrouping[grouping],
+    pointsByGrouping,
   };
 }
 
-export async function getMemberExerciseOptions(
-  tenantGymId: string,
-  memberId: string,
-): Promise<ExerciseProgressOption[]> {
-  const ctx = memberContext(tenantGymId, memberId);
-  const { workoutPlans, workoutSessions } = getRepositories();
+function buildMemberExerciseOptionsFromContext(
+  context: MemberProgressContext,
+): ExerciseProgressOption[] {
+  const { plan, completedSessions, library, planExerciseMap } = context;
+  if (!plan || !planExerciseMap) return [];
 
-  const [plan, completedSessions] = await Promise.all([
-    workoutPlans.findByMemberId(ctx, tenantGymId, memberId),
-    workoutSessions.listCompletedForMember(ctx, tenantGymId, memberId),
-  ]);
-  if (!plan) return [];
-
-  const library = await getExerciseLibraryMapByIds(
-    tenantGymId,
-    [
-      ...new Set([
-        ...collectLibraryExerciseIdsFromPlan(plan),
-        ...completedSessions.flatMap((session) =>
-          collectLibraryExerciseIdsFromSessionExercises(session.exercises),
-        ),
-      ]),
-    ],
-  );
-
-  const planExerciseMap = buildPlanExerciseMap(plan);
   const seen = new Set<string>();
   const options: ExerciseProgressOption[] = [];
   const days = [...(plan.days ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
 
   for (const day of days) {
-    const exercises = [...day.exercises].sort((a, b) => a.sortOrder - b.sortOrder);
+    const exercises = [...day.exercises].sort(
+      (a, b) => a.sortOrder - b.sortOrder,
+    );
     for (const row of exercises) {
       const option = row.exerciseId
         ? {
@@ -336,27 +394,27 @@ export async function getMemberExerciseOptions(
     for (const sessionExercise of session.exercises) {
       if (sessionExercise.sets.length === 0) continue;
 
-      const context = resolveSessionExerciseContext(
+      const exerciseContext = resolveSessionExerciseContext(
         sessionExercise,
         planExerciseMap,
       );
-      if (!context) continue;
+      if (!exerciseContext) continue;
 
-      const option = context.exerciseId
+      const option = exerciseContext.exerciseId
         ? {
-            key: context.exerciseId,
-            label: planExerciseDisplayName(context, library),
+            key: exerciseContext.exerciseId,
+            label: planExerciseDisplayName(exerciseContext, library),
           }
         : {
-            key: `custom:${context.customName ?? "Custom exercise"}`,
-            label: context.customName ?? "Custom exercise",
+            key: `custom:${exerciseContext.customName ?? "Custom exercise"}`,
+            label: exerciseContext.customName ?? "Custom exercise",
           };
       if (seen.has(option.key)) continue;
       if (
         findPlanExercisesByIdentity(
           plan,
-          context.exerciseId,
-          context.customName,
+          exerciseContext.exerciseId,
+          exerciseContext.customName,
         ).length > 0
       ) {
         continue;
@@ -367,4 +425,62 @@ export async function getMemberExerciseOptions(
   }
 
   return options;
+}
+
+export async function loadMemberWorkoutProgressPage(
+  tenantGymId: string,
+  memberId: string,
+  exerciseKey: string | undefined,
+  grouping: ProgressGrouping,
+): Promise<{
+  exercises: ExerciseProgressOption[];
+  exerciseKey: string | undefined;
+  progress: MemberExerciseProgressData | null;
+}> {
+  const context = await loadMemberProgressContext(tenantGymId, memberId);
+  const exercises = buildMemberExerciseOptionsFromContext(context);
+
+  const resolvedExerciseKey =
+    exerciseKey && exercises.some((e) => e.key === exerciseKey)
+      ? exerciseKey
+      : exercises[0]?.key;
+
+  const progress = resolvedExerciseKey
+    ? buildExerciseProgressFromContext(
+        context,
+        resolvedExerciseKey,
+        grouping,
+      )
+    : null;
+
+  return {
+    exercises,
+    exerciseKey: resolvedExerciseKey,
+    progress,
+  };
+}
+
+export async function getExerciseProgressData(
+  tenantGymId: string,
+  memberId: string,
+  exerciseKey: string,
+  grouping: ProgressGrouping = "weekly",
+): Promise<ExerciseProgressData | null> {
+  const context = await loadMemberProgressContext(tenantGymId, memberId);
+  const progress = buildExerciseProgressFromContext(
+    context,
+    exerciseKey,
+    grouping,
+  );
+  if (!progress) return null;
+  const { pointsByGrouping: _ignored, ...data } = progress;
+  return data;
+}
+
+export async function getMemberExerciseOptions(
+  tenantGymId: string,
+  memberId: string,
+): Promise<ExerciseProgressOption[]> {
+  const context = await loadMemberProgressContext(tenantGymId, memberId);
+  return buildMemberExerciseOptionsFromContext(context);
 }

@@ -1,8 +1,5 @@
 import { requireMember } from "@/lib/member-session";
-import {
-  getMemberExerciseOptions,
-  getExerciseProgressData,
-} from "@/lib/workout-tracking/progress";
+import { loadMemberWorkoutProgressPage } from "@/lib/workout-tracking/progress";
 import { MemberProgressPanel } from "@/components/member-portal/workout/member-progress-panel";
 
 export default async function MemberWorkoutProgressPage({
@@ -12,28 +9,15 @@ export default async function MemberWorkoutProgressPage({
 }) {
   const session = await requireMember();
 
-  const exercises = await getMemberExerciseOptions(
-    session.gymId,
-    session.memberId,
-  );
-
-  const exerciseKey =
-    searchParams.exercise &&
-    exercises.some((e) => e.key === searchParams.exercise)
-      ? searchParams.exercise
-      : exercises[0]?.key;
-
   const grouping =
     searchParams.grouping === "monthly" ? "monthly" : ("weekly" as const);
 
-  const progress = exerciseKey
-    ? await getExerciseProgressData(
-        session.gymId,
-        session.memberId,
-        exerciseKey,
-        grouping,
-      )
-    : null;
+  const { exercises, exerciseKey, progress } = await loadMemberWorkoutProgressPage(
+    session.gymId,
+    session.memberId,
+    searchParams.exercise,
+    grouping,
+  );
 
   return (
     <MemberProgressPanel

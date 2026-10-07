@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft, Dumbbell, TrendingUp } from "lucide-react";
 
@@ -24,8 +25,8 @@ import {
   progressMetricLabel,
   progressPointValue,
 } from "@/lib/workout-tracking/progress-format";
+import type { MemberExerciseProgressData } from "@/lib/workout-tracking/progress";
 import type {
-  ExerciseProgressData,
   ExerciseProgressPoint,
   ProgressGrouping,
 } from "@/lib/workout-tracking/types";
@@ -35,21 +36,21 @@ const CARD_CLASS =
 
 function pointValue(
   point: ExerciseProgressPoint,
-  trackingType: ExerciseProgressData["trackingType"],
+  trackingType: MemberExerciseProgressData["trackingType"],
 ): number | null {
   return progressPointValue(point, trackingType);
 }
 
 function formatValue(
   value: number,
-  trackingType: ExerciseProgressData["trackingType"],
+  trackingType: MemberExerciseProgressData["trackingType"],
 ): string {
   return formatProgressValue(value, trackingType);
 }
 
 function deriveSummary(
   points: ExerciseProgressPoint[],
-  trackingType: ExerciseProgressData["trackingType"],
+  trackingType: MemberExerciseProgressData["trackingType"],
   grouping: ProgressGrouping,
 ): {
   currentMax: number;
@@ -85,7 +86,7 @@ type MemberProgressPanelProps = {
   exercises: { key: string; label: string }[];
   initialExerciseKey?: string;
   initialGrouping?: ProgressGrouping;
-  progress: ExerciseProgressData | null;
+  progress: MemberExerciseProgressData | null;
 };
 
 export function MemberProgressPanel({
@@ -96,7 +97,7 @@ export function MemberProgressPanel({
 }: MemberProgressPanelProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { navigate, isLocked } = useSharedNavigationLock();
+  const { navigate, pendingHref } = useSharedNavigationLock();
 
   const exerciseFromUrl = searchParams.get("exercise");
   const groupingFromUrl = searchParams.get("grouping");
@@ -106,28 +107,56 @@ export function MemberProgressPanel({
       ? exerciseFromUrl
       : initialExerciseKey ?? exercises[0]?.key ?? "";
 
-  const grouping: ProgressGrouping =
+  const groupingFromUrlOrInitial: ProgressGrouping =
     groupingFromUrl === "monthly" || groupingFromUrl === "weekly"
       ? groupingFromUrl
       : initialGrouping;
 
-  function updateParams(patch: Record<string, string>) {
-    if (isLocked) return;
+  const [grouping, setGrouping] = React.useState<ProgressGrouping>(
+    groupingFromUrlOrInitial,
+  );
+
+  React.useEffect(() => {
+    setGrouping(groupingFromUrlOrInitial);
+  }, [groupingFromUrlOrInitial]);
+
+  const exerciseNavPending =
+    pendingHref != null && pendingHref.startsWith(pathname);
+
+  function navigateExercise(value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(patch)) {
-      params.set(key, value);
+    params.set("exercise", value);
+    if (grouping !== "weekly") {
+      params.set("grouping", grouping);
     }
     const query = params.toString();
     const href = query ? `${pathname}?${query}` : pathname;
-    navigate(href, undefined, { replace: true, refresh: true });
+    navigate(href, undefined, { replace: true });
   }
 
-  const summary =
-    progress && progress.points.length > 0
-      ? deriveSummary(progress.points, progress.trackingType, grouping)
-      : null;
+  function setGroupingAndUrl(next: ProgressGrouping) {
+    setGrouping(next);
+    const params = new URLSearchParams(searchParams.toString());
+    if (exerciseKey) {
+      params.set("exercise", exerciseKey);
+    }
+    if (next === "weekly") {
+      params.delete("grouping");
+    } else {
+      params.set("grouping", next);
+    }
+    const query = params.toString();
+    const url = query ? `${pathname}?${query}` : pathname;
+    window.history.replaceState(window.history.state, "", url);
+  }
 
-  const chartPoints = progress?.points ?? [];
+  const chartPoints =
+    progress?.pointsByGrouping[grouping] ?? progress?.points ?? [];
+
+  const summary =
+    progress && chartPoints.length > 0
+      ? deriveSummary(chartPoints, progress.trackingType, grouping)
+      : null;
 
   return (
     <div className="space-y-4">
@@ -150,8 +179,8 @@ export function MemberProgressPanel({
         <>
           <Select
             value={exerciseKey}
-            disabled={isLocked}
-            onValueChange={(value) => updateParams({ exercise: value })}
+            disabled={exerciseNavPending}
+            onValueChange={navigateExercise}
           >
             <SelectTrigger className="h-11 w-full rounded-full border-0 bg-card/90 px-4 shadow-soft ring-1 ring-border/70">
               <span className="flex min-w-0 items-center gap-2">
@@ -217,17 +246,15 @@ export function MemberProgressPanel({
           <div className="grid grid-cols-2 gap-2">
             <Button
               type="button"
-              disabled={isLocked}
               variant={grouping === "weekly" ? "default" : "secondary"}
-              onClick={() => updateParams({ grouping: "weekly" })}
+              onClick={() => setGroupingAndUrl("weekly")}
             >
               Weekly
             </Button>
             <Button
               type="button"
-              disabled={isLocked}
               variant={grouping === "monthly" ? "default" : "secondary"}
-              onClick={() => updateParams({ grouping: "monthly" })}
+              onClick={() => setGroupingAndUrl("monthly")}
             >
               Monthly
             </Button>

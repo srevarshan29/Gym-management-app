@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Calculator, Dumbbell, Home, User } from "lucide-react";
 
 import { useSharedNavigationLock } from "@/components/navigation/navigation-lock-provider";
+import { hrefRouteKey } from "@/hooks/use-navigation-lock";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -46,32 +47,33 @@ function isTabActive(pathname: string, match: (typeof TABS)[number]["match"]) {
 
 export function MemberPortalNav() {
   const pathname = usePathname();
-  const { navigate, isLocked } = useSharedNavigationLock();
+  const { navigate, pendingHref } = useSharedNavigationLock();
 
   return (
     <nav
-      className={cn(
-        "fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur",
-        isLocked && "pointer-events-none",
-      )}
-      aria-busy={isLocked}
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
+      aria-busy={pendingHref !== null}
     >
       <div className="mx-auto grid max-w-2xl grid-cols-4">
         {TABS.map((tab) => {
           const active = isTabActive(pathname, tab.match);
+          const targetKey = hrefRouteKey(tab.href);
+          const isNavigating = pendingHref === targetKey;
           const Icon = tab.icon;
           return (
             <Link
               key={tab.href}
               href={tab.href}
+              prefetch={true}
               onClick={(e) => navigate(tab.href, e)}
-              aria-disabled={isLocked}
+              aria-busy={isNavigating}
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex flex-col items-center gap-1 px-2 py-2.5 text-xs font-medium transition-colors",
                 active
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground",
+                isNavigating && "opacity-70",
               )}
             >
               <Icon className="h-5 w-5" />

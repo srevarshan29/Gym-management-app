@@ -33,6 +33,7 @@ export function LockedLink({
   return (
     <Link
       href={href}
+      prefetch={true}
       onClick={(e) => {
         onClick?.(e);
         if (!e.defaultPrevented) {

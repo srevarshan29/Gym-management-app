@@ -1,14 +1,20 @@
-import { cache } from "react";
+import { unstable_cache } from "next/cache";
 
 import { getRepositories, platformContext } from "@/lib/firestore";
 import { requireMember } from "@/lib/member-session";
 import { MemberPortalShell } from "@/components/member-portal/member-portal-shell";
 
-const getMemberPortalGymName = cache(async (gymId: string) => {
-  const { gyms } = getRepositories();
-  const gym = await gyms.getById(platformContext, gymId);
-  return gym?.name ?? "Your gym";
-});
+function getMemberPortalGymName(gymId: string) {
+  return unstable_cache(
+    async () => {
+      const { gyms } = getRepositories();
+      const gym = await gyms.getById(platformContext, gymId);
+      return gym?.name ?? "Your gym";
+    },
+    ["member-portal-gym-name", gymId],
+    { revalidate: 300 },
+  )();
+}
 
 export default async function MemberPortalLayout({
   children,

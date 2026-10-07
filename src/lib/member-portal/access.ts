@@ -1,7 +1,9 @@
+import { cache } from "react";
+
 import { getRepositories, platformContext } from "@/lib/firestore";
 
 /** Direct Firestore read scoped by session memberId (not tenant middleware). */
-export async function getMemberPortalRow(
+export const getMemberPortalRow = cache(async function getMemberPortalRow(
   tenantGymId: string,
   memberId: string,
 ) {
@@ -28,6 +30,6 @@ export async function getMemberPortalRow(
     weightKg: member.weightKg,
     portalEnabledAt: member.portalEnabledAt,
   };
-}
+});
 
 export { getGymByRegistrationToken } from "@/lib/registration";

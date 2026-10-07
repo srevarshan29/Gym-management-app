@@ -5,6 +5,7 @@ import { ChevronRight } from "lucide-react";
 
 import { LockedLink } from "@/components/navigation/locked-link";
 import { useSharedNavigationLock } from "@/components/navigation/navigation-lock-provider";
+import { hrefRouteKey } from "@/hooks/use-navigation-lock";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -53,18 +54,21 @@ function ToolsTabLink({
   active: boolean;
   children: React.ReactNode;
 }) {
-  const { navigate, isLocked } = useSharedNavigationLock();
+  const { navigate, pendingHref } = useSharedNavigationLock();
+  const isNavigating = pendingHref === hrefRouteKey(href);
 
   return (
     <Link
       href={href}
+      prefetch={true}
       onClick={(e) => navigate(href, e)}
-      aria-disabled={isLocked}
+      aria-busy={isNavigating}
       className={cn(
         "shrink-0 rounded-t-lg px-3 py-2 text-sm font-medium transition-colors",
         active
           ? "bg-primary/15 text-primary"
           : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+        isNavigating && "opacity-70",
       )}
     >
       {children}
@@ -73,15 +77,12 @@ function ToolsTabLink({
 }
 
 export function ToolsSubNav({ activeHref }: { activeHref?: string }) {
-  const { isLocked } = useSharedNavigationLock();
+  const { pendingHref } = useSharedNavigationLock();
 
   return (
     <nav
-      className={cn(
-        "flex gap-1 overflow-x-auto border-b border-border pb-px",
-        isLocked && "pointer-events-none",
-      )}
-      aria-busy={isLocked}
+      className="flex gap-1 overflow-x-auto border-b border-border pb-px"
+      aria-busy={pendingHref !== null}
     >
       <ToolsTabLink href="/member/tools" active={activeHref === "/member/tools"}>
         All tools

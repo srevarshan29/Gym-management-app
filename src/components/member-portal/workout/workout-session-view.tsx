@@ -17,7 +17,6 @@ import { SessionTimer } from "@/components/member-portal/workout/session-timer";
 import { LockedLink } from "@/components/navigation/locked-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useActionLock } from "@/hooks/use-action-lock";
 import { parseTargetReps } from "@/lib/workout-tracking/progress-format";
 import { cn } from "@/lib/utils";
 import type {
@@ -119,8 +118,12 @@ export function WorkoutSessionView({
   previousSets,
 }: WorkoutSessionViewProps) {
   const router = useRouter();
-  const { run, isPending: pending } = useActionLock();
+  const [, startTransition] = React.useTransition();
   const [session, setSession] = React.useState(initialSession);
+  const [savingSetKeys, setSavingSetKeys] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+  const [completing, setCompleting] = React.useState(false);
   const [exerciseIndex, setExerciseIndex] = React.useState(() =>
     firstIncompleteIndex(initialSession),
   );
@@ -163,8 +166,8 @@ export function WorkoutSessionView({
   const isBodyweight = exercise.trackingType === "BODYWEIGHT";
 
   async function onLogSet(setNumber: number) {
-    if (pending) return;
     const key = `${exercise.id}-${setNumber}`;
+    if (savingSetKeys.has(key)) return;
     const rawValue = setValues[key];
 
     const payload: {
@@ -209,52 +212,73 @@ export function WorkoutSessionView({
       }
     }
 
-    await run(async () => {
-      try {
-        const result = await logWorkoutSet(payload);
-        if (!result.ok) {
-          toast.error(result.error);
-          return;
-        }
-        if (result.ok && result.data) {
-          const { sessionExerciseId, set } = result.data;
-          setSession((current) =>
-            mergeLoggedSet(current, sessionExerciseId, set),
-          );
-        }
-        toast.success("Set saved.");
-      } catch (error) {
-        console.error("[workout] logWorkoutSet failed:", error);
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Could not save set. Please try again.",
+    const optimisticSet: ActiveWorkoutSetLog = {
+      setNumber: payload.setNumber,
+      weightKg: payload.weightKg ?? null,
+      durationSeconds: payload.durationSeconds ?? null,
+    };
+    const sessionBeforeSave = session;
+
+    setSavingSetKeys((prev) => new Set(prev).add(key));
+    setSession((current) =>
+      mergeLoggedSet(current, exercise.id, optimisticSet),
+    );
+
+    try {
+      const result = await logWorkoutSet(payload);
+      if (!result.ok) {
+        setSession(sessionBeforeSave);
+        toast.error(result.error);
+        return;
+      }
+      if (result.data) {
+        const { sessionExerciseId, set } = result.data;
+        setSession((current) =>
+          mergeLoggedSet(current, sessionExerciseId, set),
         );
       }
-    });
+      toast.success("Set saved.");
+    } catch (error) {
+      setSession(sessionBeforeSave);
+      console.error("[workout] logWorkoutSet failed:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not save set. Please try again.",
+      );
+    } finally {
+      setSavingSetKeys((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    }
   }
 
   async function onComplete() {
-    if (pending) return;
-    await run(async () => {
-      try {
-        const result = await completeWorkoutSession(session.id);
-        if (!result.ok) {
-          toast.error(result.error);
-          return;
-        }
-        toast.success(result.message ?? "Workout completed.");
-        clearRestTimersForSession(session.id);
-        router.refresh();
-      } catch (error) {
-        console.error("[workout] completeWorkoutSession failed:", error);
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Could not complete workout. Please try again.",
-        );
+    if (completing) return;
+    setCompleting(true);
+    try {
+      const result = await completeWorkoutSession(session.id);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
       }
-    });
+      toast.success(result.message ?? "Workout completed.");
+      clearRestTimersForSession(session.id);
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (error) {
+      console.error("[workout] completeWorkoutSession failed:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not complete workout. Please try again.",
+      );
+    } finally {
+      setCompleting(false);
+    }
   }
 
   function addSet() {
@@ -284,8 +308,13 @@ export function WorkoutSessionView({
             compact
           />
         </div>
-        <Button size="sm" className="shrink-0" onClick={onComplete} disabled={pending}>
-          {pending ? "..." : "Finish"}
+        <Button
+          size="sm"
+          className="shrink-0"
+          onClick={onComplete}
+          disabled={completing}
+        >
+          {completing ? "..." : "Finish"}
         </Button>
       </div>
 
@@ -366,6 +395,7 @@ export function WorkoutSessionView({
               (set) => set.setNumber === setNumber,
             );
             const isLogged = logged != null;
+            const isSaving = savingSetKeys.has(key);
             const fallback = defaultInputValue(
               exercise.trackingType,
               logged,
@@ -420,7 +450,8 @@ export function WorkoutSessionView({
                 )}
                 <button
                   type="button"
-                  disabled={pending}
+                  disabled={isSaving}
+                  aria-busy={isSaving}
                   aria-pressed={isLogged}
                   aria-label={
                     isLogged
@@ -450,7 +481,7 @@ export function WorkoutSessionView({
         variant="outline"
         className="w-full gap-2"
         onClick={addSet}
-        disabled={pending || rowCount >= MAX_SETS}
+        disabled={rowCount >= MAX_SETS}
       >
         <Plus className="h-4 w-4" />
         Add Set

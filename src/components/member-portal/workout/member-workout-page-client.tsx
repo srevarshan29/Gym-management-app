@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -7,7 +8,6 @@ import { startWorkoutSession } from "@/app/actions/workout-sessions";
 import { MemberWorkoutPlanView } from "@/components/member-portal/member-workout-plan-view";
 import { WorkoutSessionView } from "@/components/member-portal/workout/workout-session-view";
 import { Button } from "@/components/ui/button";
-import { useActionLock } from "@/hooks/use-action-lock";
 import type {
   ActiveWorkoutSession,
   PreviousSetLog,
@@ -28,28 +28,41 @@ export function MemberWorkoutPageClient({
   canStart,
 }: MemberWorkoutPageClientProps) {
   const router = useRouter();
-  const { run, isPending: pending } = useActionLock();
+  const [, startTransition] = React.useTransition();
+  const [startingDayKey, setStartingDayKey] = React.useState<string | null>(
+    null,
+  );
+
+  React.useEffect(() => {
+    if (activeSession) {
+      setStartingDayKey(null);
+    }
+  }, [activeSession]);
 
   async function onStart(dayId?: string) {
-    if (pending) return;
-    await run(async () => {
-      try {
-        const result = await startWorkoutSession(dayId);
-        if (!result.ok) {
-          toast.error(result.error);
-          return;
-        }
-        toast.success(result.message ?? "Workout started.");
-        router.refresh();
-      } catch (error) {
-        console.error("[workout] startWorkoutSession failed:", error);
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Could not start workout. Please try again.",
-        );
+    const dayKey = dayId ?? "__default__";
+    if (startingDayKey !== null) return;
+    setStartingDayKey(dayKey);
+    try {
+      const result = await startWorkoutSession(dayId);
+      if (!result.ok) {
+        toast.error(result.error);
+        setStartingDayKey(null);
+        return;
       }
-    });
+      toast.success(result.message ?? "Workout started.");
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (error) {
+      console.error("[workout] startWorkoutSession failed:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not start workout. Please try again.",
+      );
+      setStartingDayKey(null);
+    }
   }
 
   if (!plan || plan.isLegacy) {
@@ -75,9 +88,11 @@ export function MemberWorkoutPageClient({
         <Button
           className="w-full"
           onClick={() => onStart(startableDays[0]?.id)}
-          disabled={pending}
+          disabled={startingDayKey !== null}
         >
-          {pending ? "Starting..." : "Start workout"}
+          {startingDayKey === (startableDays[0]?.id ?? "__default__")
+            ? "Starting..."
+            : "Start workout"}
         </Button>
       ) : null}
       {canStart && showDayPicker ? (
@@ -91,9 +106,11 @@ export function MemberWorkoutPageClient({
               className="w-full"
               variant="outline"
               onClick={() => onStart(day.id)}
-              disabled={pending}
+              disabled={startingDayKey !== null}
             >
-              {pending ? "Starting..." : `Start ${day.label}`}
+              {startingDayKey === day.id
+                ? "Starting..."
+                : `Start ${day.label}`}
             </Button>
           ))}
         </div>

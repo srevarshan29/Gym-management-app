@@ -1,0 +1,52 @@
+{
+  "recipes": [
+    {
+      "food_code": "ASC144",
+      "food_name": "Idli",
+      "primarysource": "asc_manual",
+      "energy_kcal": 150.5,
+      "protein_g": 4.2,
+      "carb_g": 28.1,
+      "fat_g": 1.1,
+      "fibre_g": 0.5,
+      "servings_unit": "piece",
+      "unit_serving_energy_kcal": 37.6,
+      "unit_serving_protein_g": 1.05,
+      "unit_serving_carb_g": 7.02,
+      "unit_serving_fat_g": 0.28,
+      "unit_serving_fibre_g": 0.12
+    },
+    {
+      "food_code": "ASC146",
+      "food_name": "Masala dosa",
+      "primarysource": "asc_manual",
+      "energy_kcal": 210,
+      "protein_g": 5,
+      "carb_g": 32,
+      "fat_g": 7,
+      "fibre_g": 2,
+      "servings_unit": "piece"
+    }
+  ],
+  "ukIngredients": [],
+  "usIngredients": [],
+  "recipeIngredients": [
+    {
+      "recipe_code": "ASC144",
+      "ingredient_name_org": "Rice",
+      "food_code": "A001",
+      "food_name": "Rice, raw",
+      "amount": 100,
+      "unit": "g"
+    }
+  ],
+  "servings": [
+    {
+      "recipe_code": "ASC144",
+      "recipe_name_org": "Idli",
+      "servings_unit": "piece",
+      "no_of_servings": 4,
+      "size_of_servings": 1
+    }
+  ]
+}

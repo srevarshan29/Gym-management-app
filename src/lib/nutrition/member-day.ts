@@ -13,11 +13,17 @@ import {
   rankNutritionFoodSearchResults,
 } from "@/lib/nutrition/food-search";
 import { nutritionDisplayNameFromDoc } from "@/lib/nutrition/nutrition-canonical";
+import { resolveCatalogServingPortion } from "@/lib/nutrition/nutrition-serving-portion";
 import {
   defaultNutritionLogDate,
   parseNutritionLogDate,
 } from "@/lib/nutrition/date-utils";
 import { NUTRITION_MEAL_TYPES } from "@/lib/nutrition/meal-types";
+import type {
+  NutritionCalorieTargetSource,
+  ResolvedNutritionCalorieTarget,
+} from "@/lib/nutrition/nutrition-calorie-target";
+import { loadResolvedNutritionCalorieTarget } from "@/lib/nutrition/nutrition-target-loader";
 
 export { defaultNutritionLogDate, parseNutritionLogDate } from "@/lib/nutrition/date-utils";
 
@@ -37,10 +43,26 @@ export type NutritionLogEntryView = {
 export type MemberNutritionDayView = {
   logDate: string;
   targetCalories: number | null;
+  targetSource: NutritionCalorieTargetSource;
+  memberDailyCalorieTarget: number | null;
+  gymDailyCalorieTarget: number | null;
   totals: NutritionMacroTotals;
   meals: Record<NutritionMealType, NutritionLogEntryView[]>;
   entries: NutritionLogEntryView[];
 };
+
+export function applyCalorieTargetToDayView(
+  day: MemberNutritionDayView,
+  target: ResolvedNutritionCalorieTarget,
+): MemberNutritionDayView {
+  return {
+    ...day,
+    targetCalories: target.targetCalories,
+    targetSource: target.targetSource,
+    memberDailyCalorieTarget: target.memberDailyCalorieTarget,
+    gymDailyCalorieTarget: target.gymDailyCalorieTarget,
+  };
+}
 
 function toEntryView(
   doc: NutritionLogDoc & { id: string },
@@ -62,7 +84,7 @@ function toEntryView(
 export function buildMemberNutritionDayView(
   logDate: string,
   docs: Array<NutritionLogDoc & { id: string }>,
-  targetCalories: number | null,
+  target: ResolvedNutritionCalorieTarget,
 ): MemberNutritionDayView {
   const entries = docs.map(toEntryView);
   const meals = NUTRITION_MEAL_TYPES.reduce(
@@ -75,7 +97,10 @@ export function buildMemberNutritionDayView(
 
   return {
     logDate,
-    targetCalories,
+    targetCalories: target.targetCalories,
+    targetSource: target.targetSource,
+    memberDailyCalorieTarget: target.memberDailyCalorieTarget,
+    gymDailyCalorieTarget: target.gymDailyCalorieTarget,
     totals: sumMacroTotals(entries),
     meals,
     entries,
@@ -86,16 +111,13 @@ export async function loadMemberNutritionDay(
   ctx: MemberContext,
   logDate: string,
 ): Promise<MemberNutritionDayView> {
-  const { nutritionLogs, dietPlans } = getRepositories();
-  const [logs, dietPlan] = await Promise.all([
+  const { nutritionLogs } = getRepositories();
+  const [logs, target] = await Promise.all([
     nutritionLogs.listForMemberOnDate(ctx, ctx.gymId, ctx.memberId, logDate),
-    dietPlans.findByMemberId(ctx, ctx.gymId, ctx.memberId),
+    loadResolvedNutritionCalorieTarget(ctx),
   ]);
 
-  const targetCalories =
-    dietPlan && dietPlan.caloriesPerDay > 0 ? dietPlan.caloriesPerDay : null;
-
-  return buildMemberNutritionDayView(logDate, logs, targetCalories);
+  return buildMemberNutritionDayView(logDate, logs, target);
 }
 
 export type NutritionFoodSearchResult = {
@@ -131,8 +153,12 @@ export function catalogDocToSearchResult(
     | "fiberPer100g"
     | "servingSizeGrams"
     | "servingSizeLabel"
+    | "source"
+    | "indbMetadata"
+    | "caloriesPer100g"
   >,
 ): NutritionFoodSearchResult {
+  const portion = resolveCatalogServingPortion(row);
   return {
     foodId: row.foodId,
     name: nutritionDisplayNameFromDoc(row),
@@ -142,8 +168,8 @@ export function catalogDocToSearchResult(
     carbsPer100g: row.carbsPer100g,
     fatPer100g: row.fatPer100g,
     fiberPer100g: row.fiberPer100g,
-    servingSizeGrams: row.servingSizeGrams,
-    servingSizeLabel: row.servingSizeLabel,
+    servingSizeGrams: portion?.grams ?? row.servingSizeGrams,
+    servingSizeLabel: portion?.label ?? row.servingSizeLabel,
   };
 }
 

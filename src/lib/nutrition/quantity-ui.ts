@@ -3,19 +3,24 @@ import {
   calculateMacrosFromFood,
   type NutritionLogMacros,
 } from "@/lib/nutrition/calculations";
+import {
+  effectiveServingPortion,
+  effectiveServingSizeGrams,
+  resolveNutritionQuantityMode,
+  type NutritionQuantityMode,
+} from "@/lib/nutrition/nutrition-quantity-mode";
 
-export type NutritionQuantityMode = "count" | "grams";
+export type { NutritionQuantityMode };
 
-/** Catalog label, or a safe UI-only label when USDA portions lack text. */
 export function servingLabelForFood(
-  food: Pick<NutritionFoodSearchResult, "name" | "servingSizeLabel">,
+  food: Pick<
+    NutritionFoodSearchResult,
+    "name" | "servingSizeGrams" | "servingSizeLabel"
+  >,
 ): string | null {
-  if (food.servingSizeLabel?.trim()) {
-    return food.servingSizeLabel.trim();
-  }
-  const name = food.name.toLowerCase();
-  if (/\begg\b/.test(name) && !/eggplant/.test(name)) {
-    return "egg";
+  const portion = effectiveServingPortion(food);
+  if (portion) {
+    return portion.label;
   }
   return null;
 }
@@ -26,16 +31,7 @@ export function resolveQuantityMode(
     "name" | "servingSizeGrams" | "servingSizeLabel"
   >,
 ): NutritionQuantityMode {
-  if (food.servingSizeGrams == null || food.servingSizeGrams <= 0) {
-    return "grams";
-  }
-  if (food.servingSizeLabel?.trim()) {
-    return "count";
-  }
-  if (servingLabelForFood(food)) {
-    return "count";
-  }
-  return "grams";
+  return resolveNutritionQuantityMode(food);
 }
 
 export function gramsFromQuantityInput(
@@ -56,8 +52,9 @@ export function defaultQuantityAmount(
   food: NutritionFoodSearchResult,
 ): number {
   if (mode === "count") return 1;
-  if (food.servingSizeGrams != null && food.servingSizeGrams > 0) {
-    return food.servingSizeGrams;
+  const grams = effectiveServingSizeGrams(food);
+  if (grams != null && grams > 0) {
+    return grams;
   }
   return 100;
 }
@@ -82,13 +79,28 @@ export function formatQuantityLabel(
   if (mode === "count" && servingSizeLabel) {
     const displayCount =
       Number.isInteger(amount) ? String(amount) : amount.toFixed(1);
-    return `${displayCount} × ${servingSizeLabel}`;
+    return `${displayCount} ${servingSizeLabel}`;
   }
   const grams = quantityGrams > 0 ? quantityGrams : amount;
   return `${grams % 1 === 0 ? grams : grams.toFixed(1)} g`;
 }
 
-export function formatLogQuantity(quantityGrams: number): string {
+export function formatLogQuantity(
+  quantityGrams: number,
+  food?: Pick<
+    NutritionFoodSearchResult,
+    "name" | "servingSizeGrams" | "servingSizeLabel"
+  > | null,
+): string {
+  if (food) {
+    const mode = resolveQuantityMode(food);
+    const servingGrams = effectiveServingSizeGrams(food);
+    const label = servingLabelForFood(food);
+    if (mode === "count" && servingGrams != null && label) {
+      const amount = quantityAmountFromGrams(mode, quantityGrams, servingGrams);
+      return formatQuantityLabel(mode, amount, label, quantityGrams);
+    }
+  }
   return `${quantityGrams % 1 === 0 ? quantityGrams : quantityGrams.toFixed(1)} g`;
 }
 

@@ -79,6 +79,7 @@ ui-debug.log
 /data/sr_legacy.zip
 /data/sr_legacy_extract/
 /data/indian-nutrition-data/
+/data/indian-nutrient-databank/
 
 # tenant reconcile CLI dry-run captures (local only)
 tenant-reconcile-dry-run.txt

@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import { NutritionAddFoodSheet } from "@/components/member-portal/nutrition/nutrition-add-food-sheet";
 import { NutritionAttribution } from "@/components/member-portal/nutrition/nutrition-attribution";
 import { NutritionCalorieRing } from "@/components/member-portal/nutrition/nutrition-calorie-ring";
+import { NutritionDailyTargetControl } from "@/components/member-portal/nutrition/nutrition-daily-target-control";
 import { NutritionDateNav } from "@/components/member-portal/nutrition/nutrition-date-nav";
 import { NutritionLogEntryRow } from "@/components/member-portal/nutrition/nutrition-log-entry-row";
 import { Button } from "@/components/ui/button";
@@ -46,11 +47,16 @@ export function MemberNutritionPageClient({
     <div className="mx-auto w-full max-w-[390px] space-y-4 pb-8">
       <header className="space-y-1">
         <h1 className="font-display text-2xl font-bold tracking-tight">
-          Nutrition
+          Calorie Tracker
         </h1>
+        <p className="text-sm text-muted-foreground">
+          Track food, calories and daily macros.
+        </p>
       </header>
 
       <NutritionDateNav logDate={day.logDate} onDayLoaded={setDay} />
+
+      <NutritionDailyTargetControl day={day} onDayUpdated={setDay} />
 
       <section className="rounded-2xl border border-border/60 bg-card px-4 py-4 shadow-sm">
         <div className="flex items-center gap-4">

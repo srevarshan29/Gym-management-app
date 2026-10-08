@@ -19,6 +19,9 @@ export function removeNutritionLogEntryOptimistic(
   return {
     logDate: day.logDate,
     targetCalories: day.targetCalories,
+    targetSource: day.targetSource,
+    memberDailyCalorieTarget: day.memberDailyCalorieTarget,
+    gymDailyCalorieTarget: day.gymDailyCalorieTarget,
     totals: sumMacroTotals(entries),
     meals,
     entries,

@@ -2,17 +2,16 @@
 
 import * as React from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 import { getMemberNutritionDay } from "@/app/actions/member-nutrition";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   defaultNutritionLogDate,
   formatNutritionInsightsLabel,
   parseNutritionLogDate,
   shiftNutritionLogDate,
 } from "@/lib/nutrition/date-utils";
+import { syncMemberNutritionDateUrl } from "@/lib/nutrition/nutrition-date-url";
 import type { MemberNutritionDayView } from "@/lib/nutrition/member-day";
 import { cn } from "@/lib/utils";
 
@@ -22,15 +21,29 @@ type NutritionDateNavProps = {
   className?: string;
 };
 
+function openNativeDatePicker(input: HTMLInputElement | null) {
+  if (!input) return;
+  input.focus({ preventScroll: true });
+  if (typeof input.showPicker === "function") {
+    try {
+      input.showPicker();
+      return;
+    } catch {
+      // Safari / unsupported — fall through to click()
+    }
+  }
+  input.click();
+}
+
 export function NutritionDateNav({
   logDate,
   onDayLoaded,
   className,
 }: NutritionDateNavProps) {
-  const router = useRouter();
   const today = React.useMemo(() => defaultNutritionLogDate(), []);
   const [loading, setLoading] = React.useState(false);
   const dateInputRef = React.useRef<HTMLInputElement>(null);
+  const dateInputId = React.useId();
 
   async function navigateTo(nextDate: string) {
     if (loading || nextDate === logDate) return;
@@ -41,7 +54,7 @@ export function NutritionDateNav({
         return;
       }
       onDayLoaded(result.data);
-      router.replace(`/member/nutrition?date=${nextDate}`, { scroll: false });
+      syncMemberNutritionDateUrl(nextDate);
     } finally {
       setLoading(false);
     }
@@ -100,32 +113,41 @@ export function NutritionDateNav({
         <ChevronRight className="h-5 w-5" />
       </Button>
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="h-10 w-10 shrink-0"
-        disabled={loading}
-        aria-label="Pick date"
-        onClick={() => dateInputRef.current?.showPicker?.()}
-      >
-        {loading ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
-        ) : (
-          <CalendarDays className="h-5 w-5" />
-        )}
-      </Button>
-
-      <Input
-        ref={dateInputRef}
-        type="date"
-        value={logDate}
-        max={today}
-        className="sr-only"
-        aria-hidden
-        tabIndex={-1}
-        onChange={(e) => onPickDate(e.target.value)}
-      />
+      <div className="relative h-10 w-10 shrink-0">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10"
+          disabled={loading}
+          aria-label="Pick date"
+          onClick={() => openNativeDatePicker(dateInputRef.current)}
+        >
+          {loading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <CalendarDays className="h-5 w-5" />
+          )}
+        </Button>
+        {/* iOS: label-associated input receives touch; desktop uses Button + showPicker */}
+        <input
+          ref={dateInputRef}
+          id={dateInputId}
+          type="date"
+          value={logDate}
+          max={today}
+          disabled={loading}
+          tabIndex={-1}
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-0 h-px w-px opacity-0"
+          onChange={(e) => onPickDate(e.target.value)}
+        />
+        <label
+          htmlFor={dateInputId}
+          className="absolute inset-0 z-10 cursor-pointer [@media(pointer:fine)]:hidden"
+          aria-label="Pick date"
+        />
+      </div>
     </div>
   );
 }

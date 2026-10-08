@@ -4,6 +4,7 @@ import {
   tokenizeCatalogSearchQuery,
 } from "@/lib/exercises/catalog-search";
 import type { NutritionFoodCatalogDoc } from "@/lib/firestore/types";
+import { scoreIndbFoodSearch } from "@/lib/nutrition/indb-search-boosts";
 import {
   nutritionCanonicalKeyFromDoc,
   nutritionDisplayNameFromDoc,
@@ -35,6 +36,15 @@ function expandNutritionSearchToken(token: string, expanded: Set<string>): void 
   }
   if (token === "sa" || token === "sam") {
     expanded.add("sambar");
+  }
+  if (token === "up" || token === "upm") {
+    expanded.add("upma");
+  }
+  if (token === "vad") {
+    expanded.add("vada");
+  }
+  if (token === "upm") {
+    expanded.add("upma");
   }
   if (token === "swee" || token === "swe") {
     expanded.add("sweet");
@@ -233,6 +243,12 @@ export function passesNutritionSearchRelevanceGate(
       if (token === "sa") {
         return /\bsambar\b/i.test(name) || display.startsWith("sambar");
       }
+      if (token === "up") {
+        return /\bupma\b/i.test(name) || display.includes("upma");
+      }
+      if (token === "va") {
+        return /\bvada\b/i.test(name) || display.includes("vada");
+      }
     }
     if (canonicalKey === "vegetable:eggplant" && token === "egg") {
       return false;
@@ -319,6 +335,15 @@ export function scoreNutritionFoodSearch(
 
   if (canonicalKey.startsWith("indian:")) {
     score += scoreIndianCc0FoodSearch(queryTokens, canonicalKey, displayLower);
+  }
+  if (canonicalKey.startsWith("indb:")) {
+    score += scoreIndbFoodSearch(
+      queryTokens,
+      canonicalKey,
+      displayLower,
+      nameLower,
+      "",
+    );
   }
 
   if (displayLower === normalizedQuery) score += 1200;

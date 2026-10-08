@@ -462,7 +462,40 @@ export type DietPlanDoc = {
   updatedAt: Timestamp;
 };
 
-export type NutritionFoodSource = "USDA" | "indian_cc0";
+export type NutritionFoodSource = "USDA" | "indian_cc0" | "indb";
+
+export type NutritionIndbIngredientLine = {
+  ingredientName: string;
+  amount: number | null;
+  unit: string | null;
+  foodCode: string | null;
+  foodName: string | null;
+};
+
+export type NutritionIndbServingMetadata = {
+  servingsUnit: string | null;
+  numberOfServings: number | null;
+  sizeOfServing: number | null;
+  remarks1: string | null;
+  remarks2: string | null;
+};
+
+/** Preserved INDB fields for licensing review and future replacement. */
+export type NutritionIndbCatalogMetadata = {
+  foodCode: string;
+  foodCodeOrg: string | null;
+  primarysource: string;
+  recordType: "recipe" | "ingredient";
+  recipeNameOrg: string | null;
+  ingredientSource: "uk_fct" | "us_fct" | null;
+  retentionFactor: string | null;
+  nutrients: {
+    per100g: Record<string, number | string | null>;
+    perServing: Record<string, number | string | null>;
+  };
+  serving: NutritionIndbServingMetadata | null;
+  ingredients: NutritionIndbIngredientLine[] | null;
+};
 
 export type NutritionFoodSourceAttribution = {
   dataset: string;
@@ -495,6 +528,8 @@ export type NutritionFoodCatalogDoc = {
   aliases: string[];
   searchPrefixes: string[];
   sourceAttribution: NutritionFoodSourceAttribution;
+  /** Present when `source` is `indb`. */
+  indbMetadata?: NutritionIndbCatalogMetadata;
   isActive: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -510,6 +545,16 @@ export type NutritionMemberFoodDoc = {
   lastLoggedAt: Timestamp | null;
   isFavorite: boolean;
   favoritedAt: Timestamp | null;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+};
+
+/** Per-member nutrition preferences (separate from gym diet plan). */
+export type NutritionMemberSettingsDoc = {
+  gymId: string;
+  memberId: string;
+  /** Member-owned daily calorie target (kcal/day); does not modify dietPlans. */
+  customDailyCalorieTarget: number | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 };

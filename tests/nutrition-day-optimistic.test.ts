@@ -6,6 +6,9 @@ import type { MemberNutritionDayView } from "@/lib/nutrition/member-day";
 const baseDay: MemberNutritionDayView = {
   logDate: "2026-10-07",
   targetCalories: 2000,
+  targetSource: "gym",
+  memberDailyCalorieTarget: null,
+  gymDailyCalorieTarget: 2000,
   totals: {
     calories: 300,
     proteinGrams: 20,

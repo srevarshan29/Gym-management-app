@@ -9,7 +9,7 @@ import { hrefRouteKey } from "@/hooks/use-navigation-lock";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-const TOOLS = [
+export const MEMBER_TOOLS_MAIN = [
   {
     href: "/member/tools/bmi",
     title: "BMI Calculator",
@@ -25,7 +25,14 @@ const TOOLS = [
     title: "Calorie Calculator",
     description: "Daily calorie target for your goal.",
   },
+  {
+    href: "/member/nutrition",
+    title: "Calorie Tracker",
+    description: "Track food, calories and daily macros.",
+  },
 ] as const;
+
+const TOOLS = MEMBER_TOOLS_MAIN.slice(0, 3);
 
 const HUB_LINKS = [
   {
@@ -37,11 +44,6 @@ const HUB_LINKS = [
     href: "/member/diet",
     title: "Diet",
     description: "Your assigned diet plan.",
-  },
-  {
-    href: "/member/nutrition",
-    title: "Nutrition",
-    description: "Log food and track daily macros.",
   },
   {
     href: "/member/events",
@@ -92,13 +94,13 @@ export function ToolsSubNav({ activeHref }: { activeHref?: string }) {
       <ToolsTabLink href="/member/tools" active={activeHref === "/member/tools"}>
         All tools
       </ToolsTabLink>
-      {TOOLS.map((tool) => (
+      {MEMBER_TOOLS_MAIN.map((tool) => (
         <ToolsTabLink
           key={tool.href}
           href={tool.href}
           active={activeHref === tool.href}
         >
-          {tool.title.replace(" Calculator", "")}
+          {tool.title.replace(" Calculator", "").replace("Calorie Tracker", "Tracker")}
         </ToolsTabLink>
       ))}
     </nav>
@@ -133,7 +135,7 @@ export function ToolsIndexList() {
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        {TOOLS.map((tool) => (
+        {MEMBER_TOOLS_MAIN.map((tool) => (
           <HubCard
             key={tool.href}
             href={tool.href}

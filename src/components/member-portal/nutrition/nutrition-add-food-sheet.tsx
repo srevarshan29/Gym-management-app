@@ -5,7 +5,7 @@ import { Loader2, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 import {
-  addMemberNutritionLog,
+  addMemberNutritionLogs,
   getMemberNutritionAddFoodShortcuts,
   searchMemberNutritionFoods,
   setMemberNutritionFoodFavoriteAction,
@@ -36,6 +36,7 @@ import {
   updateTrackCartAmount,
 } from "@/lib/nutrition/nutrition-track-cart";
 import { resolveFoodQuantityMode } from "@/components/member-portal/nutrition/nutrition-quantity-editor";
+import { effectiveServingSizeGrams } from "@/lib/nutrition/nutrition-quantity-mode";
 import { gramsFromQuantityInput } from "@/lib/nutrition/quantity-ui";
 import { cn } from "@/lib/utils";
 
@@ -254,12 +255,16 @@ export function NutritionAddFoodSheet({
   async function onTrackAll() {
     if (tracking || trackingRef.current || cart.length === 0) return;
 
-    for (const item of cart) {
+    const items = cart.map((item) => {
       const grams = gramsFromQuantityInput(
         resolveFoodQuantityMode(item.food),
         item.amount,
-        item.food.servingSizeGrams,
+        effectiveServingSizeGrams(item.food),
       );
+      return { item, grams };
+    });
+
+    for (const { item, grams } of items) {
       if (grams < 0.1) {
         toast.error(`Enter a valid quantity for ${item.food.name}.`);
         return;
@@ -269,32 +274,20 @@ export function NutritionAddFoodSheet({
     trackingRef.current = true;
     setTracking(true);
     try {
-      let latestDay: MemberNutritionDayView | null = null;
-      for (const item of cart) {
-        const grams = gramsFromQuantityInput(
-          resolveFoodQuantityMode(item.food),
-          item.amount,
-          item.food.servingSizeGrams,
-        );
-        const result = await addMemberNutritionLog({
-          logDate,
-          mealType,
+      const result = await addMemberNutritionLogs({
+        logDate,
+        mealType,
+        items: items.map(({ item, grams }) => ({
           foodId: item.foodId,
           quantityGrams: grams,
-        });
-        if (!result.ok) {
-          toast.error(result.error);
-          if (latestDay) {
-            onDayUpdated(latestDay);
-          }
-          return;
-        }
-        if (result.data) {
-          latestDay = result.data;
-        }
+        })),
+      });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
       }
-      if (latestDay) {
-        onDayUpdated(latestDay);
+      if (result.data) {
+        onDayUpdated(result.data);
       }
       toast.success(
         cart.length === 1

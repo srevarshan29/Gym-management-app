@@ -12,6 +12,7 @@ import { MembersRepository } from "@/lib/firestore/repositories/members";
 import { NutritionFoodCatalogRepository } from "@/lib/firestore/repositories/nutrition-food-catalog";
 import { NutritionLogsRepository } from "@/lib/firestore/repositories/nutrition-logs";
 import { NutritionMemberFoodsRepository } from "@/lib/firestore/repositories/nutrition-member-foods";
+import { NutritionMemberSettingsRepository } from "@/lib/firestore/repositories/nutrition-member-settings";
 import { NotificationDeliveriesRepository } from "@/lib/firestore/repositories/notification-deliveries";
 import { PackagesRepository } from "@/lib/firestore/repositories/packages";
 import { PaymentsRepository } from "@/lib/firestore/repositories/payments";
@@ -48,6 +49,7 @@ export type FirestoreRepositories = {
   nutritionFoodCatalog: NutritionFoodCatalogRepository;
   nutritionLogs: NutritionLogsRepository;
   nutritionMemberFoods: NutritionMemberFoodsRepository;
+  nutritionMemberSettings: NutritionMemberSettingsRepository;
 };
 
 export function createRepositories(db: Firestore): FirestoreRepositories {
@@ -75,6 +77,7 @@ export function createRepositories(db: Firestore): FirestoreRepositories {
     nutritionFoodCatalog: new NutritionFoodCatalogRepository(db),
     nutritionLogs: new NutritionLogsRepository(db),
     nutritionMemberFoods: new NutritionMemberFoodsRepository(db),
+    nutritionMemberSettings: new NutritionMemberSettingsRepository(db),
   };
 }
 
@@ -90,6 +93,7 @@ export { MembersRepository } from "@/lib/firestore/repositories/members";
 export { NutritionFoodCatalogRepository } from "@/lib/firestore/repositories/nutrition-food-catalog";
 export { NutritionLogsRepository } from "@/lib/firestore/repositories/nutrition-logs";
 export { NutritionMemberFoodsRepository } from "@/lib/firestore/repositories/nutrition-member-foods";
+export { NutritionMemberSettingsRepository } from "@/lib/firestore/repositories/nutrition-member-settings";
 export { PackagesRepository } from "@/lib/firestore/repositories/packages";
 export { PaymentsRepository } from "@/lib/firestore/repositories/payments";
 export { NotificationDeliveriesRepository } from "@/lib/firestore/repositories/notification-deliveries";

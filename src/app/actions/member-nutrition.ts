@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import {
+  addMemberNutritionLogEntries,
   addMemberNutritionLogEntry,
   removeMemberNutritionLogEntry,
   updateMemberNutritionLogEntry,
@@ -25,6 +26,7 @@ import {
   type NutritionFoodDetailResult,
   type NutritionFoodSearchResult,
 } from "@/lib/nutrition/member-day";
+import { parseValidDailyCalorieTarget } from "@/lib/nutrition/nutrition-calorie-target";
 import { requireMember } from "@/lib/member-session";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
 
@@ -58,6 +60,20 @@ const addSchema = z.object({
   quantityGrams: z.coerce.number().min(0.1).max(10_000),
 });
 
+const addBatchSchema = z.object({
+  logDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/),
+  mealType: z.string().trim(),
+  items: z
+    .array(
+      z.object({
+        foodId: z.string().trim().min(1).max(128),
+        quantityGrams: z.coerce.number().min(0.1).max(10_000),
+      }),
+    )
+    .min(1)
+    .max(24),
+});
+
 const removeSchema = z.object({
   logDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/),
   logId: z.string().trim().min(1).max(128),
@@ -78,6 +94,14 @@ const favoriteSchema = z.object({
   isFavorite: z.boolean(),
 });
 
+const memberCalorieTargetSchema = z.object({
+  logDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/),
+  dailyCalorieTarget: z.union([
+    z.null(),
+    z.coerce.number().min(1).max(20_000),
+  ]),
+});
+
 export async function searchMemberNutritionFoods(
   payload: unknown,
 ): Promise<ActionResult<NutritionFoodSearchResult[]>> {
@@ -92,6 +116,33 @@ export async function searchMemberNutritionFoods(
     return actionOk(undefined, results);
   } catch (error) {
     return actionErrorFromUnknown(error, "Could not search foods.");
+  }
+}
+
+export async function addMemberNutritionLogs(
+  payload: unknown,
+): Promise<ActionResult<MemberNutritionDayView>> {
+  try {
+    const member = await requireMember();
+    const parsed = addBatchSchema.safeParse(payload);
+    if (!parsed.success) {
+      return actionError("Invalid food log batch.");
+    }
+    if (!isNutritionMealType(parsed.data.mealType)) {
+      return actionError("Invalid meal type.");
+    }
+
+    const day = await addMemberNutritionLogEntries(
+      memberContextFromSession(member),
+      {
+        logDate: parseNutritionLogDate(parsed.data.logDate),
+        mealType: parsed.data.mealType,
+        items: parsed.data.items,
+      },
+    );
+    return actionOk(undefined, day);
+  } catch (error) {
+    return actionErrorFromUnknown(error, "Could not add foods.");
   }
 }
 
@@ -231,6 +282,46 @@ export async function removeMemberNutritionLog(
     return actionOk(undefined, day);
   } catch (error) {
     return actionErrorFromUnknown(error, "Could not remove food.");
+  }
+}
+
+export async function updateMemberNutritionCalorieTarget(
+  payload: unknown,
+): Promise<ActionResult<MemberNutritionDayView>> {
+  try {
+    const member = await requireMember();
+    const parsed = memberCalorieTargetSchema.safeParse(payload);
+    if (!parsed.success) {
+      return actionError("Invalid calorie target.");
+    }
+
+    const normalized =
+      parsed.data.dailyCalorieTarget == null
+        ? null
+        : parseValidDailyCalorieTarget(parsed.data.dailyCalorieTarget);
+    if (
+      parsed.data.dailyCalorieTarget != null &&
+      normalized == null
+    ) {
+      return actionError("Enter a sensible daily calorie target (kcal).");
+    }
+
+    const ctx = memberContextFromSession(member);
+    const { nutritionMemberSettings } = getRepositories();
+    await nutritionMemberSettings.setCustomDailyCalorieTarget(
+      ctx,
+      ctx.gymId,
+      ctx.memberId,
+      normalized,
+    );
+
+    const day = await loadMemberNutritionDay(
+      ctx,
+      parseNutritionLogDate(parsed.data.logDate),
+    );
+    return actionOk(undefined, day);
+  } catch (error) {
+    return actionErrorFromUnknown(error, "Could not update calorie target.");
   }
 }
 

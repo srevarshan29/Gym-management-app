@@ -20,6 +20,7 @@ import type {
   NutritionFoodSearchResult,
   NutritionLogEntryView,
 } from "@/lib/nutrition/member-day";
+import { effectiveServingSizeGrams } from "@/lib/nutrition/nutrition-quantity-mode";
 import {
   formatLogQuantity,
   formatQuantityLabel,
@@ -28,6 +29,7 @@ import {
   resolveQuantityMode,
   servingLabelForFood,
 } from "@/lib/nutrition/quantity-ui";
+
 type NutritionLogEntryRowProps = {
   entry: NutritionLogEntryView;
   logDate: string;
@@ -49,36 +51,65 @@ export function NutritionLogEntryRow({
   const [amount, setAmount] = React.useState(entry.quantityGrams);
   const [saving, setSaving] = React.useState(false);
   const [removedOptimistic, setRemovedOptimistic] = React.useState(false);
+  const [quantityLabel, setQuantityLabel] = React.useState(
+    formatLogQuantity(entry.quantityGrams),
+  );
   const savingRef = React.useRef(false);
   const removingRef = React.useRef(false);
+  const foodCacheRef = React.useRef<NutritionFoodSearchResult | null>(null);
 
   const busy = disabled || saving;
 
   React.useEffect(() => {
-    if (!editing) return;
     let cancelled = false;
-    setLoadingFood(true);
-    void getMemberNutritionFood({ foodId: entry.foodId })
-      .then((result) => {
-        if (cancelled) return;
-        if (!result.ok || !result.data) {
-          toast.error(result.ok ? "Food not found." : result.error);
-          setEditing(false);
-          return;
-        }
-        setFood(result.data);
-        const mode = resolveQuantityMode(result.data);
+    const cached = foodCacheRef.current;
+    if (cached?.foodId === entry.foodId) {
+      setQuantityLabel(formatLogQuantity(entry.quantityGrams, cached));
+      if (editing) {
+        setFood(cached);
+        const mode = resolveQuantityMode(cached);
         setAmount(
           quantityAmountFromGrams(
             mode,
             entry.quantityGrams,
-            result.data.servingSizeGrams,
+            effectiveServingSizeGrams(cached),
           ),
         );
+      }
+      return;
+    }
+
+    if (editing) setLoadingFood(true);
+    void getMemberNutritionFood({ foodId: entry.foodId })
+      .then((result) => {
+        if (cancelled) return;
+        if (!result.ok || !result.data) {
+          if (editing) {
+            toast.error(result.ok ? "Food not found." : result.error);
+            setEditing(false);
+          }
+          return;
+        }
+        foodCacheRef.current = result.data;
+        setQuantityLabel(
+          formatLogQuantity(entry.quantityGrams, result.data),
+        );
+        if (editing) {
+          setFood(result.data);
+          const mode = resolveQuantityMode(result.data);
+          setAmount(
+            quantityAmountFromGrams(
+              mode,
+              entry.quantityGrams,
+              effectiveServingSizeGrams(result.data),
+            ),
+          );
+        }
       })
       .finally(() => {
-        if (!cancelled) setLoadingFood(false);
+        if (!cancelled && editing) setLoadingFood(false);
       });
+
     return () => {
       cancelled = true;
     };
@@ -87,7 +118,11 @@ export function NutritionLogEntryRow({
   async function onSaveQuantity() {
     if (saving || savingRef.current || !food) return;
     const mode = resolveFoodQuantityMode(food);
-    const grams = gramsFromQuantityInput(mode, amount, food.servingSizeGrams);
+    const grams = gramsFromQuantityInput(
+      mode,
+      amount,
+      effectiveServingSizeGrams(food),
+    );
     if (grams < 0.1) {
       toast.error("Enter a valid quantity.");
       return;
@@ -151,8 +186,6 @@ export function NutritionLogEntryRow({
     }
   }
 
-  const quantityLabel = formatLogQuantity(entry.quantityGrams);
-
   if (removedOptimistic) {
     return null;
   }
@@ -207,7 +240,7 @@ export function NutritionLogEntryRow({
                   gramsFromQuantityInput(
                     resolveFoodQuantityMode(food),
                     amount,
-                    food.servingSizeGrams,
+                    effectiveServingSizeGrams(food),
                   ),
                 )}
               </p>

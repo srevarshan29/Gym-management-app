@@ -149,17 +149,17 @@ export class NutritionFoodCatalogRepository {
       Math.max(60, Math.ceil(mergedCap / Math.max(1, tokens.length || 1))),
     );
 
-    const byFoodId = new Map<string, DocWithId<NutritionFoodCatalogDoc>>();
     const normalizedQuery = normalizeCatalogSearchQuery(options.query);
+    const fetchTasks: Promise<DocWithId<NutritionFoodCatalogDoc>[]>[] = [];
+
     if (normalizedQuery.length >= NUTRITION_SEARCH_MIN_CHARS) {
-      const nameRows = await this.searchByNameLowerPrefix(
-        ctx,
-        normalizedQuery,
-        Math.min(32, mergedCap),
+      fetchTasks.push(
+        this.searchByNameLowerPrefix(
+          ctx,
+          normalizedQuery,
+          Math.min(32, mergedCap),
+        ),
       );
-      for (const row of nameRows) {
-        byFoodId.set(row.foodId, row);
-      }
     }
 
     for (const token of queryTokens) {
@@ -167,19 +167,25 @@ export class NutritionFoodCatalogRepository {
         token.length >= NUTRITION_SEARCH_MIN_CHARS &&
         token.length < CATALOG_SEARCH_PREFIX_MIN_LENGTH
       ) {
-        const shortRows = await this.searchByNameLowerPrefix(
-          ctx,
-          token,
-          Math.min(48, mergedCap),
+        fetchTasks.push(
+          this.searchByNameLowerPrefix(
+            ctx,
+            token,
+            Math.min(48, mergedCap),
+          ),
         );
-        for (const row of shortRows) {
-          byFoodId.set(row.foodId, row);
-        }
       }
     }
 
     for (const token of tokens) {
-      const rows = await this.searchByPrefixToken(ctx, token, perTokenLimit);
+      fetchTasks.push(
+        this.searchByPrefixToken(ctx, token, perTokenLimit),
+      );
+    }
+
+    const resultSets = await Promise.all(fetchTasks);
+    const byFoodId = new Map<string, DocWithId<NutritionFoodCatalogDoc>>();
+    for (const rows of resultSets) {
       for (const row of rows) {
         byFoodId.set(row.foodId, row);
       }

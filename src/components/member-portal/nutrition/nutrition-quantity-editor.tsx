@@ -5,6 +5,7 @@ import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { NutritionFoodSearchResult } from "@/lib/nutrition/member-day";
+import { effectiveServingSizeGrams } from "@/lib/nutrition/nutrition-quantity-mode";
 import {
   defaultQuantityAmount,
   formatQuantityLabel,
@@ -32,7 +33,7 @@ function stepForMode(mode: NutritionQuantityMode): number {
 }
 
 function quickAmounts(mode: NutritionQuantityMode): number[] {
-  return mode === "count" ? [1, 2, 3, 4] : [50, 100, 150, 200];
+  return mode === "count" ? [1, 2, 3] : [50, 100, 150, 200];
 }
 
 export function resolveFoodQuantityMode(
@@ -55,7 +56,8 @@ export function NutritionQuantityEditor({
   className,
 }: NutritionQuantityEditorProps) {
   const servingLabel = servingLabelForFood(food);
-  const grams = gramsFromQuantityInput(mode, amount, food.servingSizeGrams);
+  const servingGrams = effectiveServingSizeGrams(food);
+  const grams = gramsFromQuantityInput(mode, amount, servingGrams);
   const preview = previewMacrosFromFood(food, grams);
   const step = stepForMode(mode);
   const min = mode === "count" ? 0.5 : 1;

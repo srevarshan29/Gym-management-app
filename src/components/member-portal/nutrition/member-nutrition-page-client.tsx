@@ -6,14 +6,9 @@ import { Plus } from "lucide-react";
 import { NutritionAddFoodSheet } from "@/components/member-portal/nutrition/nutrition-add-food-sheet";
 import { NutritionAttribution } from "@/components/member-portal/nutrition/nutrition-attribution";
 import { NutritionCalorieRing } from "@/components/member-portal/nutrition/nutrition-calorie-ring";
+import { NutritionDateNav } from "@/components/member-portal/nutrition/nutrition-date-nav";
 import { NutritionLogEntryRow } from "@/components/member-portal/nutrition/nutrition-log-entry-row";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import type { NutritionMealType } from "@/lib/firestore/types";
 import {
   NUTRITION_MEAL_LABELS,
@@ -21,34 +16,9 @@ import {
 } from "@/lib/nutrition/meal-types";
 import type { MemberNutritionDayView } from "@/lib/nutrition/member-day";
 
-const CARD_CLASS =
-  "rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70";
-
 type MemberNutritionPageClientProps = {
   initialDay: MemberNutritionDayView;
 };
-
-function MacroPill({
-  label,
-  value,
-  unit,
-}: {
-  label: string;
-  value: number;
-  unit: string;
-}) {
-  return (
-    <div className="rounded-xl bg-muted/50 px-3 py-2 text-center">
-      <p className="text-[11px] text-muted-foreground">{label}</p>
-      <p className="font-semibold">
-        {value}
-        <span className="text-xs font-normal text-muted-foreground">
-          {unit}
-        </span>
-      </p>
-    </div>
-  );
-}
 
 function mealCalories(
   items: MemberNutritionDayView["meals"][NutritionMealType],
@@ -73,80 +43,90 @@ export function MemberNutritionPageClient({
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="font-display text-xl font-bold">Nutrition</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Log meals and track daily calories and macros.
-        </p>
-      </div>
+    <div className="mx-auto w-full max-w-[390px] space-y-4 pb-8">
+      <header className="space-y-1">
+        <h1 className="font-display text-2xl font-bold tracking-tight">
+          Nutrition
+        </h1>
+      </header>
 
-      <Card className={CARD_CLASS}>
-        <CardContent className="flex flex-col items-center gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <NutritionDateNav logDate={day.logDate} onDayLoaded={setDay} />
+
+      <section className="rounded-2xl border border-border/60 bg-card px-4 py-4 shadow-sm">
+        <div className="flex items-center gap-4">
           <NutritionCalorieRing
             calories={day.totals.calories}
             targetCalories={day.targetCalories}
+            size={112}
+            strokeWidth={9}
           />
-          <div className="grid w-full max-w-xs grid-cols-3 gap-2 sm:max-w-none sm:flex-1">
-            <MacroPill label="Protein" value={day.totals.proteinGrams} unit="g" />
-            <MacroPill label="Carbs" value={day.totals.carbsGrams} unit="g" />
-            <MacroPill label="Fat" value={day.totals.fatGrams} unit="g" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <p className="text-sm text-muted-foreground">Daily summary</p>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <MacroStat label="Protein" value={day.totals.proteinGrams} />
+              <MacroStat label="Carbs" value={day.totals.carbsGrams} />
+              <MacroStat label="Fat" value={day.totals.fatGrams} />
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       <Button
-        className="h-12 w-full gap-2 text-base"
+        className="h-12 w-full gap-2 text-base shadow-sm"
         onClick={() => openAdd("breakfast")}
       >
-        <Plus className="h-4 w-4" />
-        Add food
+        <Plus className="h-5 w-5" />
+        Track Food
       </Button>
 
-      {NUTRITION_MEAL_TYPES.map((mealType) => {
-        const items = day.meals[mealType];
-        const calories = mealCalories(items);
-        return (
-          <Card key={mealType} className={CARD_CLASS}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <div>
-                <CardTitle className="text-base">
-                  {NUTRITION_MEAL_LABELS[mealType]}
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {calories} kcal
-                </p>
+      <div className="space-y-5">
+        {NUTRITION_MEAL_TYPES.map((mealType) => {
+          const items = day.meals[mealType];
+          const calories = mealCalories(items);
+          return (
+            <section key={mealType} className="space-y-2">
+              <div className="flex items-end justify-between gap-2 border-b border-border/70 pb-2">
+                <div>
+                  <h2 className="text-base font-semibold">
+                    {NUTRITION_MEAL_LABELS[mealType]}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {calories} kcal
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 gap-1 px-2 text-base text-primary"
+                  onClick={() => openAdd(mealType)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add
+                </Button>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-9 gap-1 px-2 text-base"
-                onClick={() => openAdd(mealType)}
-              >
-                <Plus className="h-4 w-4" />
-                Add
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-2 pt-0">
               {items.length === 0 ? (
                 <p className="py-2 text-sm text-muted-foreground">
-                  No foods logged yet.
+                  No foods logged.
                 </p>
               ) : (
-                items.map((entry) => (
-                  <NutritionLogEntryRow
-                    key={entry.id}
-                    entry={entry}
-                    logDate={day.logDate}
-                    onDayUpdated={setDay}
-                  />
-                ))
+                <ul className="divide-y divide-border/60 rounded-xl border border-border/50 bg-card/50">
+                  {items.map((entry) => (
+                    <li key={entry.id} className="px-1">
+                      <NutritionLogEntryRow
+                        entry={entry}
+                        logDate={day.logDate}
+                        day={day}
+                        onDayUpdated={setDay}
+                      />
+                    </li>
+                  ))}
+                </ul>
               )}
-            </CardContent>
-          </Card>
-        );
-      })}
+            </section>
+          );
+        })}
+      </div>
 
       <NutritionAttribution />
 
@@ -155,8 +135,18 @@ export function MemberNutritionPageClient({
         onOpenChange={setAddOpen}
         logDate={day.logDate}
         mealType={addMeal}
+        onMealTypeChange={setAddMeal}
         onDayUpdated={setDay}
       />
+    </div>
+  );
+}
+
+function MacroStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg bg-muted/40 px-1 py-1.5">
+      <p className="text-[10px] text-muted-foreground">{label}</p>
+      <p className="text-sm font-semibold">{value}g</p>
     </div>
   );
 }

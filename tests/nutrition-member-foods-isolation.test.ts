@@ -50,18 +50,6 @@ describe("NutritionMemberFoodsRepository member isolation", () => {
       }),
     } as never);
 
-    vi.spyOn(repo, "getById").mockResolvedValue({
-      id: "gym-a__member-a__usda:1",
-      gymId: "gym-a",
-      memberId: "member-a",
-      foodId: "usda:1",
-      isFavorite: true,
-      favoritedAt: Timestamp.now(),
-      lastLoggedAt: null,
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    });
-
     await repo.setFavorite(memberA, "gym-a", "member-a", "usda:1", true);
     expect(setMock).toHaveBeenCalled();
     const payload = setMock.mock.calls[0]?.[0];

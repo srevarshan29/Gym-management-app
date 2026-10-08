@@ -48,7 +48,7 @@ function actionErrorFromUnknown(error: unknown, fallback: string): ActionResult 
 }
 
 const searchSchema = z.object({
-  query: z.string().trim().min(3).max(80),
+  query: z.string().trim().min(2).max(80),
 });
 
 const addSchema = z.object({
@@ -86,7 +86,7 @@ export async function searchMemberNutritionFoods(
     void member;
     const parsed = searchSchema.safeParse(payload);
     if (!parsed.success) {
-      return actionError("Enter at least 3 characters to search.");
+      return actionError("Enter at least 2 characters to search.");
     }
     const results = await searchNutritionFoodCatalog(parsed.data.query);
     return actionOk(undefined, results);

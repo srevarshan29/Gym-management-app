@@ -462,7 +462,7 @@ export type DietPlanDoc = {
   updatedAt: Timestamp;
 };
 
-export type NutritionFoodSource = "USDA";
+export type NutritionFoodSource = "USDA" | "indian_cc0";
 
 export type NutritionFoodSourceAttribution = {
   dataset: string;

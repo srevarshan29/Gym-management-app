@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   dedupeUsdaCatalogCandidates,
   parseUsdaFoodRow,
+  usdaEnergyKcalPer100g,
 } from "@/lib/nutrition/usda-catalog";
 
 function row(
@@ -61,6 +62,31 @@ describe("USDA nutrition import deduplication", () => {
       "SR Legacy",
     );
     expect(parsed).toBeNull();
+  });
+
+  it("parses sweet potato raw when only kJ energy is present", () => {
+    const parsed = parseUsdaFoodRow(
+      {
+        fdcId: 168482,
+        description: "Sweet potato, raw, unprepared",
+        foodNutrients: [
+          { nutrient: { id: 1062 }, amount: 359 },
+          { nutrient: { id: 1003 }, amount: 1.5 },
+          { nutrient: { id: 1005 }, amount: 20 },
+          { nutrient: { id: 1004 }, amount: 0.1 },
+        ],
+      },
+      "SR Legacy",
+    );
+    expect(parsed?.canonicalKey).toBe("potato:sweet:raw");
+    expect(parsed?.caloriesPer100g).toBeGreaterThan(0);
+  });
+
+  it("derives kcal from kJ energy when kcal nutrient is missing", () => {
+    const kcal = usdaEnergyKcalPer100g([
+      { nutrient: { id: 1062 }, amount: 418.4 },
+    ]);
+    expect(kcal).toBeCloseTo(100, 0);
   });
 
   it("reuses stable foodId per fdcId so existing foods are not duplicated", () => {

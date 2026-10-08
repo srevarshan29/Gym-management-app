@@ -1,10 +1,10 @@
 import { getRepositories, platformContext } from "@/lib/firestore";
 import type { MemberContext } from "@/lib/firestore/context";
 import {
-  favoriteFoodIdsExcludingRecent,
   memberFoodDocToShortcutRow,
   NUTRITION_MAX_FAVORITE_FOODS,
   NUTRITION_MAX_RECENT_FOODS,
+  recentFoodIdsExcludingFavorites,
   selectFavoriteFoodIds,
   selectRecentFoodIds,
 } from "@/lib/nutrition/member-food-shortcuts";
@@ -23,16 +23,11 @@ async function hydrateFoodsByIds(
 ): Promise<NutritionFoodSearchResult[]> {
   if (foodIds.length === 0) return [];
   const { nutritionFoodCatalog } = getRepositories();
-  const rows: NutritionFoodSearchResult[] = [];
-
-  for (const foodId of foodIds) {
-    const row = await nutritionFoodCatalog.getByFoodId(platformContext, foodId);
-    if (row) {
-      rows.push(catalogDocToSearchResult(row));
-    }
-  }
-
-  return rows;
+  const rows = await nutritionFoodCatalog.getByFoodIds(
+    platformContext,
+    foodIds,
+  );
+  return rows.map((row) => catalogDocToSearchResult(row));
 }
 
 function orderByFoodIds(
@@ -64,26 +59,24 @@ export async function loadMemberNutritionAddFoodShortcuts(
     ),
   ]);
 
-  const recentIds = selectRecentFoodIds(
-    recentDocs.map(memberFoodDocToShortcutRow),
-    NUTRITION_MAX_RECENT_FOODS,
+  const favoriteIds = selectFavoriteFoodIds(
+    favoriteDocs.map(memberFoodDocToShortcutRow),
+    NUTRITION_MAX_FAVORITE_FOODS,
   );
-  const favoriteIds = favoriteFoodIdsExcludingRecent(
-    selectFavoriteFoodIds(
-      favoriteDocs.map(memberFoodDocToShortcutRow),
-      NUTRITION_MAX_FAVORITE_FOODS,
+  const recentIds = recentFoodIdsExcludingFavorites(
+    selectRecentFoodIds(
+      recentDocs.map(memberFoodDocToShortcutRow),
+      NUTRITION_MAX_RECENT_FOODS,
     ),
-    recentIds,
+    favoriteIds,
   );
 
-  const [recentFoods, favoriteFoods] = await Promise.all([
-    hydrateFoodsByIds(recentIds),
-    hydrateFoodsByIds(favoriteIds),
-  ]);
+  const allIds = [...new Set([...favoriteIds, ...recentIds])];
+  const hydrated = await hydrateFoodsByIds(allIds);
 
   return {
-    recent: orderByFoodIds(recentFoods, recentIds),
-    favorites: orderByFoodIds(favoriteFoods, favoriteIds),
+    favorites: orderByFoodIds(hydrated, favoriteIds),
+    recent: orderByFoodIds(hydrated, recentIds),
   };
 }
 
@@ -110,14 +103,14 @@ export async function setMemberNutritionFoodFavorite(
   if (!food) {
     throw new Error("Food not found in catalog.");
   }
-  const doc = await nutritionMemberFoods.setFavorite(
+  await nutritionMemberFoods.setFavorite(
     ctx,
     ctx.gymId,
     ctx.memberId,
     foodId,
     isFavorite,
   );
-  return doc.isFavorite === true;
+  return isFavorite;
 }
 
 export async function isMemberNutritionFoodFavorite(

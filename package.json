@@ -14,6 +14,7 @@
     "db:seed": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first prisma db seed",
     "db:seed:firestore": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first node --env-file=.env --import tsx scripts/seed-firestore.ts",
     "db:import:usda-nutrition": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first node --env-file=.env --import tsx scripts/import-usda-nutrition-catalog.ts",
+    "db:import:indian-cc0-nutrition": "node --env-file=.env --import tsx scripts/import-indian-cc0-nutrition-catalog.ts",
     "db:reconcile:tenant-ids": "node --dns-result-order=ipv4first --env-file=.env --import tsx scripts/reconcile-tenant-ids.ts",
     "db:reconcile:tenant-ids:apply": "node --dns-result-order=ipv4first --env-file=.env --import tsx scripts/reconcile-tenant-ids.ts --apply --confirm",
     "db:provision:tenant": "node --dns-result-order=ipv4first --env-file=.env --import tsx scripts/provision-tenant-mirror.ts",

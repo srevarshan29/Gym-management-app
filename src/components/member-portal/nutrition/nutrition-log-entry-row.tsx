@@ -14,8 +14,12 @@ import {
   resolveFoodQuantityMode,
 } from "@/components/member-portal/nutrition/nutrition-quantity-editor";
 import { Button } from "@/components/ui/button";
-import type { NutritionLogEntryView } from "@/lib/nutrition/member-day";
-import type { NutritionFoodSearchResult } from "@/lib/nutrition/member-day";
+import { removeNutritionLogEntryOptimistic } from "@/lib/nutrition/member-day-optimistic";
+import type {
+  MemberNutritionDayView,
+  NutritionFoodSearchResult,
+  NutritionLogEntryView,
+} from "@/lib/nutrition/member-day";
 import {
   formatLogQuantity,
   formatQuantityLabel,
@@ -27,13 +31,15 @@ import {
 type NutritionLogEntryRowProps = {
   entry: NutritionLogEntryView;
   logDate: string;
+  day: MemberNutritionDayView;
   disabled?: boolean;
-  onDayUpdated: (day: import("@/lib/nutrition/member-day").MemberNutritionDayView) => void;
+  onDayUpdated: (day: MemberNutritionDayView) => void;
 };
 
 export function NutritionLogEntryRow({
   entry,
   logDate,
+  day,
   disabled,
   onDayUpdated,
 }: NutritionLogEntryRowProps) {
@@ -42,10 +48,11 @@ export function NutritionLogEntryRow({
   const [loadingFood, setLoadingFood] = React.useState(false);
   const [amount, setAmount] = React.useState(entry.quantityGrams);
   const [saving, setSaving] = React.useState(false);
-  const [removing, setRemoving] = React.useState(false);
+  const [removedOptimistic, setRemovedOptimistic] = React.useState(false);
   const savingRef = React.useRef(false);
+  const removingRef = React.useRef(false);
 
-  const busy = disabled || saving || removing;
+  const busy = disabled || saving;
 
   React.useEffect(() => {
     if (!editing) return;
@@ -112,14 +119,22 @@ export function NutritionLogEntryRow({
   }
 
   async function onRemove() {
-    if (removing) return;
-    setRemoving(true);
+    if (removingRef.current) return;
+    removingRef.current = true;
+
+    const previousDay = day;
+    const optimisticDay = removeNutritionLogEntryOptimistic(day, entry.id);
+    setRemovedOptimistic(true);
+    onDayUpdated(optimisticDay);
+
     try {
       const result = await removeMemberNutritionLog({
         logDate,
         logId: entry.id,
       });
       if (!result.ok) {
+        setRemovedOptimistic(false);
+        onDayUpdated(previousDay);
         toast.error(result.error);
         return;
       }
@@ -127,14 +142,20 @@ export function NutritionLogEntryRow({
         onDayUpdated(result.data);
       }
     } catch (error) {
+      setRemovedOptimistic(false);
+      onDayUpdated(previousDay);
       console.error("[nutrition] remove failed:", error);
       toast.error("Could not remove entry.");
     } finally {
-      setRemoving(false);
+      removingRef.current = false;
     }
   }
 
   const quantityLabel = formatLogQuantity(entry.quantityGrams);
+
+  if (removedOptimistic) {
+    return null;
+  }
 
   return (
     <div className="rounded-xl bg-muted/40 px-3 py-2">
@@ -159,11 +180,7 @@ export function NutritionLogEntryRow({
           aria-label={`Remove ${entry.foodName}`}
           onClick={onRemove}
         >
-          {removing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Trash2 className="h-4 w-4" />
-          )}
+          <Trash2 className="h-4 w-4" />
         </Button>
       </div>
 

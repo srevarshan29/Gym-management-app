@@ -4,7 +4,17 @@
  */
 import { searchNutritionFoodCatalog } from "@/lib/nutrition/member-day";
 
-const QUERIES = ["egg", "rice", "chicken", "banana"];
+const QUERIES = [
+  "egg",
+  "swee",
+  "sweet potato",
+  "sweet potato leaves",
+  "chic",
+  "pota",
+  "rice",
+  "chicken",
+  "banana",
+];
 
 async function main() {
   for (const query of QUERIES) {

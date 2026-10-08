@@ -34,7 +34,7 @@ export function tokenizeCatalogSearchQuery(query: string): string[] {
  * Stores every prefix of length >= 3 for each word in the exercise name.
  */
 export function buildCatalogSearchPrefixes(name: string): string[] {
-  const nameLower = normalizeCatalogName(name);
+  const nameLower = normalizeCatalogName(name).replace(/,/g, " ");
   const prefixes = new Set<string>();
 
   for (const word of nameLower.split(/\s+/)) {

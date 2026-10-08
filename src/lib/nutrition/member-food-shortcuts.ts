@@ -62,11 +62,11 @@ export function selectFavoriteFoodIds(
   return result;
 }
 
-/** Favorites list without foods already shown in Recent. */
-export function favoriteFoodIdsExcludingRecent(
-  favoriteIds: string[],
+/** Recent list without foods already shown in Favorites. */
+export function recentFoodIdsExcludingFavorites(
   recentIds: string[],
+  favoriteIds: string[],
 ): string[] {
-  const recent = new Set(recentIds);
-  return favoriteIds.filter((id) => !recent.has(id));
+  const favorites = new Set(favoriteIds);
+  return recentIds.filter((id) => !favorites.has(id));
 }

@@ -7,8 +7,9 @@ import type {
 } from "@/lib/firestore/types";
 import { sumMacroTotals, type NutritionMacroTotals } from "@/lib/nutrition/calculations";
 import {
-  NUTRITION_SEARCH_CANDIDATE_LIMIT,
+  NUTRITION_MERGED_CANDIDATE_LIMIT,
   NUTRITION_SEARCH_RESULT_LIMIT,
+  nutritionSearchQueryMeetsMinLength,
   rankNutritionFoodSearchResults,
 } from "@/lib/nutrition/food-search";
 import { nutritionDisplayNameFromDoc } from "@/lib/nutrition/nutrition-canonical";
@@ -160,10 +161,13 @@ export function catalogDocToSearchResult(
 export async function searchNutritionFoodCatalog(
   query: string,
 ): Promise<NutritionFoodSearchResult[]> {
+  if (!nutritionSearchQueryMeetsMinLength(query)) {
+    return [];
+  }
   const { nutritionFoodCatalog } = getRepositories();
   const rows = await nutritionFoodCatalog.searchByQuery(platformContext, {
     query,
-    limit: NUTRITION_SEARCH_CANDIDATE_LIMIT,
+    limit: NUTRITION_MERGED_CANDIDATE_LIMIT,
   });
 
   const ranked = rankNutritionFoodSearchResults(

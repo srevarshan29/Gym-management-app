@@ -6,6 +6,7 @@ import {
 } from "@/lib/nutrition/nutrition-canonical";
 
 export const USDA_NUTRIENT_ENERGY_KCAL = 1008;
+export const USDA_NUTRIENT_ENERGY_KJ = 1062;
 export const USDA_NUTRIENT_PROTEIN = 1003;
 export const USDA_NUTRIENT_CARBS = 1005;
 export const USDA_NUTRIENT_FAT = 1004;
@@ -76,6 +77,17 @@ export function usdaNutrientAmount(
       return Number(row.amount);
     }
   }
+  return 0;
+}
+
+/** SR Legacy rows sometimes only provide energy in kJ (nutrient 1062). */
+export function usdaEnergyKcalPer100g(
+  rows: UsdaNutrientRow[] | undefined,
+): number {
+  const kcal = usdaNutrientAmount(rows, USDA_NUTRIENT_ENERGY_KCAL);
+  if (kcal > 0) return kcal;
+  const kj = usdaNutrientAmount(rows, USDA_NUTRIENT_ENERGY_KJ);
+  if (kj > 0) return kj / 4.184;
   return 0;
 }
 
@@ -158,10 +170,7 @@ export function parseUsdaFoodRow(
   if (!fdcId || !name) return null;
   if (isLowValueUsdaFood(name)) return null;
 
-  const caloriesPer100g = usdaNutrientAmount(
-    food.foodNutrients,
-    USDA_NUTRIENT_ENERGY_KCAL,
-  );
+  const caloriesPer100g = usdaEnergyKcalPer100g(food.foodNutrients);
   if (caloriesPer100g <= 0) return null;
 
   const canonicalKey = computeNutritionCanonicalKey(name);
@@ -204,6 +213,17 @@ export function usdaImportQualityScore(candidate: ParsedUsdaCatalogCandidate): n
     score -= 50;
   }
   if (/\bskinless\b/.test(n)) score += 10;
+  if (/\bsweet potato(?:es)?\b/.test(n)) {
+    if (/\bleaves\b/.test(n)) {
+      score -= 200;
+    }
+    if (/\braw|unprepared\b/.test(n) && !/\bfrozen|fried|leaves\b/.test(n)) {
+      score += 80;
+    }
+    if (/\bfrench fried|fried\b/.test(n)) {
+      score -= 120;
+    }
+  }
   score -= Math.min(candidate.name.length, 140) / 12;
   return score;
 }

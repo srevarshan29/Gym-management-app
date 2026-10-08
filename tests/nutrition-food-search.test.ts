@@ -3,6 +3,11 @@ import { describe, expect, it } from "vitest";
 import type { NutritionFoodCatalogDoc } from "@/lib/firestore/types";
 import {
   NUTRITION_SEARCH_RESULT_LIMIT,
+  nutritionCatalogSearchTokens,
+  nutritionSearchQueryMeetsMinLength,
+  NUTRITION_SEARCH_MIN_CHARS,
+  isProcessedSweetPotatoFood,
+  isSweetPotatoTuberSearch,
   passesNutritionSearchRelevanceGate,
   rankNutritionFoodSearchResults,
   scoreNutritionFoodSearch,
@@ -229,7 +234,153 @@ describe("nutrition food search ranking", () => {
     expect(banana[0]?.displayName).toBe("Banana");
   });
 
+  it("matches partial token prefixes like swee and chic", () => {
+    const sweetPotato = food({
+      foodId: "usda:sp",
+      name: "Sweet potato, baked, without salt",
+      nameLower: "sweet potato, baked, without salt",
+      canonicalKey: "potato:sweet:cooked",
+      displayName: "Sweet Potato, Cooked",
+      searchBoost: 90,
+    });
+    expect(passesNutritionSearchRelevanceGate("swee", sweetPotato)).toBe(true);
+    expect(passesNutritionSearchRelevanceGate("sweet potato", sweetPotato)).toBe(
+      true,
+    );
+
+    const chicken = food({
+      foodId: "usda:ch",
+      name: "Chicken, breast, roasted",
+      nameLower: "chicken, breast, roasted",
+      canonicalKey: "chicken:breast:cooked",
+      displayName: "Chicken Breast, Cooked",
+    });
+    expect(passesNutritionSearchRelevanceGate("chic", chicken)).toBe(true);
+  });
+
+  it("requires at least 2 characters before search runs", () => {
+    expect(NUTRITION_SEARCH_MIN_CHARS).toBe(2);
+    expect(nutritionSearchQueryMeetsMinLength("c")).toBe(false);
+    expect(nutritionSearchQueryMeetsMinLength("ch")).toBe(true);
+  });
+
+  it("filters 2-character ch to chicken-related foods", () => {
+    const chicken = food({
+      foodId: "usda:ch",
+      name: "Chicken, breast, roasted",
+      nameLower: "chicken, breast, roasted",
+      canonicalKey: "chicken:breast:cooked",
+      displayName: "Chicken Breast, Cooked",
+    });
+    const cheese = food({
+      foodId: "usda:cheese",
+      name: "Cheese, cheddar",
+      nameLower: "cheese, cheddar",
+      canonicalKey: "generic:cheese-cheddar",
+      displayName: "Cheese",
+    });
+    expect(passesNutritionSearchRelevanceGate("ch", chicken)).toBe(true);
+    expect(passesNutritionSearchRelevanceGate("ch", cheese)).toBe(false);
+    const ranked = rankNutritionFoodSearchResults("ch", [cheese, chicken]);
+    expect(ranked[0]?.canonicalKey).toMatch(/^chicken:/);
+  });
+
+  it("expands 2-character tokens for chicken prefix queries", () => {
+    expect(nutritionCatalogSearchTokens("ch")).toContain("chicken");
+    expect(nutritionCatalogSearchTokens("do")).toContain("dosa");
+    expect(nutritionCatalogSearchTokens("id")).toContain("idli");
+    expect(nutritionCatalogSearchTokens("sa")).toContain("sambar");
+  });
+
+  it("uses all query tokens for firestore candidate lookup", () => {
+    expect(nutritionCatalogSearchTokens("sweet potato")).toEqual([
+      "potato",
+      "sweet",
+    ]);
+    expect(nutritionCatalogSearchTokens("chicken breast")).toContain("chicken");
+    expect(nutritionCatalogSearchTokens("chicken breast")).toContain("breast");
+  });
+
+  it("ranks sweet potato highly for swee and sweet potato queries", () => {
+    const sweetPotato = food({
+      foodId: "usda:sp",
+      name: "Sweet potato, baked, without salt",
+      nameLower: "sweet potato, baked, without salt",
+      canonicalKey: "potato:sweet:cooked",
+      displayName: "Sweet Potato, Cooked",
+      searchBoost: 90,
+    });
+    const noise = food({
+      foodId: "usda:n",
+      name: "Sweet rolls",
+      nameLower: "sweet rolls",
+      canonicalKey: "generic:sweet-rolls",
+      displayName: "Sweet Rolls",
+    });
+    const swee = rankNutritionFoodSearchResults("swee", [noise, sweetPotato]);
+    expect(swee[0]?.foodId).toBe("usda:sp");
+    const phrase = rankNutritionFoodSearchResults("sweet potato", [
+      noise,
+      sweetPotato,
+    ]);
+    expect(phrase[0]?.displayName).toMatch(/Sweet Potato/i);
+  });
+
+  it("excludes sweet potato leaves and fried from tuber-style searches", () => {
+    const leaves = food({
+      foodId: "usda:leaves",
+      name: "Sweet potato leaves, raw",
+      nameLower: "sweet potato leaves, raw",
+      canonicalKey: "potato:sweet:raw",
+      displayName: "Sweet Potato",
+    });
+    expect(isSweetPotatoTuberSearch("swee")).toBe(true);
+    expect(isSweetPotatoTuberSearch("sweet potato leaves")).toBe(false);
+    expect(passesNutritionSearchRelevanceGate("swee", leaves)).toBe(false);
+    expect(passesNutritionSearchRelevanceGate("sweet potato", leaves)).toBe(false);
+    expect(
+      passesNutritionSearchRelevanceGate("sweet potato leaves", leaves),
+    ).toBe(true);
+
+    const fried = food({
+      foodId: "usda:168015",
+      name: "Sweet Potatoes, french fried, crosscut, frozen, unprepared",
+      nameLower:
+        "sweet potatoes, french fried, crosscut, frozen, unprepared",
+      canonicalKey: "potato:sweet:fried",
+      displayName: "Sweet Potatoes",
+    });
+    expect(isProcessedSweetPotatoFood(fried)).toBe(true);
+    expect(passesNutritionSearchRelevanceGate("swee", fried)).toBe(false);
+    expect(passesNutritionSearchRelevanceGate("sweet potato", fried)).toBe(false);
+  });
+
+  it("ranks raw sweet potato above cooked for tuber searches", () => {
+    const raw = food({
+      foodId: "usda:raw",
+      name: "Sweet potato, raw, unprepared",
+      nameLower: "sweet potato, raw, unprepared",
+      canonicalKey: "potato:sweet:raw",
+      displayName: "Sweet Potato",
+      searchBoost: 95,
+    });
+    const cooked = food({
+      foodId: "usda:cooked",
+      name: "Sweet potato, baked",
+      nameLower: "sweet potato, baked",
+      canonicalKey: "potato:sweet:cooked",
+      displayName: "Sweet Potato, Cooked",
+      searchBoost: 90,
+    });
+    const ranked = rankNutritionFoodSearchResults("sweet potato", [cooked, raw]);
+    expect(ranked[0]?.canonicalKey).toBe("potato:sweet:raw");
+    expect(ranked[1]?.canonicalKey).toBe("potato:sweet:cooked");
+  });
+
   it("assigns distinct canonical keys for meaningful egg parts", () => {
+    expect(computeNutritionCanonicalKey("Sweet potato leaves, raw")).toBe(
+      "vegetable:sweet-potato-leaves",
+    );
     expect(computeNutritionCanonicalKey("Egg, whole, raw")).toBe("egg:whole:raw");
     expect(computeNutritionCanonicalKey("Egg, white, raw")).toBe("egg:white:raw");
     expect(computeNutritionCanonicalKey("Egg, yolk, raw")).toBe("egg:yolk:raw");

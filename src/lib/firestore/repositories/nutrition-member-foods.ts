@@ -79,7 +79,7 @@ export class NutritionMemberFoodsRepository extends TenantRepository<NutritionMe
     memberId: string,
     foodId: string,
     isFavorite: boolean,
-  ): Promise<DocWithId<NutritionMemberFoodDoc>> {
+  ): Promise<void> {
     assertTenantAccess(ctx, gymId);
     assertMemberSelfAccess(ctx, memberId);
 
@@ -103,8 +103,6 @@ export class NutritionMemberFoodsRepository extends TenantRepository<NutritionMe
     }) as WithFieldValue<NutritionMemberFoodDoc>;
 
     await ref.set(payload, { merge: true });
-    const doc = await this.getById(ctx, gymId, id);
-    return this.assertDocBelongsToGym(ctx, doc, gymId);
   }
 
   async listRecentForMember(

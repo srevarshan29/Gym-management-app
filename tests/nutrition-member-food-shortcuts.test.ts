@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  favoriteFoodIdsExcludingRecent,
+  recentFoodIdsExcludingFavorites,
   NUTRITION_MAX_FAVORITE_FOODS,
   NUTRITION_MAX_RECENT_FOODS,
   selectFavoriteFoodIds,
@@ -61,12 +61,12 @@ describe("member nutrition food shortcuts", () => {
     expect(ids).toEqual(["f", "g", "h", "i", "j", "b"]);
   });
 
-  it("excludes favorites already shown in recent", () => {
-    const favorites = favoriteFoodIdsExcludingRecent(
-      ["a", "b", "c"],
-      ["b", "d"],
+  it("excludes favorites from recent (no overlap)", () => {
+    const recent = recentFoodIdsExcludingFavorites(
+      ["a", "b", "c", "d"],
+      ["b", "c"],
     );
-    expect(favorites).toEqual(["a", "c"]);
+    expect(recent).toEqual(["a", "d"]);
   });
 });
 

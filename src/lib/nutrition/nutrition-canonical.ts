@@ -33,6 +33,25 @@ export const NUTRITION_CANONICAL_DISPLAY: Record<string, string> = {
   "chicken:breast:raw": "Chicken Breast, Raw",
   "banana:raw": "Banana",
   "banana:dried": "Banana, Dried",
+  "potato:sweet:raw": "Sweet Potato",
+  "potato:sweet:cooked": "Sweet Potato, Cooked",
+  "vegetable:sweet-potato-leaves": "Sweet Potato Leaves",
+  "potato:sweet:fried": "Sweet Potatoes, Fried",
+  "indian:rice:raw:milled": "Rice (Raw, Milled)",
+  "indian:rice:parboiled:milled": "Rice (Parboiled)",
+  "indian:rice:raw:brown": "Brown Rice (Raw)",
+  "indian:rice:poha": "Poha (Rice Flakes)",
+  "indian:paneer": "Paneer",
+  "indian:curd": "Curd",
+  "indian:dal:toor": "Toor Dal",
+  "indian:dal:moong": "Moong Dal",
+  "indian:dal:urad": "Urad Dal",
+  "indian:dal:chana": "Chana Dal",
+  "indian:dal:masoor": "Masoor Dal",
+  "indian:millet:ragi": "Ragi",
+  "indian:wheat:atta": "Wheat Atta",
+  "indian:wheat:semolina": "Semolina (Rava)",
+  "indian:coconut:fresh": "Coconut (Fresh)",
 };
 
 /** Higher values surface first in search and win import deduplication ties. */
@@ -51,6 +70,23 @@ export const NUTRITION_CANONICAL_SEARCH_BOOST: Record<string, number> = {
   "chicken:breast:raw": 90,
   "banana:raw": 100,
   "banana:dried": 60,
+  "potato:sweet:raw": 95,
+  "potato:sweet:cooked": 90,
+  "indian:paneer": 100,
+  "indian:curd": 100,
+  "indian:dal:toor": 98,
+  "indian:dal:moong": 96,
+  "indian:dal:urad": 96,
+  "indian:dal:chana": 94,
+  "indian:dal:masoor": 94,
+  "indian:rice:raw:milled": 92,
+  "indian:rice:parboiled:milled": 88,
+  "indian:rice:raw:brown": 85,
+  "indian:millet:ragi": 90,
+  "indian:rice:poha": 80,
+  "indian:wheat:atta": 75,
+  "indian:wheat:semolina": 72,
+  "indian:coconut:fresh": 70,
 };
 
 function slugTokens(normalizedName: string, maxTokens = 6): string {
@@ -150,6 +186,20 @@ export function computeNutritionCanonicalKey(usdaDescription: string): string {
 
   if (/\bbananas?\b/.test(n)) {
     return /\bdried|dehydrated\b/.test(n) ? "banana:dried" : "banana:raw";
+  }
+
+  if (/\bsweet potato(?:es)?\b/.test(n)) {
+    if (/\bleaves\b/.test(n)) {
+      return "vegetable:sweet-potato-leaves";
+    }
+    if (/\bchips|puffs\b/.test(n)) {
+      return `generic:${slugTokens(n)}`;
+    }
+    if (/\bfrench fried|fried\b/.test(n)) {
+      return "potato:sweet:fried";
+    }
+    const cooked = /\bcooked|baked|roasted|boiled|steamed\b/.test(n);
+    return cooked ? "potato:sweet:cooked" : "potato:sweet:raw";
   }
 
   return `generic:${slugTokens(n)}`;

@@ -1,4 +1,5 @@
 import {
+  CATALOG_SEARCH_PREFIX_MIN_LENGTH,
   normalizeCatalogSearchQuery,
   tokenizeCatalogSearchQuery,
 } from "@/lib/exercises/catalog-search";
@@ -9,8 +10,59 @@ import {
   nutritionSearchBoostForCanonical,
 } from "@/lib/nutrition/nutrition-canonical";
 
+export const NUTRITION_SEARCH_MIN_CHARS = 2;
 export const NUTRITION_SEARCH_RESULT_LIMIT = 8;
-export const NUTRITION_SEARCH_CANDIDATE_LIMIT = 48;
+/** Max catalog rows passed into the relevance ranker after Firestore fetch. */
+export const NUTRITION_MERGED_CANDIDATE_LIMIT = 150;
+/** Per-token `searchPrefixes` query size (catalog has many rows sharing tokens like "sweet"). */
+export const NUTRITION_PREFIX_FETCH_PER_TOKEN = 150;
+/** @deprecated Use {@link NUTRITION_MERGED_CANDIDATE_LIMIT}. */
+export const NUTRITION_SEARCH_CANDIDATE_LIMIT = NUTRITION_MERGED_CANDIDATE_LIMIT;
+
+/** Firestore prefix tokens for a member food search (all query words, longest first). */
+function expandNutritionSearchToken(token: string, expanded: Set<string>): void {
+  if (token.length >= CATALOG_SEARCH_PREFIX_MIN_LENGTH) {
+    expanded.add(token);
+  }
+  if (token === "ch" || token === "chi" || token === "chic") {
+    expanded.add("chicken");
+  }
+  if (token === "do" || token === "dos") {
+    expanded.add("dosa");
+  }
+  if (token === "id" || token === "idl") {
+    expanded.add("idli");
+  }
+  if (token === "sa" || token === "sam") {
+    expanded.add("sambar");
+  }
+  if (token === "swee" || token === "swe") {
+    expanded.add("sweet");
+  }
+  if (token === "pota" || token === "potat") {
+    expanded.add("potato");
+  }
+}
+
+/** Firestore prefix tokens (length >= 3) plus expansions for partial member queries. */
+export function nutritionCatalogSearchTokens(query: string): string[] {
+  const tokens = tokenizeCatalogSearchQuery(query);
+  const expanded = new Set<string>();
+  for (const token of tokens) {
+    expandNutritionSearchToken(token, expanded);
+  }
+
+  const unique = [...expanded].filter(
+    (token) => token.length >= CATALOG_SEARCH_PREFIX_MIN_LENGTH,
+  );
+  unique.sort((a, b) => b.length - a.length);
+  return unique;
+}
+
+export function nutritionSearchQueryMeetsMinLength(query: string): boolean {
+  const normalized = normalizeCatalogSearchQuery(query);
+  return normalized.length >= NUTRITION_SEARCH_MIN_CHARS;
+}
 
 export type RankableNutritionFood = Pick<
   NutritionFoodCatalogDoc,
@@ -35,7 +87,104 @@ function wordBoundaryIncludes(haystack: string, token: string): boolean {
 function tokenMatchesFoodText(queryToken: string, text: string): boolean {
   if (wordBoundaryIncludes(text, queryToken)) return true;
   if (queryToken === "egg" && /\beggs\b/i.test(text)) return true;
+  const normalized = text.toLowerCase();
+  const parts = normalized.split(/[\s,]+/).filter(Boolean);
+  if (parts.some((part) => part.startsWith(queryToken))) return true;
+  if (normalized.replace(/,/g, " ").startsWith(`${queryToken} `)) return true;
+  if (normalized.replace(/,/g, " ").startsWith(`${queryToken},`)) return true;
   return false;
+}
+
+/** True when the member is searching for the edible tuber, not leaves or fried sides. */
+export function isSweetPotatoTuberSearch(query: string): boolean {
+  const queryTokens = tokenizeCatalogSearchQuery(query);
+  if (queryTokens.length === 0) return false;
+  if (queryTokens.includes("leaves")) return false;
+  if (
+    queryTokens.some(
+      (t) => t === "fried" || t === "chips" || t === "puffs" || t === "french",
+    )
+  ) {
+    return false;
+  }
+  if (queryTokens.length === 1) {
+    const token = queryTokens[0]!;
+    return token === "swee" || token === "sweet" || token === "swe";
+  }
+  return queryTokens.includes("sweet") && queryTokens.includes("potato");
+}
+
+export function isSweetPotatoLeafFood(
+  doc: Pick<RankableNutritionFood, "name" | "nameLower" | "canonicalKey">,
+): boolean {
+  const canonicalKey = nutritionCanonicalKeyFromDoc(doc);
+  if (canonicalKey === "vegetable:sweet-potato-leaves") return true;
+  const name = doc.nameLower.replace(/,/g, " ");
+  return /\bsweet potato(?:es)?\b/.test(name) && /\bleaves\b/.test(name);
+}
+
+/** Boost Indian CC0 staples for member-style queries (coexists with USDA). */
+export function scoreIndianCc0FoodSearch(
+  queryTokens: string[],
+  canonicalKey: string,
+  displayLower: string,
+): number {
+  let bonus = 40;
+  const tokenSet = new Set(queryTokens);
+
+  if (tokenSet.has("paneer") && canonicalKey === "indian:paneer") {
+    bonus += 520;
+  }
+  if (
+    (tokenSet.has("curd") || tokenSet.has("dahi")) &&
+    canonicalKey === "indian:curd"
+  ) {
+    bonus += 500;
+  }
+  if (tokenSet.has("dal") && canonicalKey.startsWith("indian:dal:")) {
+    bonus += 420;
+  }
+  if (tokenSet.has("toor") && canonicalKey === "indian:dal:toor") {
+    bonus += 380;
+  }
+  if (tokenSet.has("moong") && canonicalKey === "indian:dal:moong") {
+    bonus += 380;
+  }
+  if (tokenSet.has("urad") && canonicalKey === "indian:dal:urad") {
+    bonus += 380;
+  }
+  if (tokenSet.has("chana") && canonicalKey === "indian:dal:chana") {
+    bonus += 360;
+  }
+  if (tokenSet.has("masoor") && canonicalKey === "indian:dal:masoor") {
+    bonus += 360;
+  }
+  if (tokenSet.has("rice") && canonicalKey.startsWith("indian:rice:")) {
+    bonus += 280;
+  }
+  if (tokenSet.has("ragi") && canonicalKey === "indian:millet:ragi") {
+    bonus += 400;
+  }
+  if (tokenSet.has("poha") && canonicalKey === "indian:rice:poha") {
+    bonus += 400;
+  }
+  if (
+    (tokenSet.has("atta") || tokenSet.has("chapati")) &&
+    canonicalKey === "indian:wheat:atta"
+  ) {
+    bonus += tokenSet.has("chapati") ? 620 : 200;
+  }
+  return bonus;
+}
+
+export function isProcessedSweetPotatoFood(
+  doc: Pick<RankableNutritionFood, "name" | "nameLower" | "canonicalKey">,
+): boolean {
+  const canonicalKey = nutritionCanonicalKeyFromDoc(doc);
+  if (canonicalKey === "potato:sweet:fried") return true;
+  const name = doc.nameLower.replace(/,/g, " ");
+  if (!/\bsweet potato(?:es)?\b/.test(name)) return false;
+  return /\bfrench fried|fried|puffs|chips\b/.test(name);
 }
 
 /**
@@ -52,8 +201,39 @@ export function passesNutritionSearchRelevanceGate(
   const name = doc.nameLower.replace(/,/g, " ");
   const canonicalKey = nutritionCanonicalKeyFromDoc(doc);
 
+  if (isSweetPotatoTuberSearch(query)) {
+    if (isSweetPotatoLeafFood(doc) || isProcessedSweetPotatoFood(doc)) {
+      return false;
+    }
+  }
+
+  if (
+    queryTokens.includes("chapati") &&
+    canonicalKey === "indian:wheat:atta"
+  ) {
+    return true;
+  }
+
   if (queryTokens.length === 1) {
     const token = queryTokens[0]!;
+    if (token.length === 2) {
+      if (token === "ch") {
+        return (
+          canonicalKey.startsWith("chicken:") ||
+          /\bchicken\b/i.test(name) ||
+          display.startsWith("chicken")
+        );
+      }
+      if (token === "do") {
+        return /\bdosa\b/i.test(name) || display.startsWith("dosa");
+      }
+      if (token === "id") {
+        return /\bidli\b/i.test(name) || display.startsWith("idli");
+      }
+      if (token === "sa") {
+        return /\bsambar\b/i.test(name) || display.startsWith("sambar");
+      }
+    }
     if (canonicalKey === "vegetable:eggplant" && token === "egg") {
       return false;
     }
@@ -73,7 +253,7 @@ export function passesNutritionSearchRelevanceGate(
     if (tokenMatchesFoodText(token, display)) {
       return true;
     }
-    if (name.startsWith(`${token} `) || name.startsWith(`${token},`)) {
+    if (tokenMatchesFoodText(token, display) || tokenMatchesFoodText(token, name)) {
       return true;
     }
     return false;
@@ -126,6 +306,20 @@ export function scoreNutritionFoodSearch(
   ) {
     score += 60;
   }
+  if (
+    (canonicalKey === "potato:sweet:raw" ||
+      canonicalKey === "potato:sweet:cooked") &&
+    isSweetPotatoTuberSearch(query)
+  ) {
+    score += 750;
+    if (canonicalKey === "potato:sweet:raw") {
+      score += 120;
+    }
+  }
+
+  if (canonicalKey.startsWith("indian:")) {
+    score += scoreIndianCc0FoodSearch(queryTokens, canonicalKey, displayLower);
+  }
 
   if (displayLower === normalizedQuery) score += 1200;
   if (nameLower === normalizedQuery) score += 1100;
@@ -162,7 +356,24 @@ export function scoreNutritionFoodSearch(
       score += 30;
       continue;
     }
+    const nameParts = nameLower.replace(/,/g, " ").split(/\s+/);
+    if (nameParts.some((part) => part.startsWith(token))) {
+      score += 100;
+      continue;
+    }
+    const displayParts = displayLower.split(/\s+/);
+    if (displayParts.some((part) => part.startsWith(token))) {
+      score += 110;
+      continue;
+    }
     score -= 250;
+  }
+
+  if (queryTokens.length >= 2) {
+    const phrase = queryTokens.join(" ");
+    if (displayLower.includes(phrase) || nameLower.replace(/,/g, " ").includes(phrase)) {
+      score += 400;
+    }
   }
 
   if (
@@ -191,6 +402,15 @@ export function scoreNutritionFoodSearch(
 
   if (/\bbabyfood\b/.test(nameLower)) {
     score -= 8000;
+  }
+
+  if (
+    queryTokens.includes("chapati") &&
+    canonicalKey !== "indian:wheat:atta" &&
+    !displayLower.includes("chapati") &&
+    !nameLower.replace(/,/g, " ").includes("chapati")
+  ) {
+    score -= 900;
   }
 
   if (firstQueryToken === "egg") {

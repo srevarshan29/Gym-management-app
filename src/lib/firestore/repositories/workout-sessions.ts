@@ -14,6 +14,7 @@ import { omitUndefined, serverTimestamps } from "@/lib/firestore/serialize";
 import type {
   WorkoutSessionDoc,
   WorkoutSessionExerciseEmbedded,
+  WorkoutSessionKind,
   WorkoutSessionStatus,
   WorkoutSetLogEmbedded,
 } from "@/lib/firestore/types";
@@ -22,6 +23,8 @@ export type CreateWorkoutSessionInput = {
   memberId: string;
   workoutPlanId: string;
   workoutPlanDayId: string | null;
+  sessionKind?: WorkoutSessionKind;
+  personalWorkoutId?: string | null;
   exercises: WorkoutSessionExerciseEmbedded[];
 };
 
@@ -159,6 +162,8 @@ export class WorkoutSessionsRepository extends TenantRepository<WorkoutSessionDo
         memberId: input.memberId,
         workoutPlanId: input.workoutPlanId,
         workoutPlanDayId: input.workoutPlanDayId,
+        sessionKind: input.sessionKind ?? "ASSIGNED",
+        personalWorkoutId: input.personalWorkoutId ?? null,
         status: "IN_PROGRESS",
         startedAt: now,
         completedAt: null,
@@ -183,6 +188,8 @@ export class WorkoutSessionsRepository extends TenantRepository<WorkoutSessionDo
       memberId: input.memberId,
       workoutPlanId: input.workoutPlanId,
       workoutPlanDayId: input.workoutPlanDayId,
+      sessionKind: input.sessionKind ?? "ASSIGNED",
+      personalWorkoutId: input.personalWorkoutId ?? null,
       status: "IN_PROGRESS",
       startedAt: now,
       completedAt: null,

@@ -267,6 +267,21 @@ service cloud.firestore {
       allow delete: if staffTenantDelete(resource.data.gymId);
     }
 
+    match /memberPersonalWorkouts/{workoutId} {
+      allow read: if staffTenantRead(resource.data.gymId)
+        || (memberOwnsGym(resource.data.gymId)
+            && resource.data.memberId == authMemberId());
+      allow create: if memberOwnsGym(request.resource.data.gymId)
+        && request.resource.data.memberId == authMemberId()
+        && hasRequiredGymId();
+      allow update: if memberOwnsGym(resource.data.gymId)
+        && resource.data.memberId == authMemberId()
+        && gymIdUnchanged()
+        && request.resource.data.memberId == authMemberId();
+      allow delete: if memberOwnsGym(resource.data.gymId)
+        && resource.data.memberId == authMemberId();
+    }
+
     match /workoutSessions/{sessionId} {
       allow read: if staffTenantRead(resource.data.gymId)
         || (memberOwnsGym(resource.data.gymId)

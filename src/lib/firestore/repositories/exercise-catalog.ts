@@ -67,7 +67,8 @@ export class ExerciseCatalogRepository {
     if (
       ctx.kind === "platform" ||
       ctx.kind === "super_admin" ||
-      ctx.kind === "staff"
+      ctx.kind === "staff" ||
+      ctx.kind === "member"
     ) {
       return;
     }

@@ -18,6 +18,7 @@ export const COLLECTIONS = {
   catalogSyncMeta: "catalogSyncMeta",
   workoutPlans: "workoutPlans",
   workoutSessions: "workoutSessions",
+  memberPersonalWorkouts: "memberPersonalWorkouts",
   dietPlans: "dietPlans",
   staffLoginThrottles: "staffLoginThrottles",
   nutritionFoodCatalog: "nutritionFoodCatalog",

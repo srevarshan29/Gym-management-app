@@ -5,8 +5,19 @@ import { LockedLink } from "@/components/navigation/locked-link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export default async function MemberWorkoutPage() {
+type PageProps = {
+  searchParams: Promise<{ tab?: string; addTo?: string }>;
+};
+
+export default async function MemberWorkoutPage({ searchParams }: PageProps) {
   const session = await requireMember();
+  const { tab, addTo } = await searchParams;
+  const initialTab =
+    tab === "mine" || tab === "library" || tab === "assigned"
+      ? tab
+      : addTo?.trim()
+        ? "library"
+        : "assigned";
 
   const { plan, activeSession, previousSets, canStart } =
     await loadMemberWorkoutPageData(session.gymId, session.memberId);
@@ -35,6 +46,8 @@ export default async function MemberWorkoutPage() {
         activeSession={activeSession}
         previousSets={previousSets}
         canStart={canStart}
+        initialTab={initialTab}
+        addToWorkoutId={addTo?.trim() || null}
       />
     </div>
   );

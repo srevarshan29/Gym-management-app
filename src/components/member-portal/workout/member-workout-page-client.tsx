@@ -6,6 +6,12 @@ import { toast } from "sonner";
 
 import { startWorkoutSession } from "@/app/actions/workout-sessions";
 import { MemberWorkoutPlanView } from "@/components/member-portal/member-workout-plan-view";
+import { MemberExerciseLibraryPanel } from "@/components/member-portal/workout/member-exercise-library-panel";
+import { MemberMyWorkoutsPanel } from "@/components/member-portal/workout/member-my-workouts-panel";
+import {
+  MemberWorkoutTabs,
+  type MemberWorkoutTab,
+} from "@/components/member-portal/workout/member-workout-tabs";
 import { WorkoutSessionView } from "@/components/member-portal/workout/workout-session-view";
 import { Button } from "@/components/ui/button";
 import type {
@@ -19,6 +25,8 @@ type MemberWorkoutPageClientProps = {
   activeSession: ActiveWorkoutSession | null;
   previousSets: Record<string, PreviousSetLog[]>;
   canStart: boolean;
+  initialTab?: MemberWorkoutTab;
+  addToWorkoutId?: string | null;
 };
 
 export function MemberWorkoutPageClient({
@@ -26,8 +34,11 @@ export function MemberWorkoutPageClient({
   activeSession,
   previousSets,
   canStart,
+  initialTab = "assigned",
+  addToWorkoutId = null,
 }: MemberWorkoutPageClientProps) {
   const router = useRouter();
+  const [tab, setTab] = React.useState<MemberWorkoutTab>(initialTab);
   const [, startTransition] = React.useTransition();
   const [startingDayKey, setStartingDayKey] = React.useState<string | null>(
     null,
@@ -65,10 +76,6 @@ export function MemberWorkoutPageClient({
     }
   }
 
-  if (!plan || plan.isLegacy) {
-    return <MemberWorkoutPlanView plan={plan} />;
-  }
-
   if (activeSession) {
     return (
       <WorkoutSessionView
@@ -78,12 +85,34 @@ export function MemberWorkoutPageClient({
     );
   }
 
-  const startableDays = plan.days.filter((day) => day.exercises.length > 0);
+  const startableDays =
+    plan?.days.filter((day) => day.exercises.length > 0) ?? [];
   const showDayPicker = startableDays.length > 1;
 
   return (
     <div className="space-y-4">
-      <MemberWorkoutPlanView plan={plan} />
+      <MemberWorkoutTabs
+        value={tab}
+        onChange={(next) => {
+          setTab(next);
+          router.replace(
+            next === "assigned"
+              ? "/member/workout"
+              : `/member/workout?tab=${next}`,
+            { scroll: false },
+          );
+        }}
+      />
+
+      {tab === "library" ? (
+        <MemberExerciseLibraryPanel addToWorkoutId={addToWorkoutId} />
+      ) : null}
+
+      {tab === "mine" ? <MemberMyWorkoutsPanel /> : null}
+
+      {tab === "assigned" ? (
+        <>
+          <MemberWorkoutPlanView plan={plan} />
       {canStart && !showDayPicker ? (
         <Button
           className="w-full"
@@ -114,6 +143,8 @@ export function MemberWorkoutPageClient({
             </Button>
           ))}
         </div>
+      ) : null}
+        </>
       ) : null}
     </div>
   );

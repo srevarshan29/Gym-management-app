@@ -21,6 +21,7 @@ import { StaffLoginThrottlesRepository } from "@/lib/firestore/repositories/staf
 import { SubscriptionsRepository } from "@/lib/firestore/repositories/subscriptions";
 import { UsersRepository } from "@/lib/firestore/repositories/users";
 import { VisitorsRepository } from "@/lib/firestore/repositories/visitors";
+import { MemberPersonalWorkoutsRepository } from "@/lib/firestore/repositories/member-personal-workouts";
 import { WorkoutPlansRepository } from "@/lib/firestore/repositories/workout-plans";
 import { WorkoutSessionsRepository } from "@/lib/firestore/repositories/workout-sessions";
 import { AttendanceRepository } from "@/lib/firestore/repositories/attendance";
@@ -45,6 +46,7 @@ export type FirestoreRepositories = {
   exerciseCatalog: ExerciseCatalogRepository;
   workoutPlans: WorkoutPlansRepository;
   workoutSessions: WorkoutSessionsRepository;
+  memberPersonalWorkouts: MemberPersonalWorkoutsRepository;
   attendance: AttendanceRepository;
   nutritionFoodCatalog: NutritionFoodCatalogRepository;
   nutritionLogs: NutritionLogsRepository;
@@ -73,6 +75,7 @@ export function createRepositories(db: Firestore): FirestoreRepositories {
     exerciseCatalog: new ExerciseCatalogRepository(db),
     workoutPlans: new WorkoutPlansRepository(db),
     workoutSessions: new WorkoutSessionsRepository(db),
+    memberPersonalWorkouts: new MemberPersonalWorkoutsRepository(db),
     attendance: new AttendanceRepository(db),
     nutritionFoodCatalog: new NutritionFoodCatalogRepository(db),
     nutritionLogs: new NutritionLogsRepository(db),
@@ -102,6 +105,7 @@ export { StaffLoginThrottlesRepository } from "@/lib/firestore/repositories/staf
 export { SubscriptionsRepository } from "@/lib/firestore/repositories/subscriptions";
 export { UsersRepository } from "@/lib/firestore/repositories/users";
 export { VisitorsRepository } from "@/lib/firestore/repositories/visitors";
+export { MemberPersonalWorkoutsRepository } from "@/lib/firestore/repositories/member-personal-workouts";
 export { WorkoutPlansRepository } from "@/lib/firestore/repositories/workout-plans";
 export { WorkoutSessionsRepository } from "@/lib/firestore/repositories/workout-sessions";
 export { AttendanceRepository } from "@/lib/firestore/repositories/attendance";

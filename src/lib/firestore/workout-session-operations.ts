@@ -10,14 +10,42 @@ import {
 } from "@/lib/workout-tracking/session-exercise-identity";
 import { buildPlanExerciseMap, resolvePlanExerciseTrackingType } from "@/lib/workout-tracking/session-plan";
 import { getExerciseLibraryMapByIds } from "@/lib/workout-tracking/exercise-library";
+import {
+  PERSONAL_WORKOUT_DAY_ID,
+  personalWorkoutToPlanDoc,
+} from "@/lib/workout-tracking/member-personal-workout-plan";
+import { resolvePlanDocForWorkoutSession } from "@/lib/workout-tracking/resolve-session-plan-doc";
+import {
+  catalogTrackingType,
+  parseMemberCatalogExerciseId,
+} from "@/lib/workout-tracking/member-catalog-exercises";
 import type { ActiveWorkoutSetLog } from "@/lib/workout-tracking/types";
 
 async function loadExerciseLibraryMapForTracking(
+  ctx: MemberContext,
   gymId: string,
   exerciseId: string | null | undefined,
 ) {
   const id = exerciseId?.trim();
   if (!id) return new Map();
+  const catalogId = parseMemberCatalogExerciseId(id);
+  if (catalogId) {
+    const { exerciseCatalog } = getRepositories();
+    const doc = await exerciseCatalog.getByCatalogId(ctx, catalogId);
+    if (!doc) return new Map();
+    const trackingType = catalogTrackingType(doc);
+    return new Map([
+      [
+        id,
+        {
+          name: doc.name,
+          muscleGroup: doc.muscleGroup,
+          trackingType,
+          isSeeded: false,
+        },
+      ],
+    ]);
+  }
   return getExerciseLibraryMapByIds(gymId, [id]);
 }
 function buildSetLogValues(
@@ -93,6 +121,56 @@ export async function startWorkoutSessionRecord(
   return { sessionId: resolvedId, resumed: !created };
 }
 
+export async function startPersonalWorkoutSessionRecord(
+  ctx: MemberContext,
+  personalWorkoutId: string,
+): Promise<{ sessionId: string; resumed: boolean }> {
+  const { memberPersonalWorkouts, workoutSessions } = getRepositories();
+  const gymId = ctx.gymId;
+  const memberId = ctx.memberId;
+
+  const [personal, existing] = await Promise.all([
+    memberPersonalWorkouts.getForMember(ctx, gymId, memberId, personalWorkoutId),
+    workoutSessions.findActiveSession(ctx, gymId, memberId),
+  ]);
+
+  if (!personal || personal.exercises.length === 0) {
+    throw new Error("Add at least one exercise before starting.");
+  }
+
+  if (existing) {
+    return { sessionId: existing.id, resumed: true };
+  }
+
+  const planShell = personalWorkoutToPlanDoc(personal);
+  const day = planShell.days[0];
+  if (!day || day.exercises.length === 0) {
+    throw new Error("Add at least one exercise before starting.");
+  }
+
+  const sessionId = newDocId();
+  const { sessionId: resolvedId, created } =
+    await workoutSessions.createSessionIfNoActive(ctx, gymId, sessionId, {
+      memberId,
+      workoutPlanId: personal.id,
+      workoutPlanDayId: PERSONAL_WORKOUT_DAY_ID,
+      sessionKind: "PERSONAL",
+      personalWorkoutId: personal.id,
+      exercises: day.exercises.map((row) => ({
+        id: newDocId(),
+        workoutPlanExerciseId: row.id,
+        sortOrder: row.sortOrder,
+        exerciseId: row.exerciseId,
+        customName: row.customName,
+        trackingTypeOverride: row.trackingTypeOverride,
+        targetReps: row.targetReps,
+        sets: [],
+      })),
+    });
+
+  return { sessionId: resolvedId, resumed: !created };
+}
+
 export type LogWorkoutSetResult = {
   sessionExerciseId: string;
   set: ActiveWorkoutSetLog;
@@ -136,7 +214,7 @@ export async function logWorkoutSetRecord(
     } else {
       const plan = await measureServerPhase(
         "member.workout.logSet.planLookup",
-        () => workoutPlans.getById(ctx, gymId, active.workoutPlanId),
+        () => resolvePlanDocForWorkoutSession(ctx, gymId, memberId, active),
       );
       if (!plan) {
         throw new Error("Workout session not found.");
@@ -158,7 +236,11 @@ export async function logWorkoutSetRecord(
       const library = await measureServerPhase(
         "member.workout.logSet.libraryLookup",
         () =>
-          loadExerciseLibraryMapForTracking(gymId, exerciseContext.exerciseId),
+          loadExerciseLibraryMapForTracking(
+            ctx,
+            gymId,
+            exerciseContext.exerciseId,
+          ),
       );
       trackingType = resolvePlanExerciseTrackingType(exerciseContext, library);
     } else {

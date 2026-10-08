@@ -43,7 +43,25 @@ export type VisitorSource = "walk_in" | "qr_registration";
 export type LedgerTransactionType = "INCOME" | "EXPENSE";
 export type WorkoutLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 export type WorkoutSessionStatus = "IN_PROGRESS" | "COMPLETED";
+export type WorkoutSessionKind = "ASSIGNED" | "PERSONAL";
 export type ExerciseTrackingType = "WEIGHTED" | "TIME" | "BODYWEIGHT";
+
+export type MemberPersonalWorkoutExerciseEmbedded = {
+  id: string;
+  catalogId: string;
+  sortOrder: number;
+  targetSets: number;
+  targetReps: string;
+};
+
+export type MemberPersonalWorkoutDoc = {
+  gymId: string;
+  memberId: string;
+  name: string;
+  exercises: MemberPersonalWorkoutExerciseEmbedded[];
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+};
 
 // ── Base document fields ─────────────────────────────────────────────────
 
@@ -443,6 +461,10 @@ export type WorkoutSessionDoc = {
   memberId: string;
   workoutPlanId: string;
   workoutPlanDayId: string | null;
+  /** Defaults to ASSIGNED for legacy sessions. */
+  sessionKind?: WorkoutSessionKind;
+  /** Set when sessionKind is PERSONAL. */
+  personalWorkoutId?: string | null;
   status: WorkoutSessionStatus;
   startedAt: Timestamp;
   completedAt: Timestamp | null;

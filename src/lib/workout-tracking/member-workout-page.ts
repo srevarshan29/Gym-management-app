@@ -3,9 +3,13 @@ import { cache } from "react";
 import { getRepositories } from "@/lib/firestore";
 import type { MemberContext } from "@/lib/firestore/context";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
-import type { WorkoutPlanDoc } from "@/lib/firestore/types";
+import type { WorkoutPlanDoc, WorkoutSessionDoc } from "@/lib/firestore/types";
 import { measureServerPhase } from "@/lib/server-perf";
-import { getExercisesByIds } from "@/lib/workout-tracking/exercise-library";
+import { resolveMixedExerciseListItems } from "@/lib/workout-tracking/member-catalog-exercises";
+import {
+  isPersonalWorkoutSession,
+  personalWorkoutToPlanDoc,
+} from "@/lib/workout-tracking/member-personal-workout-plan";
 import { buildMemberWorkoutPlanDetail } from "@/lib/workout-plans";
 import {
   getPreviousSetsForSessionExercises,
@@ -46,9 +50,21 @@ async function resolvePlanDocForMemberWorkout(
   gymId: string,
   memberId: string,
   memberPlan: DocWithId<WorkoutPlanDoc> | null,
-  activeSessionPlanId: string | null,
+  activeRaw: DocWithId<WorkoutSessionDoc> | null,
 ): Promise<DocWithId<WorkoutPlanDoc> | null> {
-  const { workoutPlans } = getRepositories();
+  const { workoutPlans, memberPersonalWorkouts } = getRepositories();
+
+  if (activeRaw && isPersonalWorkoutSession(activeRaw)) {
+    const personal = await memberPersonalWorkouts.getForMember(
+      ctx,
+      gymId,
+      memberId,
+      activeRaw.personalWorkoutId!,
+    );
+    if (personal) return personalWorkoutToPlanDoc(personal);
+  }
+
+  const activeSessionPlanId = activeRaw?.workoutPlanId ?? null;
 
   if (
     memberPlan &&
@@ -57,7 +73,7 @@ async function resolvePlanDocForMemberWorkout(
     return memberPlan;
   }
 
-  if (activeSessionPlanId) {
+  if (activeSessionPlanId && !isPersonalWorkoutSession(activeRaw ?? {})) {
     const sessionPlan = await workoutPlans.getById(
       ctx,
       gymId,
@@ -85,7 +101,7 @@ export const loadMemberWorkoutPageData = cache(
         gymId,
         memberId,
         memberPlan,
-        activeRaw?.workoutPlanId ?? null,
+        activeRaw,
       );
 
       const exerciseIds = new Set<string>();
@@ -104,7 +120,7 @@ export const loadMemberWorkoutPageData = cache(
 
       const libraryItems =
         exerciseIds.size > 0
-          ? await getExercisesByIds(gymId, [...exerciseIds])
+          ? await resolveMixedExerciseListItems(ctx, gymId, [...exerciseIds])
           : [];
       const lookup = exerciseLookupFromItems(libraryItems);
 

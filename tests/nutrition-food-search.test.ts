@@ -292,6 +292,23 @@ describe("nutrition food search ranking", () => {
     expect(nutritionCatalogSearchTokens("sa")).toContain("sambar");
   });
 
+  it("returns Idli for idli, idl, and id queries", () => {
+    const idli = food({
+      foodId: "indb:ASC144",
+      source: "indb",
+      name: "Idli",
+      nameLower: "idli",
+      canonicalKey: "indb:idli",
+      displayName: "Idli",
+      searchPrefixes: ["idl", "idli"],
+    });
+    for (const q of ["idli", "idl", "id"]) {
+      expect(passesNutritionSearchRelevanceGate(q, idli)).toBe(true);
+      const ranked = rankNutritionFoodSearchResults(q, [idli]);
+      expect(ranked.some((r) => r.displayName === "Idli")).toBe(true);
+    }
+  });
+
   it("uses all query tokens for firestore candidate lookup", () => {
     expect(nutritionCatalogSearchTokens("sweet potato")).toEqual([
       "potato",

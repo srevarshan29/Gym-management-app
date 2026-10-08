@@ -6,12 +6,16 @@ import type {
   NutritionMealType,
 } from "@/lib/firestore/types";
 import { sumMacroTotals, type NutritionMacroTotals } from "@/lib/nutrition/calculations";
+import { normalizeCatalogSearchQuery } from "@/lib/exercises/catalog-search";
 import {
-  NUTRITION_MERGED_CANDIDATE_LIMIT,
   NUTRITION_SEARCH_RESULT_LIMIT,
   nutritionSearchQueryMeetsMinLength,
   rankNutritionFoodSearchResults,
 } from "@/lib/nutrition/food-search";
+import {
+  getCachedNutritionCatalogCandidates,
+  setCachedNutritionCatalogCandidates,
+} from "@/lib/nutrition/nutrition-catalog-search-cache";
 import { nutritionDisplayNameFromDoc } from "@/lib/nutrition/nutrition-canonical";
 import { resolveCatalogServingPortion } from "@/lib/nutrition/nutrition-serving-portion";
 import {
@@ -179,11 +183,16 @@ export async function searchNutritionFoodCatalog(
   if (!nutritionSearchQueryMeetsMinLength(query)) {
     return [];
   }
+  const cacheKey = normalizeCatalogSearchQuery(query);
   const { nutritionFoodCatalog } = getRepositories();
-  const rows = await nutritionFoodCatalog.searchByQuery(platformContext, {
-    query,
-    limit: NUTRITION_MERGED_CANDIDATE_LIMIT,
-  });
+  const cached = getCachedNutritionCatalogCandidates(cacheKey);
+  const rows =
+    cached ??
+    await nutritionFoodCatalog.searchByQuery(platformContext, { query });
+
+  if (!cached) {
+    setCachedNutritionCatalogCandidates(cacheKey, rows);
+  }
 
   const ranked = rankNutritionFoodSearchResults(
     query,

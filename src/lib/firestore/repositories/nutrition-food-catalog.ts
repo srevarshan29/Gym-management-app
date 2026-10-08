@@ -8,8 +8,6 @@ import {
 import {
   CATALOG_SEARCH_PREFIX_MIN_LENGTH,
   catalogNamePrefixEnd,
-  normalizeCatalogSearchQuery,
-  tokenizeCatalogSearchQuery,
 } from "@/lib/exercises/catalog-search";
 import { COLLECTIONS } from "@/lib/firestore/collections";
 import type { FirestoreContext } from "@/lib/firestore/context";
@@ -17,11 +15,10 @@ import type { DocWithId } from "@/lib/firestore/repositories/base";
 import type { NutritionFoodCatalogDoc } from "@/lib/firestore/types";
 import {
   NUTRITION_MERGED_CANDIDATE_LIMIT,
-  NUTRITION_PREFIX_FETCH_PER_TOKEN,
   NUTRITION_SEARCH_MIN_CHARS,
-  nutritionCatalogSearchTokens,
   nutritionSearchQueryMeetsMinLength,
 } from "@/lib/nutrition/food-search";
+import { planNutritionCatalogSearchFetch } from "@/lib/nutrition/nutrition-catalog-search-plan";
 
 /**
  * Platform-global nutrition catalog — client rules deny access; Admin SDK only.
@@ -137,49 +134,25 @@ export class NutritionFoodCatalogRepository {
       return [];
     }
 
-    const tokens = nutritionCatalogSearchTokens(options.query);
-    const queryTokens = tokenizeCatalogSearchQuery(options.query);
-
+    const plan = planNutritionCatalogSearchFetch(options.query);
     const mergedCap = Math.min(
-      options.limit ?? NUTRITION_MERGED_CANDIDATE_LIMIT,
+      options.limit ?? plan.mergedCap,
       NUTRITION_MERGED_CANDIDATE_LIMIT,
+      plan.mergedCap,
     );
-    const perTokenLimit = Math.min(
-      NUTRITION_PREFIX_FETCH_PER_TOKEN,
-      Math.max(60, Math.ceil(mergedCap / Math.max(1, tokens.length || 1))),
-    );
+    const nameLowerLimit = Math.min(48, mergedCap);
 
-    const normalizedQuery = normalizeCatalogSearchQuery(options.query);
     const fetchTasks: Promise<DocWithId<NutritionFoodCatalogDoc>[]>[] = [];
 
-    if (normalizedQuery.length >= NUTRITION_SEARCH_MIN_CHARS) {
+    for (const prefix of plan.nameLowerPrefixes) {
       fetchTasks.push(
-        this.searchByNameLowerPrefix(
-          ctx,
-          normalizedQuery,
-          Math.min(32, mergedCap),
-        ),
+        this.searchByNameLowerPrefix(ctx, prefix, nameLowerLimit),
       );
     }
 
-    for (const token of queryTokens) {
-      if (
-        token.length >= NUTRITION_SEARCH_MIN_CHARS &&
-        token.length < CATALOG_SEARCH_PREFIX_MIN_LENGTH
-      ) {
-        fetchTasks.push(
-          this.searchByNameLowerPrefix(
-            ctx,
-            token,
-            Math.min(48, mergedCap),
-          ),
-        );
-      }
-    }
-
-    for (const token of tokens) {
+    for (const token of plan.prefixTokens) {
       fetchTasks.push(
-        this.searchByPrefixToken(ctx, token, perTokenLimit),
+        this.searchByPrefixToken(ctx, token, plan.perTokenLimit),
       );
     }
 

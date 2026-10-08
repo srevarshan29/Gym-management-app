@@ -28,6 +28,7 @@ import type {
   NutritionFoodSearchResult,
 } from "@/lib/nutrition/member-day";
 import { NUTRITION_SEARCH_MIN_CHARS } from "@/lib/nutrition/food-search";
+import { shouldApplyNutritionSearchResponse } from "@/lib/nutrition/nutrition-search-request";
 import { applyFavoriteToggleToShortcuts } from "@/lib/nutrition/member-food-shortcuts-ui";
 import {
   type NutritionTrackCartItem,
@@ -110,9 +111,14 @@ export function NutritionAddFoodSheet({
   const [searching, setSearching] = React.useState(false);
   const [tracking, setTracking] = React.useState(false);
   const trackingRef = React.useRef(false);
+  const searchSeqRef = React.useRef(0);
 
   const mealLabel = NUTRITION_MEAL_LABELS[mealType];
-  const showSearchResults = debouncedQuery.length >= NUTRITION_SEARCH_MIN_CHARS;
+  const trimmedQuery = query.trim();
+  const showSearchResults = trimmedQuery.length >= NUTRITION_SEARCH_MIN_CHARS;
+  const searchPending =
+    showSearchResults && trimmedQuery !== debouncedQuery.trim();
+  const showSearching = searching || searchPending;
   const selectedIds = React.useMemo(
     () => new Set(cart.map((item) => item.foodId)),
     [cart],
@@ -153,17 +159,30 @@ export function NutritionAddFoodSheet({
 
   React.useEffect(() => {
     if (!open) return;
-    if (debouncedQuery.length < NUTRITION_SEARCH_MIN_CHARS) {
+    if (trimmedQuery.length < NUTRITION_SEARCH_MIN_CHARS) {
       setResults([]);
       setSearching(false);
       return;
     }
+    if (searchPending) {
+      setResults([]);
+    }
+  }, [open, trimmedQuery, searchPending]);
 
-    let cancelled = false;
+  React.useEffect(() => {
+    if (!open) return;
+    if (debouncedQuery.length < NUTRITION_SEARCH_MIN_CHARS) {
+      setSearching(false);
+      return;
+    }
+
+    const requestSeq = ++searchSeqRef.current;
     setSearching(true);
     void searchMemberNutritionFoods({ query: debouncedQuery })
       .then((result) => {
-        if (cancelled) return;
+        if (!shouldApplyNutritionSearchResponse(requestSeq, searchSeqRef.current)) {
+          return;
+        }
         if (!result.ok) {
           toast.error(result.error);
           setResults([]);
@@ -172,16 +191,15 @@ export function NutritionAddFoodSheet({
         setResults(result.data ?? []);
       })
       .finally(() => {
-        if (!cancelled) setSearching(false);
+        if (shouldApplyNutritionSearchResponse(requestSeq, searchSeqRef.current)) {
+          setSearching(false);
+        }
       });
-
-    return () => {
-      cancelled = true;
-    };
   }, [debouncedQuery, open]);
 
   React.useEffect(() => {
     if (!open) {
+      searchSeqRef.current = 0;
       setQuery("");
       setDebouncedQuery("");
       setResults([]);
@@ -366,7 +384,7 @@ export function NutritionAddFoodSheet({
             />
 
             {showSearchResults ? (
-              searching ? (
+              showSearching ? (
                 <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Searching…

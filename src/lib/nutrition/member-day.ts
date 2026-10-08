@@ -13,7 +13,13 @@ import {
   rankNutritionFoodSearchResults,
 } from "@/lib/nutrition/food-search";
 import { nutritionDisplayNameFromDoc } from "@/lib/nutrition/nutrition-canonical";
+import {
+  defaultNutritionLogDate,
+  parseNutritionLogDate,
+} from "@/lib/nutrition/date-utils";
 import { NUTRITION_MEAL_TYPES } from "@/lib/nutrition/meal-types";
+
+export { defaultNutritionLogDate, parseNutritionLogDate } from "@/lib/nutrition/date-utils";
 
 export type NutritionLogEntryView = {
   id: string;
@@ -35,23 +41,6 @@ export type MemberNutritionDayView = {
   meals: Record<NutritionMealType, NutritionLogEntryView[]>;
   entries: NutritionLogEntryView[];
 };
-
-const LOG_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
-export function parseNutritionLogDate(value: string): string {
-  const trimmed = value.trim();
-  if (!LOG_DATE_PATTERN.test(trimmed)) {
-    throw new Error("Invalid date.");
-  }
-  return trimmed;
-}
-
-export function defaultNutritionLogDate(now = new Date()): string {
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 function toEntryView(
   doc: NutritionLogDoc & { id: string },

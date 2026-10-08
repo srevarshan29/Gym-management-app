@@ -9,35 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   defaultNutritionLogDate,
+  formatNutritionInsightsLabel,
   parseNutritionLogDate,
-} from "@/lib/nutrition/member-day";
+  shiftNutritionLogDate,
+} from "@/lib/nutrition/date-utils";
 import type { MemberNutritionDayView } from "@/lib/nutrition/member-day";
 import { cn } from "@/lib/utils";
-
-const MOBILE_FIELD_CLASS = "text-base";
-
-function shiftLogDate(logDate: string, days: number): string {
-  const [y, m, d] = logDate.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
-  date.setDate(date.getDate() + days);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function formatInsightsLabel(logDate: string, today: string): string {
-  if (logDate === today) return "Today";
-  const yesterday = shiftLogDate(today, -1);
-  if (logDate === yesterday) return "Yesterday";
-  const [y, m, d] = logDate.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-}
 
 type NutritionDateNavProps = {
   logDate: string;
@@ -80,7 +57,7 @@ export function NutritionDateNav({
   }
 
   const atToday = logDate === today;
-  const insightsLabel = formatInsightsLabel(logDate, today);
+  const insightsLabel = formatNutritionInsightsLabel(logDate, today);
 
   return (
     <div
@@ -96,7 +73,7 @@ export function NutritionDateNav({
         className="h-10 w-10 shrink-0"
         disabled={loading}
         aria-label="Previous day"
-        onClick={() => void navigateTo(shiftLogDate(logDate, -1))}
+        onClick={() => void navigateTo(shiftNutritionLogDate(logDate, -1))}
       >
         <ChevronLeft className="h-5 w-5" />
       </Button>
@@ -118,7 +95,7 @@ export function NutritionDateNav({
         className="h-10 w-10 shrink-0"
         disabled={loading || atToday}
         aria-label="Next day"
-        onClick={() => void navigateTo(shiftLogDate(logDate, 1))}
+        onClick={() => void navigateTo(shiftNutritionLogDate(logDate, 1))}
       >
         <ChevronRight className="h-5 w-5" />
       </Button>

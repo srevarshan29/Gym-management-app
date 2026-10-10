@@ -32,11 +32,13 @@ export type MemberPersonalWorkoutDetail = {
 };
 
 function toSummary(doc: DocWithId<MemberPersonalWorkoutDoc>): MemberPersonalWorkoutSummary {
+  const updatedAt =
+    doc.updatedAt?.toDate?.() ?? doc.createdAt?.toDate?.() ?? new Date(0);
   return {
     id: doc.id,
     name: doc.name,
-    exerciseCount: doc.exercises.length,
-    updatedAt: doc.updatedAt.toDate().toISOString(),
+    exerciseCount: Array.isArray(doc.exercises) ? doc.exercises.length : 0,
+    updatedAt: updatedAt.toISOString(),
   };
 }
 

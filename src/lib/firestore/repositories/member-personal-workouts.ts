@@ -20,6 +20,18 @@ export type SaveMemberPersonalWorkoutInput = {
   exercises: MemberPersonalWorkoutExerciseEmbedded[];
 };
 
+function personalWorkoutUpdatedAtMillis(doc: MemberPersonalWorkoutDoc): number {
+  const updatedAt = doc.updatedAt;
+  if (updatedAt && typeof updatedAt.toMillis === "function") {
+    return updatedAt.toMillis();
+  }
+  const createdAt = doc.createdAt;
+  if (createdAt && typeof createdAt.toMillis === "function") {
+    return createdAt.toMillis();
+  }
+  return 0;
+}
+
 export class MemberPersonalWorkoutsRepository extends TenantRepository<MemberPersonalWorkoutDoc> {
   constructor(db: Firestore) {
     super(db, COLLECTIONS.memberPersonalWorkouts);
@@ -34,16 +46,21 @@ export class MemberPersonalWorkoutsRepository extends TenantRepository<MemberPer
     assertTenantAccess(ctx, gymId);
     assertMemberSelfAccess(ctx, memberId);
 
+    // Equality-only query: works without the gymId+memberId+updatedAt composite index.
+    // Members typically have few personal workouts; sort by updatedAt in memory.
     const snap = await this.collection()
       .where("gymId", "==", gymId)
       .where("memberId", "==", memberId)
-      .orderBy("updatedAt", "desc")
-      .limit(limit)
       .get();
 
     return snap.docs
       .map((d) => this.fromSnapshot(d.id, d.data()))
-      .filter((d): d is DocWithId<MemberPersonalWorkoutDoc> => d !== null);
+      .filter((d): d is DocWithId<MemberPersonalWorkoutDoc> => d !== null)
+      .sort(
+        (a, b) =>
+          personalWorkoutUpdatedAtMillis(b) - personalWorkoutUpdatedAtMillis(a),
+      )
+      .slice(0, limit);
   }
 
   async getForMember(

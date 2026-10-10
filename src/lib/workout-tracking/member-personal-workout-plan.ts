@@ -9,28 +9,12 @@ import type {
   WorkoutPlanExerciseEmbedded,
 } from "@/lib/firestore/types";
 import { memberCatalogExerciseId } from "@/lib/workout-tracking/member-catalog-exercises";
+import { reorderPersonalWorkoutExercises } from "@/lib/workout-tracking/member-personal-workout-exercise-order";
 import { newDocId } from "@/lib/firestore/helpers";
 
 export const PERSONAL_WORKOUT_DAY_ID = "personal-day";
 
-export function reorderPersonalWorkoutExercises(
-  exercises: MemberPersonalWorkoutExerciseEmbedded[],
-  orderedIds: string[],
-): MemberPersonalWorkoutExerciseEmbedded[] {
-  const byId = new Map(exercises.map((row) => [row.id, row]));
-  const ordered: MemberPersonalWorkoutExerciseEmbedded[] = [];
-  orderedIds.forEach((id, index) => {
-    const row = byId.get(id);
-    if (!row) return;
-    ordered.push({ ...row, sortOrder: index });
-  });
-  for (const row of exercises) {
-    if (!orderedIds.includes(row.id)) {
-      ordered.push({ ...row, sortOrder: ordered.length });
-    }
-  }
-  return ordered;
-}
+export { reorderPersonalWorkoutExercises };
 
 export function removePersonalWorkoutExercise(
   exercises: MemberPersonalWorkoutExerciseEmbedded[],

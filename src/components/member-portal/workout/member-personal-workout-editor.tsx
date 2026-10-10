@@ -13,7 +13,7 @@ import {
 } from "@/app/actions/member-personal-workouts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { reorderPersonalWorkoutExercises } from "@/lib/workout-tracking/member-personal-workout-plan";
+import { reorderPersonalWorkoutExercises } from "@/lib/workout-tracking/member-personal-workout-exercise-order";
 
 type EditorExercise = {
   id: string;

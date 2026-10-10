@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+
 import { requireMember } from "@/lib/member-session";
 import { loadMemberWorkoutPageData } from "@/lib/workout-tracking/member-workout-page";
 import { MemberWorkoutPageClient } from "@/components/member-portal/workout/member-workout-page-client";
@@ -6,12 +8,17 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type PageProps = {
-  searchParams: Promise<{ tab?: string; addTo?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    addTo?: string;
+    created?: string;
+    group?: string;
+  }>;
 };
 
 export default async function MemberWorkoutPage({ searchParams }: PageProps) {
   const session = await requireMember();
-  const { tab, addTo } = await searchParams;
+  const { tab, addTo, created } = await searchParams;
   const initialTab =
     tab === "mine" || tab === "library" || tab === "assigned"
       ? tab
@@ -23,13 +30,15 @@ export default async function MemberWorkoutPage({ searchParams }: PageProps) {
     await loadMemberWorkoutPageData(session.gymId, session.memberId);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {activeSession ? null : (
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-3 px-1">
           <div>
-            <h1 className="font-display text-xl font-bold">Workout</h1>
+            <h1 className="font-display text-xl font-bold tracking-tight">
+              Workout
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              View your plan and log sets during your session.
+              Trainer plan, personal workouts, and exercise library.
             </p>
           </div>
           <LockedLink
@@ -41,14 +50,17 @@ export default async function MemberWorkoutPage({ searchParams }: PageProps) {
         </div>
       )}
 
-      <MemberWorkoutPageClient
-        plan={plan}
-        activeSession={activeSession}
-        previousSets={previousSets}
-        canStart={canStart}
-        initialTab={initialTab}
-        addToWorkoutId={addTo?.trim() || null}
-      />
+      <Suspense fallback={null}>
+        <MemberWorkoutPageClient
+          plan={plan}
+          activeSession={activeSession}
+          previousSets={previousSets}
+          canStart={canStart}
+          initialTab={initialTab}
+          addToWorkoutId={addTo?.trim() || null}
+          createdWorkoutId={created?.trim() || null}
+        />
+      </Suspense>
     </div>
   );
 }

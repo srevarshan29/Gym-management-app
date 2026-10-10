@@ -186,4 +186,55 @@
       padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
     }
   }
+
+  /* Member workout — GymDesk black + neon lime (#B6FF00). */
+  .member-workout-theme {
+    --background: 0 0% 2%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 75 100% 50%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 11%;
+    --muted-foreground: 0 0% 62%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 98%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 75 100% 50%;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+    border-radius: var(--radius);
+  }
+
+  .member-workout-card {
+    @apply rounded-2xl border border-border/80 bg-card/90 shadow-[0_0_0_1px_hsl(var(--primary)/0.04)];
+  }
+
+  .member-workout-glow {
+    box-shadow: 0 0 24px -8px hsl(var(--primary) / 0.35);
+  }
+
+  /* Muscle-group PNGs ship on black; screen blend hides black on dark cards. */
+  .member-muscle-group-art-wrap {
+    @apply relative flex items-center justify-center overflow-hidden bg-card;
+  }
+
+  .member-muscle-group-art {
+    @apply h-full w-full object-contain object-center;
+    max-height: 4.25rem;
+    mix-blend-mode: screen;
+    filter: contrast(1.06) brightness(1.04);
+  }
+
+  @supports not (mix-blend-mode: screen) {
+    .member-muscle-group-art {
+      mix-blend-mode: normal;
+      filter: contrast(1.08) brightness(1.1);
+    }
+  }
 }

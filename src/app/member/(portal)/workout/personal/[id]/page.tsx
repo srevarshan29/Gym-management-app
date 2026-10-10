@@ -1,7 +1,9 @@
 import Link from "next/link";
 
 import { MemberPersonalWorkoutEditor } from "@/components/member-portal/workout/member-personal-workout-editor";
+import { MemberWorkoutTheme } from "@/components/member-portal/workout/member-workout-theme";
 import { requireMember } from "@/lib/member-session";
+import { memberWorkoutPageHref } from "@/lib/member-portal/member-workout-tab-url";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -14,10 +16,10 @@ export default async function MemberPersonalWorkoutPage({ params }: PageProps) {
   const { id } = await params;
 
   return (
-    <div className="space-y-4">
+    <MemberWorkoutTheme>
       <div className="flex items-center gap-2">
         <Link
-          href="/member/workout?tab=mine"
+          href={memberWorkoutPageHref({ tab: "mine" })}
           className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
         >
           Back
@@ -25,6 +27,6 @@ export default async function MemberPersonalWorkoutPage({ params }: PageProps) {
         <h1 className="font-display text-lg font-bold">Edit workout</h1>
       </div>
       <MemberPersonalWorkoutEditor workoutId={id} />
-    </div>
+    </MemberWorkoutTheme>
   );
 }

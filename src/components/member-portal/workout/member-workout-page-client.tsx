@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { startWorkoutSession } from "@/app/actions/workout-sessions";
@@ -14,6 +14,13 @@ import {
 } from "@/components/member-portal/workout/member-workout-tabs";
 import { WorkoutSessionView } from "@/components/member-portal/workout/workout-session-view";
 import { Button } from "@/components/ui/button";
+import { parseMemberLibraryMuscleGroup } from "@/lib/member-portal/member-library-muscle-groups";
+import {
+  memberPersonalWorkoutEditorHref,
+  memberWorkoutPageHref,
+  parseMemberWorkoutTab,
+} from "@/lib/member-portal/member-workout-tab-url";
+import { MemberWorkoutTheme } from "@/components/member-portal/workout/member-workout-theme";
 import type {
   ActiveWorkoutSession,
   PreviousSetLog,
@@ -27,6 +34,7 @@ type MemberWorkoutPageClientProps = {
   canStart: boolean;
   initialTab?: MemberWorkoutTab;
   addToWorkoutId?: string | null;
+  createdWorkoutId?: string | null;
 };
 
 export function MemberWorkoutPageClient({
@@ -36,19 +44,57 @@ export function MemberWorkoutPageClient({
   canStart,
   initialTab = "assigned",
   addToWorkoutId = null,
+  createdWorkoutId = null,
 }: MemberWorkoutPageClientProps) {
   const router = useRouter();
-  const [tab, setTab] = React.useState<MemberWorkoutTab>(initialTab);
+  const searchParams = useSearchParams();
+  const urlTab = parseMemberWorkoutTab(
+    searchParams.get("tab") ?? (initialTab !== "assigned" ? initialTab : null),
+  );
+  const [tab, setTab] = React.useState<MemberWorkoutTab>(urlTab);
   const [, startTransition] = React.useTransition();
   const [startingDayKey, setStartingDayKey] = React.useState<string | null>(
     null,
   );
+
+  const resolvedAddTo =
+    searchParams.get("addTo")?.trim() || addToWorkoutId?.trim() || null;
+  const resolvedCreated =
+    searchParams.get("created")?.trim() || createdWorkoutId?.trim() || null;
+  const resolvedGroup = parseMemberLibraryMuscleGroup(
+    searchParams.get("group"),
+  );
+
+  React.useEffect(() => {
+    setTab(urlTab);
+  }, [urlTab]);
 
   React.useEffect(() => {
     if (activeSession) {
       setStartingDayKey(null);
     }
   }, [activeSession]);
+
+  function navigateTab(
+    next: MemberWorkoutTab,
+    extra?: { created?: string; group?: typeof resolvedGroup },
+  ) {
+    setTab(next);
+    router.replace(
+      memberWorkoutPageHref({
+        tab: next,
+        addTo: next === "library" ? resolvedAddTo : null,
+        created: extra?.created ?? (next === "mine" ? resolvedCreated : null),
+        group:
+          extra?.group !== undefined
+            ? extra.group
+            : next === "library"
+              ? resolvedGroup
+              : null,
+      }),
+      { scroll: false },
+    );
+  }
 
   async function onStart(dayId?: string) {
     const dayKey = dayId ?? "__default__";
@@ -90,62 +136,69 @@ export function MemberWorkoutPageClient({
   const showDayPicker = startableDays.length > 1;
 
   return (
-    <div className="space-y-4">
-      <MemberWorkoutTabs
-        value={tab}
-        onChange={(next) => {
-          setTab(next);
-          router.replace(
-            next === "assigned"
-              ? "/member/workout"
-              : `/member/workout?tab=${next}`,
-            { scroll: false },
-          );
-        }}
-      />
+    <MemberWorkoutTheme className="!p-0 sm:!p-0">
+      <MemberWorkoutTabs value={tab} onChange={(next) => navigateTab(next)} />
 
       {tab === "library" ? (
-        <MemberExerciseLibraryPanel addToWorkoutId={addToWorkoutId} />
+        <MemberExerciseLibraryPanel
+          addToWorkoutId={resolvedAddTo}
+          initialGroup={resolvedGroup}
+          selectionMode={Boolean(resolvedAddTo)}
+          doneHref={
+            resolvedAddTo
+              ? memberPersonalWorkoutEditorHref(resolvedAddTo)
+              : null
+          }
+        />
       ) : null}
 
-      {tab === "mine" ? <MemberMyWorkoutsPanel /> : null}
+      {tab === "mine" ? (
+        <MemberMyWorkoutsPanel
+          highlightWorkoutId={resolvedCreated}
+          onHighlightConsumed={() => {
+            router.replace(memberWorkoutPageHref({ tab: "mine" }), {
+              scroll: false,
+            });
+          }}
+        />
+      ) : null}
 
       {tab === "assigned" ? (
         <>
           <MemberWorkoutPlanView plan={plan} />
-      {canStart && !showDayPicker ? (
-        <Button
-          className="w-full"
-          onClick={() => onStart(startableDays[0]?.id)}
-          disabled={startingDayKey !== null}
-        >
-          {startingDayKey === (startableDays[0]?.id ?? "__default__")
-            ? "Starting..."
-            : "Start workout"}
-        </Button>
-      ) : null}
-      {canStart && showDayPicker ? (
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
-            Choose which day to train.
-          </p>
-          {startableDays.map((day) => (
+          {canStart && !showDayPicker ? (
             <Button
-              key={day.id}
               className="w-full"
-              variant="outline"
-              onClick={() => onStart(day.id)}
+              onClick={() => onStart(startableDays[0]?.id)}
               disabled={startingDayKey !== null}
             >
-              {startingDayKey === day.id
+              {startingDayKey === (startableDays[0]?.id ?? "__default__")
                 ? "Starting..."
-                : `Start ${day.label}`}
+                : "Start workout"}
             </Button>
-          ))}
-        </div>
-      ) : null}
+          ) : null}
+          {canStart && showDayPicker ? (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Choose which day to train.
+              </p>
+              {startableDays.map((day) => (
+                <Button
+                  key={day.id}
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => onStart(day.id)}
+                  disabled={startingDayKey !== null}
+                >
+                  {startingDayKey === day.id
+                    ? "Starting..."
+                    : `Start ${day.label}`}
+                </Button>
+              ))}
+            </div>
+          ) : null}
         </>
       ) : null}
-    </div>
+    </MemberWorkoutTheme>
   );
 }

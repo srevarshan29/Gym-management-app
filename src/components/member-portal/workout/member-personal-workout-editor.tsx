@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -13,6 +12,7 @@ import {
 } from "@/app/actions/member-personal-workouts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { memberPersonalWorkoutAddExercisesHref } from "@/lib/member-portal/member-workout-tab-url";
 import { reorderPersonalWorkoutExercises } from "@/lib/workout-tracking/member-personal-workout-exercise-order";
 
 type EditorExercise = {
@@ -122,6 +122,36 @@ export function MemberPersonalWorkoutEditor({
     }
   }
 
+  async function onAddExercises() {
+    if (saving) return;
+    const trimmed = name.trim();
+    if (!trimmed) {
+      toast.error("Enter a workout name.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const result = await saveMemberPersonalWorkoutAction({
+        workoutId,
+        name: trimmed,
+        exercises: exercises.map((e) => ({
+          id: e.id,
+          catalogId: e.catalogId,
+          sortOrder: e.sortOrder,
+          targetSets: e.targetSets,
+          targetReps: e.targetReps,
+        })),
+      });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      router.push(memberPersonalWorkoutAddExercisesHref(workoutId));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function onDelete() {
     if (!window.confirm("Delete this workout?")) return;
     const result = await deleteMemberPersonalWorkoutAction(workoutId);
@@ -151,10 +181,14 @@ export function MemberPersonalWorkoutEditor({
         maxLength={80}
       />
 
-      <Button type="button" variant="outline" className="h-11 w-full" asChild>
-        <Link href={`/member/workout?tab=library&addTo=${workoutId}`}>
-          Add from library
-        </Link>
+      <Button
+        type="button"
+        variant="outline"
+        className="h-11 w-full"
+        disabled={saving}
+        onClick={() => void onAddExercises()}
+      >
+        Add exercise
       </Button>
 
       {exercises.length === 0 ? (
@@ -166,7 +200,7 @@ export function MemberPersonalWorkoutEditor({
           {exercises.map((exercise, index) => (
             <li
               key={exercise.id}
-              className="rounded-xl border p-3 space-y-2"
+              className="member-workout-card space-y-2 p-3"
             >
               <div className="flex items-start justify-between gap-2">
                 <p className="font-medium leading-snug">{exercise.displayName}</p>

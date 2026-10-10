@@ -1,8 +1,9 @@
 "use client";
 
+import type { MemberWorkoutTab } from "@/lib/member-portal/member-workout-tab-url";
 import { cn } from "@/lib/utils";
 
-export type MemberWorkoutTab = "assigned" | "mine" | "library";
+export type { MemberWorkoutTab };
 
 const TABS: { id: MemberWorkoutTab; label: string }[] = [
   { id: "assigned", label: "Assigned" },
@@ -24,7 +25,7 @@ export function MemberWorkoutTabs({
   return (
     <div
       className={cn(
-        "flex gap-1 rounded-xl bg-muted/60 p-1",
+        "flex gap-1 rounded-2xl border border-border/60 bg-card/40 p-1",
         className,
       )}
       role="tablist"
@@ -37,10 +38,10 @@ export function MemberWorkoutTabs({
           role="tab"
           aria-selected={value === tab.id}
           className={cn(
-            "min-h-11 flex-1 rounded-lg px-2 text-sm font-medium transition-colors",
+            "min-h-11 flex-1 rounded-xl px-2 text-sm font-semibold transition-all",
             value === tab.id
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground",
+              ? "bg-primary text-primary-foreground shadow member-workout-glow"
+              : "text-muted-foreground hover:text-foreground",
           )}
           onClick={() => onChange(tab.id)}
         >

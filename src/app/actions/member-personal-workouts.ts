@@ -43,8 +43,13 @@ function memberCtx(member: {
   return { kind: "member", gymId: member.gymId, memberId: member.memberId };
 }
 
-function revalidateMemberWorkout() {
+function revalidateMemberWorkout(personalWorkoutId?: string) {
   revalidatePath("/member/workout");
+  if (personalWorkoutId?.trim()) {
+    const id = personalWorkoutId.trim();
+    revalidatePath(`/member/workout/personal/${id}`);
+    revalidatePath(`/member/workout/personal/${id}/add-exercises`);
+  }
 }
 
 export async function listMemberPersonalWorkoutsAction(): Promise<
@@ -111,7 +116,7 @@ export async function saveMemberPersonalWorkoutAction(
       name: parsed.data.name,
       exercises: parsed.data.exercises,
     });
-    revalidateMemberWorkout();
+    revalidateMemberWorkout(parsed.data.workoutId);
     return actionOk("Workout saved.");
   } catch (error) {
     console.error("[personal-workout] save failed", error);
@@ -139,12 +144,13 @@ export async function addExerciseToPersonalWorkoutAction(payload: {
 }): Promise<ActionResult> {
   try {
     const member = await requireMember();
+    const workoutId = payload.workoutId.trim();
     await addCatalogExerciseToPersonalWorkout(
       memberCtx(member),
-      payload.workoutId.trim(),
+      workoutId,
       payload.catalogId.trim(),
     );
-    revalidateMemberWorkout();
+    revalidateMemberWorkout(workoutId);
     return actionOk("Exercise added.");
   } catch (error) {
     console.error("[personal-workout] add exercise failed", error);

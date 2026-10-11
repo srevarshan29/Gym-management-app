@@ -32,3 +32,14 @@ export function useSharedNavigationLock(): NavigationLock {
   }
   return context;
 }
+
+/** Runs before shell `navigate` / `LockedLink` when registered (e.g. personal workout editor). */
+export function useRegisterBeforeNavigate(
+  handler: (() => Promise<boolean>) | null,
+) {
+  const { registerBeforeNavigate } = useSharedNavigationLock();
+  React.useEffect(() => {
+    registerBeforeNavigate(handler);
+    return () => registerBeforeNavigate(null);
+  }, [handler, registerBeforeNavigate]);
+}

@@ -1,29 +1,82 @@
 import type { MemberLibraryMuscleFilter } from "@/lib/member-portal/member-library-muscle-groups";
 
-export type MemberWorkoutTab = "assigned" | "mine" | "library";
+/** Top-level workout page sections (Phase 1). */
+export type MemberWorkoutTab = "plan" | "exercises";
+
+export type MemberPlanFilter = "all" | "trainer" | "mine";
+
+/** @deprecated Use MemberWorkoutTab — kept for imports migrating from legacy tabs. */
+export type MemberWorkoutTopTab = MemberWorkoutTab;
+
+/** Legacy `tab` query values still accepted in URLs. */
+export type MemberWorkoutTabQuery =
+  | MemberWorkoutTab
+  | "assigned"
+  | "mine"
+  | "library";
 
 export function parseMemberWorkoutTab(
   value: string | null | undefined,
 ): MemberWorkoutTab {
-  if (value === "mine" || value === "library" || value === "assigned") {
-    return value;
+  const normalized = value?.trim().toLowerCase();
+  if (normalized === "library" || normalized === "exercises") {
+    return "exercises";
   }
-  return "assigned";
+  return "plan";
+}
+
+export function parseMemberPlanFilter(
+  tab: string | null | undefined,
+  planFilter: string | null | undefined,
+): MemberPlanFilter {
+  const tabNorm = tab?.trim().toLowerCase();
+  if (tabNorm === "assigned") return "trainer";
+  if (tabNorm === "mine") return "mine";
+
+  const filterNorm = planFilter?.trim().toLowerCase();
+  if (filterNorm === "trainer" || filterNorm === "mine" || filterNorm === "all") {
+    return filterNorm;
+  }
+  /** Bare `/member/workout` and other URLs without an explicit plan filter. */
+  return "trainer";
 }
 
 export type MemberWorkoutPageQuery = {
-  tab?: MemberWorkoutTab;
+  tab?: MemberWorkoutTabQuery | null;
+  planFilter?: MemberPlanFilter | null;
   addTo?: string | null;
   created?: string | null;
   group?: MemberLibraryMuscleFilter | null;
 };
 
+function resolveTopTabAndFilter(query: MemberWorkoutPageQuery): {
+  topTab: MemberWorkoutTab;
+  planFilter: MemberPlanFilter;
+} {
+  const rawTab = query.tab ?? "plan";
+  const topTab = parseMemberWorkoutTab(rawTab);
+  if (topTab === "exercises") {
+    return { topTab, planFilter: "all" };
+  }
+  const planFilter = parseMemberPlanFilter(rawTab, query.planFilter ?? null);
+  return { topTab, planFilter };
+}
+
 export function memberWorkoutPageHref(query: MemberWorkoutPageQuery = {}): string {
   const params = new URLSearchParams();
-  const tab = query.tab ?? "assigned";
-  if (tab !== "assigned") {
-    params.set("tab", tab);
+  const { topTab, planFilter } = resolveTopTabAndFilter(query);
+
+  if (topTab === "exercises") {
+    params.set("tab", "library");
+  } else if (planFilter === "trainer") {
+    params.set("tab", "assigned");
+  } else if (planFilter === "mine") {
+    params.set("tab", "mine");
+  } else if (query.tab === "plan") {
+    params.set("tab", "plan");
+    params.set("planFilter", "all");
   }
+
   const addTo = query.addTo?.trim();
   if (addTo) {
     params.set("addTo", addTo);
@@ -44,13 +97,16 @@ export function memberPersonalWorkoutEditorHref(workoutId: string): string {
   return `/member/workout/personal/${encodeURIComponent(workoutId.trim())}`;
 }
 
+/** Shared Exercises tab in selection mode (`addTo` workout id). */
 export function memberPersonalWorkoutAddExercisesHref(
   workoutId: string,
   group?: MemberLibraryMuscleFilter | null,
 ): string {
-  const base = `/member/workout/personal/${encodeURIComponent(workoutId.trim())}/add-exercises`;
-  if (!group) return base;
-  return `${base}?group=${encodeURIComponent(group)}`;
+  return memberWorkoutPageHref({
+    tab: "library",
+    addTo: workoutId.trim(),
+    group: group ?? null,
+  });
 }
 
 export function memberExerciseLibraryDetailHref(

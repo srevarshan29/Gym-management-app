@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 const STEPS = [
   "Create workout",
   "Add exercises",
-  "Save",
+  "Auto-save",
   "Start",
 ] as const;
 

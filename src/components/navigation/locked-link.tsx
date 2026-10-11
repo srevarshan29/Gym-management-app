@@ -37,7 +37,7 @@ export function LockedLink({
       onClick={(e) => {
         onClick?.(e);
         if (!e.defaultPrevented) {
-          navigate(hrefString, e, navigationOptions);
+          void navigate(hrefString, e, navigationOptions);
         }
       }}
       aria-busy={isNavigating}

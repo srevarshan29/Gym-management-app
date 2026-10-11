@@ -9,7 +9,9 @@ import { startPersonalWorkoutSessionRecord } from "@/lib/firestore/workout-sessi
 import { requireMember } from "@/lib/member-session";
 import {
   addCatalogExerciseToPersonalWorkout,
+  addCatalogExercisesToPersonalWorkout,
   createMemberPersonalWorkout,
+  DEFAULT_PERSONAL_WORKOUT_NAME,
   deleteMemberPersonalWorkout,
   getMemberPersonalWorkoutDetail,
   listMemberPersonalWorkouts,
@@ -20,6 +22,18 @@ import {
 
 const nameSchema = z.object({
   name: z.string().trim().min(1).max(80),
+});
+
+const createSchema = z.object({
+  name: z.string().trim().max(80).optional(),
+});
+
+const bulkAddSchema = z.object({
+  workoutId: z.string().trim().min(1),
+  catalogIds: z
+    .array(z.string().trim().min(1).max(128))
+    .min(1)
+    .max(40),
 });
 
 const exerciseRowSchema = z.object({
@@ -83,17 +97,18 @@ export async function getMemberPersonalWorkoutAction(
 }
 
 export async function createMemberPersonalWorkoutAction(
-  payload: unknown,
+  payload: unknown = {},
 ): Promise<ActionResult<{ workoutId: string }>> {
   try {
     const member = await requireMember();
-    const parsed = nameSchema.safeParse(payload);
+    const parsed = createSchema.safeParse(payload ?? {});
     if (!parsed.success) {
-      return actionError("Enter a workout name.");
+      return actionError("Invalid workout data.");
     }
+    const name = parsed.data.name?.trim() || DEFAULT_PERSONAL_WORKOUT_NAME;
     const workoutId = await createMemberPersonalWorkout(
       memberCtx(member),
-      parsed.data.name,
+      name,
     );
     revalidateMemberWorkout();
     return actionOk("Workout created.", { workoutId });
@@ -156,6 +171,31 @@ export async function addExerciseToPersonalWorkoutAction(payload: {
     console.error("[personal-workout] add exercise failed", error);
     return actionError(
       error instanceof Error ? error.message : "Could not add exercise.",
+    );
+  }
+}
+
+export async function addExercisesToPersonalWorkoutAction(
+  payload: unknown,
+): Promise<ActionResult<{ addedCount: number }>> {
+  try {
+    const member = await requireMember();
+    const parsed = bulkAddSchema.safeParse(payload);
+    if (!parsed.success) {
+      return actionError("Select at least one exercise.");
+    }
+    const workoutId = parsed.data.workoutId.trim();
+    const result = await addCatalogExercisesToPersonalWorkout(
+      memberCtx(member),
+      workoutId,
+      parsed.data.catalogIds,
+    );
+    revalidateMemberWorkout(workoutId);
+    return actionOk(undefined, result);
+  } catch (error) {
+    console.error("[personal-workout] bulk add exercises failed", error);
+    return actionError(
+      error instanceof Error ? error.message : "Could not add exercises.",
     );
   }
 }

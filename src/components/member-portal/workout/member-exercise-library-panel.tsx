@@ -7,8 +7,10 @@ import { ArrowLeft, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { browseMemberExerciseLibraryAction } from "@/app/actions/member-exercise-library";
+import { addExercisesToPersonalWorkoutAction } from "@/app/actions/member-personal-workouts";
 import { MemberExerciseCard } from "@/components/member-portal/workout/member-exercise-card";
 import { MemberMuscleGroupGrid } from "@/components/member-portal/workout/member-muscle-group-grid";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   memberLibraryFilterToCatalogMuscleGroup,
@@ -16,7 +18,7 @@ import {
   type MemberLibraryMuscleFilter,
 } from "@/lib/member-portal/member-library-muscle-groups";
 import {
-  memberPersonalWorkoutAddExercisesHref,
+  memberPersonalWorkoutEditorHref,
   memberWorkoutPageHref,
 } from "@/lib/member-portal/member-workout-tab-url";
 import type { MemberCatalogListItem } from "@/lib/workout-tracking/member-catalog-exercises";
@@ -28,11 +30,9 @@ type MemberExerciseLibraryPanelProps = {
   className?: string;
   addToWorkoutId?: string | null;
   initialGroup?: MemberLibraryMuscleFilter | null;
-  /** Tap-to-add exercises without opening the detail page first. */
+  /** Multi-select picker for adding exercises to a personal workout. */
   selectionMode?: boolean;
   doneHref?: string | null;
-  /** When set, muscle-group navigation stays on the add-exercises route. */
-  workoutIdForAddFlow?: string | null;
 };
 
 export function MemberExerciseLibraryPanel({
@@ -41,9 +41,11 @@ export function MemberExerciseLibraryPanel({
   initialGroup = null,
   selectionMode = false,
   doneHref = null,
-  workoutIdForAddFlow = null,
 }: MemberExerciseLibraryPanelProps) {
   const router = useRouter();
+  const workoutId = addToWorkoutId?.trim() ?? "";
+  const pickFlow = selectionMode && workoutId.length > 0;
+
   const [activeGroup, setActiveGroup] =
     React.useState<MemberLibraryMuscleFilter | null>(initialGroup);
   const [query, setQuery] = React.useState("");
@@ -53,6 +55,8 @@ export function MemberExerciseLibraryPanel({
   const [hasMore, setHasMore] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [loadingMore, setLoadingMore] = React.useState(false);
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+  const [submitting, setSubmitting] = React.useState(false);
   const searchSeqRef = React.useRef(0);
 
   React.useEffect(() => {
@@ -105,12 +109,11 @@ export function MemberExerciseLibraryPanel({
     });
   }, [debouncedQuery, catalogMuscleGroup, browsingList, loadPage]);
 
-  const addFlowWorkoutId = workoutIdForAddFlow?.trim() || null;
+  const editorDoneHref =
+    doneHref?.trim() ||
+    (workoutId ? memberPersonalWorkoutEditorHref(workoutId) : null);
 
   function libraryLocationHref(group: MemberLibraryMuscleFilter | null) {
-    if (addFlowWorkoutId) {
-      return memberPersonalWorkoutAddExercisesHref(addFlowWorkoutId, group);
-    }
     return memberWorkoutPageHref({
       tab: "library",
       addTo: addToWorkoutId,
@@ -130,6 +133,14 @@ export function MemberExerciseLibraryPanel({
     router.replace(libraryLocationHref(null), { scroll: false });
   }
 
+  function toggleSelect(catalogId: string) {
+    setSelectedIds((prev) =>
+      prev.includes(catalogId)
+        ? prev.filter((id) => id !== catalogId)
+        : [...prev, catalogId],
+    );
+  }
+
   async function onLoadMore() {
     if (!hasMore || !cursor || loadingMore) return;
     setLoadingMore(true);
@@ -141,23 +152,61 @@ export function MemberExerciseLibraryPanel({
     }
   }
 
+  async function onAddSelected() {
+    if (!pickFlow || submitting || selectedIds.length === 0) return;
+    setSubmitting(true);
+    try {
+      const result = await addExercisesToPersonalWorkoutAction({
+        workoutId,
+        catalogIds: selectedIds,
+      });
+      if (!result.ok || !result.data) {
+        toast.error(!result.ok ? result.error : "Could not add exercises.");
+        return;
+      }
+      const count = result.data.addedCount;
+      toast.success(
+        count === 1
+          ? "1 exercise added to your workout."
+          : `${count} exercises added to your workout.`,
+      );
+      router.push(memberPersonalWorkoutEditorHref(workoutId));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const selectedCount = selectedIds.length;
+
   return (
-    <div className={cn("space-y-4", className)}>
-      {addToWorkoutId && selectionMode ? (
+    <div
+      className={cn("space-y-4", pickFlow && "pb-28", className)}
+    >
+      {pickFlow ? (
         <div
           className="member-workout-card flex flex-wrap items-center justify-between gap-2 border-primary/25 bg-primary/5 px-3 py-2.5 text-sm"
         >
-          <p className="text-muted-foreground">
-            Tap exercises to add. You can pick several.
+          <p className="min-w-0 text-muted-foreground">
+            Select exercises, then add them to your workout.
           </p>
-          {doneHref ? (
-            <Link
-              href={doneHref}
-              className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground"
-            >
-              Done
-            </Link>
-          ) : null}
+          <div className="flex shrink-0 items-center gap-2">
+            {editorDoneHref ? (
+              <Link
+                href={editorDoneHref}
+                className="rounded-lg border border-border/80 px-3 py-1.5 text-sm font-semibold text-foreground"
+              >
+                Back to editor
+              </Link>
+            ) : null}
+            {editorDoneHref ? (
+              <Link
+                href={editorDoneHref}
+                className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground"
+              >
+                Done
+              </Link>
+            ) : null}
+          </div>
         </div>
       ) : addToWorkoutId ? (
         <div className="member-workout-card border-primary/25 bg-primary/5 px-3 py-2.5 text-sm">
@@ -251,6 +300,9 @@ export function MemberExerciseLibraryPanel({
                   addToWorkoutId={addToWorkoutId}
                   group={activeGroup}
                   selectionMode={selectionMode}
+                  multiSelect={pickFlow}
+                  selected={selectedIds.includes(item.catalogId)}
+                  onToggleSelect={toggleSelect}
                 />
               ))}
             </div>
@@ -272,6 +324,30 @@ export function MemberExerciseLibraryPanel({
           ) : null}
         </>
       )}
+
+      {pickFlow ? (
+        <div
+          className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] z-30 border-t border-border/80 bg-card/95 px-4 py-3 shadow-lg backdrop-blur-sm"
+        >
+          <p className="mb-2 text-center text-xs text-muted-foreground">
+            {selectedCount === 0
+              ? "Select one or more exercises to add."
+              : `${selectedCount} selected`}
+          </p>
+          <Button
+            type="button"
+            className="h-12 w-full text-base"
+            disabled={selectedCount === 0 || submitting}
+            onClick={() => void onAddSelected()}
+          >
+            {submitting
+              ? "Adding…"
+              : selectedCount === 0
+                ? "Add exercises"
+                : `Add ${selectedCount} exercise${selectedCount === 1 ? "" : "s"}`}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

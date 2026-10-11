@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   appendPersonalWorkoutExercise,
+  catalogIdsToAppendToPersonalWorkout,
   removePersonalWorkoutExercise,
   reorderPersonalWorkoutExercises,
 } from "@/lib/workout-tracking/member-personal-workout-plan";
@@ -46,5 +47,17 @@ describe("member personal workout plan helpers", () => {
     expect(next).toHaveLength(3);
     expect(next[2]?.catalogId).toBe("cat-3");
     expect(next[2]?.targetSets).toBe(5);
+  });
+
+  it("dedupes batch ids and skips catalog ids already on the workout", () => {
+    expect(
+      catalogIdsToAppendToPersonalWorkout(base, [
+        "cat-1",
+        "cat-3",
+        "cat-3",
+        "cat-2",
+      ]),
+    ).toEqual(["cat-3"]);
+    expect(catalogIdsToAppendToPersonalWorkout(base, ["cat-1"])).toEqual([]);
   });
 });

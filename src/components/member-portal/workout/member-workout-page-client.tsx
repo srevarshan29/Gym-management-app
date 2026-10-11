@@ -5,20 +5,20 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { startWorkoutSession } from "@/app/actions/workout-sessions";
-import { MemberWorkoutPlanView } from "@/components/member-portal/member-workout-plan-view";
 import { MemberExerciseLibraryPanel } from "@/components/member-portal/workout/member-exercise-library-panel";
-import { MemberMyWorkoutsPanel } from "@/components/member-portal/workout/member-my-workouts-panel";
+import { MemberWorkoutPlanPanel } from "@/components/member-portal/workout/member-workout-plan-panel";
 import {
   MemberWorkoutTabs,
   type MemberWorkoutTab,
 } from "@/components/member-portal/workout/member-workout-tabs";
 import { WorkoutSessionView } from "@/components/member-portal/workout/workout-session-view";
-import { Button } from "@/components/ui/button";
 import { parseMemberLibraryMuscleGroup } from "@/lib/member-portal/member-library-muscle-groups";
 import {
   memberPersonalWorkoutEditorHref,
   memberWorkoutPageHref,
+  parseMemberPlanFilter,
   parseMemberWorkoutTab,
+  type MemberPlanFilter,
 } from "@/lib/member-portal/member-workout-tab-url";
 import { MemberWorkoutTheme } from "@/components/member-portal/workout/member-workout-theme";
 import type {
@@ -32,7 +32,7 @@ type MemberWorkoutPageClientProps = {
   activeSession: ActiveWorkoutSession | null;
   previousSets: Record<string, PreviousSetLog[]>;
   canStart: boolean;
-  initialTab?: MemberWorkoutTab;
+  initialTab?: string | null;
   addToWorkoutId?: string | null;
   createdWorkoutId?: string | null;
 };
@@ -42,23 +42,31 @@ export function MemberWorkoutPageClient({
   activeSession,
   previousSets,
   canStart,
-  initialTab = "assigned",
+  initialTab = null,
   addToWorkoutId = null,
   createdWorkoutId = null,
 }: MemberWorkoutPageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const urlTab = parseMemberWorkoutTab(
-    searchParams.get("tab") ?? (initialTab !== "assigned" ? initialTab : null),
+  const resolvedAddTo =
+    searchParams.get("addTo")?.trim() || addToWorkoutId?.trim() || null;
+  const rawTabParam = searchParams.get("tab") ?? initialTab;
+  const urlTopTab = resolvedAddTo
+    ? "exercises"
+    : parseMemberWorkoutTab(rawTabParam);
+  const urlPlanFilter = parseMemberPlanFilter(
+    rawTabParam,
+    searchParams.get("planFilter"),
   );
-  const [tab, setTab] = React.useState<MemberWorkoutTab>(urlTab);
+
+  const [tab, setTab] = React.useState<MemberWorkoutTab>(urlTopTab);
+  const [planFilter, setPlanFilter] =
+    React.useState<MemberPlanFilter>(urlPlanFilter);
   const [, startTransition] = React.useTransition();
   const [startingDayKey, setStartingDayKey] = React.useState<string | null>(
     null,
   );
 
-  const resolvedAddTo =
-    searchParams.get("addTo")?.trim() || addToWorkoutId?.trim() || null;
   const resolvedCreated =
     searchParams.get("created")?.trim() || createdWorkoutId?.trim() || null;
   const resolvedGroup = parseMemberLibraryMuscleGroup(
@@ -66,8 +74,24 @@ export function MemberWorkoutPageClient({
   );
 
   React.useEffect(() => {
-    setTab(urlTab);
-  }, [urlTab]);
+    setTab(urlTopTab);
+    setPlanFilter(urlPlanFilter);
+  }, [urlTopTab, urlPlanFilter]);
+
+  React.useEffect(() => {
+    const addTo = resolvedAddTo;
+    if (!addTo) return;
+    const tabParam = searchParams.get("tab") ?? initialTab;
+    if (parseMemberWorkoutTab(tabParam) === "exercises") return;
+    router.replace(
+      memberWorkoutPageHref({
+        tab: "library",
+        addTo,
+        group: parseMemberLibraryMuscleGroup(searchParams.get("group")),
+      }),
+      { scroll: false },
+    );
+  }, [resolvedAddTo, searchParams, initialTab, router]);
 
   React.useEffect(() => {
     if (activeSession) {
@@ -75,28 +99,33 @@ export function MemberWorkoutPageClient({
     }
   }, [activeSession]);
 
-  function navigateTab(
-    next: MemberWorkoutTab,
-    extra?: { created?: string; group?: typeof resolvedGroup },
-  ) {
+  function navigateTopTab(next: MemberWorkoutTab) {
     setTab(next);
     router.replace(
       memberWorkoutPageHref({
-        tab: next,
-        addTo: next === "library" ? resolvedAddTo : null,
-        created: extra?.created ?? (next === "mine" ? resolvedCreated : null),
-        group:
-          extra?.group !== undefined
-            ? extra.group
-            : next === "library"
-              ? resolvedGroup
-              : null,
+        tab: next === "exercises" ? "library" : "plan",
+        planFilter: next === "plan" ? planFilter : null,
+        addTo: next === "exercises" ? resolvedAddTo : null,
+        created: next === "plan" ? resolvedCreated : null,
+        group: next === "exercises" ? resolvedGroup : null,
       }),
       { scroll: false },
     );
   }
 
-  async function onStart(dayId?: string) {
+  function navigatePlanFilter(next: MemberPlanFilter) {
+    setPlanFilter(next);
+    router.replace(
+      memberWorkoutPageHref({
+        tab: "plan",
+        planFilter: next,
+        created: next === "mine" ? resolvedCreated : null,
+      }),
+      { scroll: false },
+    );
+  }
+
+  async function onStartTrainer(dayId?: string) {
     const dayKey = dayId ?? "__default__";
     if (startingDayKey !== null) return;
     setStartingDayKey(dayKey);
@@ -131,15 +160,11 @@ export function MemberWorkoutPageClient({
     );
   }
 
-  const startableDays =
-    plan?.days.filter((day) => day.exercises.length > 0) ?? [];
-  const showDayPicker = startableDays.length > 1;
-
   return (
     <MemberWorkoutTheme className="!p-0 sm:!p-0">
-      <MemberWorkoutTabs value={tab} onChange={(next) => navigateTab(next)} />
+      <MemberWorkoutTabs value={tab} onChange={(next) => navigateTopTab(next)} />
 
-      {tab === "library" ? (
+      {tab === "exercises" ? (
         <MemberExerciseLibraryPanel
           addToWorkoutId={resolvedAddTo}
           initialGroup={resolvedGroup}
@@ -152,52 +177,22 @@ export function MemberWorkoutPageClient({
         />
       ) : null}
 
-      {tab === "mine" ? (
-        <MemberMyWorkoutsPanel
+      {tab === "plan" ? (
+        <MemberWorkoutPlanPanel
+          planFilter={planFilter}
+          onPlanFilterChange={navigatePlanFilter}
+          plan={plan}
+          canStart={canStart}
+          startingDayKey={startingDayKey}
+          onStartTrainer={(dayId) => void onStartTrainer(dayId)}
           highlightWorkoutId={resolvedCreated}
           onHighlightConsumed={() => {
-            router.replace(memberWorkoutPageHref({ tab: "mine" }), {
-              scroll: false,
-            });
+            router.replace(
+              memberWorkoutPageHref({ tab: "mine" }),
+              { scroll: false },
+            );
           }}
         />
-      ) : null}
-
-      {tab === "assigned" ? (
-        <>
-          <MemberWorkoutPlanView plan={plan} />
-          {canStart && !showDayPicker ? (
-            <Button
-              className="w-full"
-              onClick={() => onStart(startableDays[0]?.id)}
-              disabled={startingDayKey !== null}
-            >
-              {startingDayKey === (startableDays[0]?.id ?? "__default__")
-                ? "Starting..."
-                : "Start workout"}
-            </Button>
-          ) : null}
-          {canStart && showDayPicker ? (
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Choose which day to train.
-              </p>
-              {startableDays.map((day) => (
-                <Button
-                  key={day.id}
-                  className="w-full"
-                  variant="outline"
-                  onClick={() => onStart(day.id)}
-                  disabled={startingDayKey !== null}
-                >
-                  {startingDayKey === day.id
-                    ? "Starting..."
-                    : `Start ${day.label}`}
-                </Button>
-              ))}
-            </div>
-          ) : null}
-        </>
       ) : null}
     </MemberWorkoutTheme>
   );

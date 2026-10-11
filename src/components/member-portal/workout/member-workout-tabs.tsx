@@ -6,9 +6,8 @@ import { cn } from "@/lib/utils";
 export type { MemberWorkoutTab };
 
 const TABS: { id: MemberWorkoutTab; label: string }[] = [
-  { id: "assigned", label: "Assigned" },
-  { id: "mine", label: "My Workouts" },
-  { id: "library", label: "Library" },
+  { id: "plan", label: "Plan" },
+  { id: "exercises", label: "Exercises" },
 ];
 
 type MemberWorkoutTabsProps = {

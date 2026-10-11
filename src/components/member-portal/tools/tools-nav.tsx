@@ -68,7 +68,9 @@ function ToolsTabLink({
     <Link
       href={href}
       prefetch={true}
-      onClick={(e) => navigate(href, e)}
+      onClick={(e) => {
+        void navigate(href, e);
+      }}
       aria-busy={isNavigating}
       className={cn(
         "shrink-0 rounded-t-lg px-3 py-2 text-sm font-medium transition-colors",

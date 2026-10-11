@@ -40,6 +40,13 @@ export type NavigationLockOptions = {
 
 const NAVIGATION_LOCK_TIMEOUT_MS = 10_000;
 
+export async function runBeforeNavigateIfRegistered(
+  beforeNavigate: (() => Promise<boolean>) | null,
+): Promise<boolean> {
+  if (!beforeNavigate) return true;
+  return beforeNavigate();
+}
+
 export function useNavigationLock() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -48,6 +55,7 @@ export function useNavigationLock() {
   const [pendingHref, setPendingHref] = React.useState<string | null>(null);
   const lockRef = React.useRef(false);
   const pendingHrefRef = React.useRef<string | null>(null);
+  const beforeNavigateRef = React.useRef<(() => Promise<boolean>) | null>(null);
 
   const routeKey = React.useMemo(
     () => buildRouteKey(pathname, searchParams),
@@ -74,12 +82,23 @@ export function useNavigationLock() {
     return () => clearTimeout(timeoutId);
   }, [pendingHref, releaseLock]);
 
+  const registerBeforeNavigate = React.useCallback(
+    (handler: (() => Promise<boolean>) | null) => {
+      beforeNavigateRef.current = handler;
+    },
+    [],
+  );
+
+  const runRegisteredBeforeLeave = React.useCallback(async () => {
+    return runBeforeNavigateIfRegistered(beforeNavigateRef.current);
+  }, []);
+
   const navigate = React.useCallback(
-    (
+    async (
       href: string,
       e?: Pick<React.MouseEvent, "preventDefault">,
       options?: NavigationLockOptions,
-    ): boolean => {
+    ): Promise<boolean> => {
       const target = hrefRouteKey(href);
       if (target === routeKey) {
         e?.preventDefault();
@@ -95,14 +114,23 @@ export function useNavigationLock() {
       pendingHrefRef.current = target;
       setPendingHref(target);
 
-      // Let Next.js <Link> handle default navigations so viewport prefetch can apply.
+      const needsBeforeNavigate = beforeNavigateRef.current != null;
       const useProgrammaticNavigation =
-        !e || options?.replace || options?.refresh;
+        needsBeforeNavigate || !e || options?.replace || options?.refresh;
       if (!useProgrammaticNavigation) {
         return true;
       }
 
       e?.preventDefault();
+
+      const allowed = await runBeforeNavigateIfRegistered(
+        beforeNavigateRef.current,
+      );
+      if (!allowed) {
+        releaseLock();
+        return false;
+      }
+
       startTransition(() => {
         if (options?.replace) {
           router.replace(href);
@@ -113,13 +141,15 @@ export function useNavigationLock() {
           router.refresh();
         }
       });
-      return true;
+      return false;
     },
-    [routeKey, router],
+    [routeKey, router, releaseLock],
   );
 
   return {
     navigate,
+    registerBeforeNavigate,
+    runRegisteredBeforeLeave,
     pendingHref,
     isLocked,
     currentRoute: routeKey,

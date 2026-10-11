@@ -13,7 +13,6 @@ import {
 } from "@/app/actions/member-personal-workouts";
 import { MemberWorkoutFlowSteps } from "@/components/member-portal/workout/member-workout-flow-steps";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   memberPersonalWorkoutAddExercisesHref,
   memberWorkoutPageHref,
@@ -24,11 +23,14 @@ import { cn } from "@/lib/utils";
 type MemberMyWorkoutsPanelProps = {
   highlightWorkoutId?: string | null;
   onHighlightConsumed?: () => void;
+  /** When false, hides onboarding steps and library blurb (combined Plan view). */
+  showIntro?: boolean;
 };
 
 export function MemberMyWorkoutsPanel({
   highlightWorkoutId = null,
   onHighlightConsumed,
+  showIntro = true,
 }: MemberMyWorkoutsPanelProps) {
   const router = useRouter();
   const [workouts, setWorkouts] = React.useState<MemberPersonalWorkoutSummary[]>(
@@ -36,7 +38,6 @@ export function MemberMyWorkoutsPanel({
   );
   const [loading, setLoading] = React.useState(true);
   const [creating, setCreating] = React.useState(false);
-  const [newName, setNewName] = React.useState("");
   const [startingId, setStartingId] = React.useState<string | null>(null);
   const [recentlyCreatedId, setRecentlyCreatedId] = React.useState<
     string | null
@@ -81,24 +82,17 @@ export function MemberMyWorkoutsPanel({
   }, [loadWorkouts]);
 
   async function onCreate() {
-    const name = newName.trim();
-    if (!name || creating) return;
+    if (creating) return;
     setCreating(true);
     try {
-      const result = await createMemberPersonalWorkoutAction({ name });
+      const result = await createMemberPersonalWorkoutAction({});
       if (!result.ok || !result.data) {
         toast.error(!result.ok ? result.error : "Could not create workout.");
         return;
       }
       const workoutId = result.data.workoutId;
-      setNewName("");
       setRecentlyCreatedId(workoutId);
-      await loadWorkouts();
-      toast.success("Workout created. Add exercises from the Library tab.");
-      router.replace(
-        memberWorkoutPageHref({ tab: "mine", created: workoutId }),
-        { scroll: false },
-      );
+      router.push(memberPersonalWorkoutAddExercisesHref(workoutId));
     } finally {
       setCreating(false);
     }
@@ -131,50 +125,45 @@ export function MemberMyWorkoutsPanel({
 
   return (
     <div className="space-y-4">
-      <MemberWorkoutFlowSteps />
-      <p className="text-sm text-muted-foreground">
-        Build your own plans here. Open the{" "}
-        <button
-          type="button"
-          className="font-medium text-foreground underline"
-          onClick={() =>
-            router.replace(memberWorkoutPageHref({ tab: "library" }), {
-              scroll: false,
-            })
-          }
-        >
-          Library
-        </button>{" "}
-        tab to add exercises, or edit a workout below.
-      </p>
+      {showIntro ? (
+        <>
+          <MemberWorkoutFlowSteps />
+          <p className="text-sm text-muted-foreground">
+            Create a workout and pick exercises from the{" "}
+            <button
+              type="button"
+              className="font-medium text-foreground underline"
+              onClick={() =>
+                router.replace(memberWorkoutPageHref({ tab: "library" }), {
+                  scroll: false,
+                })
+              }
+            >
+              Exercises
+            </button>{" "}
+            tab. Rename anytime in Edit.
+          </p>
+        </>
+      ) : null}
 
-      <div className="member-workout-card space-y-2 p-3">
-        <p className="text-sm font-medium">New workout</p>
-        <div className="flex gap-2">
-          <Input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Workout name"
-            className="h-11 text-base"
-            maxLength={80}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") void onCreate();
-            }}
-          />
-          <Button
-            type="button"
-            className="h-11 shrink-0 px-3"
-            onClick={() => void onCreate()}
-            disabled={creating || !newName.trim()}
-          >
-            <Plus className="h-5 w-5" />
-          </Button>
-        </div>
-      </div>
+      <Button
+        type="button"
+        className="member-workout-card h-12 w-full justify-center gap-2 border border-border/60 bg-card/50 text-base font-semibold shadow-none hover:bg-card/80"
+        variant="outline"
+        disabled={creating}
+        onClick={() => void onCreate()}
+      >
+        {creating ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : (
+          <Plus className="h-5 w-5" />
+        )}
+        New workout
+      </Button>
 
       {workouts.length === 0 ? (
         <p className="text-center text-sm text-muted-foreground py-6">
-          Create a workout above, then add exercises from the Library tab.
+          No personal workouts yet. Tap New workout to pick exercises.
         </p>
       ) : (
         <ul className="space-y-3">
@@ -203,7 +192,8 @@ export function MemberMyWorkoutsPanel({
                     </p>
                     {highlighted ? (
                       <p className="mt-1 text-xs text-primary">
-                        Ready — add exercises from Library or open Edit.
+                        Ready — add exercises from the Exercises tab or open
+                        Edit to rename.
                       </p>
                     ) : null}
                   </div>

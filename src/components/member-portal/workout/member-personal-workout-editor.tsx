@@ -10,9 +10,19 @@ import {
   getMemberPersonalWorkoutAction,
   saveMemberPersonalWorkoutAction,
 } from "@/app/actions/member-personal-workouts";
-import { Button } from "@/components/ui/button";
+import { useRegisterBeforeNavigate } from "@/components/navigation/navigation-lock-provider";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { memberPersonalWorkoutAddExercisesHref } from "@/lib/member-portal/member-workout-tab-url";
+import {
+  memberPersonalWorkoutAddExercisesHref,
+  memberWorkoutPageHref,
+} from "@/lib/member-portal/member-workout-tab-url";
+import {
+  flushBeforePersonalWorkoutNavigation,
+  PersonalWorkoutAutosaveRunner,
+  type PersonalWorkoutAutosaveStatus,
+} from "@/lib/member-portal/personal-workout-editor-autosave";
+import { cn } from "@/lib/utils";
 import { reorderPersonalWorkoutExercises } from "@/lib/workout-tracking/member-personal-workout-exercise-order";
 
 type EditorExercise = {
@@ -26,19 +36,92 @@ type EditorExercise = {
 
 type MemberPersonalWorkoutEditorProps = {
   workoutId: string;
+  /** When set, renders header Back with flush-before-navigate. */
+  backHref?: string;
 };
+
+function AutosaveStatusLine({
+  status,
+  onRetry,
+}: {
+  status: PersonalWorkoutAutosaveStatus;
+  onRetry: () => void;
+}) {
+  if (status === "saving" || status === "pending") {
+    return (
+      <p className="text-xs text-muted-foreground" aria-live="polite">
+        Saving…
+      </p>
+    );
+  }
+  if (status === "saved") {
+    return (
+      <p className="text-xs text-muted-foreground" aria-live="polite">
+        Saved
+      </p>
+    );
+  }
+  if (status === "error") {
+    return (
+      <button
+        type="button"
+        className="text-xs font-medium text-destructive underline-offset-2 hover:underline"
+        onClick={onRetry}
+      >
+        Save failed — Retry
+      </button>
+    );
+  }
+  return null;
+}
 
 export function MemberPersonalWorkoutEditor({
   workoutId,
+  backHref = memberWorkoutPageHref({ tab: "mine" }),
 }: MemberPersonalWorkoutEditorProps) {
   const router = useRouter();
   const [name, setName] = React.useState("");
   const [exercises, setExercises] = React.useState<EditorExercise[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [saving, setSaving] = React.useState(false);
+  const [autosaveStatus, setAutosaveStatus] =
+    React.useState<PersonalWorkoutAutosaveStatus>("idle");
+  const [navigatingAway, setNavigatingAway] = React.useState(false);
+  const navigationFlushRef = React.useRef<Promise<boolean> | null>(null);
+
+  const nameRef = React.useRef(name);
+  const exercisesRef = React.useRef(exercises);
+  nameRef.current = name;
+  exercisesRef.current = exercises;
+
+  const autosaveRef = React.useRef<PersonalWorkoutAutosaveRunner | null>(null);
+
+  React.useEffect(() => {
+    const runner = new PersonalWorkoutAutosaveRunner({
+      getState: () => ({
+        workoutId,
+        name: nameRef.current,
+        exercises: exercisesRef.current,
+      }),
+      save: async (body) => {
+        const result = await saveMemberPersonalWorkoutAction(body);
+        if (result.ok) {
+          router.refresh();
+        }
+        return { ok: result.ok };
+      },
+      onStatusChange: setAutosaveStatus,
+    });
+    autosaveRef.current = runner;
+    return () => {
+      runner.disable();
+      autosaveRef.current = null;
+    };
+  }, [workoutId, router]);
 
   React.useEffect(() => {
     let cancelled = false;
+    autosaveRef.current?.disable();
+    setLoading(true);
     void getMemberPersonalWorkoutAction(workoutId).then((result) => {
       if (cancelled) return;
       if (!result.ok || !result.data) {
@@ -51,11 +134,29 @@ export function MemberPersonalWorkoutEditor({
       setName(result.data.name);
       setExercises(result.data.exercises);
       setLoading(false);
+      autosaveRef.current?.enableAfterHydration();
     });
     return () => {
       cancelled = true;
     };
   }, [workoutId]);
+
+  const flushForLeave = React.useCallback(async () => {
+    const ok = await flushBeforePersonalWorkoutNavigation(
+      autosaveRef.current,
+      navigationFlushRef,
+    );
+    if (!ok) {
+      toast.error("Could not save workout. Use Retry, then try again.");
+    }
+    return ok;
+  }, []);
+
+  useRegisterBeforeNavigate(loading ? null : flushForLeave);
+
+  function markDirty() {
+    autosaveRef.current?.markDirty();
+  }
 
   function moveExercise(id: string, direction: -1 | 1) {
     const index = exercises.findIndex((e) => e.id === id);
@@ -81,6 +182,7 @@ export function MemberPersonalWorkoutEditor({
         return { ...prev, sortOrder: row.sortOrder };
       }),
     );
+    markDirty();
   }
 
   function removeExercise(id: string) {
@@ -89,67 +191,23 @@ export function MemberPersonalWorkoutEditor({
         .filter((e) => e.id !== id)
         .map((e, i) => ({ ...e, sortOrder: i })),
     );
+    markDirty();
   }
 
-  async function onSave() {
-    if (saving) return;
-    const trimmed = name.trim();
-    if (!trimmed) {
-      toast.error("Enter a workout name.");
-      return;
-    }
-    setSaving(true);
+  async function navigateAway(href: string) {
+    if (navigatingAway) return;
+    setNavigatingAway(true);
     try {
-      const result = await saveMemberPersonalWorkoutAction({
-        workoutId,
-        name: trimmed,
-        exercises: exercises.map((e) => ({
-          id: e.id,
-          catalogId: e.catalogId,
-          sortOrder: e.sortOrder,
-          targetSets: e.targetSets,
-          targetReps: e.targetReps,
-        })),
-      });
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
-      toast.success("Saved.");
-      router.refresh();
+      const ok = await flushForLeave();
+      if (!ok) return;
+      router.push(href);
     } finally {
-      setSaving(false);
+      setNavigatingAway(false);
     }
   }
 
   async function onAddExercises() {
-    if (saving) return;
-    const trimmed = name.trim();
-    if (!trimmed) {
-      toast.error("Enter a workout name.");
-      return;
-    }
-    setSaving(true);
-    try {
-      const result = await saveMemberPersonalWorkoutAction({
-        workoutId,
-        name: trimmed,
-        exercises: exercises.map((e) => ({
-          id: e.id,
-          catalogId: e.catalogId,
-          sortOrder: e.sortOrder,
-          targetSets: e.targetSets,
-          targetReps: e.targetReps,
-        })),
-      });
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
-      router.push(memberPersonalWorkoutAddExercisesHref(workoutId));
-    } finally {
-      setSaving(false);
-    }
+    await navigateAway(memberPersonalWorkoutAddExercisesHref(workoutId));
   }
 
   async function onDelete() {
@@ -171,24 +229,50 @@ export function MemberPersonalWorkoutEditor({
     );
   }
 
+  const navigationBusy =
+    navigatingAway ||
+    autosaveStatus === "saving" ||
+    autosaveStatus === "pending";
+
   return (
     <div className="space-y-4 pb-8">
-      <Input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="h-12 text-base font-medium"
-        placeholder="Workout name"
-        maxLength={80}
-      />
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={navigatingAway}
+          className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+          onClick={() => void navigateAway(backHref)}
+        >
+          {navigatingAway ? "Saving…" : "Back"}
+        </button>
+        <h1 className="font-display text-lg font-bold">Edit workout</h1>
+      </div>
+
+      <div className="flex items-center justify-between gap-2">
+        <Input
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value);
+            markDirty();
+          }}
+          className="h-12 flex-1 text-base font-medium"
+          placeholder="Workout name"
+          maxLength={80}
+        />
+        <AutosaveStatusLine
+          status={autosaveStatus}
+          onRetry={() => autosaveRef.current?.retry()}
+        />
+      </div>
 
       <Button
         type="button"
         variant="outline"
         className="h-11 w-full"
-        disabled={saving}
+        disabled={navigationBusy}
         onClick={() => void onAddExercises()}
       >
-        Add exercise
+        {navigatingAway ? "Saving…" : "Add exercise"}
       </Button>
 
       {exercises.length === 0 ? (
@@ -251,6 +335,7 @@ export function MemberPersonalWorkoutEditor({
                             : row,
                         ),
                       );
+                      markDirty();
                     }}
                   />
                 </div>
@@ -268,6 +353,7 @@ export function MemberPersonalWorkoutEditor({
                             : row,
                         ),
                       );
+                      markDirty();
                     }}
                   />
                 </div>
@@ -276,15 +362,6 @@ export function MemberPersonalWorkoutEditor({
           ))}
         </ul>
       )}
-
-      <Button
-        type="button"
-        className="h-12 w-full text-base"
-        onClick={() => void onSave()}
-        disabled={saving}
-      >
-        {saving ? "Saving…" : "Save workout"}
-      </Button>
 
       <Button
         type="button"

@@ -25,6 +25,23 @@ export function removePersonalWorkoutExercise(
     .map((row, index) => ({ ...row, sortOrder: index }));
 }
 
+/** Batch-unique catalog ids not already present on the workout (preserves request order). */
+export function catalogIdsToAppendToPersonalWorkout(
+  existing: MemberPersonalWorkoutExerciseEmbedded[],
+  requestedCatalogIds: string[],
+): string[] {
+  const inWorkout = new Set(existing.map((row) => row.catalogId));
+  const seen = new Set<string>();
+  const toAppend: string[] = [];
+  for (const raw of requestedCatalogIds) {
+    const catalogId = raw.trim();
+    if (!catalogId || seen.has(catalogId) || inWorkout.has(catalogId)) continue;
+    seen.add(catalogId);
+    toAppend.push(catalogId);
+  }
+  return toAppend;
+}
+
 export function appendPersonalWorkoutExercise(
   exercises: MemberPersonalWorkoutExerciseEmbedded[],
   catalogId: string,

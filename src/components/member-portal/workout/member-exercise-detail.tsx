@@ -1,20 +1,19 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { getMemberExerciseLibraryDetailAction } from "@/app/actions/member-exercise-library";
 import {
   addExerciseToPersonalWorkoutAction,
+  createMemberPersonalWorkoutAction,
   listMemberPersonalWorkoutsAction,
 } from "@/app/actions/member-personal-workouts";
+import { MemberExerciseDestinationPicker } from "@/components/member-portal/workout/member-exercise-destination-picker";
 import { MemberExerciseWatchDemoLink } from "@/components/member-portal/workout/member-exercise-watch-demo-link";
-import { Button } from "@/components/ui/button";
 import type { MemberLibraryMuscleFilter } from "@/lib/member-portal/member-library-muscle-groups";
-import { memberWorkoutPageHref } from "@/lib/member-portal/member-workout-tab-url";
+import { pickDefaultPersonalWorkoutId } from "@/lib/member-portal/member-exercise-destination";
 import { muscleGroupLabel } from "@/lib/muscle-groups";
 import type { MemberCatalogExerciseDetail } from "@/lib/workout-tracking/member-catalog-exercises";
 import type { MemberPersonalWorkoutSummary } from "@/lib/workout-tracking/member-personal-workouts";
@@ -35,7 +34,6 @@ export function MemberExerciseDetail({
   addToWorkoutId,
   libraryGroup = null,
 }: MemberExerciseDetailProps) {
-  const router = useRouter();
   const [detail, setDetail] = React.useState<MemberCatalogExerciseDetail | null>(
     null,
   );
@@ -44,22 +42,27 @@ export function MemberExerciseDetail({
   );
   const [loading, setLoading] = React.useState(true);
   const [adding, setAdding] = React.useState(false);
+  const [creating, setCreating] = React.useState(false);
   const [pickWorkoutId, setPickWorkoutId] = React.useState(
     addToWorkoutId?.trim() ?? "",
   );
 
+  const applyWorkoutList = React.useCallback(
+    (rows: MemberPersonalWorkoutSummary[]) => {
+      setWorkouts(rows);
+      setPickWorkoutId((current) =>
+        pickDefaultPersonalWorkoutId(rows, addToWorkoutId?.trim() || current),
+      );
+    },
+    [addToWorkoutId],
+  );
+
   const loadWorkouts = React.useCallback(async () => {
     const listResult = await listMemberPersonalWorkoutsAction();
-    if (!listResult.ok) return;
-    const rows = listResult.data ?? [];
-    setWorkouts(rows);
-    setPickWorkoutId((current) => {
-      const preferred =
-        addToWorkoutId?.trim() || current.trim() || rows[0]?.id || "";
-      if (preferred && rows.some((w) => w.id === preferred)) return preferred;
-      return rows[0]?.id ?? "";
-    });
-  }, [addToWorkoutId]);
+    if (!listResult.ok) return false;
+    applyWorkoutList(listResult.data ?? []);
+    return true;
+  }, [applyWorkoutList]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -76,17 +79,14 @@ export function MemberExerciseDetail({
         setDetail(detailResult.data);
       }
       if (listResult.ok && listResult.data) {
-        const rows = listResult.data;
-        setWorkouts(rows);
-        const preferred = addToWorkoutId?.trim() || rows[0]?.id || "";
-        if (preferred) setPickWorkoutId(preferred);
+        applyWorkoutList(listResult.data);
       }
       setLoading(false);
     });
     return () => {
       cancelled = true;
     };
-  }, [catalogId, addToWorkoutId]);
+  }, [catalogId, applyWorkoutList]);
 
   React.useEffect(() => {
     function onVisible() {
@@ -95,6 +95,24 @@ export function MemberExerciseDetail({
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [loadWorkouts]);
+
+  async function onCreateWorkout() {
+    if (creating) return;
+    setCreating(true);
+    try {
+      const result = await createMemberPersonalWorkoutAction({});
+      if (!result.ok || !result.data) {
+        toast.error(!result.ok ? result.error : "Could not create workout.");
+        return;
+      }
+      const workoutId = result.data.workoutId;
+      await loadWorkouts();
+      setPickWorkoutId(workoutId);
+      toast.success("Workout created. You can add this exercise below.");
+    } finally {
+      setCreating(false);
+    }
+  }
 
   async function onAdd() {
     const workoutId = pickWorkoutId.trim();
@@ -109,18 +127,12 @@ export function MemberExerciseDetail({
         toast.error(result.error);
         return;
       }
-      toast.success("Added to your workout.");
-      router.push(`/member/workout/personal/${workoutId}`);
+      toast.success(result.message ?? "Exercise added.");
+      await loadWorkouts();
     } finally {
       setAdding(false);
     }
   }
-
-  const libraryBackHref = memberWorkoutPageHref({
-    tab: "library",
-    addTo: addToWorkoutId,
-    group: libraryGroup,
-  });
 
   if (loading) {
     return (
@@ -143,7 +155,7 @@ export function MemberExerciseDetail({
 
   return (
     <div
-      className="relative pb-[calc(11.5rem+4.25rem+env(safe-area-inset-bottom,0px))]"
+      className="relative pb-[calc(9.5rem+4.25rem+env(safe-area-inset-bottom,0px))]"
     >
       <div className="member-workout-card overflow-hidden">
         <div className="relative aspect-[4/3] w-full bg-gradient-to-b from-muted/20 to-card">
@@ -212,56 +224,21 @@ export function MemberExerciseDetail({
 
       <div
         className={cn(
-          "fixed inset-x-0 z-30 border-t border-border/80 bg-card/95 p-4 backdrop-blur-md",
+          "fixed inset-x-0 z-30 border-t border-border/80 bg-card/95 px-3 py-2.5 backdrop-blur-md",
           "bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))]",
         )}
       >
-        <div className="mx-auto max-w-2xl space-y-2">
-          {workouts.length === 0 ? (
-            <>
-              <p className="text-center text-sm text-muted-foreground">
-                Create a workout first, then add this exercise.
-              </p>
-              <Button type="button" className="h-12 w-full text-base" asChild>
-                <Link href={memberWorkoutPageHref({ tab: "mine" })}>
-                  Create workout
-                </Link>
-              </Button>
-            </>
-          ) : (
-            <>
-              <select
-                className="flex h-11 w-full rounded-xl border border-border bg-background px-3 text-base"
-                value={pickWorkoutId}
-                onChange={(e) => setPickWorkoutId(e.target.value)}
-              >
-                {workouts.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name}
-                    {w.exerciseCount > 0
-                      ? ` (${w.exerciseCount} ex.)`
-                      : ""}
-                  </option>
-                ))}
-              </select>
-              <Button
-                type="button"
-                className="h-12 w-full text-base font-semibold"
-                disabled={adding || !pickWorkoutId}
-                onClick={() => void onAdd()}
-              >
-                {adding ? "Adding…" : "Add to workout"}
-              </Button>
-            </>
-          )}
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-10 w-full text-muted-foreground"
-            asChild
-          >
-            <Link href={libraryBackHref}>Back to library</Link>
-          </Button>
+        <div className="mx-auto max-w-2xl">
+          <MemberExerciseDestinationPicker
+            catalogId={catalogId}
+            workouts={workouts}
+            selectedWorkoutId={pickWorkoutId}
+            onSelectWorkoutId={setPickWorkoutId}
+            onCreateWorkout={() => void onCreateWorkout()}
+            onAdd={() => void onAdd()}
+            adding={adding}
+            creating={creating}
+          />
         </div>
       </div>
     </div>

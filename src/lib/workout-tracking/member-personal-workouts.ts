@@ -5,15 +5,24 @@ import type { DocWithId } from "@/lib/firestore/repositories/base";
 import type { MemberPersonalWorkoutDoc } from "@/lib/firestore/types";
 import {
   appendPersonalWorkoutExercise,
+  catalogIdsToAppendToPersonalWorkout,
   personalWorkoutToPlanDoc,
   reorderPersonalWorkoutExercises,
   removePersonalWorkoutExercise,
 } from "@/lib/workout-tracking/member-personal-workout-plan";
+import {
+  DEFAULT_PERSONAL_WORKOUT_NAME,
+  MAX_PERSONAL_WORKOUT_EXERCISES,
+} from "@/lib/workout-tracking/member-personal-workout-constants";
+
+export { DEFAULT_PERSONAL_WORKOUT_NAME, MAX_PERSONAL_WORKOUT_EXERCISES };
 
 export type MemberPersonalWorkoutSummary = {
   id: string;
   name: string;
   exerciseCount: number;
+  /** Catalog exercise ids already in this workout (for duplicate checks in the UI). */
+  catalogIds: string[];
   updatedAt: string;
 };
 
@@ -34,10 +43,12 @@ export type MemberPersonalWorkoutDetail = {
 function toSummary(doc: DocWithId<MemberPersonalWorkoutDoc>): MemberPersonalWorkoutSummary {
   const updatedAt =
     doc.updatedAt?.toDate?.() ?? doc.createdAt?.toDate?.() ?? new Date(0);
+  const exercises = Array.isArray(doc.exercises) ? doc.exercises : [];
   return {
     id: doc.id,
     name: doc.name,
-    exerciseCount: Array.isArray(doc.exercises) ? doc.exercises.length : 0,
+    exerciseCount: exercises.length,
+    catalogIds: exercises.map((row) => row.catalogId),
     updatedAt: updatedAt.toISOString(),
   };
 }
@@ -152,6 +163,19 @@ export async function addCatalogExerciseToPersonalWorkout(
   workoutId: string,
   catalogId: string,
 ): Promise<void> {
+  await addCatalogExercisesToPersonalWorkout(ctx, workoutId, [catalogId]);
+}
+
+export async function addCatalogExercisesToPersonalWorkout(
+  ctx: MemberContext,
+  workoutId: string,
+  catalogIds: string[],
+): Promise<{ addedCount: number }> {
+  const hasRequestedId = catalogIds.some((raw) => raw.trim().length > 0);
+  if (!hasRequestedId) {
+    throw new Error("Select at least one exercise.");
+  }
+
   const { memberPersonalWorkouts, exerciseCatalog } = getRepositories();
   const doc = await memberPersonalWorkouts.getForMember(
     ctx,
@@ -161,10 +185,28 @@ export async function addCatalogExerciseToPersonalWorkout(
   );
   if (!doc) throw new Error("Workout not found.");
 
-  const catalog = await exerciseCatalog.getByCatalogId(ctx, catalogId);
-  if (!catalog?.isActive) throw new Error("Exercise not found.");
+  const toAppend = catalogIdsToAppendToPersonalWorkout(
+    doc.exercises,
+    catalogIds,
+  );
+  if (toAppend.length === 0) {
+    return { addedCount: 0 };
+  }
 
-  const exercises = appendPersonalWorkoutExercise(doc.exercises, catalogId);
+  if (doc.exercises.length + toAppend.length > MAX_PERSONAL_WORKOUT_EXERCISES) {
+    throw new Error(
+      `Workout cannot have more than ${MAX_PERSONAL_WORKOUT_EXERCISES} exercises.`,
+    );
+  }
+
+  const catalogMap = await exerciseCatalog.getByCatalogIds(ctx, toAppend);
+  let exercises = doc.exercises;
+  for (const catalogId of toAppend) {
+    const catalog = catalogMap.get(catalogId);
+    if (!catalog?.isActive) throw new Error("Exercise not found.");
+    exercises = appendPersonalWorkoutExercise(exercises, catalogId);
+  }
+
   await memberPersonalWorkouts.updateForMember(
     ctx,
     ctx.gymId,
@@ -172,6 +214,8 @@ export async function addCatalogExerciseToPersonalWorkout(
     workoutId,
     { name: doc.name, exercises },
   );
+
+  return { addedCount: toAppend.length };
 }
 
 export { personalWorkoutToPlanDoc, reorderPersonalWorkoutExercises, removePersonalWorkoutExercise };

@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 type PageProps = {
   searchParams: Promise<{
     tab?: string;
+    planFilter?: string;
     addTo?: string;
     created?: string;
     group?: string;
@@ -20,11 +21,8 @@ export default async function MemberWorkoutPage({ searchParams }: PageProps) {
   const session = await requireMember();
   const { tab, addTo, created } = await searchParams;
   const initialTab =
-    tab === "mine" || tab === "library" || tab === "assigned"
-      ? tab
-      : addTo?.trim()
-        ? "library"
-        : "assigned";
+    tab ??
+    (addTo?.trim() ? "library" : null);
 
   const { plan, activeSession, previousSets, canStart } =
     await loadMemberWorkoutPageData(session.gymId, session.memberId);
@@ -38,7 +36,7 @@ export default async function MemberWorkoutPage({ searchParams }: PageProps) {
               Workout
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Trainer plan, personal workouts, and exercise library.
+              Your plan, personal workouts, and exercise library.
             </p>
           </div>
           <LockedLink

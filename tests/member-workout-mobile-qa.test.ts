@@ -11,7 +11,7 @@ describe("member workout mobile QA layout guards", () => {
     );
     expect(source).toContain("bottom-[calc(4.25rem+env(safe-area-inset-bottom");
     expect(source).toContain("z-30");
-    expect(source).toMatch(/pb-\[calc\(11\.5rem\+4\.25rem/);
+    expect(source).toMatch(/pb-\[calc\(9\.5rem\+4\.25rem/);
   });
 
   it("renders six muscle groups from local static art", () => {
@@ -34,6 +34,17 @@ describe("member workout mobile QA layout guards", () => {
     );
     expect(groups).toContain('"FULL_BODY"');
     expect(groups).toContain('"CHEST"');
+  });
+
+  it("redirects legacy add-exercises route to shared Exercises tab", () => {
+    const page = readFileSync(
+      resolve(
+        "src/app/member/(portal)/workout/personal/[id]/add-exercises/page.tsx",
+      ),
+      "utf8",
+    );
+    expect(page).toContain("redirect(");
+    expect(page).toContain("memberPersonalWorkoutAddExercisesHref");
   });
 
   it("keeps portal shell padding clear of fixed bottom nav", () => {

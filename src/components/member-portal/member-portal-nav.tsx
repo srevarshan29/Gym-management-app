@@ -67,7 +67,9 @@ export function MemberPortalNav() {
               key={tab.href}
               href={tab.href}
               prefetch={true}
-              onClick={(e) => navigate(tab.href, e)}
+              onClick={(e) => {
+                void navigate(tab.href, e);
+              }}
               aria-busy={isNavigating}
               aria-current={active ? "page" : undefined}
               className={cn(

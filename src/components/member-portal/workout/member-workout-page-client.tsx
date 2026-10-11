@@ -11,7 +11,7 @@ import {
   MemberWorkoutTabs,
   type MemberWorkoutTab,
 } from "@/components/member-portal/workout/member-workout-tabs";
-import { WorkoutSessionView } from "@/components/member-portal/workout/workout-session-view";
+import { MemberActiveWorkoutSession } from "@/components/member-portal/workout/member-active-workout-session";
 import { parseMemberLibraryMuscleGroup } from "@/lib/member-portal/member-library-muscle-groups";
 import {
   memberPersonalWorkoutEditorHref,
@@ -23,14 +23,12 @@ import {
 import { MemberWorkoutTheme } from "@/components/member-portal/workout/member-workout-theme";
 import type {
   ActiveWorkoutSession,
-  PreviousSetLog,
   WorkoutPlanDetail,
 } from "@/lib/workout-tracking/types";
 
 type MemberWorkoutPageClientProps = {
   plan: WorkoutPlanDetail | null;
   activeSession: ActiveWorkoutSession | null;
-  previousSets: Record<string, PreviousSetLog[]>;
   canStart: boolean;
   initialTab?: string | null;
   addToWorkoutId?: string | null;
@@ -40,7 +38,6 @@ type MemberWorkoutPageClientProps = {
 export function MemberWorkoutPageClient({
   plan,
   activeSession,
-  previousSets,
   canStart,
   initialTab = null,
   addToWorkoutId = null,
@@ -153,10 +150,7 @@ export function MemberWorkoutPageClient({
 
   if (activeSession) {
     return (
-      <WorkoutSessionView
-        session={activeSession}
-        previousSets={previousSets}
-      />
+      <MemberActiveWorkoutSession session={activeSession} />
     );
   }
 

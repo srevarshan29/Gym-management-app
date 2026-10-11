@@ -11,10 +11,7 @@ import {
   personalWorkoutToPlanDoc,
 } from "@/lib/workout-tracking/member-personal-workout-plan";
 import { buildMemberWorkoutPlanDetail } from "@/lib/workout-plans";
-import {
-  getPreviousSetsForSessionExercises,
-  type PreviousSetsBySessionExerciseId,
-} from "@/lib/workout-tracking/previous-sets";
+import type { PreviousSetsBySessionExerciseId } from "@/lib/workout-tracking/previous-sets";
 import {
   buildActiveWorkoutSessionView,
   type ActiveWorkoutSession,
@@ -141,20 +138,6 @@ export const loadMemberWorkoutPageData = cache(
             )
           : null;
 
-      const previousSets =
-        activeRaw && planForSessionView
-          ? await getPreviousSetsForSessionExercises(
-              gymId,
-              memberId,
-              activeRaw.exercises.map((exercise) => ({
-                sessionExerciseId: exercise.id,
-                exerciseId: exercise.exerciseId ?? null,
-                customName: exercise.customName ?? null,
-              })),
-              { planDoc: planForSessionView },
-            )
-          : {};
-
       const canStart = Boolean(
         planDetail &&
           !planDetail.isLegacy &&
@@ -164,7 +147,8 @@ export const loadMemberWorkoutPageData = cache(
       return {
         plan: planDetail,
         activeSession,
-        previousSets,
+        /** Loaded client-side after session UI mounts (see loadActiveWorkoutPreviousSetsAction). */
+        previousSets: {},
         canStart,
       };
     });

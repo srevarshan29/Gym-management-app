@@ -12,7 +12,11 @@ import type { MemberContext } from "@/lib/firestore/context";
 import { measureServerPhase } from "@/lib/server-perf";
 import { requireMember } from "@/lib/member-session";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
-import type { ActiveWorkoutSetLog } from "@/lib/workout-tracking/types";
+import { loadPreviousSetsForActiveMemberSession } from "@/lib/workout-tracking/member-active-session-previous-sets";
+import type {
+  ActiveWorkoutSetLog,
+  PreviousSetsBySessionExerciseId,
+} from "@/lib/workout-tracking/types";
 
 const logSetSchema = z.object({
   sessionExerciseId: z.string().trim().min(1),
@@ -43,6 +47,29 @@ function actionErrorFromUnknown(error: unknown, fallback: string): ActionResult 
 function revalidateWorkoutSessionPaths() {
   revalidatePath("/member/workout");
   revalidatePath("/member");
+}
+
+export async function loadActiveWorkoutPreviousSetsAction(
+  sessionId: string,
+): Promise<ActionResult<PreviousSetsBySessionExerciseId>> {
+  try {
+    const member = await requireMember();
+    const data = await measureServerPhase(
+      "member.workout.previousSets",
+      () =>
+        loadPreviousSetsForActiveMemberSession(
+          memberContextFromSession(member),
+          sessionId,
+        ),
+    );
+    if (!data) {
+      return actionError("Workout session not found.");
+    }
+    return actionOk(undefined, data);
+  } catch (error) {
+    console.error("[workout] load previous sets failed", error);
+    return actionError("Could not load previous sets.");
+  }
 }
 
 export async function startWorkoutSession(

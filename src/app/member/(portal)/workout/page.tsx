@@ -24,8 +24,10 @@ export default async function MemberWorkoutPage({ searchParams }: PageProps) {
     tab ??
     (addTo?.trim() ? "library" : null);
 
-  const { plan, activeSession, previousSets, canStart } =
-    await loadMemberWorkoutPageData(session.gymId, session.memberId);
+  const { plan, activeSession, canStart } = await loadMemberWorkoutPageData(
+    session.gymId,
+    session.memberId,
+  );
 
   return (
     <div className="space-y-3">
@@ -52,7 +54,6 @@ export default async function MemberWorkoutPage({ searchParams }: PageProps) {
         <MemberWorkoutPageClient
           plan={plan}
           activeSession={activeSession}
-          previousSets={previousSets}
           canStart={canStart}
           initialTab={initialTab}
           addToWorkoutId={addTo?.trim() || null}

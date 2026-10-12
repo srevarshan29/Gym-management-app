@@ -7,14 +7,17 @@ import { Play } from "lucide-react";
 
 import { startWorkoutSession } from "@/app/actions/workout-sessions";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 type TodaysWorkoutStartButtonProps = {
   dayId: string | null;
   label: string;
+  className?: string;
 };
 
 export function TodaysWorkoutStartButton({
   dayId,
   label,
+  className,
 }: TodaysWorkoutStartButtonProps) {
   const router = useRouter();
   const [pending, setPending] = React.useState(false);
@@ -43,7 +46,11 @@ export function TodaysWorkoutStartButton({
   }
 
   return (
-    <Button className="w-full gap-2" onClick={onStart} disabled={pending}>
+    <Button
+      className={cn("w-full gap-2", className)}
+      onClick={onStart}
+      disabled={pending}
+    >
       <Play className="h-4 w-4" />
       {pending ? "Starting..." : label}
     </Button>

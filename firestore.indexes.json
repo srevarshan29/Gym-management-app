@@ -614,6 +614,24 @@
         { "fieldPath": "isFavorite", "order": "ASCENDING" },
         { "fieldPath": "favoritedAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "memberWaterLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gymId", "order": "ASCENDING" },
+        { "fieldPath": "memberId", "order": "ASCENDING" },
+        { "fieldPath": "logDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "attendance",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gymId", "order": "ASCENDING" },
+        { "fieldPath": "memberId", "order": "ASCENDING" },
+        { "fieldPath": "dateKey", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

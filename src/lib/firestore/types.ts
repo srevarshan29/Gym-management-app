@@ -581,6 +581,27 @@ export type NutritionMemberSettingsDoc = {
   updatedAt: Timestamp;
 };
 
+export type MemberWaterLogDoc = {
+  gymId: string;
+  memberId: string;
+  /** Gym-local calendar day (YYYY-MM-DD), aligned with attendance dateKey. */
+  logDate: string;
+  amountMl: number;
+  createdAt: Timestamp;
+};
+
+export type MemberPortalDashboardStateDoc = {
+  gymId: string;
+  memberId: string;
+  /** Gym-local calendar day for pinned greeting rotation. */
+  greetingDateKey: string | null;
+  greetingMessageKey: string | null;
+  recentMessageKeys: string[];
+  celebratedCalorieDateKey: string | null;
+  celebratedWaterDateKey: string | null;
+  updatedAt: Timestamp;
+};
+
 export type NutritionLogDoc = {
   gymId: string;
   memberId: string;

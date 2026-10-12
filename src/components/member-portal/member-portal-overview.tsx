@@ -1,10 +1,10 @@
 import { Dumbbell, Salad, TrendingUp } from "lucide-react";
 
+import { MemberDashboardAttendanceSection } from "@/components/member-portal/dashboard/member-dashboard-attendance";
+import { MemberDashboardMetricCards } from "@/components/member-portal/dashboard/member-dashboard-metric-cards";
 import { LockedLink } from "@/components/navigation/locked-link";
 import { MembershipProgressRing } from "@/components/member-portal/membership-progress-ring";
-import { MemberPortalStatCard } from "@/components/member-portal/member-portal-stat-card";
 import { TodaysWorkoutStartButton } from "@/components/member-portal/todays-workout-start-button";
-import { StatusBadge } from "@/components/status-badge";
 import {
   Card,
   CardContent,
@@ -12,9 +12,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { MemberPortalDashboardData } from "@/lib/member-portal/load-member-portal-dashboard";
 import type { MemberPortalOverview } from "@/lib/member-portal/queries";
 import type { SuggestedWorkoutDay } from "@/lib/workout-tracking/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 const CARD_CLASS =
   "rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm";
@@ -35,61 +37,53 @@ function TodaysWorkoutCard({
   if (suggestion.kind === "none" || suggestion.kind === "legacy") {
     return (
       <Card className={CARD_CLASS}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold">Today&apos;s workout</CardTitle>
+        <CardHeader className="pb-1 pt-3">
+          <CardTitle className="text-sm font-semibold">Today&apos;s workout</CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">{emptyCopy}</p>
+        <CardContent className="pb-3 pt-0">
+          <p className="text-xs text-muted-foreground">{emptyCopy}</p>
         </CardContent>
       </Card>
     );
   }
 
-  if (suggestion.kind === "resume") {
-    return (
-      <Card className={CARD_CLASS}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold">Today&apos;s workout</CardTitle>
-          <CardDescription>
-            {suggestion.label ? `${suggestion.label} in progress` : "Workout in progress"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            {suggestion.exerciseCount} exercise
-            {suggestion.exerciseCount === 1 ? "" : "s"}
-            {suggestion.estimatedMinutes != null
-              ? ` · ~${suggestion.estimatedMinutes} min`
-              : ""}
-          </p>
-          <TodaysWorkoutStartButton
-            dayId={suggestion.dayId}
-            label="Resume workout"
-          />
-        </CardContent>
-      </Card>
-    );
-  }
+  const title =
+    suggestion.kind === "resume"
+      ? suggestion.label
+        ? `${suggestion.label}`
+        : "Workout in progress"
+      : suggestion.label;
 
   return (
     <Card className={CARD_CLASS}>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-semibold">Today&apos;s workout</CardTitle>
-        <CardDescription>{suggestion.label}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          {suggestion.exerciseCount} exercise
-          {suggestion.exerciseCount === 1 ? "" : "s"}
-          {` · ~${suggestion.estimatedMinutes} min`}
-        </p>
-        <TodaysWorkoutStartButton dayId={suggestion.dayId} label="Start workout" />
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-1 pt-3">
+        <div className="min-w-0">
+          <CardTitle className="text-base font-semibold leading-tight">
+            {title}
+          </CardTitle>
+          <CardDescription className="text-xs">
+            {suggestion.exerciseCount} exercise
+            {suggestion.exerciseCount === 1 ? "" : "s"}
+            {suggestion.estimatedMinutes != null
+              ? ` · ${suggestion.estimatedMinutes} min`
+              : ""}
+          </CardDescription>
+        </div>
         <LockedLink
           href="/member/workout"
-          className="block text-center text-sm text-primary hover:underline"
+          className="shrink-0 text-xs text-muted-foreground hover:text-primary"
         >
-          See all days
+          All days
         </LockedLink>
+      </CardHeader>
+      <CardContent className="pb-3 pt-0">
+        <TodaysWorkoutStartButton
+          dayId={suggestion.dayId}
+          label={
+            suggestion.kind === "resume" ? "Resume" : "Start"
+          }
+          className="h-11 w-full rounded-2xl text-base font-bold"
+        />
       </CardContent>
     </Card>
   );
@@ -97,13 +91,13 @@ function TodaysWorkoutCard({
 
 function QuickActionsGrid() {
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-3 gap-2">
       {QUICK_ACTIONS.map((action) => (
         <LockedLink key={action.href} href={action.href} className="min-w-0">
           <Card className={CARD_CLASS}>
-            <CardContent className="flex flex-col items-center gap-2 p-4 text-center">
-              <action.icon className="h-5 w-5 text-primary" />
-              <span className="text-xs font-medium">{action.label}</span>
+            <CardContent className="flex flex-col items-center gap-1.5 p-3 text-center">
+              <action.icon className="h-4 w-4 text-primary" />
+              <span className="text-[11px] font-medium">{action.label}</span>
             </CardContent>
           </Card>
         </LockedLink>
@@ -112,99 +106,142 @@ function QuickActionsGrid() {
   );
 }
 
+function CompactMembershipRow({
+  overview,
+}: {
+  overview: MemberPortalOverview;
+}) {
+  const daysRemaining = overview.daysRemaining ?? 0;
+  const planTotalDays = overview.planTotalDays ?? 1;
+  const displayDays = Math.max(0, daysRemaining);
+  const pendingAmount = overview.pendingAmount ?? 0;
+  const statusLabel =
+    overview.status === "ACTIVE"
+      ? "Active"
+      : overview.status === "EXPIRING_SOON"
+        ? "Expiring soon"
+        : overview.status;
+
+  return (
+    <Card className={CARD_CLASS}>
+      <CardContent className="flex items-center gap-3 p-3">
+        {planTotalDays > 0 ? (
+          <MembershipProgressRing
+            daysRemaining={daysRemaining}
+            planTotalDays={planTotalDays}
+            size={64}
+            strokeWidth={6}
+            className="shrink-0"
+          />
+        ) : (
+          <p className="font-mono text-xl font-bold tabular-nums">{displayDays}</p>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-medium text-muted-foreground">Days left</p>
+          <p className="text-sm font-semibold leading-tight">
+            {statusLabel}
+            {overview.endDate ? (
+              <span className="font-normal text-muted-foreground">
+                {" "}
+                · ends {formatDate(overview.endDate)}
+              </span>
+            ) : null}
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="text-xs text-muted-foreground">Pending</p>
+          <p
+            className={cn(
+              "text-sm font-bold tabular-nums",
+              pendingAmount > 0 ? "text-destructive" : "text-foreground",
+            )}
+          >
+            {formatCurrency(pendingAmount)}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function MemberPortalOverviewPanel({
   overview,
   suggestion,
+  dashboard,
 }: {
   overview: MemberPortalOverview;
   suggestion: SuggestedWorkoutDay;
+  dashboard: MemberPortalDashboardData;
 }) {
   const hasSubscription = overview.packageName != null;
+  const [year, monthIndex0] = dashboard.dateKey.split("-").map(Number);
+  const calendarMonthIndex0 = monthIndex0 - 1;
 
   if (!hasSubscription) {
     return (
-      <div className="space-y-4">
-        <h1 className="min-w-0 break-words font-display text-xl font-bold">
-          Hi, {overview.memberName}
-        </h1>
-        <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70">
-          <CardContent className="p-5">
+      <div className="space-y-3">
+        <div>
+          <h1 className="font-display text-xl font-bold leading-tight">
+            Hi, {overview.memberName}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">{dashboard.message.text}</p>
+        </div>
+        <Card className={CARD_CLASS}>
+          <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">
               No active subscription on file. Contact your gym front desk.
             </p>
           </CardContent>
         </Card>
+        <MemberDashboardMetricCards
+          logDate={dashboard.dateKey}
+          calories={dashboard.calories}
+          calorieTarget={dashboard.calorieTarget}
+          caloriePercent={dashboard.caloriePercent}
+          calorieGoalComplete={dashboard.calorieGoalComplete}
+          waterConsumedMl={dashboard.waterConsumedMl}
+          waterTargetMl={dashboard.waterTargetMl}
+          waterPercent={dashboard.waterPercent}
+          waterGoalComplete={dashboard.waterGoalComplete}
+        />
         <TodaysWorkoutCard suggestion={suggestion} />
         <QuickActionsGrid />
       </div>
     );
   }
 
-  const daysRemaining = overview.daysRemaining ?? 0;
-  const planTotalDays = overview.planTotalDays ?? 1;
-  const displayDays = Math.max(0, daysRemaining);
-  const percentRemaining = Math.min(
-    100,
-    Math.max(0, Math.round((displayDays / Math.max(1, planTotalDays)) * 100)),
-  );
-  const paidAmount = overview.paidAmount ?? 0;
-  const pendingAmount = overview.pendingAmount ?? 0;
-  const fullyPaid = pendingAmount <= 0;
-
   return (
-    <div className="space-y-4">
-      <div className="flex min-w-0 items-start justify-between gap-3">
-        <h1 className="min-w-0 break-words font-display text-xl font-bold">
+    <div className="space-y-3">
+      <div>
+        <h1 className="font-display text-xl font-bold leading-tight">
           Hi, {overview.memberName}
         </h1>
-        <StatusBadge status={overview.status} className="shrink-0" />
-      </div>
-
-      <Card className={CARD_CLASS}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold">
-            {overview.packageName}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center gap-3 pb-6 pt-0">
-          {planTotalDays > 0 ? (
-            <MembershipProgressRing
-              daysRemaining={daysRemaining}
-              planTotalDays={planTotalDays}
-            />
-          ) : (
-            <p className="font-mono text-2xl font-bold">
-              {displayDays} days left
-            </p>
-          )}
-          <p className="text-center text-sm text-muted-foreground">
-            {percentRemaining}% of plan remaining
-            {overview.endDate ? (
-              <>
-                {" "}
-                · ends {formatDate(overview.endDate)}
-              </>
-            ) : null}
-          </p>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-2 gap-3">
-        <MemberPortalStatCard
-          label="Paid"
-          value={formatCurrency(paidAmount)}
-          valueClassName={fullyPaid ? "text-primary" : "text-foreground"}
-        />
-        <MemberPortalStatCard
-          label="Pending"
-          value={formatCurrency(pendingAmount)}
-          valueClassName={
-            pendingAmount > 0 ? "text-destructive" : "text-foreground"
-          }
-        />
+        <p className="mt-1 text-sm text-muted-foreground">{dashboard.message.text}</p>
       </div>
 
       <TodaysWorkoutCard suggestion={suggestion} />
+
+      <MemberDashboardMetricCards
+        logDate={dashboard.dateKey}
+        calories={dashboard.calories}
+        calorieTarget={dashboard.calorieTarget}
+        caloriePercent={dashboard.caloriePercent}
+        calorieGoalComplete={dashboard.calorieGoalComplete}
+        waterConsumedMl={dashboard.waterConsumedMl}
+        waterTargetMl={dashboard.waterTargetMl}
+        waterPercent={dashboard.waterPercent}
+        waterGoalComplete={dashboard.waterGoalComplete}
+      />
+
+      <CompactMembershipRow overview={overview} />
+
+      <MemberDashboardAttendanceSection
+        weekDays={dashboard.weekDays}
+        visitsThisWeek={dashboard.visitsThisWeek}
+        initialYear={year}
+        initialMonthIndex0={calendarMonthIndex0}
+      />
+
       <QuickActionsGrid />
     </div>
   );

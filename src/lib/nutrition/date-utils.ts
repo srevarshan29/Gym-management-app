@@ -1,4 +1,6 @@
-/** Client-safe nutrition log date helpers (no server/Firestore imports). */
+import { attendanceDateKey } from "@/lib/attendance/date-key";
+
+/** Nutrition log date helpers (gym-local calendar day for member portal). */
 
 const LOG_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -10,11 +12,9 @@ export function parseNutritionLogDate(value: string): string {
   return trimmed;
 }
 
+/** Default log day for member nutrition (same rule as dashboard + attendance). */
 export function defaultNutritionLogDate(now = new Date()): string {
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return attendanceDateKey(now);
 }
 
 export function shiftNutritionLogDate(logDate: string, days: number): string {

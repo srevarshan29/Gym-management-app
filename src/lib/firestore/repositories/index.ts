@@ -25,6 +25,8 @@ import { MemberPersonalWorkoutsRepository } from "@/lib/firestore/repositories/m
 import { WorkoutPlansRepository } from "@/lib/firestore/repositories/workout-plans";
 import { WorkoutSessionsRepository } from "@/lib/firestore/repositories/workout-sessions";
 import { AttendanceRepository } from "@/lib/firestore/repositories/attendance";
+import { MemberPortalDashboardStateRepository } from "@/lib/firestore/repositories/member-portal-dashboard-state";
+import { MemberWaterLogsRepository } from "@/lib/firestore/repositories/member-water-logs";
 
 export type FirestoreRepositories = {
   gyms: GymsRepository;
@@ -52,6 +54,8 @@ export type FirestoreRepositories = {
   nutritionLogs: NutritionLogsRepository;
   nutritionMemberFoods: NutritionMemberFoodsRepository;
   nutritionMemberSettings: NutritionMemberSettingsRepository;
+  memberWaterLogs: MemberWaterLogsRepository;
+  memberPortalDashboardState: MemberPortalDashboardStateRepository;
 };
 
 export function createRepositories(db: Firestore): FirestoreRepositories {
@@ -81,6 +85,8 @@ export function createRepositories(db: Firestore): FirestoreRepositories {
     nutritionLogs: new NutritionLogsRepository(db),
     nutritionMemberFoods: new NutritionMemberFoodsRepository(db),
     nutritionMemberSettings: new NutritionMemberSettingsRepository(db),
+    memberWaterLogs: new MemberWaterLogsRepository(db),
+    memberPortalDashboardState: new MemberPortalDashboardStateRepository(db),
   };
 }
 
@@ -109,6 +115,8 @@ export { MemberPersonalWorkoutsRepository } from "@/lib/firestore/repositories/m
 export { WorkoutPlansRepository } from "@/lib/firestore/repositories/workout-plans";
 export { WorkoutSessionsRepository } from "@/lib/firestore/repositories/workout-sessions";
 export { AttendanceRepository } from "@/lib/firestore/repositories/attendance";
+export { MemberPortalDashboardStateRepository } from "@/lib/firestore/repositories/member-portal-dashboard-state";
+export { MemberWaterLogsRepository } from "@/lib/firestore/repositories/member-water-logs";
 export {
   TenantRepository,
   clampPageSize,

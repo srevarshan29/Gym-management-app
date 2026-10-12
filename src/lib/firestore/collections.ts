@@ -30,6 +30,8 @@ export const COLLECTIONS = {
   notificationDeliveries: "notificationDeliveries",
   gymNotificationSettings: "gymNotificationSettings",
   attendance: "attendance",
+  memberWaterLogs: "memberWaterLogs",
+  memberPortalDashboardState: "memberPortalDashboardState",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];

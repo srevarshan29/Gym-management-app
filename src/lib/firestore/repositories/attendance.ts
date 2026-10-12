@@ -8,7 +8,7 @@ import type {
 } from "@/lib/attendance/types";
 import { COLLECTIONS } from "@/lib/firestore/collections";
 import type { FirestoreContext } from "@/lib/firestore/context";
-import { assertTenantAccess } from "@/lib/firestore/context";
+import { assertMemberSelfAccess, assertTenantAccess } from "@/lib/firestore/context";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
 import { clampPageSize } from "@/lib/firestore/repositories/base";
 import type { AttendanceDoc, AttendanceMethod, MemberDoc } from "@/lib/firestore/types";
@@ -55,6 +55,34 @@ export class AttendanceRepository {
       .limit(pageSize)
       .get();
     return snap.docs.map((d) => ({ id: d.id, ...(d.data() as AttendanceDoc) }));
+  }
+
+  /**
+   * Unique attendance date keys in range (inclusive), gym-local YYYY-MM-DD.
+   * Index: gymId + memberId + dateKey
+   */
+  async listVisitDateKeysForMemberInRange(
+    ctx: FirestoreContext,
+    gymId: string,
+    memberId: string,
+    startDateKey: string,
+    endDateKey: string,
+  ): Promise<string[]> {
+    assertTenantAccess(ctx, gymId);
+    assertMemberSelfAccess(ctx, memberId);
+    const snap = await this.col()
+      .where("gymId", "==", gymId)
+      .where("memberId", "==", memberId)
+      .where("dateKey", ">=", startDateKey)
+      .where("dateKey", "<=", endDateKey)
+      .get();
+
+    const keys = new Set<string>();
+    for (const doc of snap.docs) {
+      const row = doc.data() as AttendanceDoc;
+      if (row.dateKey) keys.add(row.dateKey);
+    }
+    return [...keys].sort();
   }
 
   async listRecentForMember(

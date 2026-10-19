@@ -1,4 +1,9 @@
-import { Timestamp, type Firestore } from "firebase-admin/firestore";
+import {
+  AggregateField,
+  Timestamp,
+  type Firestore,
+  type QueryDocumentSnapshot,
+} from "firebase-admin/firestore";
 
 import { COLLECTIONS } from "@/lib/firestore/collections";
 import type { FirestoreContext } from "@/lib/firestore/context";
@@ -12,7 +17,11 @@ import {
 import type { DocWithId } from "@/lib/firestore/repositories/base";
 import { omitUndefined } from "@/lib/firestore/serialize";
 import type { MemberDoc, SubscriptionDoc } from "@/lib/firestore/types";
+import { queryPageByNumber } from "@/lib/firestore/pagination";
+import { measureServerPhase } from "@/lib/server-perf";
 import { computeSubscriptionBalance } from "@/lib/subscription-balance";
+
+const PENDING_DUES_SCAN_BATCH = 200;
 
 export type CreateSubscriptionInput = {
   memberId: string;
@@ -224,6 +233,67 @@ export class SubscriptionsRepository {
     };
   }
 
+  private pendingDuesFilterQuery(gymId: string) {
+    return this.col()
+      .where("gymId", "==", gymId)
+      .where("pendingAmount", ">", 0);
+  }
+
+  private pendingDuesBaseQuery(gymId: string) {
+    return this.pendingDuesFilterQuery(gymId).orderBy("pendingAmount", "desc");
+  }
+
+  async aggregatePendingDuesTotals(
+    ctx: FirestoreContext,
+    gymId: string,
+  ): Promise<{ unpaidCycleCount: number; totalDue: number }> {
+    assertTenantAccess(ctx, gymId);
+    const query = this.pendingDuesFilterQuery(gymId);
+    const [countSnap, sumSnap] = await Promise.all([
+      query.count().get(),
+      query.aggregate({ total: AggregateField.sum("pendingAmount") }).get(),
+    ]);
+    return {
+      unpaidCycleCount: countSnap.data().count,
+      totalDue: sumSnap.data().total ?? 0,
+    };
+  }
+
+  private async scanPendingCyclesMatchingName(
+    ctx: FirestoreContext,
+    gymId: string,
+    q: string,
+    page: number,
+    pageSize: number,
+  ): Promise<{ rows: DocWithId<SubscriptionDoc>[]; matchingCount: number }> {
+    assertTenantAccess(ctx, gymId);
+    const needle = q.trim().toLowerCase();
+    const matches: DocWithId<SubscriptionDoc>[] = [];
+    let lastDoc: QueryDocumentSnapshot | undefined;
+
+    for (;;) {
+      let query = this.pendingDuesBaseQuery(gymId).limit(PENDING_DUES_SCAN_BATCH);
+      if (lastDoc) query = query.startAfter(lastDoc);
+      const snap = await query.get();
+      if (snap.empty) break;
+
+      for (const d of snap.docs) {
+        const row = { id: d.id, ...(d.data() as SubscriptionDoc) };
+        if (!row.memberName.toLowerCase().includes(needle)) continue;
+        matches.push(row);
+      }
+
+      lastDoc = snap.docs[snap.docs.length - 1];
+      if (snap.docs.length < PENDING_DUES_SCAN_BATCH) break;
+    }
+
+    const offset = (page - 1) * pageSize;
+    return {
+      rows: matches.slice(offset, offset + pageSize),
+      matchingCount: matches.length,
+    };
+  }
+
   async listPendingCyclesPage(
     ctx: FirestoreContext,
     gymId: string,
@@ -240,56 +310,79 @@ export class SubscriptionsRepository {
     page: number;
     pageSize: number;
   }> {
-    assertTenantAccess(ctx, gymId);
-    const pageSize = options.pageSize ?? 50;
-    const page = Math.max(1, Math.floor(options.page ?? 1));
-    const q = options.q?.trim().toLowerCase() ?? "";
+    return measureServerPhase("staff.pendingDues.page", async () => {
+      assertTenantAccess(ctx, gymId);
+      const pageSize = options.pageSize ?? 50;
+      const page = Math.max(1, Math.floor(options.page ?? 1));
+      const q = options.q?.trim().toLowerCase() ?? "";
 
-    const snap = await this.col()
-      .where("gymId", "==", gymId)
-      .where("pendingAmount", ">", 0)
-      .orderBy("pendingAmount", "desc")
-      .get();
+      const totals = await measureServerPhase(
+        "staff.pendingDues.totals",
+        () => this.aggregatePendingDuesTotals(ctx, gymId),
+      );
 
-    let rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as SubscriptionDoc) }));
-    const unpaidCycleCount = rows.length;
-    const totalDue = rows.reduce((sum, r) => sum + r.pendingAmount, 0);
+      if (!q) {
+        const pageSnaps = await queryPageByNumber(
+          this.pendingDuesBaseQuery(gymId),
+          page,
+          pageSize,
+        );
+        const rows = pageSnaps.map((d) => ({
+          id: d.id,
+          ...(d.data() as SubscriptionDoc),
+        }));
+        return {
+          rows,
+          matchingCount: totals.unpaidCycleCount,
+          unpaidCycleCount: totals.unpaidCycleCount,
+          totalDue: totals.totalDue,
+          page,
+          pageSize,
+        };
+      }
 
-    if (q) {
-      rows = rows.filter((r) => r.memberName.toLowerCase().includes(q));
-    }
-
-    const matchingCount = rows.length;
-    const offset = (page - 1) * pageSize;
-    const pageRows = rows.slice(offset, offset + pageSize);
-
-    return {
-      rows: pageRows,
-      matchingCount,
-      unpaidCycleCount,
-      totalDue,
-      page,
-      pageSize,
-    };
+      const filtered = await measureServerPhase(
+        "staff.pendingDues.search",
+        () => this.scanPendingCyclesMatchingName(ctx, gymId, q, page, pageSize),
+      );
+      return {
+        rows: filtered.rows,
+        matchingCount: filtered.matchingCount,
+        unpaidCycleCount: totals.unpaidCycleCount,
+        totalDue: totals.totalDue,
+        page,
+        pageSize,
+      };
+    });
   }
 
   async sumPendingTotals(
     ctx: FirestoreContext,
     gymId: string,
   ): Promise<{ pendingTotal: number; pendingMemberCount: number }> {
-    assertTenantAccess(ctx, gymId);
-    const snap = await this.col()
-      .where("gymId", "==", gymId)
-      .where("pendingAmount", ">", 0)
-      .get();
-    const memberIds = new Set<string>();
-    let pendingTotal = 0;
-    for (const doc of snap.docs) {
-      const data = doc.data() as SubscriptionDoc;
-      pendingTotal += data.pendingAmount;
-      memberIds.add(data.memberId);
-    }
-    return { pendingTotal, pendingMemberCount: memberIds.size };
+    return measureServerPhase("staff.dashboard.pendingTotals", async () => {
+      assertTenantAccess(ctx, gymId);
+      const totals = await this.aggregatePendingDuesTotals(ctx, gymId);
+      const memberIds = new Set<string>();
+      let lastDoc: QueryDocumentSnapshot | undefined;
+
+      for (;;) {
+        let query = this.pendingDuesBaseQuery(gymId).limit(PENDING_DUES_SCAN_BATCH);
+        if (lastDoc) query = query.startAfter(lastDoc);
+        const snap = await query.get();
+        if (snap.empty) break;
+        for (const doc of snap.docs) {
+          memberIds.add((doc.data() as SubscriptionDoc).memberId);
+        }
+        lastDoc = snap.docs[snap.docs.length - 1];
+        if (snap.docs.length < PENDING_DUES_SCAN_BATCH) break;
+      }
+
+      return {
+        pendingTotal: totals.totalDue,
+        pendingMemberCount: memberIds.size,
+      };
+    });
   }
 
   /** Earliest subscription start for one member (single-document read). */

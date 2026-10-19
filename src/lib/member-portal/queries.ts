@@ -1,4 +1,8 @@
 import { getRepositories, platformContext } from "@/lib/firestore";
+import type { MemberContext } from "@/lib/firestore/context";
+import type { DocWithId } from "@/lib/firestore/repositories/base";
+import type { MemberDoc, SubscriptionDoc } from "@/lib/firestore/types";
+import { getPortalMemberDoc } from "@/lib/member-portal/member-doc-cache";
 import { computeSubscriptionBalance } from "@/lib/subscription-balance";
 import { statusFromEndDate } from "@/lib/subscription";
 
@@ -29,29 +33,10 @@ function inclusiveDayCount(start: Date, end: Date): number {
   return Math.max(1, diff + 1);
 }
 
-export async function getMemberPortalOverview(
-  tenantGymId: string,
-  memberId: string,
-): Promise<MemberPortalOverview | null> {
-  const { members, subscriptions } = getRepositories();
-
-  const member = await members.findByIdAndGym(
-    platformContext,
-    memberId,
-    tenantGymId,
-  );
-  if (!member) return null;
-
-  const subs = await subscriptions.listByMember(
-    platformContext,
-    tenantGymId,
-    memberId,
-  );
-
-  const sorted = [...subs].sort(
-    (a, b) => b.endDate.toMillis() - a.endDate.toMillis(),
-  );
-  const current = sorted[0];
+export function buildMemberPortalOverviewFromMember(
+  member: DocWithId<MemberDoc>,
+  current: DocWithId<SubscriptionDoc> | undefined,
+): MemberPortalOverview {
   if (!current) {
     return {
       memberName: member.name,
@@ -93,6 +78,26 @@ export async function getMemberPortalOverview(
     pendingAmount: member.pendingAmountTotal,
     endDate: current.endDate.toDate(),
   };
+}
+
+export async function getMemberPortalOverview(
+  ctx: MemberContext,
+): Promise<MemberPortalOverview | null> {
+  const { subscriptions } = getRepositories();
+
+  const member = await getPortalMemberDoc(ctx);
+  if (!member) return null;
+
+  const subs = await subscriptions.listByMember(
+    ctx,
+    ctx.gymId,
+    ctx.memberId,
+  );
+
+  const sorted = [...subs].sort(
+    (a, b) => b.endDate.toMillis() - a.endDate.toMillis(),
+  );
+  return buildMemberPortalOverviewFromMember(member, sorted[0]);
 }
 
 export async function getMemberPortalPayments(

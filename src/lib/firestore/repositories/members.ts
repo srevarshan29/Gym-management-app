@@ -1,4 +1,8 @@
-import { Timestamp, type Firestore } from "firebase-admin/firestore";
+import {
+  Timestamp,
+  type Firestore,
+  type QueryDocumentSnapshot,
+} from "firebase-admin/firestore";
 
 import {
   resetGymSequences,
@@ -10,8 +14,12 @@ import { assertMemberSelfAccess, assertTenantAccess } from "@/lib/firestore/cont
 import { DocumentNotFoundError } from "@/lib/firestore/errors";
 import {
   buildMemberSearchTokens,
+  memberDocMatchesQueryTokens,
+  MEMBER_DIRECTORY_SEARCH_SCAN_BATCH,
+  sliceMemberSearchMatches,
   tokenizeSearchQuery,
 } from "@/lib/firestore/member-search";
+import { measureServerPhase } from "@/lib/server-perf";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
 import { omitUndefined, touchUpdatedAt } from "@/lib/firestore/serialize";
 import { queryPageByNumber } from "@/lib/firestore/pagination";
@@ -417,6 +425,46 @@ export class MembersRepository {
     };
   }
 
+  private async scanMemberDirectorySearchMatches(
+    ctx: FirestoreContext,
+    gymId: string,
+    tokens: string[],
+    page: number,
+    pageSize: number,
+  ): Promise<{ pageMembers: DocWithId<MemberDoc>[]; matchingCount: number }> {
+    assertTenantAccess(ctx, gymId);
+    const matches: DocWithId<MemberDoc>[] = [];
+
+    let lastDoc: QueryDocumentSnapshot | undefined;
+    const baseQuery = this.col()
+      .where("gymId", "==", gymId)
+      .where("searchTokens", "array-contains", tokens[0]!);
+
+    for (;;) {
+      let query = baseQuery.limit(MEMBER_DIRECTORY_SEARCH_SCAN_BATCH);
+      if (lastDoc) query = query.startAfter(lastDoc);
+      const snap = await query.get();
+      if (snap.empty) break;
+
+      for (const d of snap.docs) {
+        const member = { id: d.id, ...(d.data() as MemberDoc) };
+        if (!memberDocMatchesQueryTokens(member.searchTokens, tokens)) continue;
+        matches.push(member);
+      }
+
+      lastDoc = snap.docs[snap.docs.length - 1];
+      if (snap.docs.length < MEMBER_DIRECTORY_SEARCH_SCAN_BATCH) break;
+    }
+
+    matches.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+    const { rows, matchingCount } = sliceMemberSearchMatches(
+      matches,
+      page,
+      pageSize,
+    );
+    return { pageMembers: rows, matchingCount };
+  }
+
   async listDirectoryPage(
     ctx: FirestoreContext,
     gymId: string,
@@ -435,6 +483,7 @@ export class MembersRepository {
 
     let totalMembers: number;
     let candidates: DocWithId<MemberDoc>[];
+    let matchingCount: number;
 
     if (tokens.length === 0) {
       const [resolvedTotalMembers, pageSnaps] = await Promise.all([
@@ -450,34 +499,19 @@ export class MembersRepository {
         id: d.id,
         ...(d.data() as MemberDoc),
       }));
+      matchingCount = totalMembers;
     } else {
-      const [resolvedTotalMembers, snap] = await Promise.all([
-        this.countByGym(ctx, gymId),
-        this.col()
-          .where("gymId", "==", gymId)
-          .where("searchTokens", "array-contains", tokens[0]!)
-          .get(),
-      ]);
-      totalMembers = resolvedTotalMembers;
-      candidates = snap.docs
-        .map((d) => ({ id: d.id, ...(d.data() as MemberDoc) }))
-        .filter((m) =>
-          tokens.every((t) =>
-            m.searchTokens.some((token) => token.includes(t)),
-          ),
-        )
-        .sort(
-          (a, b) => b.createdAt.toMillis() - a.createdAt.toMillis(),
-        );
+      totalMembers = await this.countByGym(ctx, gymId);
+      const searchResult = await measureServerPhase(
+        "staff.members.directory.search",
+        () =>
+          this.scanMemberDirectorySearchMatches(ctx, gymId, tokens, page, pageSize),
+      );
+      candidates = searchResult.pageMembers;
+      matchingCount = searchResult.matchingCount;
     }
 
-    const matchingCount = tokens.length === 0 ? totalMembers : candidates.length;
-    const pageMembers = tokens.length === 0 ? candidates : candidates.slice(
-      (page - 1) * pageSize,
-      page * pageSize,
-    );
-
-    const rows = pageMembers.map((m) => this.toListItem(m, null));
+    const rows = candidates.map((m) => this.toListItem(m, null));
 
     return { rows, totalMembers, matchingCount, page, pageSize };
   }
@@ -539,14 +573,8 @@ export class MembersRepository {
     gymId: string,
   ): Promise<MemberListItem[]> {
     assertTenantAccess(ctx, gymId);
-    const snap = await this.col()
-      .where("gymId", "==", gymId)
-      .orderBy("createdAt", "desc")
-      .limit(500)
-      .get();
-    return snap.docs.map((d) =>
-      this.toListItem({ id: d.id, ...(d.data() as MemberDoc) }, null),
-    );
+    const docs = await this.listAllByGym(ctx, gymId);
+    return docs.map((d) => this.toListItem(d, null));
   }
 
   /** Full member roster for tenant-scoped reports (not paginated). */

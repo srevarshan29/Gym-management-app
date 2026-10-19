@@ -10,10 +10,13 @@ import type { FirestoreContext } from "@/lib/firestore/context";
 import { assertTenantAccess } from "@/lib/firestore/context";
 import { DocumentNotFoundError } from "@/lib/firestore/errors";
 import { batchGetByIds } from "@/lib/firestore/batch-get";
+import { measureServerPhase } from "@/lib/server-perf";
 import { newDocId } from "@/lib/firestore/helpers";
 import { queryPageByNumber } from "@/lib/firestore/pagination";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
 import { omitUndefined } from "@/lib/firestore/serialize";
+import { buildPaymentReportMetricsFromAggregates } from "@/lib/operations-reports/metrics";
+import type { PaymentReportMetrics } from "@/lib/operations-reports/metrics";
 import type {
   MemberDoc,
   PaymentDoc,
@@ -21,6 +24,14 @@ import type {
   SubscriptionDoc,
   UserDoc,
 } from "@/lib/firestore/types";
+
+const ALL_PAYMENT_METHODS: PaymentMethod[] = [
+  "CASH",
+  "UPI",
+  "CARD",
+  "BANK_TRANSFER",
+  "OTHER",
+];
 
 export type CreatePaymentInput = {
   memberId: string;
@@ -118,7 +129,11 @@ export class PaymentsRepository {
     const pageSize = options.pageSize ?? 50;
     const page = Math.max(1, Math.floor(options.page ?? 1));
     const q = options.q?.trim().toLowerCase() ?? "";
+    const perfLabel = q
+      ? "staff.payments.listPaidPage.search"
+      : "staff.payments.listPaidPage";
 
+    return measureServerPhase(perfLabel, async () => {
     const statsQuery = this.col().where("gymId", "==", gymId);
     const listQuery = this.col()
       .where("gymId", "==", gymId)
@@ -129,14 +144,16 @@ export class PaymentsRepository {
     const subCache = new Map<string, SubscriptionDoc>();
     const userCache = new Map<string, UserDoc>();
 
-    async function loadMember(id: string) {
-      const cached = memberCache.get(id);
-      if (cached) return cached;
-      const s = await db.collection(COLLECTIONS.members).doc(id).get();
-      if (!s.exists) throw new DocumentNotFoundError(COLLECTIONS.members, id);
-      const data = s.data() as MemberDoc;
-      memberCache.set(id, data);
-      return data;
+    async function primeMembersForPayments(paymentDocs: DocWithId<PaymentDoc>[]) {
+      const memberIds = paymentDocs.map((p) => p.memberId);
+      const loaded = await batchGetByIds<MemberDoc>(
+        db,
+        COLLECTIONS.members,
+        memberIds,
+      );
+      for (const [id, data] of loaded) {
+        memberCache.set(id, data);
+      }
     }
 
     async function primeRelatedDocs(pageDocs: DocWithId<PaymentDoc>[]) {
@@ -197,10 +214,18 @@ export class PaymentsRepository {
           const snap = await batchQuery.get();
           if (snap.empty) break;
 
-          for (const doc of snap.docs) {
+          const batchPayments: DocWithId<PaymentDoc>[] = snap.docs.map((doc) => ({
+            id: doc.id,
+            ...(doc.data() as PaymentDoc),
+          }));
+          await primeMembersForPayments(batchPayments);
+
+          for (const payment of batchPayments) {
             scanned += 1;
-            const payment = { id: doc.id, ...(doc.data() as PaymentDoc) };
-            const member = await loadMember(payment.memberId);
+            const member = loadMemberCached(payment.memberId);
+            if (member.gymId !== gymId) {
+              throw new DocumentNotFoundError(COLLECTIONS.members, payment.memberId);
+            }
             if (member.name.toLowerCase().includes(q)) {
               filtered.push(payment);
             }
@@ -267,6 +292,7 @@ export class PaymentsRepository {
       page,
       pageSize,
     };
+    });
   }
 
   async countByGym(ctx: FirestoreContext, gymId: string): Promise<number> {
@@ -398,6 +424,64 @@ export class PaymentsRepository {
       .aggregate({ total: AggregateField.sum("amount") })
       .get();
     return snap.data().total ?? 0;
+  }
+
+  private paidInRangeQuery(
+    gymId: string,
+    start: Date,
+    end: Date,
+  ) {
+    return this.col()
+      .where("gymId", "==", gymId)
+      .where("paidAt", ">=", Timestamp.fromDate(start))
+      .where("paidAt", "<", Timestamp.fromDate(end));
+  }
+
+  async aggregatePaidInRangeForMethod(
+    ctx: FirestoreContext,
+    gymId: string,
+    start: Date,
+    end: Date,
+    method: PaymentMethod,
+  ): Promise<{ method: PaymentMethod; count: number; total: number }> {
+    assertTenantAccess(ctx, gymId);
+    const query = this.paidInRangeQuery(gymId, start, end).where(
+      "method",
+      "==",
+      method,
+    );
+    const [countSnap, sumSnap] = await Promise.all([
+      query.count().get(),
+      query.aggregate({ total: AggregateField.sum("amount") }).get(),
+    ]);
+    return {
+      method,
+      count: countSnap.data().count,
+      total: sumSnap.data().total ?? 0,
+    };
+  }
+
+  /** Range payment totals without loading every payment document. */
+  async summarizePaidInRange(
+    ctx: FirestoreContext,
+    gymId: string,
+    start: Date,
+    end: Date,
+  ): Promise<PaymentReportMetrics> {
+    return measureServerPhase("staff.reports.payments.aggregate", async () => {
+      const [paymentCount, totalCollected, ...byMethod] = await Promise.all([
+        this.countPaidInRange(ctx, gymId, start, end),
+        this.sumPaidInRange(ctx, gymId, start, end),
+        ...ALL_PAYMENT_METHODS.map((method) =>
+          this.aggregatePaidInRangeForMethod(ctx, gymId, start, end, method),
+        ),
+      ]);
+      return buildPaymentReportMetricsFromAggregates(
+        paymentCount,
+        totalCollected,
+        byMethod,
+      );
+    });
   }
 
   /** All-time sum of logged member payments for a gym (realized income only). */

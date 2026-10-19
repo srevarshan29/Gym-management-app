@@ -4,7 +4,7 @@ import * as React from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft, Dumbbell, TrendingUp } from "lucide-react";
 
-import { ExerciseProgressChart } from "@/components/workout/exercise-progress-chart";
+import { ExerciseProgressChartLazy } from "@/components/charts/lazy-charts";
 import { LockedLink } from "@/components/navigation/locked-link";
 import { Button } from "@/components/ui/button";
 import {
@@ -226,7 +226,7 @@ export function MemberProgressPanel({
               ) : null}
 
               {progress ? (
-                <ExerciseProgressChart
+                <ExerciseProgressChartLazy
                   key={`${exerciseKey}-${grouping}`}
                   data={chartPoints}
                   targetWeightKg={progress.targetWeightKg}

@@ -37,12 +37,20 @@ function paginationHref(
   base: Record<string, string | undefined>,
   key: "ap" | "pp",
   page: number,
+  cursorKey: "ac" | "pc",
+  nextPageStartAfter?: string | null,
 ): string {
   const params = new URLSearchParams();
   for (const [k, v] of Object.entries(base)) {
     if (v) params.set(k, v);
   }
   if (page > 1) params.set(key, String(page));
+  else params.delete(key);
+  if (page > 1 && nextPageStartAfter) {
+    params.set(cursorKey, nextPageStartAfter);
+  } else {
+    params.delete(cursorKey);
+  }
   const q = params.toString();
   return q ? `/operations/reports?${q}` : "/operations/reports";
 }
@@ -162,11 +170,14 @@ export function OperationsReportsDashboard({
                     searchParams,
                     "ap",
                     data.attendance.page - 1,
+                    "ac",
                   )}
                   nextHref={paginationHref(
                     searchParams,
                     "ap",
                     data.attendance.page + 1,
+                    "ac",
+                    data.attendance.nextPageStartAfter,
                   )}
                 />
               ) : undefined
@@ -296,11 +307,14 @@ export function OperationsReportsDashboard({
                       searchParams,
                       "pp",
                       data.payments.page - 1,
+                      "pc",
                     )}
                     nextHref={paginationHref(
                       searchParams,
                       "pp",
                       data.payments.page + 1,
+                      "pc",
+                      data.payments.nextPageStartAfter,
                     )}
                   />
                 ) : undefined

@@ -38,6 +38,7 @@ function emptyDashboard() {
       totalRows: 0,
       page: 1,
       pageSize: 50,
+      nextPageStartAfter: null,
       empty: true,
     },
     members: {
@@ -61,6 +62,7 @@ function emptyDashboard() {
       totalRows: 0,
       page: 1,
       pageSize: 50,
+      nextPageStartAfter: null,
       canView: true,
       empty: true,
     },

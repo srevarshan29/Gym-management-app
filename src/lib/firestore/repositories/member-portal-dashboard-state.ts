@@ -9,7 +9,11 @@ import {
 import type { DocWithId } from "@/lib/firestore/repositories/base";
 import { TenantRepository } from "@/lib/firestore/repositories/base";
 import { omitUndefined, serverTimestamps, touchUpdatedAt } from "@/lib/firestore/serialize";
+import {
+  dashboardStateNeedsPersist,
+} from "@/lib/member-portal/dashboard-state-sync";
 import type { MemberPortalDashboardStateDoc } from "@/lib/firestore/types";
+import { measureServerPhase } from "@/lib/server-perf";
 
 export function memberPortalDashboardStateDocId(
   gymId: string,
@@ -47,20 +51,38 @@ export class MemberPortalDashboardStateRepository extends TenantRepository<Membe
     gymId: string,
     memberId: string,
     patch: DashboardStatePatch,
-  ): Promise<DocWithId<MemberPortalDashboardStateDoc>> {
+    options?: {
+      /** When already loaded for message resolution, skips an extra read. */
+      existingDoc?: DocWithId<MemberPortalDashboardStateDoc> | null;
+    },
+  ): Promise<DocWithId<MemberPortalDashboardStateDoc> | null> {
+    return measureServerPhase("member.portal.dashboard.stateWrite", async () => {
     assertTenantAccess(ctx, gymId);
     assertMemberSelfAccess(ctx, memberId);
 
     const id = memberPortalDashboardStateDocId(gymId, memberId);
     const ref = this.docRef(id);
-    const existing = await ref.get();
+    const existingSnap =
+      options?.existingDoc !== undefined
+        ? null
+        : await ref.get();
+    const existingData =
+      options?.existingDoc !== undefined
+        ? options.existingDoc
+        : existingSnap?.exists
+          ? ({
+              id,
+              ...(existingSnap.data() as MemberPortalDashboardStateDoc),
+            } satisfies DocWithId<MemberPortalDashboardStateDoc>)
+          : null;
+
+    if (!dashboardStateNeedsPersist(existingData, patch)) {
+      return existingData;
+    }
 
     const recentMessageKeys =
       patch.recentMessageKeys?.slice(-MAX_RECENT_MESSAGE_KEYS) ??
-      (existing.exists
-        ? ((existing.data() as MemberPortalDashboardStateDoc).recentMessageKeys ??
-          [])
-        : []);
+      (existingData?.recentMessageKeys ?? []);
 
     const payload = omitUndefined({
       gymId,
@@ -68,31 +90,21 @@ export class MemberPortalDashboardStateRepository extends TenantRepository<Membe
       greetingDateKey:
         patch.greetingDateKey !== undefined
           ? patch.greetingDateKey
-          : existing.exists
-            ? (existing.data() as MemberPortalDashboardStateDoc).greetingDateKey
-            : null,
+          : (existingData?.greetingDateKey ?? null),
       greetingMessageKey:
         patch.greetingMessageKey !== undefined
           ? patch.greetingMessageKey
-          : existing.exists
-            ? (existing.data() as MemberPortalDashboardStateDoc).greetingMessageKey
-            : null,
+          : (existingData?.greetingMessageKey ?? null),
       recentMessageKeys,
       celebratedCalorieDateKey:
         patch.celebratedCalorieDateKey !== undefined
           ? patch.celebratedCalorieDateKey
-          : existing.exists
-            ? (existing.data() as MemberPortalDashboardStateDoc)
-                .celebratedCalorieDateKey
-            : null,
+          : (existingData?.celebratedCalorieDateKey ?? null),
       celebratedWaterDateKey:
         patch.celebratedWaterDateKey !== undefined
           ? patch.celebratedWaterDateKey
-          : existing.exists
-            ? (existing.data() as MemberPortalDashboardStateDoc)
-                .celebratedWaterDateKey
-            : null,
-      ...(existing.exists
+          : (existingData?.celebratedWaterDateKey ?? null),
+      ...(existingData
         ? touchUpdatedAt()
         : {
             ...serverTimestamps(),
@@ -103,5 +115,6 @@ export class MemberPortalDashboardStateRepository extends TenantRepository<Membe
     await ref.set(payload, { merge: true });
     const doc = await this.getById(ctx, gymId, id);
     return this.assertDocBelongsToGym(ctx, doc, gymId);
+    });
   }
 }

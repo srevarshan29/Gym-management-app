@@ -57,6 +57,15 @@ describe("resolveDashboardMessage", () => {
     const second = resolveDashboardMessage(baseCtx);
     expect(second.text).toBe(first.text);
   });
+
+  it("does not append duplicate message keys on reload", () => {
+    const first = resolveDashboardMessage(baseCtx);
+    const second = resolveDashboardMessage({
+      ...baseCtx,
+      recentMessageKeys: first.patchRecentMessageKeys,
+    });
+    expect(second.patchRecentMessageKeys).toEqual(first.patchRecentMessageKeys);
+  });
 });
 
 describe("memberFirstName", () => {

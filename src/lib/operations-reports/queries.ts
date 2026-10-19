@@ -11,13 +11,14 @@ import {
   type ResolvedReportDateRange,
 } from "@/lib/operations-reports/date-range";
 import {
-  computeAttendanceSummary,
+  computeAttendanceSummaryFromCount,
   computeMemberReportMetrics,
-  computePaymentReportMetrics,
   computeSubscriptionReportMetrics,
   type MemberRowForReport,
   type SubscriptionRowForReport,
 } from "@/lib/operations-reports/metrics";
+import { resolveRangePageStartAfterId } from "@/lib/operations-reports/pagination";
+import { measureServerPhase } from "@/lib/server-perf";
 import type {
   OperationsReportDashboard,
   OperationsReportMemberRow,
@@ -119,12 +120,9 @@ function mapMembers(
   }));
 }
 
-export function buildNewMemberRows(
-  members: MemberRowForReport[],
+export function earliestSubscriptionStartByMember(
   subscriptions: SubscriptionRowForReport[],
-  range: ResolvedReportDateRange,
-  memberDocs: Map<string, MemberDoc>,
-): OperationsReportMemberRow[] {
+): Map<string, Date> {
   const earliestStartByMember = new Map<string, Date>();
   for (const sub of subscriptions) {
     const existing = earliestStartByMember.get(sub.memberId);
@@ -132,20 +130,69 @@ export function buildNewMemberRows(
       earliestStartByMember.set(sub.memberId, sub.startDate);
     }
   }
+  return earliestStartByMember;
+}
+
+export function memberIdsWithEarliestStartInRange(
+  subscriptions: SubscriptionRowForReport[],
+  range: ResolvedReportDateRange,
+): string[] {
+  const earliestStartByMember = earliestSubscriptionStartByMember(subscriptions);
+  const ids: string[] = [];
+  for (const [memberId, earliest] of earliestStartByMember) {
+    if (earliest >= range.startInstant && earliest < range.endInstant) {
+      ids.push(memberId);
+    }
+  }
+  return ids;
+}
+
+export async function loadMemberDocMapForIds(
+  ctx: FirestoreContext,
+  memberIds: string[],
+): Promise<Map<string, MemberDoc>> {
+  if (memberIds.length === 0) return new Map();
+  const db = getFirestoreDb();
+  const loaded = await batchGetByIds<MemberDoc>(
+    db,
+    COLLECTIONS.members,
+    memberIds,
+  );
+  return loaded;
+}
+
+export function buildNewMemberRows(
+  subscriptions: SubscriptionRowForReport[],
+  range: ResolvedReportDateRange,
+  memberDocs: Map<string, MemberDoc>,
+): OperationsReportMemberRow[] {
+  const earliestStartByMember = earliestSubscriptionStartByMember(subscriptions);
+  const profileByMember = new Map<
+    string,
+    Pick<SubscriptionRowForReport, "memberNumber" | "memberName">
+  >();
+  for (const sub of subscriptions) {
+    if (!profileByMember.has(sub.memberId)) {
+      profileByMember.set(sub.memberId, {
+        memberNumber: sub.memberNumber,
+        memberName: sub.memberName,
+      });
+    }
+  }
 
   const rows: OperationsReportMemberRow[] = [];
-  for (const member of members) {
-    const earliest = earliestStartByMember.get(member.id);
-    if (!earliest) continue;
+  for (const [memberId, earliest] of earliestStartByMember) {
     if (earliest < range.startInstant || earliest >= range.endInstant) continue;
-    const doc = memberDocs.get(member.id);
+    const doc = memberDocs.get(memberId);
+    const profile = profileByMember.get(memberId);
+    const endDate = doc?.currentEndDate?.toDate() ?? null;
     rows.push({
-      memberNumber: member.memberNumber,
-      name: member.name,
+      memberNumber: doc?.memberNumber ?? profile?.memberNumber ?? 0,
+      name: doc?.name ?? profile?.memberName ?? "Unknown",
       phone: doc?.phone ?? "",
       packageName: doc?.currentPackageName ?? null,
       registeredAt: earliest,
-      statusLabel: STATUS_LABEL[statusFromEndDate(member.endDate, range.asOfInstant)],
+      statusLabel: STATUS_LABEL[statusFromEndDate(endDate, range.asOfInstant)],
     });
   }
   rows.sort((a, b) => a.registeredAt.getTime() - b.registeredAt.getTime());
@@ -188,6 +235,24 @@ export function buildSubscriptionTableRows(
   return rows;
 }
 
+async function loadAttendanceMemberIdsForSummary(
+  ctx: FirestoreContext,
+  gymId: string,
+  range: ResolvedReportDateRange,
+): Promise<string[]> {
+  const { attendance } = getRepositories();
+  const memberIds: string[] = [];
+  for await (const row of attendance.iterateForDateKeyRange(
+    ctx,
+    gymId,
+    range.startDateKey,
+    range.endDateKey,
+  )) {
+    memberIds.push(row.memberId);
+  }
+  return memberIds;
+}
+
 export async function loadOperationsReportDashboard(
   tenantGymId: string,
   range: ResolvedReportDateRange,
@@ -195,215 +260,241 @@ export async function loadOperationsReportDashboard(
     canViewFinancials: boolean;
     attendancePage?: number;
     paymentsPage?: number;
+    /** `ac` query param — startAfter id for the current attendance page. */
+    attendanceStartAfterId?: string | null;
+    /** `pc` query param — startAfter id for the current payments page. */
+    paymentsStartAfterId?: string | null;
   },
 ): Promise<OperationsReportDashboard> {
-  const ctx = platformContext;
-  const { attendance, members, payments, subscriptions, receipts } =
-    getRepositories();
+  return measureServerPhase("staff.reports.dashboard", async () => {
+    const ctx = platformContext;
+    const { attendance, members, payments, receipts } = getRepositories();
 
-  const attendancePage = Math.max(1, options.attendancePage ?? 1);
-  const paymentsPage = Math.max(1, options.paymentsPage ?? 1);
+    const attendancePage = Math.max(1, options.attendancePage ?? 1);
+    const paymentsPage = Math.max(1, options.paymentsPage ?? 1);
 
-  const [
-    attendanceTotal,
-    attendanceBatch,
-    memberDocs,
-    subscriptionDocs,
-    allPaymentsInRange,
-  ] = await Promise.all([
-    attendance.countForDateKeyRange(
-      ctx,
-      tenantGymId,
-      range.startDateKey,
-      range.endDateKey,
-    ),
-    attendance.listForDateKeyRange(
-      ctx,
-      tenantGymId,
-      range.startDateKey,
-      range.endDateKey,
-      {
-        limit: OPERATIONS_REPORT_ATTENDANCE_PAGE_SIZE,
-        startAfterId:
-          attendancePage > 1
-            ? await attendancePageCursor(
+    const attendanceStartAfterId = await measureServerPhase(
+      "staff.reports.attendance.cursor",
+      () =>
+        resolveRangePageStartAfterId(
+          attendancePage,
+          options.attendanceStartAfterId,
+          (startAfterId) =>
+            attendance.listForDateKeyRange(
+              ctx,
+              tenantGymId,
+              range.startDateKey,
+              range.endDateKey,
+              {
+                limit: OPERATIONS_REPORT_ATTENDANCE_PAGE_SIZE,
+                startAfterId,
+              },
+            ),
+        ),
+    );
+
+    const paymentsStartAfterId = options.canViewFinancials
+      ? await measureServerPhase("staff.reports.payments.cursor", () =>
+          resolveRangePageStartAfterId(
+            paymentsPage,
+            options.paymentsStartAfterId,
+            (startAfterId) =>
+              payments.listPaidInRange(
                 ctx,
                 tenantGymId,
-                range,
-                attendancePage,
-              )
-            : null,
-      },
-    ),
-    members.listAllByGym(ctx, tenantGymId),
-    loadReportSubscriptionDocs(ctx, tenantGymId, range),
-    options.canViewFinancials
-      ? payments.listAllPaidInRange(
-          ctx,
-          tenantGymId,
-          range.startInstant,
-          range.endInstant,
+                range.startInstant,
+                range.endInstant,
+                {
+                  limit: OPERATIONS_REPORT_PAYMENTS_PAGE_SIZE,
+                  startAfterId,
+                },
+              ),
+          ),
         )
-      : Promise.resolve([]),
-  ]);
+      : null;
 
-  const attendanceSummary =
-    attendanceTotal > 0
-      ? computeAttendanceSummary(
-          await loadAllAttendanceForSummary(ctx, tenantGymId, range),
-        )
-      : computeAttendanceSummary([]);
-
-  const memberRows = mapMembers(memberDocs);
-  const memberDocMap = new Map(memberDocs.map((m) => [m.id, m]));
-  const subscriptionRows = mapSubscriptions(subscriptionDocs);
-
-  const attendanceListItems = attendance.mapListItems(attendanceBatch.rows);
-
-  const memberMetrics = computeMemberReportMetrics(
-    memberRows,
-    subscriptionRows,
-    range,
-  );
-  const memberTableRows = buildNewMemberRows(
-    memberRows,
-    subscriptionRows,
-    range,
-    memberDocMap,
-  );
-
-  const paymentMetrics = computePaymentReportMetrics(
-    allPaymentsInRange.map((p) => ({
-      amount: p.amount,
-      method: p.method,
-    })),
-  );
-
-  const paymentOffset = (paymentsPage - 1) * OPERATIONS_REPORT_PAYMENTS_PAGE_SIZE;
-  const paymentPageDocs = allPaymentsInRange.slice(
-    paymentOffset,
-    paymentOffset + OPERATIONS_REPORT_PAYMENTS_PAGE_SIZE,
-  );
-
-  const receiptNumbers = options.canViewFinancials
-    ? await receipts.mapReceiptNumbersByPaymentIds(
-        ctx,
-        tenantGymId,
-        paymentPageDocs.map((p) => p.id),
-      )
-    : new Map<string, number>();
-
-  const paymentTableRows: OperationsReportPaymentRow[] = paymentPageDocs.map(
-    (p) => {
-      const member = memberDocMap.get(p.memberId);
-      const receiptNo = receiptNumbers.get(p.id);
-      return {
-        id: p.id,
-        paidAt: p.paidAt.toDate(),
-        memberNumber: member?.memberNumber ?? 0,
-        memberName: member?.name ?? "Unknown",
-        amount: p.amount,
-        method: p.method,
-        receiptNumber:
-          receiptNo != null ? formatReceiptNumber(receiptNo) : "",
-      };
-    },
-  );
-
-  const subscriptionMetrics = computeSubscriptionReportMetrics(
-    subscriptionRows,
-    memberRows,
-    range,
-  );
-  const subscriptionTableRows = buildSubscriptionTableRows(
-    subscriptionRows,
-    range,
-  );
-
-  return {
-    range,
-    rangeLabel: formatReportDateRangeLabel(range),
-    summary: {
-      totalCheckIns: attendanceSummary.totalCheckIns,
-      newMembers: memberMetrics.newMembers,
-      totalRevenue: paymentMetrics.totalCollected,
-      renewals: memberMetrics.renewalsDuringPeriod,
-    },
-    attendance: {
-      summary: attendanceSummary,
-      rows: attendanceListItems,
-      totalRows: attendanceTotal,
-      page: attendancePage,
-      pageSize: OPERATIONS_REPORT_ATTENDANCE_PAGE_SIZE,
-      empty: attendanceTotal === 0,
-    },
-    members: {
-      metrics: memberMetrics,
-      rows: memberTableRows,
-      empty: memberTableRows.length === 0,
-    },
-    payments: {
-      metrics: paymentMetrics,
-      rows: paymentTableRows,
-      totalRows: allPaymentsInRange.length,
-      page: paymentsPage,
-      pageSize: OPERATIONS_REPORT_PAYMENTS_PAGE_SIZE,
-      canView: options.canViewFinancials,
-      empty: allPaymentsInRange.length === 0,
-    },
-    subscriptions: {
-      metrics: subscriptionMetrics,
-      rows: subscriptionTableRows,
-      empty: subscriptionTableRows.length === 0,
-    },
-  };
-}
-
-async function attendancePageCursor(
-  ctx: Parameters<
-    ReturnType<typeof getRepositories>["attendance"]["listForDateKeyRange"]
-  >[0],
-  gymId: string,
-  range: ResolvedReportDateRange,
-  page: number,
-): Promise<string | null> {
-  const { attendance } = getRepositories();
-  let cursor: string | null = null;
-  for (let i = 1; i < page; i++) {
-    const batch = await attendance.listForDateKeyRange(
+    const attendanceTotal = await attendance.countForDateKeyRange(
       ctx,
-      gymId,
+      tenantGymId,
       range.startDateKey,
       range.endDateKey,
-      {
-        limit: OPERATIONS_REPORT_ATTENDANCE_PAGE_SIZE,
-        startAfterId: cursor,
+    );
+
+    const [
+      attendanceBatch,
+      attendanceMemberIds,
+      memberDocs,
+      subscriptionDocs,
+      paymentMetrics,
+      paymentPageBatch,
+    ] = await measureServerPhase("staff.reports.parallelLoad", () =>
+      Promise.all([
+        attendance.listForDateKeyRange(
+          ctx,
+          tenantGymId,
+          range.startDateKey,
+          range.endDateKey,
+          {
+            limit: OPERATIONS_REPORT_ATTENDANCE_PAGE_SIZE,
+            startAfterId: attendanceStartAfterId,
+          },
+        ),
+        attendanceTotal > 0
+          ? measureServerPhase("staff.reports.attendance.uniqueMembers", () =>
+              loadAttendanceMemberIdsForSummary(ctx, tenantGymId, range),
+            )
+          : Promise.resolve([] as string[]),
+        measureServerPhase("staff.reports.members.roster", () =>
+          members.listAllByGym(ctx, tenantGymId),
+        ),
+        measureServerPhase("staff.reports.subscriptions", () =>
+          loadReportSubscriptionDocs(ctx, tenantGymId, range),
+        ),
+        options.canViewFinancials
+          ? payments.summarizePaidInRange(
+              ctx,
+              tenantGymId,
+              range.startInstant,
+              range.endInstant,
+            )
+          : Promise.resolve(null),
+        options.canViewFinancials
+          ? payments.listPaidInRange(
+              ctx,
+              tenantGymId,
+              range.startInstant,
+              range.endInstant,
+              {
+                limit: OPERATIONS_REPORT_PAYMENTS_PAGE_SIZE,
+                startAfterId: paymentsStartAfterId,
+              },
+            )
+          : Promise.resolve({ rows: [], nextCursor: null }),
+      ]),
+    );
+
+    const attendanceSummary = computeAttendanceSummaryFromCount(
+      attendanceTotal,
+      attendanceMemberIds,
+    );
+
+    const memberRows = mapMembers(memberDocs);
+    const subscriptionRows = mapSubscriptions(subscriptionDocs);
+
+    const attendanceListItems = attendance.mapListItems(attendanceBatch.rows);
+
+    const memberMetrics = computeMemberReportMetrics(
+      memberRows,
+      subscriptionRows,
+      range,
+    );
+
+    const newMemberIds = memberIdsWithEarliestStartInRange(
+      subscriptionRows,
+      range,
+    );
+    const newMemberDocMap = await measureServerPhase(
+      "staff.reports.members.newTable",
+      () => loadMemberDocMapForIds(ctx, newMemberIds),
+    );
+    const memberTableRows = buildNewMemberRows(
+      subscriptionRows,
+      range,
+      newMemberDocMap,
+    );
+
+    const paymentTotalRows = paymentMetrics?.paymentCount ?? 0;
+    const paymentPageDocs = paymentPageBatch.rows;
+
+    const paymentMemberDocMap = options.canViewFinancials
+      ? await measureServerPhase("staff.reports.payments.members", async () => {
+          const ids = [...new Set(paymentPageDocs.map((p) => p.memberId))];
+          return loadMemberDocMapForIds(ctx, ids);
+        })
+      : new Map<string, MemberDoc>();
+
+    const receiptNumbers = options.canViewFinancials
+      ? await receipts.mapReceiptNumbersByPaymentIds(
+          ctx,
+          tenantGymId,
+          paymentPageDocs.map((p) => p.id),
+        )
+      : new Map<string, number>();
+
+    const paymentTableRows: OperationsReportPaymentRow[] = paymentPageDocs.map(
+      (p) => {
+        const member = paymentMemberDocMap.get(p.memberId);
+        const receiptNo = receiptNumbers.get(p.id);
+        return {
+          id: p.id,
+          paidAt: p.paidAt.toDate(),
+          memberNumber: member?.memberNumber ?? 0,
+          memberName: member?.name ?? "Unknown",
+          amount: p.amount,
+          method: p.method,
+          receiptNumber:
+            receiptNo != null ? formatReceiptNumber(receiptNo) : "",
+        };
       },
     );
-    if (!batch.nextCursor) return null;
-    cursor = batch.nextCursor;
-  }
-  return cursor;
-}
 
-async function loadAllAttendanceForSummary(
-  ctx: Parameters<
-    ReturnType<typeof getRepositories>["attendance"]["listForDateKeyRange"]
-  >[0],
-  gymId: string,
-  range: ResolvedReportDateRange,
-) {
-  const { attendance } = getRepositories();
-  const rows: { memberId: string }[] = [];
-  for await (const row of attendance.iterateForDateKeyRange(
-    ctx,
-    gymId,
-    range.startDateKey,
-    range.endDateKey,
-  )) {
-    rows.push({ memberId: row.memberId });
-  }
-  return rows;
+    const subscriptionMetrics = computeSubscriptionReportMetrics(
+      subscriptionRows,
+      memberRows,
+      range,
+    );
+    const subscriptionTableRows = buildSubscriptionTableRows(
+      subscriptionRows,
+      range,
+    );
+
+    const emptyPaymentMetrics = {
+      totalCollected: 0,
+      paymentCount: 0,
+      averagePayment: 0,
+      byMethod: [],
+    };
+
+    return {
+      range,
+      rangeLabel: formatReportDateRangeLabel(range),
+      summary: {
+        totalCheckIns: attendanceSummary.totalCheckIns,
+        newMembers: memberMetrics.newMembers,
+        totalRevenue: paymentMetrics?.totalCollected ?? 0,
+        renewals: memberMetrics.renewalsDuringPeriod,
+      },
+      attendance: {
+        summary: attendanceSummary,
+        rows: attendanceListItems,
+        totalRows: attendanceTotal,
+        page: attendancePage,
+        pageSize: OPERATIONS_REPORT_ATTENDANCE_PAGE_SIZE,
+        nextPageStartAfter: attendanceBatch.nextCursor,
+        empty: attendanceTotal === 0,
+      },
+      members: {
+        metrics: memberMetrics,
+        rows: memberTableRows,
+        empty: memberTableRows.length === 0,
+      },
+      payments: {
+        metrics: paymentMetrics ?? emptyPaymentMetrics,
+        rows: paymentTableRows,
+        totalRows: paymentTotalRows,
+        page: paymentsPage,
+        pageSize: OPERATIONS_REPORT_PAYMENTS_PAGE_SIZE,
+        nextPageStartAfter: paymentPageBatch.nextCursor,
+        canView: options.canViewFinancials,
+        empty: paymentTotalRows === 0,
+      },
+      subscriptions: {
+        metrics: subscriptionMetrics,
+        rows: subscriptionTableRows,
+        empty: subscriptionTableRows.length === 0,
+      },
+    };
+  });
 }
 
 export const ATTENDANCE_CSV_HEADERS = [
@@ -453,8 +544,7 @@ export async function* iterateOperationsReportCsvRows(
   canViewFinancials: boolean,
 ): AsyncGenerator<string, void, unknown> {
   const ctx = platformContext;
-  const { attendance, members, payments, subscriptions, receipts } =
-    getRepositories();
+  const { attendance, payments, receipts } = getRepositories();
 
   if (dataset === "attendance") {
     for await (const row of attendance.iterateForDateKeyRange(
@@ -474,9 +564,6 @@ export async function* iterateOperationsReportCsvRows(
     return;
   }
 
-  const memberDocs = await members.listAllByGym(ctx, tenantGymId);
-  const memberDocMap = new Map(memberDocs.map((m) => [m.id, m]));
-  const memberRows = mapMembers(memberDocs);
   const subscriptionDocs = await loadReportSubscriptionDocs(
     ctx,
     tenantGymId,
@@ -485,12 +572,12 @@ export async function* iterateOperationsReportCsvRows(
   const subscriptionRows = mapSubscriptions(subscriptionDocs);
 
   if (dataset === "members") {
-    const rows = buildNewMemberRows(
-      memberRows,
+    const newMemberIds = memberIdsWithEarliestStartInRange(
       subscriptionRows,
       range,
-      memberDocMap,
     );
+    const memberDocMap = await loadMemberDocMapForIds(ctx, newMemberIds);
+    const rows = buildNewMemberRows(subscriptionRows, range, memberDocMap);
     for (const row of rows) {
       yield csvDataLine([
         String(row.memberNumber).padStart(4, "0"),
@@ -523,9 +610,6 @@ export async function* iterateOperationsReportCsvRows(
   if (dataset === "payments") {
     if (!canViewFinancials) return;
     const memberCache = new Map<string, MemberDoc>();
-    for (const m of memberDocs) {
-      memberCache.set(m.id, m);
-    }
 
     const all = await payments.listAllPaidInRange(
       ctx,

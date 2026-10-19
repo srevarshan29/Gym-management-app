@@ -1,5 +1,7 @@
 import { MemberDashboardAttendanceSection } from "@/components/member-portal/dashboard/member-dashboard-attendance";
-import { MemberDashboardMetricCards } from "@/components/member-portal/dashboard/member-dashboard-metric-cards";
+import { MemberDashboardLiveBanner } from "@/components/member-portal/dashboard/member-dashboard-live-banner";
+import { MemberDashboardMetricCardsLive } from "@/components/member-portal/dashboard/member-dashboard-metric-cards-live";
+import { MemberDashboardWaterLiveProvider } from "@/components/member-portal/dashboard/member-dashboard-water-live";
 import { LockedLink } from "@/components/navigation/locked-link";
 import { MembershipProgressRing } from "@/components/member-portal/membership-progress-ring";
 import { TodaysWorkoutStartButton } from "@/components/member-portal/todays-workout-start-button";
@@ -174,79 +176,77 @@ export function MemberPortalOverviewPanel({
   overview,
   suggestion,
   dashboard,
+  memberId,
 }: {
   overview: MemberPortalOverview;
   suggestion: SuggestedWorkoutDay;
   dashboard: MemberPortalDashboardData;
+  memberId: string;
 }) {
   const hasSubscription = overview.packageName != null;
   const [year, monthIndex0] = dashboard.dateKey.split("-").map(Number);
   const calendarMonthIndex0 = monthIndex0 - 1;
   const greetingName = memberFirstName(overview.memberName);
 
+  const metricCards = (
+    <MemberDashboardMetricCardsLive
+      logDate={dashboard.dateKey}
+      calories={dashboard.calories}
+      calorieTarget={dashboard.calorieTarget}
+      caloriePercent={dashboard.caloriePercent}
+      calorieGoalComplete={dashboard.calorieGoalComplete}
+      waterConsumedMl={dashboard.waterConsumedMl}
+      waterTargetMl={dashboard.waterTargetMl}
+      waterPercent={dashboard.waterPercent}
+      waterGoalComplete={dashboard.waterGoalComplete}
+    />
+  );
+
   if (!hasSubscription) {
     return (
-      <div className="space-y-3">
-        <div>
-          <h1 className="font-display text-xl font-bold leading-tight">
-            Hi, {greetingName}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{dashboard.message.text}</p>
+      <MemberDashboardWaterLiveProvider dashboard={dashboard}>
+        <div className="space-y-3">
+          <MemberDashboardLiveBanner
+            greetingName={greetingName}
+            memberId={memberId}
+            suggestion={suggestion}
+          />
+          <Card className={CARD_CLASS}>
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground">
+                No active subscription on file. Contact your gym front desk.
+              </p>
+            </CardContent>
+          </Card>
+          {metricCards}
+          <TodaysWorkoutCard suggestion={suggestion} />
         </div>
-        <Card className={CARD_CLASS}>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">
-              No active subscription on file. Contact your gym front desk.
-            </p>
-          </CardContent>
-        </Card>
-        <MemberDashboardMetricCards
-          logDate={dashboard.dateKey}
-          calories={dashboard.calories}
-          calorieTarget={dashboard.calorieTarget}
-          caloriePercent={dashboard.caloriePercent}
-          calorieGoalComplete={dashboard.calorieGoalComplete}
-          waterConsumedMl={dashboard.waterConsumedMl}
-          waterTargetMl={dashboard.waterTargetMl}
-          waterPercent={dashboard.waterPercent}
-          waterGoalComplete={dashboard.waterGoalComplete}
-        />
-        <TodaysWorkoutCard suggestion={suggestion} />
-      </div>
+      </MemberDashboardWaterLiveProvider>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div>
-        <h1 className="font-display text-xl font-bold leading-tight">
-          Hi, {greetingName}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">{dashboard.message.text}</p>
+    <MemberDashboardWaterLiveProvider dashboard={dashboard}>
+      <div className="space-y-3">
+        <MemberDashboardLiveBanner
+          greetingName={greetingName}
+          memberId={memberId}
+          suggestion={suggestion}
+        />
+
+        <TodaysWorkoutCard suggestion={suggestion} />
+
+        {metricCards}
+
+        <CompactMembershipRow overview={overview} />
+
+        <MemberDashboardAttendanceSection
+          weekDays={dashboard.weekDays}
+          visitsThisWeek={dashboard.visitsThisWeek}
+          initialYear={year}
+          initialMonthIndex0={calendarMonthIndex0}
+        />
       </div>
-
-      <TodaysWorkoutCard suggestion={suggestion} />
-
-      <MemberDashboardMetricCards
-        logDate={dashboard.dateKey}
-        calories={dashboard.calories}
-        calorieTarget={dashboard.calorieTarget}
-        caloriePercent={dashboard.caloriePercent}
-        calorieGoalComplete={dashboard.calorieGoalComplete}
-        waterConsumedMl={dashboard.waterConsumedMl}
-        waterTargetMl={dashboard.waterTargetMl}
-        waterPercent={dashboard.waterPercent}
-        waterGoalComplete={dashboard.waterGoalComplete}
-      />
-
-      <CompactMembershipRow overview={overview} />
-
-      <MemberDashboardAttendanceSection
-        weekDays={dashboard.weekDays}
-        visitsThisWeek={dashboard.visitsThisWeek}
-        initialYear={year}
-        initialMonthIndex0={calendarMonthIndex0}
-      />
-    </div>
+    </MemberDashboardWaterLiveProvider>
   );
 }

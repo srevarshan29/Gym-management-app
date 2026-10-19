@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { attendanceDateKey, ATTENDANCE_GYM_TIMEZONE } from "@/lib/attendance/date-key";
 import type { AttendanceListItem } from "@/lib/attendance/types";
@@ -11,13 +11,17 @@ import {
   validateCustomDateRange,
 } from "@/lib/operations-reports/date-range";
 import {
+  buildPaymentReportMetricsFromAggregates,
   computeAttendanceSummary,
+  computeAttendanceSummaryFromCount,
   computeMemberReportMetrics,
   computePaymentReportMetrics,
 } from "@/lib/operations-reports/metrics";
+import { resolveRangePageStartAfterId } from "@/lib/operations-reports/pagination";
 import {
   ATTENDANCE_CSV_HEADERS,
   buildNewMemberRows,
+  memberIdsWithEarliestStartInRange,
   MEMBERS_CSV_HEADERS,
   PAYMENTS_CSV_HEADERS,
 } from "@/lib/operations-reports/queries";
@@ -52,6 +56,36 @@ describe("operations report date ranges", () => {
     expect(range.startInstant.getTime()).toBeLessThan(range.endInstant.getTime());
     expect(range.asOfInstant.getTime()).toBeLessThan(range.endInstant.getTime());
   });
+
+  it("treats range end as exclusive for new-member earliest starts", () => {
+    const range = resolveCustomRange("2026-09-01", "2026-09-30");
+    const ids = memberIdsWithEarliestStartInRange(
+      [
+        {
+          id: "s1",
+          memberId: "in-range",
+          memberName: "A",
+          memberNumber: 1,
+          packageName: "Gold",
+          startDate: new Date("2026-09-15"),
+          endDate: new Date("2026-12-01"),
+          createdAt: new Date("2026-09-15"),
+        },
+        {
+          id: "s2",
+          memberId: "after-range",
+          memberName: "B",
+          memberNumber: 2,
+          packageName: "Gold",
+          startDate: new Date("2026-10-01"),
+          endDate: new Date("2026-12-01"),
+          createdAt: new Date("2026-10-01"),
+        },
+      ],
+      range,
+    );
+    expect(ids).toEqual(["in-range"]);
+  });
 });
 
 describe("attendance report metrics", () => {
@@ -81,6 +115,17 @@ describe("attendance report metrics", () => {
     expect(summary.totalCheckIns).toBe(2);
     expect(summary.uniqueMembers).toBe(1);
     expect(summary.averageCheckInsPerActiveMember).toBe(2);
+  });
+
+  it("matches row-based summary when total count comes from Firestore aggregate", () => {
+    const rows: AttendanceListItem[] = [
+      { id: "a1", memberId: "m1", memberNumber: 1, memberName: "A", checkedInAt: new Date(), method: "manual", dateKey: "2026-09-01" },
+      { id: "a2", memberId: "m2", memberNumber: 2, memberName: "B", checkedInAt: new Date(), method: "manual", dateKey: "2026-09-01" },
+      { id: "a3", memberId: "m1", memberNumber: 1, memberName: "A", checkedInAt: new Date(), method: "qr", dateKey: "2026-09-02" },
+    ];
+    const fromRows = computeAttendanceSummary(rows);
+    const fromCount = computeAttendanceSummaryFromCount(3, ["m1", "m2", "m1"]);
+    expect(fromCount).toEqual(fromRows);
   });
 });
 
@@ -154,6 +199,19 @@ describe("member and payment report metrics", () => {
     expect(metrics.paymentCount).toBe(2);
     expect(metrics.averagePayment).toBe(750);
   });
+
+  it("builds the same payment metrics from aggregate inputs", () => {
+    const fromRows = computePaymentReportMetrics([
+      { amount: 1000, method: "CASH" },
+      { amount: 500, method: "UPI" },
+      { amount: 200, method: "CASH" },
+    ]);
+    const fromAggregates = buildPaymentReportMetricsFromAggregates(3, 1700, [
+      { method: "CASH", count: 2, total: 1200 },
+      { method: "UPI", count: 1, total: 500 },
+    ]);
+    expect(fromAggregates).toEqual(fromRows);
+  });
 });
 
 describe("CSV export headers", () => {
@@ -174,15 +232,6 @@ describe("empty range messaging helpers", () => {
   it("buildNewMemberRows returns empty for ranges with no signups", () => {
     const range = resolveCustomRange("2026-01-01", "2026-01-31");
     const rows = buildNewMemberRows(
-      [
-        {
-          id: "m1",
-          memberNumber: 1,
-          name: "Member",
-          createdAt: new Date("2025-12-01"),
-          endDate: new Date("2026-06-01"),
-        },
-      ],
       [
         {
           id: "s1",
@@ -250,6 +299,36 @@ describe("subscription report date filtering", () => {
     );
     expect(metrics.newMembers).toBe(1);
     expect(metrics.renewalsDuringPeriod).toBe(0);
+  });
+});
+
+describe("report pagination cursors", () => {
+  it("returns null for the first page without querying", async () => {
+    const fetchPage = vi.fn();
+    const startAfter = await resolveRangePageStartAfterId(1, null, fetchPage);
+    expect(startAfter).toBeNull();
+    expect(fetchPage).not.toHaveBeenCalled();
+  });
+
+  it("uses explicit cursor for deep pages without walking", async () => {
+    const fetchPage = vi.fn();
+    const startAfter = await resolveRangePageStartAfterId(
+      4,
+      "cursor-page-4",
+      fetchPage,
+    );
+    expect(startAfter).toBe("cursor-page-4");
+    expect(fetchPage).not.toHaveBeenCalled();
+  });
+
+  it("walks prior pages when cursor is missing", async () => {
+    const fetchPage = vi
+      .fn()
+      .mockResolvedValueOnce({ nextCursor: "after-page-1" })
+      .mockResolvedValueOnce({ nextCursor: "after-page-2" });
+    const startAfter = await resolveRangePageStartAfterId(3, null, fetchPage);
+    expect(startAfter).toBe("after-page-2");
+    expect(fetchPage).toHaveBeenCalledTimes(2);
   });
 });
 

@@ -95,6 +95,7 @@ describe("AttendanceRepository.supportedMethods", () => {
       "manual",
       "biometric",
       "qr",
+      "workout",
     ]);
   });
 });

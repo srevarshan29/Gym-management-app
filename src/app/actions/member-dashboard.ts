@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
@@ -39,6 +38,31 @@ export type AddMemberWaterResult = {
   goalComplete: boolean;
 };
 
+const celebrateWaterSchema = z.object({
+  logDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
+/** Persists water-goal celebration state without revalidating the dashboard route. */
+export async function celebrateMemberWaterGoalAction(
+  input: z.infer<typeof celebrateWaterSchema>,
+): Promise<ActionResult<void>> {
+  try {
+    const member = await requireMember();
+    const logDate = assertValidWaterLogDate(celebrateWaterSchema.parse(input).logDate);
+    const ctx = memberContextFromSession(member);
+    const { memberPortalDashboardState } = getRepositories();
+    await memberPortalDashboardState.mergeForMember(ctx, member.gymId, member.memberId, {
+      celebratedWaterDateKey: logDate,
+    });
+    return actionOk(undefined, undefined);
+  } catch (error) {
+    console.error("celebrateMemberWaterGoalAction", error);
+    return actionError(
+      error instanceof Error ? error.message : "Could not save celebration.",
+    );
+  }
+}
+
 export async function addMemberWaterAction(
   input: z.infer<typeof addWaterSchema>,
 ): Promise<ActionResult<AddMemberWaterResult>> {
@@ -61,7 +85,6 @@ export async function addMemberWaterAction(
     );
 
     const progress = waterDayProgress(totalMl);
-    revalidatePath("/member");
     return actionOk(undefined, {
       consumedMl: progress.consumedMl,
       targetMl: progress.targetMl,

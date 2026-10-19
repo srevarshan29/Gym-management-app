@@ -11,8 +11,15 @@ export type AttendanceReportSummary = {
 export function computeAttendanceSummary(
   rows: Pick<AttendanceListItem, "memberId">[],
 ): AttendanceReportSummary {
-  const totalCheckIns = rows.length;
-  const uniqueMembers = new Set(rows.map((r) => r.memberId)).size;
+  return computeAttendanceSummaryFromCount(rows.length, rows.map((r) => r.memberId));
+}
+
+/** Uses an authoritative check-in count plus member ids from a range scan. */
+export function computeAttendanceSummaryFromCount(
+  totalCheckIns: number,
+  memberIds: Iterable<string>,
+): AttendanceReportSummary {
+  const uniqueMembers = new Set(memberIds).size;
   const averageCheckInsPerActiveMember =
     uniqueMembers > 0 ? totalCheckIns / uniqueMembers : 0;
   return {
@@ -130,8 +137,6 @@ export function computePaymentReportMetrics(
 ): PaymentReportMetrics {
   const totalCollected = payments.reduce((sum, p) => sum + p.amount, 0);
   const paymentCount = payments.length;
-  const averagePayment = paymentCount > 0 ? totalCollected / paymentCount : 0;
-
   const methodMap = new Map<PaymentMethod, { count: number; total: number }>();
   for (const p of payments) {
     const bucket = methodMap.get(p.method) ?? { count: 0, total: 0 };
@@ -139,16 +144,31 @@ export function computePaymentReportMetrics(
     bucket.total += p.amount;
     methodMap.set(p.method, bucket);
   }
+  const byMethod = [...methodMap.entries()].map(([method, stats]) => ({
+    method,
+    ...stats,
+  }));
+  return buildPaymentReportMetricsFromAggregates(
+    paymentCount,
+    totalCollected,
+    byMethod,
+  );
+}
 
-  const byMethod = [...methodMap.entries()]
-    .map(([method, stats]) => ({ method, ...stats }))
+export function buildPaymentReportMetricsFromAggregates(
+  paymentCount: number,
+  totalCollected: number,
+  byMethod: { method: PaymentMethod; count: number; total: number }[],
+): PaymentReportMetrics {
+  const averagePayment = paymentCount > 0 ? totalCollected / paymentCount : 0;
+  const sortedByMethod = [...byMethod]
+    .filter((row) => row.count > 0)
     .sort((a, b) => b.total - a.total);
-
   return {
     totalCollected,
     paymentCount,
     averagePayment,
-    byMethod,
+    byMethod: sortedByMethod,
   };
 }
 

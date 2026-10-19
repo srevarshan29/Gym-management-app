@@ -100,7 +100,10 @@ export function resolveDashboardMessage(
     messageKey = `priority:default:${ctx.dateKey}`;
   }
 
-  const recent = [...ctx.recentMessageKeys, messageKey].slice(-24);
+  const recent =
+    ctx.recentMessageKeys.at(-1) === messageKey
+      ? ctx.recentMessageKeys
+      : [...ctx.recentMessageKeys, messageKey].slice(-24);
 
   let patchCelebratedCalorie = ctx.celebratedCalorieDateKey;
   let patchCelebratedWater = ctx.celebratedWaterDateKey;

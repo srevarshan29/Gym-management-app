@@ -82,6 +82,8 @@ async function ReportsDashboardSection({
     canViewFinancials: isOwner,
     attendancePage,
     paymentsPage,
+    attendanceStartAfterId: searchParams.ac ?? null,
+    paymentsStartAfterId: searchParams.pc ?? null,
   });
 
   return (

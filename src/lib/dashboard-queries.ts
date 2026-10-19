@@ -216,6 +216,7 @@ export async function loadDashboardMemberMetrics(
 ): Promise<DashboardMemberMetrics> {
   return measureServerPhase("staff.dashboard.memberMetrics", async () => {
   const { members, subscriptions } = getRepositories();
+  const memberListPhase = "staff.dashboard.members.listAll";
   const db = getFirestoreDb();
 
   const countSince = async (start: Date, end?: Date) => {
@@ -233,7 +234,9 @@ export async function loadDashboardMemberMetrics(
   const [totalMembers, allMembers, pendingTotals, thisMonth, lastMonth] =
     await Promise.all([
       members.countByGym(platformContext, tenantGymId),
-      members.listAllWithStatus(platformContext, tenantGymId),
+      measureServerPhase(memberListPhase, () =>
+        members.listAllWithStatus(platformContext, tenantGymId),
+      ),
       queryAllCyclePendingTotals(tenantGymId),
       countSince(monthBounds.startThisMonth),
       countSince(monthBounds.startLastMonth, monthBounds.startThisMonth),
@@ -283,14 +286,27 @@ export function buildWeeklyPaymentCountsFromPayments(
   );
 }
 
+function bucketEndExclusive(bucket: WeekBucket): Date {
+  return new Date(bucket.end.getTime() + 1);
+}
+
 export async function queryWeeklyPaymentCounts(
   tenantGymId: string,
   buckets: WeekBucket[],
 ): Promise<number[]> {
   if (buckets.length === 0) return [];
-  const { payments } = getRepositories();
-  const rangeStart = buckets[0]!.start;
-  const rows = await payments.listSince(platformContext, tenantGymId, rangeStart);
-  const paidAtDates = rows.map((p) => p.paidAt.toDate());
-  return buildWeeklyPaymentCountsFromPayments(paidAtDates, buckets);
+  return measureServerPhase("staff.dashboard.weeklyPayments", async () => {
+    const { payments } = getRepositories();
+    const counts = await Promise.all(
+      buckets.map((bucket) =>
+        payments.countPaidInRange(
+          platformContext,
+          tenantGymId,
+          bucket.start,
+          bucketEndExclusive(bucket),
+        ),
+      ),
+    );
+    return counts;
+  });
 }

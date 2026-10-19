@@ -1,6 +1,9 @@
 import { getRepositories, platformContext } from "@/lib/firestore";
+import { measureServerPhase } from "@/lib/server-perf";
 import {
-  buildMonthlyRevenueTrendFromPayments,
+  applyMonthlyRevenueSums,
+  buildMonthlyRevenueBuckets,
+  loadMonthlyRevenueSums,
   type MonthlyRevenuePoint,
 } from "@/lib/revenue";
 
@@ -103,6 +106,7 @@ export async function getMonthlyMemberJoins(
 export async function getAnalyticsPageData(
   tenantGymId: string,
 ): Promise<AnalyticsPageData> {
+  return measureServerPhase("staff.analytics.page", async () => {
   const { gyms, members, payments, subscriptions, visitors } = getRepositories();
   const ctx = platformContext;
   const now = new Date();
@@ -121,12 +125,14 @@ export async function getAnalyticsPageData(
     totalMembers,
     paymentsLoggedThisMonth,
     earliestStarts,
-    paymentRows,
+    revenueSums,
   ] = await Promise.all([
     members.countByGym(ctx, tenantGymId),
     payments.countPaidInRange(ctx, tenantGymId, startThisMonth, startNextMonth),
-    subscriptions.listEarliestJoinStartsSince(ctx, tenantGymId, startMonth),
-    payments.listSince(ctx, tenantGymId, startMonth),
+    measureServerPhase("staff.analytics.memberJoins", () =>
+      subscriptions.listEarliestJoinStartsSince(ctx, tenantGymId, startMonth),
+    ),
+    loadMonthlyRevenueSums(tenantGymId, ANALYTICS_MONTH_COUNT, now),
   ]);
 
   const memberJoins = buildMonthlyMemberJoinsFromEarliestStarts(
@@ -134,10 +140,9 @@ export async function getAnalyticsPageData(
     ANALYTICS_MONTH_COUNT,
     now,
   );
-  const revenueTrend = buildMonthlyRevenueTrendFromPayments(
-    paymentRows.map((p) => ({ amount: p.amount, paidAt: p.paidAt.toDate() })),
-    ANALYTICS_MONTH_COUNT,
-    now,
+  const revenueTrend = applyMonthlyRevenueSums(
+    buildMonthlyRevenueBuckets(ANALYTICS_MONTH_COUNT, now),
+    revenueSums,
   );
 
   const totalRevenue = revenueTrend.reduce((sum, point) => sum + point.revenue, 0);
@@ -151,4 +156,5 @@ export async function getAnalyticsPageData(
     memberJoins,
     revenueTrend,
   };
+  });
 }

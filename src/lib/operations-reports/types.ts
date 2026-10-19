@@ -52,6 +52,8 @@ export type OperationsReportDashboard = {
     totalRows: number;
     page: number;
     pageSize: number;
+    /** Firestore doc id cursor for the next attendance page (`ac` query param). */
+    nextPageStartAfter: string | null;
     empty: boolean;
   };
   members: {
@@ -65,6 +67,8 @@ export type OperationsReportDashboard = {
     totalRows: number;
     page: number;
     pageSize: number;
+    /** Firestore doc id cursor for the next payments page (`pc` query param). */
+    nextPageStartAfter: string | null;
     canView: boolean;
     empty: boolean;
   };

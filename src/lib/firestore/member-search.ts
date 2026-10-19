@@ -41,3 +41,35 @@ export function tokenizeSearchQuery(query: string): string[] {
   if (!normalized) return [];
   return normalized.split(/\s+/).filter(Boolean);
 }
+
+export function memberDocMatchesQueryTokens(
+  memberSearchTokens: string[],
+  queryTokens: string[],
+): boolean {
+  if (queryTokens.length === 0) return true;
+  return queryTokens.every((t) =>
+    memberSearchTokens.some((token) => token.includes(t)),
+  );
+}
+
+/** Firestore batch size when scanning token matches (avoids unbounded `.get()`). */
+export const MEMBER_DIRECTORY_SEARCH_SCAN_BATCH = 200;
+
+export function memberSearchPageBounds(
+  page: number,
+  pageSize: number,
+): { offset: number; limit: number } {
+  const safePage = Math.max(1, Math.floor(page));
+  return { offset: (safePage - 1) * pageSize, limit: pageSize };
+}
+
+/** Slice an in-memory match list for directory pagination (used in tests). */
+export function sliceMemberSearchMatches<T>(
+  matches: T[],
+  page: number,
+  pageSize: number,
+): { rows: T[]; matchingCount: number } {
+  const matchingCount = matches.length;
+  const { offset, limit } = memberSearchPageBounds(page, pageSize);
+  return { rows: matches.slice(offset, offset + limit), matchingCount };
+}

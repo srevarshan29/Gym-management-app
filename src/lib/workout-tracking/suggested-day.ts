@@ -1,5 +1,6 @@
 import { attendanceDateKey } from "@/lib/attendance/date-key";
 import { getRepositories } from "@/lib/firestore";
+import { measureServerPhase } from "@/lib/server-perf";
 import type { MemberContext } from "@/lib/firestore/context";
 import type { WorkoutPlanDoc } from "@/lib/firestore/types";
 import { findTodayQualifyingCompletedSession } from "@/lib/workout-tracking/session-today";
@@ -8,8 +9,10 @@ import {
   isLegacyWorkoutPlan,
 } from "@/lib/workout-tracking/session-plan";
 import type { SuggestedWorkoutDay } from "@/lib/workout-tracking/types";
+import { isWorkoutCompletedTodaySuggestion } from "@/lib/workout-tracking/workout-completed-today";
 
 export type { SuggestedWorkoutDay } from "@/lib/workout-tracking/types";
+export { isWorkoutCompletedTodaySuggestion };
 
 const WORK_SECONDS_PER_SET = 40;
 const DEFAULT_REST_SECONDS = 60;
@@ -80,6 +83,7 @@ export async function getSuggestedWorkoutDay(
   tenantGymId: string,
   memberId: string,
 ): Promise<SuggestedWorkoutDay> {
+  return measureServerPhase("member.portal.suggestedDay", async () => {
   const ctx = memberContext(tenantGymId, memberId);
   const { workoutPlans, workoutSessions } = getRepositories();
 
@@ -158,4 +162,5 @@ export async function getSuggestedWorkoutDay(
   const suggested = nextStartableDay(startable, lastDayIdForRotation);
   if (!suggested) return { kind: "none" };
   return toSuggested(suggested);
+  });
 }

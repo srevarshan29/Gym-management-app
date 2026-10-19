@@ -85,16 +85,56 @@ export async function loadPaymentsSinceRevenueTrendStart(
  * Sum of Payment.amount per calendar month for the last N months,
  * scoped to a single gym. Months with no payments return revenue 0.
  */
+export function monthRangeHalfOpen(monthDate: Date): { start: Date; end: Date } {
+  const start = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+  const end = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1);
+  return { start, end };
+}
+
+/** Applies pre-fetched monthly sums to chart buckets (pure, testable). */
+export function applyMonthlyRevenueSums(
+  buckets: MonthlyRevenuePoint[],
+  sumsByMonthKey: Map<string, number>,
+): MonthlyRevenuePoint[] {
+  return buckets.map((bucket) => ({
+    ...bucket,
+    revenue: sumsByMonthKey.get(bucket.monthKey) ?? 0,
+  }));
+}
+
+export async function loadMonthlyRevenueSums(
+  tenantGymId: string,
+  monthCount = 6,
+  now = new Date(),
+): Promise<Map<string, number>> {
+  return measureServerPhase("staff.revenue.monthlySums", async () => {
+    const { payments } = getRepositories();
+    const buckets = buildMonthlyRevenueBuckets(monthCount, now);
+    const entries = await Promise.all(
+      buckets.map(async (bucket) => {
+        const [year, month] = bucket.monthKey.split("-").map(Number);
+        const { start, end } = monthRangeHalfOpen(
+          new Date(year, month - 1, 1),
+        );
+        const sum = await payments.sumPaidInRange(
+          platformContext,
+          tenantGymId,
+          start,
+          end,
+        );
+        return [bucket.monthKey, sum] as const;
+      }),
+    );
+    return new Map(entries);
+  });
+}
+
 export async function getMonthlyRevenueTrend(
   tenantGymId: string,
   monthCount = 6,
 ): Promise<MonthlyRevenuePoint[]> {
   const now = new Date();
-  const rows = await loadPaymentsSinceRevenueTrendStart(
-    tenantGymId,
-    monthCount,
-    now,
-  );
-
-  return buildMonthlyRevenueTrendFromPayments(rows, monthCount, now);
+  const buckets = buildMonthlyRevenueBuckets(monthCount, now);
+  const sums = await loadMonthlyRevenueSums(tenantGymId, monthCount, now);
+  return applyMonthlyRevenueSums(buckets, sums);
 }

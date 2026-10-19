@@ -3,7 +3,10 @@
 import * as React from "react";
 import { useCallback, useRef, useState, useTransition } from "react";
 
-import { addMemberWaterAction } from "@/app/actions/member-dashboard";
+import {
+  addMemberWaterAction,
+  celebrateMemberWaterGoalAction,
+} from "@/app/actions/member-dashboard";
 import { DashboardPercentRing } from "@/components/member-portal/dashboard/dashboard-percent-ring";
 import { useAnimatedNumber } from "@/components/member-portal/dashboard/use-animated-number";
 import { usePrefersReducedMotion } from "@/components/member-portal/dashboard/use-prefers-reduced-motion";
@@ -32,6 +35,11 @@ type MetricCardsProps = {
   waterTargetMl: number;
   waterPercent: number;
   waterGoalComplete: boolean;
+  onWaterProgress?: (progress: {
+    consumedMl: number;
+    percent: number;
+    goalComplete: boolean;
+  }) => void;
 };
 
 export function MemberDashboardMetricCards({
@@ -44,6 +52,7 @@ export function MemberDashboardMetricCards({
   waterTargetMl: _waterTargetMl,
   waterPercent: initialWaterPercent,
   waterGoalComplete: initialWaterComplete,
+  onWaterProgress,
 }: MetricCardsProps) {
   const reducedMotion = usePrefersReducedMotion();
   const [waterMl, setWaterMl] = useState(initialWaterMl);
@@ -122,6 +131,11 @@ export function MemberDashboardMetricCards({
       setWaterMl(result.data.consumedMl);
       setWaterPercent(result.data.percent);
       setWaterComplete(result.data.goalComplete);
+      onWaterProgress?.({
+        consumedMl: result.data.consumedMl,
+        percent: result.data.percent,
+        goalComplete: result.data.goalComplete,
+      });
 
       const newlyReached =
         result.data.goalComplete &&
@@ -131,6 +145,7 @@ export function MemberDashboardMetricCards({
         goalToastShownRef.current = true;
         setWaterRingCelebrate(true);
         setGoalToastOpen(true);
+        void celebrateMemberWaterGoalAction({ logDate });
         window.setTimeout(
           () => setWaterRingCelebrate(false),
           reducedMotion ? 0 : 650,
@@ -143,7 +158,7 @@ export function MemberDashboardMetricCards({
         void runWaterAdd();
       }
     }
-  }, [logDate, showFloatIndicator, reducedMotion]);
+  }, [logDate, onWaterProgress, showFloatIndicator, reducedMotion]);
 
   const onAddWater = useCallback(() => {
     startTransition(() => {

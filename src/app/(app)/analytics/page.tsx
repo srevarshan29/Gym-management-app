@@ -16,8 +16,10 @@ import { formatCurrency } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { AnalyticsPageSkeleton } from "@/components/page-loading-skeletons";
 import { DashboardStatCard } from "@/components/dashboard-stat-card";
-import { MemberJoinsChart } from "@/components/member-joins-chart";
-import { RevenueTrendChart } from "@/components/revenue-trend-chart";
+import {
+  MemberJoinsChartLazy,
+  RevenueTrendChartLazy,
+} from "@/components/charts/lazy-charts";
 import {
   Card,
   CardContent,
@@ -101,7 +103,7 @@ async function AnalyticsPageContent({ gymId }: { gymId: string }) {
             </CardDescription>
           </CardHeader>
           <CardContent className="min-w-0 p-4 pt-0 sm:p-6 sm:pt-0">
-            <MemberJoinsChart data={data.memberJoins} />
+            <MemberJoinsChartLazy data={data.memberJoins} />
           </CardContent>
         </Card>
 
@@ -116,7 +118,7 @@ async function AnalyticsPageContent({ gymId }: { gymId: string }) {
             </CardDescription>
           </CardHeader>
           <CardContent className="min-w-0 p-4 pt-0 sm:p-6 sm:pt-0">
-            <RevenueTrendChart data={data.revenueTrend} />
+            <RevenueTrendChartLazy data={data.revenueTrend} />
           </CardContent>
         </Card>
       </div>

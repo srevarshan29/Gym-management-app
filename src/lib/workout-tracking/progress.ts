@@ -1,6 +1,7 @@
 import { cache } from "react";
 
 import { getRepositories } from "@/lib/firestore";
+import { measureServerPhase } from "@/lib/server-perf";
 import type { MemberContext } from "@/lib/firestore/context";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
 import type { WorkoutPlanDoc, WorkoutSessionDoc } from "@/lib/firestore/types";
@@ -437,6 +438,7 @@ export async function loadMemberWorkoutProgressPage(
   exerciseKey: string | undefined;
   progress: MemberExerciseProgressData | null;
 }> {
+  return measureServerPhase("member.workout.progress.page", async () => {
   const context = await loadMemberProgressContext(tenantGymId, memberId);
   const exercises = buildMemberExerciseOptionsFromContext(context);
 
@@ -458,6 +460,7 @@ export async function loadMemberWorkoutProgressPage(
     exerciseKey: resolvedExerciseKey,
     progress,
   };
+  });
 }
 
 export async function getExerciseProgressData(

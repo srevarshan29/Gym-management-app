@@ -8,6 +8,7 @@ import {
   platformContext,
   type MemberContext,
 } from "@/lib/firestore";
+import { getPortalMemberDoc } from "@/lib/member-portal/member-doc-cache";
 
 export type MemberSession = {
   memberId: string;
@@ -30,10 +31,9 @@ const resolveCurrentMember = cache(async (): Promise<MemberSession | null> => {
     gymId: tenantGymId,
   };
 
-  const { members } = getRepositories();
-  const dbMember = await members.findPortalMember(ctx, memberId, tenantGymId);
+  const dbMember = await getPortalMemberDoc(ctx);
 
-  if (!dbMember) {
+  if (!dbMember?.portalEnabledAt) {
     redirect("/member/logout");
   }
 

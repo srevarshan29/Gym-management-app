@@ -26,16 +26,20 @@ import {
   lastNWeekBuckets,
   DASHBOARD_SPARKLINE_WEEKS,
 } from "@/lib/dashboard-metrics";
-import { buildWeeklyPaymentCountsFromPayments } from "@/lib/dashboard-queries";
+import { queryWeeklyPaymentCounts } from "@/lib/dashboard-queries";
 import {
-  buildMonthlyRevenueTrendFromPayments,
-  loadPaymentsSinceRevenueTrendStart,
+  loadMonthlyRevenueSums,
+  applyMonthlyRevenueSums,
+  buildMonthlyRevenueBuckets,
   type MonthlyRevenuePoint,
 } from "@/lib/revenue";
+import { measureServerPhase } from "@/lib/server-perf";
 import { formatCurrency } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
-import { RevenueTrendChart } from "@/components/revenue-trend-chart";
-import { PackageDistributionChart } from "@/components/package-distribution-chart";
+import {
+  PackageDistributionChartLazy,
+  RevenueTrendChartLazy,
+} from "@/components/charts/lazy-charts";
 import { DashboardStatCard } from "@/components/dashboard-stat-card";
 import { DashboardRenewalPanel } from "@/components/dashboard-renewal-panel";
 import { DashboardQuickActions } from "@/components/dashboard-quick-actions";
@@ -90,6 +94,7 @@ async function DashboardBody({
   canManageMembers: boolean;
   canManagePackages: boolean;
 }) {
+  return measureServerPhase("staff.dashboard.page", async () => {
   const metricsPromise = getDashboardMetrics(tenantGymId);
 
   let monthRevenue = 0;
@@ -105,27 +110,17 @@ async function DashboardBody({
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
     const revenueMonthCount = 6;
-    const revenuePaymentsPromise = loadPaymentsSinceRevenueTrendStart(
-      tenantGymId,
-      revenueMonthCount,
-      now,
-    );
-
-    const [resolvedMetrics, revenuePaymentRows] = await Promise.all([
+    const weekBuckets = lastNWeekBuckets(DASHBOARD_SPARKLINE_WEEKS);
+    const [resolvedMetrics, revenueSums, weeklyPaymentCounts] = await Promise.all([
       metricsPromise,
-      revenuePaymentsPromise,
+      loadMonthlyRevenueSums(tenantGymId, revenueMonthCount, now),
+      queryWeeklyPaymentCounts(tenantGymId, weekBuckets),
     ]);
     metrics = resolvedMetrics;
 
-    revenueTrend = buildMonthlyRevenueTrendFromPayments(
-      revenuePaymentRows,
-      revenueMonthCount,
-      now,
-    );
-    const weekBuckets = lastNWeekBuckets(DASHBOARD_SPARKLINE_WEEKS);
-    const weeklyPaymentCounts = buildWeeklyPaymentCountsFromPayments(
-      revenuePaymentRows.map((p) => p.paidAt),
-      weekBuckets,
+    revenueTrend = applyMonthlyRevenueSums(
+      buildMonthlyRevenueBuckets(revenueMonthCount, now),
+      revenueSums,
     );
 
     const [monthRevenueSum, finSparklines] = await Promise.all([
@@ -294,7 +289,7 @@ async function DashboardBody({
               </CardDescription>
             </CardHeader>
             <CardContent className="min-w-0 p-4 pt-0 sm:p-6 sm:pt-0">
-              <RevenueTrendChart data={revenueTrend} />
+              <RevenueTrendChartLazy data={revenueTrend} />
             </CardContent>
           </Card>
 
@@ -309,13 +304,16 @@ async function DashboardBody({
               </CardDescription>
             </CardHeader>
             <CardContent className="min-w-0 p-4 pt-0 sm:p-6 sm:pt-0">
-              <PackageDistributionChart data={metrics.packageDistribution} />
+              <PackageDistributionChartLazy
+                data={metrics.packageDistribution}
+              />
             </CardContent>
           </Card>
         </div>
       ) : null}
     </>
   );
+  });
 }
 
 function DashboardSkeleton({

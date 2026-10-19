@@ -15,7 +15,10 @@ import { newDocId } from "@/lib/firestore/helpers";
 import { queryPageByNumber } from "@/lib/firestore/pagination";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
 import { omitUndefined } from "@/lib/firestore/serialize";
-import { buildPaymentReportMetricsFromAggregates } from "@/lib/operations-reports/metrics";
+import {
+  buildPaymentReportMetricsFromAggregates,
+  computePaymentReportMetrics,
+} from "@/lib/operations-reports/metrics";
 import type { PaymentReportMetrics } from "@/lib/operations-reports/metrics";
 import type {
   MemberDoc,
@@ -461,7 +464,11 @@ export class PaymentsRepository {
     };
   }
 
-  /** Range payment totals without loading every payment document. */
+  /**
+   * Range payment totals for operations reports.
+   * Uses the gymId + paidAt range index via {@link iteratePaidInRange} so report
+   * pages work without extra per-method composite indexes.
+   */
   async summarizePaidInRange(
     ctx: FirestoreContext,
     gymId: string,
@@ -469,18 +476,16 @@ export class PaymentsRepository {
     end: Date,
   ): Promise<PaymentReportMetrics> {
     return measureServerPhase("staff.reports.payments.aggregate", async () => {
-      const [paymentCount, totalCollected, ...byMethod] = await Promise.all([
-        this.countPaidInRange(ctx, gymId, start, end),
-        this.sumPaidInRange(ctx, gymId, start, end),
-        ...ALL_PAYMENT_METHODS.map((method) =>
-          this.aggregatePaidInRangeForMethod(ctx, gymId, start, end, method),
-        ),
-      ]);
-      return buildPaymentReportMetricsFromAggregates(
-        paymentCount,
-        totalCollected,
-        byMethod,
-      );
+      const rows: { amount: number; method: PaymentMethod }[] = [];
+      for await (const payment of this.iteratePaidInRange(
+        ctx,
+        gymId,
+        start,
+        end,
+      )) {
+        rows.push({ amount: payment.amount, method: payment.method });
+      }
+      return computePaymentReportMetrics(rows);
     });
   }
 

@@ -101,7 +101,7 @@ export function ExerciseMedia({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-lg border border-border/60 bg-muted/20",
+        "overflow-hidden rounded-lg border border-border/60 bg-muted/50",
         className,
       )}
     >

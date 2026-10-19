@@ -107,7 +107,12 @@ export function MemberWorkoutPlanView({ plan }: MemberWorkoutPlanViewProps) {
                     {exercise.targetSets} sets × {exercise.targetReps} reps
                   </span>
                   {exercise.targetWeightKg != null ? (
-                    <span>Target: {exercise.targetWeightKg} kg</span>
+                    <span className="whitespace-nowrap">
+                      Target:{" "}
+                      <span className="whitespace-nowrap">
+                        {exercise.targetWeightKg}&nbsp;kg
+                      </span>
+                    </span>
                   ) : (
                     <span>Target weight: —</span>
                   )}

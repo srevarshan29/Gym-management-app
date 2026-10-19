@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { DASHBOARD_MESSAGE_LIBRARY } from "@/lib/member-portal/dashboard-message-library";
 import {
   memberFirstName,
   resolveDashboardMessage,
@@ -23,8 +22,6 @@ const baseCtx = {
   waterPercent: 30,
   waterGoalComplete: false,
   waterRemainingMl: 2100,
-  visitsThisWeek: 2,
-  daysSinceLastVisit: 1,
   recentMessageKeys: [],
   greetingDateKey: null,
   greetingMessageKey: null,
@@ -32,43 +29,32 @@ const baseCtx = {
   celebratedWaterDateKey: null,
 };
 
-describe("dashboard message library", () => {
-  it("has at least 100 distinct messages", () => {
-    expect(DASHBOARD_MESSAGE_LIBRARY.length).toBeGreaterThanOrEqual(100);
-    const keys = new Set(DASHBOARD_MESSAGE_LIBRARY.map((m) => m.key));
-    expect(keys.size).toBe(DASHBOARD_MESSAGE_LIBRARY.length);
-  });
-});
-
 describe("resolveDashboardMessage", () => {
-  it("does not congratulate incomplete calorie goals", () => {
-    const result = resolveDashboardMessage(
-      { ...baseCtx, calorieGoalComplete: false, caloriePercent: 50 },
-      "2.1 L to go",
-    );
-    expect(result.category).not.toBe("calorie_complete");
-    expect(result.category).not.toBe("both_goals_complete");
+  it("does not show completed message without a qualifying workout", () => {
+    const result = resolveDashboardMessage(baseCtx);
+    expect(result.text.toLowerCase()).not.toContain("session closed");
+    expect(result.text.toLowerCase()).not.toContain("done for today");
   });
 
-  it("prioritizes fresh calorie completion", () => {
-    const result = resolveDashboardMessage(
-      {
-        ...baseCtx,
-        caloriePercent: 100,
-        calorieGoalComplete: true,
-        celebratedCalorieDateKey: null,
-      },
-      "0 ml to go",
-    );
-    expect(result.category).toBe("calorie_complete");
-    expect(result.showCalorieComplete).toBe(true);
-    expect(result.patchCelebratedCalorieDateKey).toBe("2026-10-11");
+  it("prioritizes completed workout today", () => {
+    const result = resolveDashboardMessage({
+      ...baseCtx,
+      workoutCompletedToday: true,
+    });
+    expect(
+      result.text.toLowerCase().includes("workout completed") ||
+        result.text.toLowerCase().includes("finished today"),
+    ).toBe(true);
+  });
+
+  it("shows hydration when water is below goal", () => {
+    const result = resolveDashboardMessage(baseCtx);
+    expect(result.text.toLowerCase()).toContain("hydrat");
   });
 
   it("is deterministic for the same context", () => {
-    const first = resolveDashboardMessage(baseCtx, "2.1 L to go");
-    const second = resolveDashboardMessage(baseCtx, "2.1 L to go");
-    expect(second.messageKey).toBe(first.messageKey);
+    const first = resolveDashboardMessage(baseCtx);
+    const second = resolveDashboardMessage(baseCtx);
     expect(second.text).toBe(first.text);
   });
 });

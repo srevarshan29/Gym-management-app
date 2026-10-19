@@ -95,10 +95,32 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "dashboard-water-float": {
+          "0%": { opacity: "0", transform: "translateY(6px)" },
+          "20%": { opacity: "1", transform: "translateY(0)" },
+          "100%": { opacity: "0", transform: "translateY(-14px)" },
+        },
+        "dashboard-ring-pop": {
+          "0%": { transform: "scale(1)" },
+          "40%": { transform: "scale(1.06)" },
+          "100%": { transform: "scale(1)" },
+        },
+        "dashboard-toast-in": {
+          from: { opacity: "0", transform: "translateY(12px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "dashboard-toast-out": {
+          from: { opacity: "1", transform: "translateY(0)" },
+          to: { opacity: "0", transform: "translateY(8px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "dashboard-water-float": "dashboard-water-float 0.85s ease-out forwards",
+        "dashboard-ring-pop": "dashboard-ring-pop 0.55s ease-out",
+        "dashboard-toast-in": "dashboard-toast-in 0.35s ease-out",
+        "dashboard-toast-out": "dashboard-toast-out 0.3s ease-in forwards",
       },
     },
   },

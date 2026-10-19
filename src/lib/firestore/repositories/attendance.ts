@@ -1,4 +1,10 @@
-import { Timestamp, type Firestore } from "firebase-admin/firestore";
+import {
+  Timestamp,
+  type DocumentSnapshot,
+  type Firestore,
+  type QuerySnapshot,
+  type Transaction,
+} from "firebase-admin/firestore";
 
 import { attendanceDateKey } from "@/lib/attendance/date-key";
 import { maxLastAttendanceAt, shouldUpdateLastAttendanceAt } from "@/lib/attendance/last-attendance";
@@ -243,8 +249,115 @@ export class AttendanceRepository {
     }
   }
 
+  memberDateAttendanceQuery(gymId: string, memberId: string, dateKey: string) {
+    return this.col()
+      .where("gymId", "==", gymId)
+      .where("memberId", "==", memberId)
+      .where("dateKey", "==", dateKey)
+      .limit(1);
+  }
+
+  /**
+   * Write-only: records a visit when preloaded reads show no row for `dateKey`.
+   * All transaction reads must be finished before calling this.
+   */
+  writeMemberVisitIfAbsentInTransaction(
+    tx: Transaction,
+    ctx: FirestoreContext,
+    gymId: string,
+    member: Pick<
+      DocWithId<MemberDoc>,
+      "id" | "gymId" | "memberNumber" | "name" | "lastAttendanceAt"
+    >,
+    checkedInAt: Date,
+    dateKey: string,
+    method: AttendanceMethod,
+    existingAttendance: QuerySnapshot,
+    memberSnap: DocumentSnapshot,
+  ): boolean {
+    assertTenantAccess(ctx, gymId);
+    if (member.gymId !== gymId) {
+      throw new Error("Member does not belong to this gym.");
+    }
+    if (!existingAttendance.empty) {
+      return false;
+    }
+    if (!memberSnap.exists) {
+      throw new Error("Member not found.");
+    }
+    const memberData = memberSnap.data() as MemberDoc;
+    if (memberData.gymId !== gymId) {
+      throw new Error("Member does not belong to this gym.");
+    }
+
+    const checkedTs = Timestamp.fromDate(checkedInAt);
+    const attendanceRef = this.col().doc();
+    const doc: AttendanceDoc = {
+      gymId,
+      memberId: member.id,
+      memberNumber: member.memberNumber,
+      memberName: member.name,
+      checkedInAt: checkedTs,
+      dateKey,
+      method,
+    };
+    tx.set(attendanceRef, doc);
+
+    const memberRef = this.db.collection(COLLECTIONS.members).doc(member.id);
+    const existingLast = memberData.lastAttendanceAt?.toDate() ?? null;
+    if (shouldUpdateLastAttendanceAt(existingLast, checkedInAt)) {
+      const nextLast = maxLastAttendanceAt(existingLast, checkedInAt);
+      tx.update(memberRef, {
+        lastAttendanceAt: Timestamp.fromDate(nextLast),
+        updatedAt: Timestamp.now(),
+      });
+    }
+
+    return true;
+  }
+
+  /**
+   * Records a gym visit if the member has no attendance row for `dateKey` yet.
+   * Returns true when a new visit was written.
+   */
+  async recordMemberVisitIfAbsentInTransaction(
+    tx: Transaction,
+    ctx: FirestoreContext,
+    gymId: string,
+    member: Pick<
+      DocWithId<MemberDoc>,
+      "id" | "gymId" | "memberNumber" | "name" | "lastAttendanceAt"
+    >,
+    checkedInAt: Date,
+    dateKey: string,
+    method: AttendanceMethod,
+  ): Promise<boolean> {
+    assertTenantAccess(ctx, gymId);
+    if (member.gymId !== gymId) {
+      throw new Error("Member does not belong to this gym.");
+    }
+
+    const existing = await tx.get(
+      this.memberDateAttendanceQuery(gymId, member.id, dateKey),
+    );
+    const memberRef = this.db.collection(COLLECTIONS.members).doc(member.id);
+    const memberSnap = await tx.get(memberRef);
+
+    return this.writeMemberVisitIfAbsentInTransaction(
+      tx,
+      ctx,
+      gymId,
+      member,
+      checkedInAt,
+      dateKey,
+      method,
+      existing,
+      memberSnap,
+    );
+  }
+
   /** Validates attendance method values without persisting (model extensibility). */
   static supportedMethods(): AttendanceMethod[] {
-    return ["manual", "biometric", "qr"];
+    return ["manual", "biometric", "qr", "workout"];
   }
 }

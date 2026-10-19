@@ -8,6 +8,7 @@ import {
   logWorkoutSetRecord,
   startWorkoutSessionRecord,
 } from "@/lib/firestore/workout-session-operations";
+import { WorkoutEmptyConfirmationRequiredError } from "@/lib/workout-tracking/workout-completion-errors";
 import type { MemberContext } from "@/lib/firestore/context";
 import { measureServerPhase } from "@/lib/server-perf";
 import { requireMember } from "@/lib/member-session";
@@ -133,19 +134,33 @@ export async function logWorkoutSet(
   });
 }
 
+const completeSchema = z.object({
+  sessionId: z.string().trim().min(1),
+  confirmEmptyFinish: z.boolean().optional(),
+});
+
 export async function completeWorkoutSession(
   sessionId: string,
+  confirmEmptyFinish?: boolean,
 ): Promise<ActionResult> {
   try {
     const member = await requireMember();
-    await completeWorkoutSessionRecord(
+    const parsed = completeSchema.parse({ sessionId, confirmEmptyFinish });
+    const result = await completeWorkoutSessionRecord(
       memberContextFromSession(member),
-      sessionId,
+      parsed.sessionId,
+      { confirmEmptyFinish: parsed.confirmEmptyFinish },
     );
 
     revalidateWorkoutSessionPaths();
+    if (result.outcome === "abandoned") {
+      return actionOk("Workout closed.");
+    }
     return actionOk("Workout completed. Great job!");
   } catch (error) {
+    if (error instanceof WorkoutEmptyConfirmationRequiredError) {
+      return actionError("WORKOUT_EMPTY_CONFIRMATION_REQUIRED");
+    }
     return actionErrorFromUnknown(
       error,
       "Could not complete workout. Please try again.",

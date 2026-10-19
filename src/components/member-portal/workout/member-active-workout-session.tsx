@@ -19,25 +19,33 @@ export function MemberActiveWorkoutSession({
   const [previousSets, setPreviousSets] = React.useState<
     Record<string, PreviousSetLog[]>
   >({});
+  const [previousSetsReady, setPreviousSetsReady] = React.useState(false);
 
   React.useEffect(() => {
     const sessionId = session.id;
     let cancelled = false;
+    setPreviousSetsReady(false);
 
     void loadActiveWorkoutPreviousSetsAction(sessionId).then((result) => {
       if (cancelled) return;
       if (result.ok && result.data) {
         setPreviousSets(result.data);
       }
+      setPreviousSetsReady(true);
     });
 
     return () => {
       cancelled = true;
       setPreviousSets({});
+      setPreviousSetsReady(false);
     };
   }, [session.id]);
 
   return (
-    <WorkoutSessionView session={session} previousSets={previousSets} />
+    <WorkoutSessionView
+      session={session}
+      previousSets={previousSets}
+      previousSetsReady={previousSetsReady}
+    />
   );
 }

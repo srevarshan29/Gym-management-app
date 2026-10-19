@@ -1,8 +1,9 @@
 import { getFirestoreDb } from "@/lib/firebase/admin";
+import { COLLECTIONS } from "@/lib/firestore/collections";
 import { getRepositories } from "@/lib/firestore";
 import type { MemberContext } from "@/lib/firestore/context";
 import { newDocId } from "@/lib/firestore/helpers";
-import type { ExerciseTrackingType } from "@/lib/firestore/types";
+import type { ExerciseTrackingType, WorkoutSessionDoc } from "@/lib/firestore/types";
 import { measureServerPhase } from "@/lib/server-perf";
 import {
   hasSessionExerciseSnapshot,
@@ -19,6 +20,9 @@ import {
   catalogTrackingType,
   parseMemberCatalogExerciseId,
 } from "@/lib/workout-tracking/member-catalog-exercises";
+import { attendanceDateKey } from "@/lib/attendance/date-key";
+import { countLoggedSetsInSession } from "@/lib/workout-tracking/session-logged-sets";
+import { WorkoutEmptyConfirmationRequiredError } from "@/lib/workout-tracking/workout-completion-errors";
 import type { ActiveWorkoutSetLog } from "@/lib/workout-tracking/types";
 
 async function loadExerciseLibraryMapForTracking(
@@ -286,11 +290,17 @@ export async function logWorkoutSetRecord(
   });
 }
 
+export type CompleteWorkoutSessionResult = {
+  outcome: "completed" | "abandoned";
+  attendanceRecorded: boolean;
+};
+
 export async function completeWorkoutSessionRecord(
   ctx: MemberContext,
   sessionId: string,
-): Promise<void> {
-  const { workoutSessions } = getRepositories();
+  options?: { confirmEmptyFinish?: boolean },
+): Promise<CompleteWorkoutSessionResult> {
+  const { workoutSessions, attendance, members } = getRepositories();
   const gymId = ctx.gymId;
   const memberId = ctx.memberId;
 
@@ -304,22 +314,94 @@ export async function completeWorkoutSessionRecord(
     throw new Error("Active workout session not found.");
   }
 
-  const completedAtMs = Date.now();
-  const durationSeconds = Math.max(
-    0,
-    Math.round(
-      (completedAtMs - session.startedAt.toMillis()) / 1000,
-    ),
-  );
+  const loggedSets = countLoggedSetsInSession(session);
+  if (loggedSets === 0 && !options?.confirmEmptyFinish) {
+    throw new WorkoutEmptyConfirmationRequiredError();
+  }
+
+  const member = await members.findByIdAndGym(ctx, memberId, gymId);
+  if (!member) {
+    throw new Error("Member not found.");
+  }
 
   const db = getFirestoreDb();
+  if (loggedSets === 0) {
+    await db.runTransaction(async (tx) => {
+      await workoutSessions.abandonSessionInTransaction(
+        tx,
+        ctx,
+        gymId,
+        sessionId,
+      );
+    });
+    return { outcome: "abandoned", attendanceRecorded: false };
+  }
+
+  const completedAtMs = Date.now();
+  const completedAt = new Date(completedAtMs);
+  const dateKey = attendanceDateKey(completedAt);
+  const durationSeconds = Math.max(
+    0,
+    Math.round((completedAtMs - session.startedAt.toMillis()) / 1000),
+  );
+
+  let attendanceRecorded = false;
+  let alreadyCompleted = false;
   await db.runTransaction(async (tx) => {
-    await workoutSessions.completeSessionInTransaction(
+    const sessionRef = db.collection(COLLECTIONS.workoutSessions).doc(sessionId);
+    const sessionSnap = await tx.get(sessionRef);
+    if (!sessionSnap.exists) {
+      throw new Error("Active workout session not found.");
+    }
+    const fresh = sessionSnap.data() as WorkoutSessionDoc;
+    if (fresh.gymId !== gymId || fresh.memberId !== memberId) {
+      throw new Error("Active workout session not found.");
+    }
+    if (fresh.status === "COMPLETED") {
+      alreadyCompleted = true;
+      return;
+    }
+    if (fresh.status !== "IN_PROGRESS") {
+      throw new Error("Active workout session not found.");
+    }
+    const freshSets = countLoggedSetsInSession(fresh);
+    if (freshSets === 0) {
+      throw new Error("No sets logged.");
+    }
+
+    const attendanceQuery = attendance.memberDateAttendanceQuery(
+      gymId,
+      member.id,
+      dateKey,
+    );
+    const attendanceSnap = await tx.get(attendanceQuery);
+    const memberRef = db.collection(COLLECTIONS.members).doc(member.id);
+    const memberSnap = await tx.get(memberRef);
+
+    workoutSessions.completeSessionWriteInTransaction(
       tx,
       ctx,
       gymId,
       sessionId,
       durationSeconds,
     );
+
+    attendanceRecorded = attendance.writeMemberVisitIfAbsentInTransaction(
+      tx,
+      ctx,
+      gymId,
+      member,
+      completedAt,
+      dateKey,
+      "workout",
+      attendanceSnap,
+      memberSnap,
+    );
   });
+
+  if (alreadyCompleted) {
+    return { outcome: "completed", attendanceRecorded: false };
+  }
+
+  return { outcome: "completed", attendanceRecorded };
 }

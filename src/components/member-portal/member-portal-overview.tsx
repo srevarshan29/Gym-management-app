@@ -1,5 +1,3 @@
-import { Dumbbell, Salad, TrendingUp } from "lucide-react";
-
 import { MemberDashboardAttendanceSection } from "@/components/member-portal/dashboard/member-dashboard-attendance";
 import { MemberDashboardMetricCards } from "@/components/member-portal/dashboard/member-dashboard-metric-cards";
 import { LockedLink } from "@/components/navigation/locked-link";
@@ -12,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { memberFirstName } from "@/lib/member-portal/dashboard-message-engine";
 import type { MemberPortalDashboardData } from "@/lib/member-portal/load-member-portal-dashboard";
 import type { MemberPortalOverview } from "@/lib/member-portal/queries";
 import type { SuggestedWorkoutDay } from "@/lib/workout-tracking/types";
@@ -21,18 +20,42 @@ import { cn } from "@/lib/utils";
 const CARD_CLASS =
   "rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm";
 
-const QUICK_ACTIONS = [
-  { href: "/member/workout", label: "Workouts", icon: Dumbbell },
-  { href: "/member/workout/progress", label: "Progress", icon: TrendingUp },
-  { href: "/member/diet", label: "Diet", icon: Salad },
-] as const;
-
 function TodaysWorkoutCard({
   suggestion,
 }: {
   suggestion: SuggestedWorkoutDay;
 }) {
   const emptyCopy = "No workout assigned today — check with your trainer";
+
+  if (suggestion.kind === "completed_today") {
+    return (
+      <Card className={CARD_CLASS}>
+        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-1 pt-3">
+          <div className="min-w-0">
+            <CardTitle className="text-base font-semibold leading-tight">
+              {suggestion.completedLabel}
+            </CardTitle>
+            <CardDescription className="text-xs text-primary">
+              Done ✓
+            </CardDescription>
+          </div>
+          <LockedLink
+            href="/member/workout"
+            className="shrink-0 text-xs text-muted-foreground hover:text-primary"
+          >
+            All days
+          </LockedLink>
+        </CardHeader>
+        <CardContent className="pb-3 pt-0">
+          {suggestion.next ? (
+            <p className="text-sm text-muted-foreground">
+              Next: {suggestion.next.label}
+            </p>
+          ) : null}
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (suggestion.kind === "none" || suggestion.kind === "legacy") {
     return (
@@ -86,23 +109,6 @@ function TodaysWorkoutCard({
         />
       </CardContent>
     </Card>
-  );
-}
-
-function QuickActionsGrid() {
-  return (
-    <div className="grid grid-cols-3 gap-2">
-      {QUICK_ACTIONS.map((action) => (
-        <LockedLink key={action.href} href={action.href} className="min-w-0">
-          <Card className={CARD_CLASS}>
-            <CardContent className="flex flex-col items-center gap-1.5 p-3 text-center">
-              <action.icon className="h-4 w-4 text-primary" />
-              <span className="text-[11px] font-medium">{action.label}</span>
-            </CardContent>
-          </Card>
-        </LockedLink>
-      ))}
-    </div>
   );
 }
 
@@ -176,13 +182,14 @@ export function MemberPortalOverviewPanel({
   const hasSubscription = overview.packageName != null;
   const [year, monthIndex0] = dashboard.dateKey.split("-").map(Number);
   const calendarMonthIndex0 = monthIndex0 - 1;
+  const greetingName = memberFirstName(overview.memberName);
 
   if (!hasSubscription) {
     return (
       <div className="space-y-3">
         <div>
           <h1 className="font-display text-xl font-bold leading-tight">
-            Hi, {overview.memberName}
+            Hi, {greetingName}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">{dashboard.message.text}</p>
         </div>
@@ -205,7 +212,6 @@ export function MemberPortalOverviewPanel({
           waterGoalComplete={dashboard.waterGoalComplete}
         />
         <TodaysWorkoutCard suggestion={suggestion} />
-        <QuickActionsGrid />
       </div>
     );
   }
@@ -214,7 +220,7 @@ export function MemberPortalOverviewPanel({
     <div className="space-y-3">
       <div>
         <h1 className="font-display text-xl font-bold leading-tight">
-          Hi, {overview.memberName}
+          Hi, {greetingName}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">{dashboard.message.text}</p>
       </div>
@@ -241,8 +247,6 @@ export function MemberPortalOverviewPanel({
         initialYear={year}
         initialMonthIndex0={calendarMonthIndex0}
       />
-
-      <QuickActionsGrid />
     </div>
   );
 }

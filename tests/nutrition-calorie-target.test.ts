@@ -9,15 +9,15 @@ import {
 } from "@/lib/nutrition/nutrition-calorie-target";
 
 describe("nutrition calorie target", () => {
-  it("prefers member custom target over gym diet plan", () => {
+  it("prefers gym diet plan over member custom target", () => {
     const resolved = resolveNutritionCalorieTarget({
-      memberCustomDailyCalorieTarget: 1800,
-      gymDietPlanCaloriesPerDay: 2200,
+      memberCustomDailyCalorieTarget: 2600,
+      gymDietPlanCaloriesPerDay: 2800,
     });
-    expect(resolved.targetCalories).toBe(1800);
-    expect(resolved.targetSource).toBe("member");
-    expect(resolved.gymDailyCalorieTarget).toBe(2200);
-    expect(resolved.memberDailyCalorieTarget).toBe(1800);
+    expect(resolved.targetCalories).toBe(2800);
+    expect(resolved.targetSource).toBe("gym");
+    expect(resolved.gymDailyCalorieTarget).toBe(2800);
+    expect(resolved.memberDailyCalorieTarget).toBe(2600);
   });
 
   it("uses gym target when member has no custom target", () => {
@@ -52,13 +52,14 @@ describe("nutrition calorie target", () => {
     );
   });
 
-  it("keeps gym and member values independent when member overrides", () => {
+  it("keeps stored member value when gym plan is authoritative", () => {
     const resolved = resolveNutritionCalorieTarget({
       memberCustomDailyCalorieTarget: 2500,
       gymDietPlanCaloriesPerDay: 2000,
     });
     expect(resolved.gymDailyCalorieTarget).toBe(2000);
-    expect(resolved.targetCalories).toBe(2500);
-    expect(nutritionCalorieTargetSourceLabel("member")).toBe("Set by You");
+    expect(resolved.targetCalories).toBe(2000);
+    expect(resolved.memberDailyCalorieTarget).toBe(2500);
+    expect(nutritionCalorieTargetSourceLabel("gym")).toBe("Set by Gym");
   });
 });

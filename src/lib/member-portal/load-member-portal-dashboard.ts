@@ -14,12 +14,9 @@ import {
   resolveDashboardMessage,
   type ResolvedDashboardMessage,
 } from "@/lib/member-portal/dashboard-message-engine";
+import { findTodayQualifyingCompletedSession } from "@/lib/workout-tracking/session-today";
 import type { SuggestedWorkoutDay } from "@/lib/workout-tracking/types";
-import {
-  formatWaterRemainingMl,
-  sumWaterLogMl,
-  waterDayProgress,
-} from "@/lib/water/water-progress";
+import { sumWaterLogMl, waterDayProgress } from "@/lib/water/water-progress";
 
 export type MemberDashboardWeekDay = {
   dateKey: string;
@@ -46,14 +43,6 @@ export type MemberPortalDashboardData = {
 
 const WEEKDAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"] as const;
 
-function sessionCompletedOnDateKey(
-  completedAt: Date | null | undefined,
-  dateKey: string,
-): boolean {
-  if (!completedAt) return false;
-  return attendanceDateKey(completedAt) === dateKey;
-}
-
 function daysBetweenDateKeys(fromKey: string, toKey: string): number {
   const [fy, fm, fd] = fromKey.split("-").map(Number);
   const [ty, tm, td] = toKey.split("-").map(Number);
@@ -72,8 +61,6 @@ export async function loadMemberPortalDashboard(
     memberWaterLogs,
     memberPortalDashboardState,
     attendance,
-    workoutSessions,
-    members,
   } = getRepositories();
 
   const weekStart = startOfWeekDateKey(dateKey);
@@ -84,8 +71,7 @@ export async function loadMemberPortalDashboard(
     waterRows,
     dashboardState,
     weekVisitKeys,
-    lastCompleted,
-    member,
+    completedTodaySession,
   ] = await Promise.all([
     loadMemberNutritionDay(ctx, dateKey),
     memberWaterLogs.listForMemberOnDate(ctx, ctx.gymId, ctx.memberId, dateKey),
@@ -97,8 +83,7 @@ export async function loadMemberPortalDashboard(
       weekStart,
       weekEnd,
     ),
-    workoutSessions.findLastCompletedSession(ctx, ctx.gymId, ctx.memberId),
-    members.findByIdAndGym(ctx, ctx.memberId, ctx.gymId),
+    findTodayQualifyingCompletedSession(ctx, ctx.gymId, ctx.memberId, dateKey),
   ]);
 
   const visitSet = new Set(weekVisitKeys);
@@ -124,45 +109,25 @@ export async function loadMemberPortalDashboard(
   const waterConsumedMl = sumWaterLogMl(waterRows);
   const waterProgress = waterDayProgress(waterConsumedMl);
 
-  const workoutCompletedToday = sessionCompletedOnDateKey(
-    lastCompleted?.completedAt?.toDate(),
+  const workoutCompletedToday = completedTodaySession != null;
+
+  const message = resolveDashboardMessage({
     dateKey,
-  );
-
-  const lastVisitKey =
-    member?.lastAttendanceAt != null
-      ? attendanceDateKey(member.lastAttendanceAt.toDate())
-      : null;
-  const daysSinceLastVisit =
-    lastVisitKey != null ? daysBetweenDateKeys(lastVisitKey, dateKey) : null;
-
-  const waterRemainingLabel = formatWaterRemainingMl(
-    waterProgress.targetMl - waterProgress.consumedMl,
-  );
-
-  const message = resolveDashboardMessage(
-    {
-      dateKey,
-      memberId: ctx.memberId,
-      memberName,
-      suggestion,
-      workoutCompletedToday,
-      caloriePercent: displayTarget != null ? percent : null,
-      calorieGoalComplete,
-      waterPercent: waterProgress.percent,
-      waterGoalComplete: waterProgress.goalComplete,
-      waterRemainingMl: waterProgress.targetMl - waterProgress.consumedMl,
-      visitsThisWeek: weekVisitKeys.length,
-      daysSinceLastVisit,
-      recentMessageKeys: dashboardState?.recentMessageKeys ?? [],
-      greetingDateKey: dashboardState?.greetingDateKey ?? null,
-      greetingMessageKey: dashboardState?.greetingMessageKey ?? null,
-      celebratedCalorieDateKey:
-        dashboardState?.celebratedCalorieDateKey ?? null,
-      celebratedWaterDateKey: dashboardState?.celebratedWaterDateKey ?? null,
-    },
-    waterRemainingLabel,
-  );
+    memberId: ctx.memberId,
+    memberName,
+    suggestion,
+    workoutCompletedToday,
+    caloriePercent: displayTarget != null ? percent : null,
+    calorieGoalComplete,
+    waterPercent: waterProgress.percent,
+    waterGoalComplete: waterProgress.goalComplete,
+    waterRemainingMl: waterProgress.targetMl - waterProgress.consumedMl,
+    recentMessageKeys: dashboardState?.recentMessageKeys ?? [],
+    greetingDateKey: dashboardState?.greetingDateKey ?? null,
+    greetingMessageKey: dashboardState?.greetingMessageKey ?? null,
+    celebratedCalorieDateKey: dashboardState?.celebratedCalorieDateKey ?? null,
+    celebratedWaterDateKey: dashboardState?.celebratedWaterDateKey ?? null,
+  });
 
   await memberPortalDashboardState.mergeForMember(
     ctx,
@@ -219,11 +184,18 @@ export async function loadMemberAttendanceMonthSummary(
   );
 
   const visitCount = visitDateKeys.length;
-  const daysInMonth =
-    daysBetweenDateKeys(start, end) + 1;
-  const weeksInMonth = Math.max(1, daysInMonth / 7);
+  const todayKey = defaultNutritionLogDate();
+  const [todayYear, todayMonth, todayDay] = todayKey.split("-").map(Number);
+  const isCurrentMonth =
+    todayYear === year && todayMonth - 1 === monthIndex0;
+  const elapsedDaysInMonth = isCurrentMonth
+    ? Math.max(1, todayDay)
+    : daysBetweenDateKeys(start, end) + 1;
+  const elapsedWeeks = Math.max(1, elapsedDaysInMonth / 7);
   const averageVisitsPerWeek =
-    visitCount === 0 ? 0 : Math.round((visitCount / weeksInMonth) * 10) / 10;
+    visitCount === 0
+      ? 0
+      : Math.round((visitCount / elapsedWeeks) * 100) / 100;
 
   const monthLabel = new Date(Date.UTC(year, monthIndex0, 1)).toLocaleString(
     "en-US",

@@ -158,6 +158,19 @@ export type SuggestedWorkoutDay =
       exerciseCount: number;
       estimatedMinutes: number | null;
       sessionId: string;
+    }
+  | {
+      kind: "completed_today";
+      completedLabel: string;
+      next:
+        | {
+            kind: "suggested";
+            dayId: string;
+            label: string;
+            exerciseCount: number;
+            estimatedMinutes: number;
+          }
+        | null;
     };
 
 export type ProgressGrouping = "weekly" | "monthly";

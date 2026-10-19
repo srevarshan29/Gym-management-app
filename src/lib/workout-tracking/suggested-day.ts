@@ -1,6 +1,8 @@
+import { attendanceDateKey } from "@/lib/attendance/date-key";
 import { getRepositories } from "@/lib/firestore";
 import type { MemberContext } from "@/lib/firestore/context";
 import type { WorkoutPlanDoc } from "@/lib/firestore/types";
+import { findTodayQualifyingCompletedSession } from "@/lib/workout-tracking/session-today";
 import {
   findDayIdForPlanExercise,
   isLegacyWorkoutPlan,
@@ -102,9 +104,11 @@ export async function getSuggestedWorkoutDay(
 
   const startableIds = new Set(startable.map((day) => day.id));
 
-  const [active, lastCompleted] = await Promise.all([
+  const todayKey = attendanceDateKey();
+  const [active, lastCompleted, completedToday] = await Promise.all([
     workoutSessions.findActiveSession(ctx, tenantGymId, memberId),
     workoutSessions.findLastCompletedSession(ctx, tenantGymId, memberId),
+    findTodayQualifyingCompletedSession(ctx, tenantGymId, memberId, todayKey),
   ]);
 
   if (active) {
@@ -125,16 +129,33 @@ export async function getSuggestedWorkoutDay(
     };
   }
 
-  const lastDayId = lastCompleted
+  const lastDayIdForRotation = completedToday
     ? inferDayId(
-        lastCompleted.workoutPlanDayId,
-        lastCompleted.exercises.map((row) => row.workoutPlanExerciseId),
+        completedToday.workoutPlanDayId,
+        completedToday.exercises.map((row) => row.workoutPlanExerciseId),
         plan,
         startableIds,
       )
-    : null;
+    : lastCompleted
+      ? inferDayId(
+          lastCompleted.workoutPlanDayId,
+          lastCompleted.exercises.map((row) => row.workoutPlanExerciseId),
+          plan,
+          startableIds,
+        )
+      : null;
 
-  const suggested = nextStartableDay(startable, lastDayId);
+  if (completedToday) {
+    const completedDay = startable.find((row) => row.id === lastDayIdForRotation);
+    const nextDay = nextStartableDay(startable, lastDayIdForRotation);
+    return {
+      kind: "completed_today",
+      completedLabel: completedDay?.label ?? "Workout",
+      next: nextDay ? toSuggested(nextDay) : null,
+    };
+  }
+
+  const suggested = nextStartableDay(startable, lastDayIdForRotation);
   if (!suggested) return { kind: "none" };
   return toSuggested(suggested);
 }

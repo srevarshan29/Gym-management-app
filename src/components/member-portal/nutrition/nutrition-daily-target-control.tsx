@@ -111,9 +111,13 @@ export function NutritionDailyTargetControl({
           ) : (
             <p className="text-sm text-muted-foreground">No daily target set</p>
           )}
-          {day.targetSource === "member" && day.gymDailyCalorieTarget != null ? (
+          {day.targetSource === "gym" &&
+          day.memberDailyCalorieTarget != null &&
+          day.memberDailyCalorieTarget !== day.targetCalories ? (
             <p className="mt-0.5 text-[11px] text-muted-foreground">
-              Gym recommendation: {day.gymDailyCalorieTarget.toLocaleString()} kcal
+              Personal preference saved:{" "}
+              {day.memberDailyCalorieTarget.toLocaleString()} kcal (trainer target
+              applies)
             </p>
           ) : null}
         </div>

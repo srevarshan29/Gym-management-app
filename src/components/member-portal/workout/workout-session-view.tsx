@@ -16,6 +16,13 @@ import { clearRestTimersForSession } from "@/lib/workout-tracking/rest-timer-sto
 import { SessionTimer } from "@/components/member-portal/workout/session-timer";
 import { LockedLink } from "@/components/navigation/locked-link";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { parseTargetReps } from "@/lib/workout-tracking/progress-format";
 import { cn } from "@/lib/utils";
@@ -26,6 +33,27 @@ import type {
 } from "@/lib/workout-tracking/types";
 
 const MAX_SETS = 20;
+
+const WORKOUT_TOAST_ID = "member-workout-session-toast";
+
+function showWorkoutToast(
+  message: string,
+  variant: "success" | "error",
+): void {
+  toast.dismiss(WORKOUT_TOAST_ID);
+  const options = {
+    id: WORKOUT_TOAST_ID,
+    position: "bottom-center" as const,
+    duration: variant === "error" ? 3500 : 2200,
+    className:
+      "!bg-card !text-foreground border border-border shadow-lg mb-[max(5.25rem,env(safe-area-inset-bottom))]",
+  };
+  if (variant === "success") {
+    toast.success(message, options);
+  } else {
+    toast.error(message, options);
+  }
+}
 
 function toIsoTimestamp(value: string | Date): string {
   return typeof value === "string" ? value : value.toISOString();
@@ -111,11 +139,13 @@ function firstIncompleteIndex(session: ActiveWorkoutSession): number {
 type WorkoutSessionViewProps = {
   session: ActiveWorkoutSession;
   previousSets: Record<string, PreviousSetLog[]>;
+  previousSetsReady?: boolean;
 };
 
 export function WorkoutSessionView({
   session: initialSession,
   previousSets,
+  previousSetsReady = true,
 }: WorkoutSessionViewProps) {
   const router = useRouter();
   const [, startTransition] = React.useTransition();
@@ -129,6 +159,10 @@ export function WorkoutSessionView({
   );
   const [addedSets, setAddedSets] = React.useState<Record<string, number>>({});
   const [setValues, setSetValues] = React.useState<Record<string, string>>({});
+  const [editedSetKeys, setEditedSetKeys] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+  const [emptyFinishOpen, setEmptyFinishOpen] = React.useState(false);
 
   React.useEffect(() => {
     setSession(initialSession);
@@ -187,7 +221,7 @@ export function WorkoutSessionView({
       const source = rawValue ?? fallback;
       const weightKg = Number(source);
       if (!source && weightKg !== 0) {
-        toast.error("Enter a weight for this set.");
+        showWorkoutToast("Enter a weight for this set.", "error");
         return;
       }
       payload.weightKg = weightKg;
@@ -201,7 +235,7 @@ export function WorkoutSessionView({
       const source = rawValue ?? fallback;
       const durationSeconds = Number(source);
       if (!durationSeconds || durationSeconds < 1) {
-        toast.error("Enter a duration in seconds for this set.");
+        showWorkoutToast("Enter a duration in seconds for this set.", "error");
         return;
       }
       payload.durationSeconds = durationSeconds;
@@ -228,7 +262,7 @@ export function WorkoutSessionView({
       const result = await logWorkoutSet(payload);
       if (!result.ok) {
         setSession(sessionBeforeSave);
-        toast.error(result.error);
+        showWorkoutToast(result.error, "error");
         return;
       }
       if (result.data) {
@@ -237,14 +271,15 @@ export function WorkoutSessionView({
           mergeLoggedSet(current, sessionExerciseId, set),
         );
       }
-      toast.success("Set saved.");
+      showWorkoutToast("Set saved.", "success");
     } catch (error) {
       setSession(sessionBeforeSave);
       console.error("[workout] logWorkoutSet failed:", error);
-      toast.error(
+      showWorkoutToast(
         error instanceof Error
           ? error.message
           : "Could not save set. Please try again.",
+        "error",
       );
     } finally {
       setSavingSetKeys((prev) => {
@@ -255,35 +290,58 @@ export function WorkoutSessionView({
     }
   }
 
-  async function onComplete() {
-    if (completing) return;
+  const hasPendingSaves = savingSetKeys.size > 0;
+
+  async function runComplete(confirmEmptyFinish = false) {
+    if (completing || hasPendingSaves) {
+      if (hasPendingSaves) {
+        showWorkoutToast("Wait for sets to finish saving.", "error");
+      }
+      return;
+    }
     setCompleting(true);
     try {
-      const result = await completeWorkoutSession(session.id);
+      const result = await completeWorkoutSession(
+        session.id,
+        confirmEmptyFinish,
+      );
       if (!result.ok) {
-        toast.error(result.error);
+        if (result.error === "WORKOUT_EMPTY_CONFIRMATION_REQUIRED") {
+          setEmptyFinishOpen(true);
+          return;
+        }
+        showWorkoutToast(result.error, "error");
         return;
       }
-      toast.success(result.message ?? "Workout completed.");
+      setEmptyFinishOpen(false);
+      if (result.message && result.message !== "Workout closed.") {
+        showWorkoutToast(result.message, "success");
+      }
       clearRestTimersForSession(session.id);
       startTransition(() => {
+        router.push("/member");
         router.refresh();
       });
     } catch (error) {
       console.error("[workout] completeWorkoutSession failed:", error);
-      toast.error(
+      showWorkoutToast(
         error instanceof Error
           ? error.message
           : "Could not complete workout. Please try again.",
+        "error",
       );
     } finally {
       setCompleting(false);
     }
   }
 
+  async function onComplete() {
+    await runComplete(false);
+  }
+
   function addSet() {
     if (rowCount >= MAX_SETS) {
-      toast.error("You can log up to 20 sets.");
+      showWorkoutToast("You can log up to 20 sets.", "error");
       return;
     }
     setAddedSets((prev) => ({
@@ -293,8 +351,8 @@ export function WorkoutSessionView({
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex min-w-0 items-center gap-2">
+    <div className="mx-auto w-full min-w-0 max-w-lg space-y-4 overflow-x-hidden pb-1">
+      <div className="sticky top-0 z-20 -mx-0.5 flex min-w-0 items-center gap-2 bg-background/95 pb-2 pt-0.5 backdrop-blur-sm">
         <LockedLink
           href="/member"
           aria-label="Back to overview"
@@ -310,9 +368,9 @@ export function WorkoutSessionView({
         </div>
         <Button
           size="sm"
-          className="shrink-0"
+          className="h-9 shrink-0 px-3"
           onClick={onComplete}
-          disabled={completing}
+          disabled={completing || hasPendingSaves}
         >
           {completing ? "..." : "Finish"}
         </Button>
@@ -349,19 +407,17 @@ export function WorkoutSessionView({
       </div>
 
       <div className="space-y-3">
-        <h2 className="break-words text-center font-display text-2xl font-bold leading-tight">
+        <h2 className="break-words px-1 text-center font-display text-xl font-bold leading-tight sm:text-2xl">
           {exercise.displayName}
         </h2>
-        {exercise.exerciseId ? (
-          <ExerciseMedia
-            media={exercise.media}
-            alt={`${exercise.displayName} demonstration`}
-            variant="thumbnail"
-            compact
-            emptyLabel=""
-            className="mx-auto h-28 w-full max-w-[11rem] sm:max-w-[12rem]"
-          />
-        ) : null}
+        <ExerciseMedia
+          media={exercise.media}
+          alt={`${exercise.displayName} demonstration`}
+          variant="thumbnail"
+          compact
+          emptyLabel=""
+          className="mx-auto h-24 w-full max-w-[10.5rem] rounded-2xl bg-muted/50 ring-1 ring-border/60 sm:h-28 sm:max-w-[12rem]"
+        />
         {exercise.youtubeUrl ? (
           <div className="flex justify-center overflow-x-hidden">
             <MemberExerciseWatchDemoLink
@@ -380,14 +436,25 @@ export function WorkoutSessionView({
       </div>
 
       <div className="overflow-x-hidden">
-        <div className="grid grid-cols-[2.5rem_minmax(0,1fr)_4.5rem_2.5rem] items-center gap-x-2 px-1 pb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="grid grid-cols-[1.75rem_minmax(0,1fr)_minmax(3.25rem,4rem)_1.75rem] items-center gap-x-1.5 px-0.5 pb-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:grid-cols-[2rem_minmax(0,1fr)_4rem_2rem] sm:gap-x-2 sm:text-[11px]">
           <span>Set</span>
           <span>Prev</span>
-          <span>{isTime ? "Sec" : isBodyweight ? "" : "KG"}</span>
+          <span className="text-center whitespace-nowrap">
+            {isTime ? "Sec" : isBodyweight ? "" : "KG"}
+          </span>
           <span className="sr-only">Done</span>
         </div>
         <div className="space-y-1.5">
-          {Array.from({ length: rowCount }, (_, index) => {
+          {!previousSetsReady
+            ? Array.from({ length: Math.min(rowCount, 4) }, (_, index) => (
+                <div
+                  key={index}
+                  className="h-11 w-full animate-pulse rounded-xl bg-muted/50"
+                />
+              ))
+            : null}
+          {previousSetsReady
+            ? Array.from({ length: rowCount }, (_, index) => {
             const setNumber = index + 1;
             const key = `${exercise.id}-${setNumber}`;
             const logged = exercise.sets.find((set) => set.setNumber === setNumber);
@@ -402,20 +469,21 @@ export function WorkoutSessionView({
               previous,
               exercise.targetWeightKg,
             );
-            const value = setValues[key] ?? fallback;
+            const value =
+              setValues[key] ?? (editedSetKeys.has(key) ? "" : fallback);
 
             return (
               <div
                 key={key}
                 className={cn(
-                  "grid grid-cols-[2.5rem_minmax(0,1fr)_4.5rem_2.5rem] items-center gap-x-2 rounded-xl px-1 py-2",
+                  "grid grid-cols-[1.75rem_minmax(0,1fr)_minmax(3.25rem,4rem)_1.75rem] items-center gap-x-1.5 rounded-xl px-0.5 py-1.5 sm:grid-cols-[2rem_minmax(0,1fr)_4rem_2rem] sm:gap-x-2 sm:px-1 sm:py-2",
                   isLogged ? "bg-primary/10" : "bg-transparent",
                 )}
               >
-                <span className="text-center text-sm font-semibold">
+                <span className="text-center text-xs font-semibold tabular-nums sm:text-sm">
                   {setNumber}
                 </span>
-                <span className="min-w-0 truncate text-sm text-muted-foreground">
+                <span className="min-w-0 truncate text-xs tabular-nums text-muted-foreground sm:text-sm">
                   {formatPrev(
                     previous,
                     exercise.trackingType,
@@ -439,13 +507,14 @@ export function WorkoutSessionView({
                         ? `Set ${setNumber} seconds`
                         : `Set ${setNumber} kilograms`
                     }
-                    className="h-9 px-2 text-center"
-                    onChange={(event) =>
+                    className="h-9 min-w-0 px-1 text-center text-sm tabular-nums sm:px-2"
+                    onChange={(event) => {
+                      setEditedSetKeys((prev) => new Set(prev).add(key));
                       setSetValues((prev) => ({
                         ...prev,
                         [key]: event.target.value,
-                      }))
-                    }
+                      }));
+                    }}
                   />
                 )}
                 <button
@@ -472,7 +541,8 @@ export function WorkoutSessionView({
                 </button>
               </div>
             );
-          })}
+          })
+            : null}
         </div>
       </div>
 
@@ -481,11 +551,39 @@ export function WorkoutSessionView({
         variant="outline"
         className="w-full gap-2"
         onClick={addSet}
-        disabled={rowCount >= MAX_SETS}
+        disabled={rowCount >= MAX_SETS || !previousSetsReady}
       >
         <Plus className="h-4 w-4" />
         Add Set
       </Button>
+
+      <Dialog open={emptyFinishOpen} onOpenChange={setEmptyFinishOpen}>
+        <DialogContent className="rounded-2xl sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Finish early?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            You haven&apos;t logged any sets. Finishing now won&apos;t count as a
+            completed workout or gym visit.
+          </p>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setEmptyFinishOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void runComplete(true)}
+              disabled={completing}
+            >
+              Finish
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

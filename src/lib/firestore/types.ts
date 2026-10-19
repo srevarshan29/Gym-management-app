@@ -272,7 +272,7 @@ export type MemberDoc = {
   updatedAt: Timestamp;
 };
 
-export type AttendanceMethod = "manual" | "biometric" | "qr";
+export type AttendanceMethod = "manual" | "biometric" | "qr" | "workout";
 
 export type AttendanceDoc = {
   gymId: string;

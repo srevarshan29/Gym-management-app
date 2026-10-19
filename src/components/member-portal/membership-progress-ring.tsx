@@ -28,6 +28,19 @@ export function MembershipProgressRing({
   const center = size / 2;
 
   const ariaLabel = `${displayDays} days left, ${Math.round(percentRemaining)}% of plan remaining`;
+  const compact = size <= 72;
+  const digitSizeClass =
+    displayDays >= 100
+      ? compact
+        ? "text-sm font-bold"
+        : "text-2xl font-bold"
+      : displayDays >= 10
+        ? compact
+          ? "text-lg font-bold"
+          : "text-3xl font-bold"
+        : compact
+          ? "text-xl font-bold"
+          : "text-4xl font-bold";
 
   return (
     <div
@@ -64,11 +77,26 @@ export function MembershipProgressRing({
           className="shadow-glow transition-[stroke-dashoffset] duration-500 ease-out"
         />
       </svg>
-      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-        <span className="font-mono text-4xl font-bold leading-none tracking-tight">
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-1 text-center",
+          compact ? "gap-0" : "gap-0.5",
+        )}
+      >
+        <span
+          className={cn(
+            "font-mono leading-none tracking-tight tabular-nums",
+            digitSizeClass,
+          )}
+        >
           {displayDays}
         </span>
-        <span className="mt-1 text-xs font-medium text-muted-foreground">
+        <span
+          className={cn(
+            "font-medium leading-tight text-muted-foreground",
+            compact ? "text-[8px]" : "text-xs",
+          )}
+        >
           days left
         </span>
       </div>

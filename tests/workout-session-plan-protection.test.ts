@@ -44,6 +44,8 @@ vi.mock("@/lib/firestore", () => ({
     workoutPlans: mockWorkoutPlans,
     workoutSessions: mockWorkoutSessions,
     customExercises: mockCustomExercises,
+    members: mockMembers,
+    attendance: mockAttendance,
   }),
   platformContext: { kind: "platform" },
 }));
@@ -100,6 +102,17 @@ const mockWorkoutSessions = {
   listCompletedForMember: vi.fn(),
   getActiveSessionForMember: vi.fn(),
   completeSessionInTransaction: vi.fn(),
+  completeSessionWriteInTransaction: vi.fn(),
+};
+
+const mockMembers = {
+  findByIdAndGym: vi.fn(),
+};
+
+const mockAttendance = {
+  recordMemberVisitIfAbsentInTransaction: vi.fn(),
+  memberDateAttendanceQuery: vi.fn(() => ({ path: "attendance/query" })),
+  writeMemberVisitIfAbsentInTransaction: vi.fn(() => true),
 };
 
 const mockCustomExercises = {
@@ -1007,11 +1020,54 @@ describe("repository ownership checks", () => {
 
 describe("completeWorkoutSessionRecord", () => {
   it("still completes active sessions after unrelated plan edits", async () => {
-    mockWorkoutSessions.getActiveSessionForMember.mockResolvedValue(activeSession());
+    mockWorkoutSessions.getActiveSessionForMember.mockResolvedValue(
+      completedSession({ id: "session-1", status: "IN_PROGRESS", completedAt: null }),
+    );
+    mockMembers.findByIdAndGym.mockResolvedValue({
+      id: "member-1",
+      gymId: "gym-a",
+      memberNumber: 1,
+      name: "Member",
+    });
+    const sessionRef = { path: "workoutSessions/session-1" };
+    const memberDocRef = { path: "members/member-1" };
+    const attendanceQueryRef = { path: "attendance/query" };
+    const sessionData = completedSession({
+      id: "session-1",
+      status: "IN_PROGRESS",
+      completedAt: null,
+    });
+    vi.mocked(getFirestoreDb).mockReturnValue({
+      collection: vi.fn((name: string) => ({
+        doc: vi.fn((id: string) => {
+          if (name === "workoutSessions" && id === "session-1") return sessionRef;
+          if (name === "members" && id === "member-1") return memberDocRef;
+          return { path: `${name}/${id}` };
+        }),
+      })),
+      runTransaction: vi.fn(async (fn: (tx: { get: ReturnType<typeof vi.fn> }) => Promise<void>) => {
+        const txGet = vi.fn(async (ref: { path: string }) => {
+          if (ref.path === sessionRef.path) {
+            return { exists: true, data: () => sessionData };
+          }
+          if (ref.path === attendanceQueryRef.path) {
+            return { empty: true, docs: [] };
+          }
+          if (ref.path === memberDocRef.path) {
+            return {
+              exists: true,
+              data: () => ({ gymId: "gym-a", lastAttendanceAt: null }),
+            };
+          }
+          throw new Error(`Unexpected ref ${ref.path}`);
+        });
+        await fn({ get: txGet });
+      }),
+    } as never);
 
     await completeWorkoutSessionRecord(memberCtx, "session-1");
 
-    expect(mockWorkoutSessions.completeSessionInTransaction).toHaveBeenCalledWith(
+    expect(mockWorkoutSessions.completeSessionWriteInTransaction).toHaveBeenCalledWith(
       expect.anything(),
       memberCtx,
       "gym-a",

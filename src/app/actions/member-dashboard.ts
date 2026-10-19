@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
@@ -60,6 +61,7 @@ export async function addMemberWaterAction(
     );
 
     const progress = waterDayProgress(totalMl);
+    revalidatePath("/member");
     return actionOk(undefined, {
       consumedMl: progress.consumedMl,
       targetMl: progress.targetMl,

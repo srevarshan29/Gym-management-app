@@ -42,8 +42,8 @@ export function assertValidMemberDailyCalorieTarget(value: number): number {
 }
 
 /**
- * Active ring target: member custom → gym diet plan → none.
- * Gym and member values are stored independently (no silent overwrite).
+ * Active ring target: trainer gym diet plan → member custom → none.
+ * Gym and member values are stored independently (member custom does not override diet plan).
  */
 export function resolveNutritionCalorieTarget(input: {
   memberCustomDailyCalorieTarget: number | null | undefined;
@@ -56,21 +56,21 @@ export function resolveNutritionCalorieTarget(input: {
     input.gymDietPlanCaloriesPerDay,
   );
 
-  if (memberDailyCalorieTarget != null) {
+  if (gymDailyCalorieTarget != null) {
     return {
-      targetCalories: memberDailyCalorieTarget,
-      targetSource: "member",
+      targetCalories: gymDailyCalorieTarget,
+      targetSource: "gym",
       memberDailyCalorieTarget,
       gymDailyCalorieTarget,
     };
   }
 
-  if (gymDailyCalorieTarget != null) {
+  if (memberDailyCalorieTarget != null) {
     return {
-      targetCalories: gymDailyCalorieTarget,
-      targetSource: "gym",
-      memberDailyCalorieTarget: null,
-      gymDailyCalorieTarget,
+      targetCalories: memberDailyCalorieTarget,
+      targetSource: "member",
+      memberDailyCalorieTarget,
+      gymDailyCalorieTarget: null,
     };
   }
 

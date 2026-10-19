@@ -297,4 +297,49 @@ export class WorkoutSessionsRepository extends TenantRepository<WorkoutSessionDo
       durationSeconds,
     }));
   }
+
+  /**
+   * Marks a session completed (write-only). Caller must read and validate the
+   * session document in the same transaction before calling this.
+   */
+  completeSessionWriteInTransaction(
+    tx: Transaction,
+    ctx: FirestoreContext,
+    gymId: string,
+    sessionId: string,
+    durationSeconds: number | null,
+  ): void {
+    assertTenantAccess(ctx, gymId);
+    const ref = this.docRef(sessionId);
+    tx.update(ref, omitUndefined({
+      status: "COMPLETED" satisfies WorkoutSessionStatus,
+      completedAt: Timestamp.now(),
+      durationSeconds,
+    }));
+  }
+
+  async abandonSessionInTransaction(
+    tx: Transaction,
+    ctx: FirestoreContext,
+    gymId: string,
+    sessionId: string,
+  ): Promise<void> {
+    assertTenantAccess(ctx, gymId);
+    const ref = this.docRef(sessionId);
+    const snap = await tx.get(ref);
+    if (!snap.exists) {
+      throw new DocumentNotFoundError(COLLECTIONS.workoutSessions, sessionId);
+    }
+    const session = snap.data() as WorkoutSessionDoc;
+    if (session.gymId !== gymId) {
+      throw new DocumentNotFoundError(COLLECTIONS.workoutSessions, sessionId);
+    }
+    if (session.status !== "IN_PROGRESS") {
+      throw new DocumentNotFoundError(COLLECTIONS.workoutSessions, sessionId);
+    }
+    if (ctx.kind === "member" && session.memberId !== ctx.memberId) {
+      throw new DocumentNotFoundError(COLLECTIONS.workoutSessions, sessionId);
+    }
+    tx.delete(ref);
+  }
 }

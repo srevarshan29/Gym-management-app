@@ -320,7 +320,6 @@ export function WorkoutSessionView({
       clearRestTimersForSession(session.id);
       startTransition(() => {
         router.push("/member");
-        router.refresh();
       });
     } catch (error) {
       console.error("[workout] completeWorkoutSession failed:", error);

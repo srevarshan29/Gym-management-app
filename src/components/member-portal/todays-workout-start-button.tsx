@@ -33,7 +33,6 @@ export function TodaysWorkoutStartButton({
       }
       toast.success(result.message ?? "Workout started.");
       router.push("/member/workout");
-      router.refresh();
     } catch (error) {
       console.error("[workout] overview startWorkoutSession failed:", error);
       toast.error(

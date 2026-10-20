@@ -15,9 +15,10 @@ import { MemberActiveWorkoutSession } from "@/components/member-portal/workout/m
 import { parseMemberLibraryMuscleGroup } from "@/lib/member-portal/member-library-muscle-groups";
 import {
   memberPersonalWorkoutEditorHref,
-  memberWorkoutPageHref,
   parseMemberPlanFilter,
   parseMemberWorkoutTab,
+  readMemberWorkoutPageQueryFromLocation,
+  syncMemberWorkoutPageUrl,
   type MemberPlanFilter,
 } from "@/lib/member-portal/member-workout-tab-url";
 import { MemberWorkoutTheme } from "@/components/member-portal/workout/member-workout-theme";
@@ -25,6 +26,7 @@ import type {
   ActiveWorkoutSession,
   WorkoutPlanDetail,
 } from "@/lib/workout-tracking/types";
+import { cn } from "@/lib/utils";
 
 type MemberWorkoutPageClientProps = {
   plan: WorkoutPlanDetail | null;
@@ -70,25 +72,38 @@ export function MemberWorkoutPageClient({
     searchParams.get("group"),
   );
 
+  const syncTabStateFromLocation = React.useCallback(() => {
+    const fromLocation = readMemberWorkoutPageQueryFromLocation();
+    setTab(fromLocation.topTab);
+    setPlanFilter(fromLocation.planFilter);
+  }, []);
+
   React.useEffect(() => {
     setTab(urlTopTab);
     setPlanFilter(urlPlanFilter);
   }, [urlTopTab, urlPlanFilter]);
 
   React.useEffect(() => {
+    syncTabStateFromLocation();
+  }, [syncTabStateFromLocation]);
+
+  React.useEffect(() => {
+    const onPopState = () => syncTabStateFromLocation();
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [syncTabStateFromLocation]);
+
+  React.useEffect(() => {
     const addTo = resolvedAddTo;
     if (!addTo) return;
     const tabParam = searchParams.get("tab") ?? initialTab;
     if (parseMemberWorkoutTab(tabParam) === "exercises") return;
-    router.replace(
-      memberWorkoutPageHref({
-        tab: "library",
-        addTo,
-        group: parseMemberLibraryMuscleGroup(searchParams.get("group")),
-      }),
-      { scroll: false },
-    );
-  }, [resolvedAddTo, searchParams, initialTab, router]);
+    syncMemberWorkoutPageUrl({
+      tab: "library",
+      addTo,
+      group: parseMemberLibraryMuscleGroup(searchParams.get("group")),
+    });
+  }, [resolvedAddTo, searchParams, initialTab]);
 
   React.useEffect(() => {
     if (activeSession) {
@@ -98,28 +113,22 @@ export function MemberWorkoutPageClient({
 
   function navigateTopTab(next: MemberWorkoutTab) {
     setTab(next);
-    router.replace(
-      memberWorkoutPageHref({
-        tab: next === "exercises" ? "library" : "plan",
-        planFilter: next === "plan" ? planFilter : null,
-        addTo: next === "exercises" ? resolvedAddTo : null,
-        created: next === "plan" ? resolvedCreated : null,
-        group: next === "exercises" ? resolvedGroup : null,
-      }),
-      { scroll: false },
-    );
+    syncMemberWorkoutPageUrl({
+      tab: next === "exercises" ? "library" : "plan",
+      planFilter: next === "plan" ? planFilter : null,
+      addTo: next === "exercises" ? resolvedAddTo : null,
+      created: next === "plan" ? resolvedCreated : null,
+      group: next === "exercises" ? resolvedGroup : null,
+    });
   }
 
   function navigatePlanFilter(next: MemberPlanFilter) {
     setPlanFilter(next);
-    router.replace(
-      memberWorkoutPageHref({
-        tab: "plan",
-        planFilter: next,
-        created: next === "mine" ? resolvedCreated : null,
-      }),
-      { scroll: false },
-    );
+    syncMemberWorkoutPageUrl({
+      tab: "plan",
+      planFilter: next,
+      created: next === "mine" ? resolvedCreated : null,
+    });
   }
 
   async function onStartTrainer(dayId?: string) {
@@ -158,7 +167,11 @@ export function MemberWorkoutPageClient({
     <MemberWorkoutTheme className="!p-0 sm:!p-0">
       <MemberWorkoutTabs value={tab} onChange={(next) => navigateTopTab(next)} />
 
-      {tab === "exercises" ? (
+      <div
+        className={cn(tab !== "exercises" && "hidden")}
+        hidden={tab !== "exercises"}
+        aria-hidden={tab !== "exercises"}
+      >
         <MemberExerciseLibraryPanel
           addToWorkoutId={resolvedAddTo}
           initialGroup={resolvedGroup}
@@ -169,9 +182,13 @@ export function MemberWorkoutPageClient({
               : null
           }
         />
-      ) : null}
+      </div>
 
-      {tab === "plan" ? (
+      <div
+        className={cn(tab !== "plan" && "hidden")}
+        hidden={tab !== "plan"}
+        aria-hidden={tab !== "plan"}
+      >
         <MemberWorkoutPlanPanel
           planFilter={planFilter}
           onPlanFilterChange={navigatePlanFilter}
@@ -181,13 +198,12 @@ export function MemberWorkoutPageClient({
           onStartTrainer={(dayId) => void onStartTrainer(dayId)}
           highlightWorkoutId={resolvedCreated}
           onHighlightConsumed={() => {
-            router.replace(
-              memberWorkoutPageHref({ tab: "mine" }),
-              { scroll: false },
-            );
+            setPlanFilter("mine");
+            syncMemberWorkoutPageUrl({ tab: "mine" });
           }}
+          onOpenExercisesTab={() => navigateTopTab("exercises")}
         />
-      ) : null}
+      </div>
     </MemberWorkoutTheme>
   );
 }

@@ -1,4 +1,7 @@
-import type { MemberLibraryMuscleFilter } from "@/lib/member-portal/member-library-muscle-groups";
+import {
+  parseMemberLibraryMuscleGroup,
+  type MemberLibraryMuscleFilter,
+} from "@/lib/member-portal/member-library-muscle-groups";
 
 /** Top-level workout page sections (Phase 1). */
 export type MemberWorkoutTab = "plan" | "exercises";
@@ -60,6 +63,38 @@ function resolveTopTabAndFilter(query: MemberWorkoutPageQuery): {
   }
   const planFilter = parseMemberPlanFilter(rawTab, query.planFilter ?? null);
   return { topTab, planFilter };
+}
+
+/** Sync workout tab query in the URL without a Next.js RSC navigation. */
+export function syncMemberWorkoutPageUrl(query: MemberWorkoutPageQuery = {}): void {
+  if (typeof window === "undefined") return;
+  const href = memberWorkoutPageHref(query);
+  window.history.replaceState(window.history.state, "", href);
+}
+
+/** Read tab query from the live URL (use after `syncMemberWorkoutPageUrl` or bfcache). */
+export function readMemberWorkoutPageQueryFromLocation(): MemberWorkoutPageQuery & {
+  topTab: MemberWorkoutTab;
+  planFilter: MemberPlanFilter;
+} {
+  if (typeof window === "undefined") {
+    return { topTab: "plan", planFilter: "trainer" };
+  }
+  const params = new URLSearchParams(window.location.search);
+  const rawTab = params.get("tab");
+  const topTab = parseMemberWorkoutTab(rawTab);
+  const planFilter =
+    topTab === "exercises"
+      ? "all"
+      : parseMemberPlanFilter(rawTab, params.get("planFilter"));
+  return {
+    tab: rawTab as MemberWorkoutTabQuery | null,
+    planFilter,
+    topTab,
+    addTo: params.get("addTo"),
+    created: params.get("created"),
+    group: parseMemberLibraryMuscleGroup(params.get("group")),
+  };
 }
 
 export function memberWorkoutPageHref(query: MemberWorkoutPageQuery = {}): string {

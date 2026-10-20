@@ -15,7 +15,7 @@ import { MemberWorkoutFlowSteps } from "@/components/member-portal/workout/membe
 import { Button } from "@/components/ui/button";
 import {
   memberPersonalWorkoutAddExercisesHref,
-  memberWorkoutPageHref,
+  syncMemberWorkoutPageUrl,
 } from "@/lib/member-portal/member-workout-tab-url";
 import type { MemberPersonalWorkoutSummary } from "@/lib/workout-tracking/member-personal-workouts";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 type MemberMyWorkoutsPanelProps = {
   highlightWorkoutId?: string | null;
   onHighlightConsumed?: () => void;
+  onOpenExercisesTab?: () => void;
   /** When false, hides onboarding steps and library blurb (combined Plan view). */
   showIntro?: boolean;
 };
@@ -30,6 +31,7 @@ type MemberMyWorkoutsPanelProps = {
 export function MemberMyWorkoutsPanel({
   highlightWorkoutId = null,
   onHighlightConsumed,
+  onOpenExercisesTab,
   showIntro = true,
 }: MemberMyWorkoutsPanelProps) {
   const router = useRouter();
@@ -108,7 +110,7 @@ export function MemberMyWorkoutsPanel({
         return;
       }
       toast.success(result.message);
-      router.replace(memberWorkoutPageHref({ tab: "mine" }), { scroll: false });
+      syncMemberWorkoutPageUrl({ tab: "mine" });
       router.refresh();
     } finally {
       setStartingId(null);
@@ -133,11 +135,7 @@ export function MemberMyWorkoutsPanel({
             <button
               type="button"
               className="font-medium text-foreground underline"
-              onClick={() =>
-                router.replace(memberWorkoutPageHref({ tab: "library" }), {
-                  scroll: false,
-                })
-              }
+              onClick={() => onOpenExercisesTab?.()}
             >
               Exercises
             </button>{" "}

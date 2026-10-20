@@ -20,6 +20,7 @@ import {
 import {
   memberPersonalWorkoutEditorHref,
   memberWorkoutPageHref,
+  syncMemberWorkoutPageUrl,
 } from "@/lib/member-portal/member-workout-tab-url";
 import type { MemberCatalogListItem } from "@/lib/workout-tracking/member-catalog-exercises";
 import { cn } from "@/lib/utils";
@@ -113,24 +114,24 @@ export function MemberExerciseLibraryPanel({
     doneHref?.trim() ||
     (workoutId ? memberPersonalWorkoutEditorHref(workoutId) : null);
 
-  function libraryLocationHref(group: MemberLibraryMuscleFilter | null) {
-    return memberWorkoutPageHref({
+  function selectGroup(group: MemberLibraryMuscleFilter) {
+    setActiveGroup(group);
+    setQuery("");
+    syncMemberWorkoutPageUrl({
       tab: "library",
       addTo: addToWorkoutId,
       group,
     });
   }
 
-  function selectGroup(group: MemberLibraryMuscleFilter) {
-    setActiveGroup(group);
-    setQuery("");
-    router.replace(libraryLocationHref(group), { scroll: false });
-  }
-
   function clearGroup() {
     setActiveGroup(null);
     setQuery("");
-    router.replace(libraryLocationHref(null), { scroll: false });
+    syncMemberWorkoutPageUrl({
+      tab: "library",
+      addTo: addToWorkoutId,
+      group: null,
+    });
   }
 
   function toggleSelect(catalogId: string) {

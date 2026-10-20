@@ -22,6 +22,7 @@ type MemberWorkoutPlanPanelProps = {
   onStartTrainer: (dayId?: string) => void;
   highlightWorkoutId?: string | null;
   onHighlightConsumed?: () => void;
+  onOpenExercisesTab?: () => void;
 };
 
 export function MemberWorkoutPlanPanel({
@@ -33,6 +34,7 @@ export function MemberWorkoutPlanPanel({
   onStartTrainer,
   highlightWorkoutId = null,
   onHighlightConsumed,
+  onOpenExercisesTab,
 }: MemberWorkoutPlanPanelProps) {
   const showTrainer = planFilter === "all" || planFilter === "trainer";
   const showMine = planFilter === "all" || planFilter === "mine";
@@ -121,6 +123,7 @@ export function MemberWorkoutPlanPanel({
           <MemberMyWorkoutsPanel
             highlightWorkoutId={highlightWorkoutId}
             onHighlightConsumed={onHighlightConsumed}
+            onOpenExercisesTab={onOpenExercisesTab}
             showIntro={planFilter === "mine"}
           />
         </section>

@@ -12,15 +12,16 @@ export default async function MemberOverviewPage() {
     memberId: session.memberId,
   };
 
-  const suggestion = await getSuggestedWorkoutDay(
-    session.gymId,
-    session.memberId,
-  );
-
-  const [overview, dashboard] = await Promise.all([
+  const [suggestion, overview] = await Promise.all([
+    getSuggestedWorkoutDay(session.gymId, session.memberId),
     getMemberPortalOverview(ctx),
-    loadMemberPortalDashboard(ctx, suggestion, session.name),
   ]);
+
+  const dashboard = await loadMemberPortalDashboard(
+    ctx,
+    suggestion,
+    session.name,
+  );
 
   if (!overview) {
     return <p className="text-muted-foreground">Unable to load your account.</p>;

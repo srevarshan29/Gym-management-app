@@ -35,11 +35,3 @@ export function isMemberPortalTabActive(
       return false;
   }
 }
-
-/** True when an in-flight tab pending state should clear after navigation. */
-export function memberPortalTabPendingShouldClear(
-  pathname: string,
-  pendingMatch: MemberPortalTabMatch | null,
-): boolean {
-  return pendingMatch != null && isMemberPortalTabActive(pathname, pendingMatch);
-}

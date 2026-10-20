@@ -4,7 +4,7 @@ import { GymDeskLogo } from "@/components/gymdesk-logo";
 import { MemberPortalNav } from "@/components/member-portal/member-portal-nav";
 import { MemberSignOutButton } from "@/components/member-portal/member-sign-out-button";
 import { LockedLink } from "@/components/navigation/locked-link";
-import { NavigationLockProvider } from "@/components/navigation/navigation-lock-provider";
+import { PathnameNavigationLockProvider } from "@/components/navigation/navigation-lock-provider";
 
 export function MemberPortalShell({
   gymName,
@@ -18,7 +18,7 @@ export function MemberPortalShell({
   children: React.ReactNode;
 }) {
   return (
-    <NavigationLockProvider>
+    <PathnameNavigationLockProvider>
       <div className="flex min-h-dvh min-w-0 flex-col overflow-x-clip bg-background">
         <header className="app-shell-header safe-area-top safe-area-x sticky top-0 z-30 border-b bg-card/80 backdrop-blur">
           <div className="mx-auto flex max-w-2xl min-w-0 items-center justify-between gap-2 py-3 sm:gap-3 sm:py-4">
@@ -46,6 +46,6 @@ export function MemberPortalShell({
         </footer>
         <MemberPortalNav />
       </div>
-    </NavigationLockProvider>
+    </PathnameNavigationLockProvider>
   );
 }

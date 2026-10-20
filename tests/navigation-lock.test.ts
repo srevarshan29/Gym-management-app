@@ -4,6 +4,7 @@ import {
   buildRouteKey,
   hrefRouteKey,
   shouldUseProgrammaticNavigation,
+  usePathnameNavigationLock,
 } from "@/hooks/use-navigation-lock";
 
 describe("shouldUseProgrammaticNavigation", () => {
@@ -24,6 +25,12 @@ describe("shouldUseProgrammaticNavigation", () => {
     expect(
       shouldUseProgrammaticNavigation(true, false, { refresh: true }),
     ).toBe(true);
+  });
+});
+
+describe("pathname navigation lock export", () => {
+  it("exposes member-shell lock without useSearchParams", () => {
+    expect(typeof usePathnameNavigationLock).toBe("function");
   });
 });
 

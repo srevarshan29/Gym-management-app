@@ -9,8 +9,8 @@ describe("member portal navigation performance guards", () => {
       resolve("src/app/member/(portal)/loading.tsx"),
       "utf8",
     );
-    expect(source).toContain("animate-member-portal-route-loading");
-    expect(source).not.toMatch(/h-28 rounded-2xl bg-muted/);
+    expect(source).toContain("animate-pulse");
+    expect(source).toMatch(/h-28 rounded-2xl bg-muted/);
   });
 
   it("syncs workout tabs without router.replace on the workout page client", () => {

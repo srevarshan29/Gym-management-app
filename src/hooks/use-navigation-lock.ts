@@ -61,20 +61,28 @@ export async function runBeforeNavigateIfRegistered(
   return beforeNavigate();
 }
 
-export function useNavigationLock() {
+export type NavigationLock = {
+  navigate: (
+    href: string,
+    e?: Pick<React.MouseEvent, "preventDefault">,
+    options?: NavigationLockOptions,
+  ) => Promise<boolean>;
+  registerBeforeNavigate: (handler: (() => Promise<boolean>) | null) => void;
+  runRegisteredBeforeLeave: () => Promise<boolean>;
+  pendingHref: string | null;
+  isLocked: boolean;
+  currentRoute: string;
+  pathname: string;
+};
+
+function useNavigationLockCore(routeKey: string): NavigationLock {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
   const [, startTransition] = React.useTransition();
   const [pendingHref, setPendingHref] = React.useState<string | null>(null);
   const lockRef = React.useRef(false);
   const pendingHrefRef = React.useRef<string | null>(null);
   const beforeNavigateRef = React.useRef<(() => Promise<boolean>) | null>(null);
-
-  const routeKey = React.useMemo(
-    () => buildRouteKey(pathname, searchParams),
-    [pathname, searchParams],
-  );
 
   const isLocked = pendingHref !== null;
 
@@ -173,4 +181,22 @@ export function useNavigationLock() {
   };
 }
 
-export type NavigationLock = ReturnType<typeof useNavigationLock>;
+/** Staff / query-aware shells — uses `useSearchParams` (wrap in Suspense when static). */
+export function useNavigationLock(): NavigationLock {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const routeKey = React.useMemo(
+    () => buildRouteKey(pathname, searchParams),
+    [pathname, searchParams],
+  );
+  return useNavigationLockCore(routeKey);
+}
+
+/**
+ * Member portal shell — pathname-only route key (no `useSearchParams`), so the
+ * bottom nav and shell hydrate without search-param bailout delays.
+ */
+export function usePathnameNavigationLock(): NavigationLock {
+  const pathname = usePathname();
+  return useNavigationLockCore(pathname);
+}

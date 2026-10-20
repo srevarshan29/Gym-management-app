@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
   createContext,
   useContext,
@@ -22,7 +23,7 @@ export type LiveWaterProgress = {
 type WaterLiveContextValue = {
   dashboard: MemberPortalDashboardData;
   liveWater: LiveWaterProgress;
-  setLiveWater: (progress: LiveWaterProgress) => void;
+  setLiveWater: React.Dispatch<React.SetStateAction<LiveWaterProgress>>;
 };
 
 const WaterLiveContext = createContext<WaterLiveContextValue | null>(null);

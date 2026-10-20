@@ -113,6 +113,10 @@ const config: Config = {
           from: { opacity: "1", transform: "translateY(0)" },
           to: { opacity: "0", transform: "translateY(8px)" },
         },
+        "member-portal-route-loading": {
+          "0%": { transform: "translateX(-120%)" },
+          "100%": { transform: "translateX(320%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -121,6 +125,8 @@ const config: Config = {
         "dashboard-ring-pop": "dashboard-ring-pop 0.55s ease-out",
         "dashboard-toast-in": "dashboard-toast-in 0.35s ease-out",
         "dashboard-toast-out": "dashboard-toast-out 0.3s ease-in forwards",
+        "member-portal-route-loading":
+          "member-portal-route-loading 1.1s ease-in-out infinite",
       },
     },
   },

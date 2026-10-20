@@ -18,6 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   dropFailedWaterWrite,
   enqueueWaterQuickAdd,
+  mergeConfirmedWaterMl,
   reconcileWaterAfterServerSuccess,
   waterProgressWithPending,
   type WaterQuickAddOperation,
@@ -82,6 +83,8 @@ export function MemberDashboardMetricCards({
   const processingRef = useRef(false);
 
   const logDateRef = useRef(logDate);
+  const goalToastOpenRef = useRef(goalToastOpen);
+  goalToastOpenRef.current = goalToastOpen;
 
   const applyWaterProgress = useCallback(
     (progress: ReturnType<typeof waterProgressWithPending>) => {
@@ -122,20 +125,22 @@ export function MemberDashboardMetricCards({
     }
 
     if (pendingOpsRef.current.length === 0 && !processingRef.current) {
-      confirmedMlRef.current = initialWaterMl;
-      applyWaterProgress(
-        waterProgressWithPending(initialWaterMl, [], waterTargetMl),
+      const mergedConfirmed = mergeConfirmedWaterMl(
+        confirmedMlRef.current,
+        initialWaterMl,
       );
-      if (!goalToastOpen) {
+      confirmedMlRef.current = mergedConfirmed;
+      applyWaterProgress(
+        waterProgressWithPending(mergedConfirmed, [], waterTargetMl),
+      );
+      if (!goalToastOpenRef.current) {
         goalToastShownRef.current = initialWaterComplete;
       }
     }
   }, [
     logDate,
     initialWaterMl,
-    initialWaterPercent,
     initialWaterComplete,
-    goalToastOpen,
     waterTargetMl,
     applyWaterProgress,
   ]);
@@ -199,6 +204,7 @@ export function MemberDashboardMetricCards({
             const reconciled = reconcileWaterAfterServerSuccess(
               result.data.consumedMl,
               pendingOpsRef.current,
+              confirmedMlRef.current,
             );
             confirmedMlRef.current = reconciled.confirmedConsumedMl;
             pendingOpsRef.current = reconciled.pending;

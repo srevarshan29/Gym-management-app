@@ -24,7 +24,7 @@ export function LockedLink({
   navigationOptions,
   ...props
 }: LockedLinkProps) {
-  const { navigate, isLocked, pendingHref } = useSharedNavigationLock();
+  const { navigate, pendingHref } = useSharedNavigationLock();
   const hrefString =
     typeof href === "string" ? href : resolveLinkHref(href as Parameters<typeof resolveLinkHref>[0]);
   const targetKey = hrefRouteKey(hrefString);
@@ -41,8 +41,8 @@ export function LockedLink({
         }
       }}
       aria-busy={isNavigating}
-      aria-disabled={isLocked}
-      tabIndex={isLocked && !isNavigating ? -1 : props.tabIndex}
+      aria-disabled={isNavigating}
+      tabIndex={isNavigating ? -1 : props.tabIndex}
       className={cn(className, isNavigating && "opacity-80")}
       {...props}
     >

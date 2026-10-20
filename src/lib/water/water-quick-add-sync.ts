@@ -34,13 +34,31 @@ export function enqueueWaterQuickAdd(
   return [...pending, { operationId, amountMl }];
 }
 
+/** Never roll back a higher on-device confirmed total (stale RSC props or lagging writes). */
+export function mergeConfirmedWaterMl(
+  currentConfirmedMl: number,
+  nextConsumedMl: number,
+): number {
+  const current = Number.isFinite(currentConfirmedMl)
+    ? Math.max(0, Math.round(currentConfirmedMl))
+    : 0;
+  const next = Number.isFinite(nextConsumedMl)
+    ? Math.max(0, Math.round(nextConsumedMl))
+    : current;
+  return Math.max(current, next);
+}
+
 /** After a successful write for the head of the queue, trust server total and dequeue one. */
 export function reconcileWaterAfterServerSuccess(
   serverConsumedMl: number,
   pending: readonly WaterQuickAddOperation[],
+  currentConfirmedMl: number,
 ): { confirmedConsumedMl: number; pending: WaterQuickAddOperation[] } {
   return {
-    confirmedConsumedMl: serverConsumedMl,
+    confirmedConsumedMl: mergeConfirmedWaterMl(
+      currentConfirmedMl,
+      serverConsumedMl,
+    ),
     pending: pending.slice(1),
   };
 }

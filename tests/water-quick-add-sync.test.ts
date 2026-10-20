@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   dropFailedWaterWrite,
   enqueueWaterQuickAdd,
+  mergeConfirmedWaterMl,
   reconcileWaterAfterServerSuccess,
   sumPendingWaterMl,
   waterProgressWithPending,
@@ -26,17 +27,17 @@ describe("water quick-add sync", () => {
     expect(sumPendingWaterMl(pending)).toBe(750);
     expect(waterProgressWithPending(confirmed, pending).consumedMl).toBe(1250);
 
-    const first = reconcileWaterAfterServerSuccess(750, pending);
+    const first = reconcileWaterAfterServerSuccess(750, pending, confirmed);
     confirmed = first.confirmedConsumedMl;
     pending = first.pending;
     expect(waterProgressWithPending(confirmed, pending).consumedMl).toBe(1250);
 
-    const second = reconcileWaterAfterServerSuccess(1000, pending);
+    const second = reconcileWaterAfterServerSuccess(1000, pending, confirmed);
     confirmed = second.confirmedConsumedMl;
     pending = second.pending;
     expect(waterProgressWithPending(confirmed, pending).consumedMl).toBe(1250);
 
-    const third = reconcileWaterAfterServerSuccess(1250, pending);
+    const third = reconcileWaterAfterServerSuccess(1250, pending, confirmed);
     confirmed = third.confirmedConsumedMl;
     pending = third.pending;
     expect(waterProgressWithPending(confirmed, pending).consumedMl).toBe(1250);
@@ -64,12 +65,23 @@ describe("water quick-add sync", () => {
     const pending = [op("one"), op("two")];
     const failedOnce = dropFailedWaterWrite(pending);
     expect(waterProgressWithPending(confirmed, failedOnce).consumedMl).toBe(250);
-    const reconciled = reconcileWaterAfterServerSuccess(250, failedOnce);
+    const reconciled = reconcileWaterAfterServerSuccess(250, failedOnce, confirmed);
     expect(
       waterProgressWithPending(
         reconciled.confirmedConsumedMl,
         reconciled.pending,
       ).consumedMl,
     ).toBe(250);
+  });
+
+  it("does not roll back confirmed total when dashboard props or server lag behind", () => {
+    expect(mergeConfirmedWaterMl(750, 500)).toBe(750);
+    expect(mergeConfirmedWaterMl(500, 750)).toBe(750);
+
+    const reconciled = reconcileWaterAfterServerSuccess(500, [], 750);
+    expect(reconciled.confirmedConsumedMl).toBe(750);
+    expect(waterProgressWithPending(reconciled.confirmedConsumedMl, []).consumedMl).toBe(
+      750,
+    );
   });
 });

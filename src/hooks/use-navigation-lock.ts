@@ -40,6 +40,20 @@ export type NavigationLockOptions = {
 
 const NAVIGATION_LOCK_TIMEOUT_MS = 10_000;
 
+/** Programmatic router navigation (and global lock). Native Link clicks opt out. */
+export function shouldUseProgrammaticNavigation(
+  hasClickEvent: boolean,
+  hasBeforeNavigateHandler: boolean,
+  options?: NavigationLockOptions,
+): boolean {
+  return (
+    hasBeforeNavigateHandler ||
+    !hasClickEvent ||
+    options?.replace === true ||
+    options?.refresh === true
+  );
+}
+
 export async function runBeforeNavigateIfRegistered(
   beforeNavigate: (() => Promise<boolean>) | null,
 ): Promise<boolean> {
@@ -110,18 +124,20 @@ export function useNavigationLock() {
         return false;
       }
 
-      lockRef.current = true;
-      pendingHrefRef.current = target;
-      setPendingHref(target);
-
-      const needsBeforeNavigate = beforeNavigateRef.current != null;
-      const useProgrammaticNavigation =
-        needsBeforeNavigate || !e || options?.replace || options?.refresh;
+      const useProgrammaticNavigation = shouldUseProgrammaticNavigation(
+        e != null,
+        beforeNavigateRef.current != null,
+        options,
+      );
       if (!useProgrammaticNavigation) {
         return true;
       }
 
       e?.preventDefault();
+
+      lockRef.current = true;
+      pendingHrefRef.current = target;
+      setPendingHref(target);
 
       const allowed = await runBeforeNavigateIfRegistered(
         beforeNavigateRef.current,

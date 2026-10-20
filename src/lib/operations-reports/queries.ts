@@ -273,52 +273,53 @@ export async function loadOperationsReportDashboard(
     const attendancePage = Math.max(1, options.attendancePage ?? 1);
     const paymentsPage = Math.max(1, options.paymentsPage ?? 1);
 
-    const attendanceStartAfterId = await measureServerPhase(
-      "staff.reports.attendance.cursor",
-      () =>
-        resolveRangePageStartAfterId(
-          attendancePage,
-          options.attendanceStartAfterId,
-          (startAfterId) =>
-            attendance.listForDateKeyRange(
-              ctx,
-              tenantGymId,
-              range.startDateKey,
-              range.endDateKey,
-              {
-                limit: OPERATIONS_REPORT_ATTENDANCE_PAGE_SIZE,
-                startAfterId,
-              },
+    const [attendanceStartAfterId, paymentsStartAfterId, attendanceTotal] =
+      await measureServerPhase("staff.reports.prefetch", () =>
+        Promise.all([
+          measureServerPhase("staff.reports.attendance.cursor", () =>
+            resolveRangePageStartAfterId(
+              attendancePage,
+              options.attendanceStartAfterId,
+              (startAfterId) =>
+                attendance.listForDateKeyRange(
+                  ctx,
+                  tenantGymId,
+                  range.startDateKey,
+                  range.endDateKey,
+                  {
+                    limit: OPERATIONS_REPORT_ATTENDANCE_PAGE_SIZE,
+                    startAfterId,
+                  },
+                ),
             ),
-        ),
-    );
-
-    const paymentsStartAfterId = options.canViewFinancials
-      ? await measureServerPhase("staff.reports.payments.cursor", () =>
-          resolveRangePageStartAfterId(
-            paymentsPage,
-            options.paymentsStartAfterId,
-            (startAfterId) =>
-              payments.listPaidInRange(
-                ctx,
-                tenantGymId,
-                range.startInstant,
-                range.endInstant,
-                {
-                  limit: OPERATIONS_REPORT_PAYMENTS_PAGE_SIZE,
-                  startAfterId,
-                },
-              ),
           ),
-        )
-      : null;
-
-    const attendanceTotal = await attendance.countForDateKeyRange(
-      ctx,
-      tenantGymId,
-      range.startDateKey,
-      range.endDateKey,
-    );
+          options.canViewFinancials
+            ? measureServerPhase("staff.reports.payments.cursor", () =>
+                resolveRangePageStartAfterId(
+                  paymentsPage,
+                  options.paymentsStartAfterId,
+                  (startAfterId) =>
+                    payments.listPaidInRange(
+                      ctx,
+                      tenantGymId,
+                      range.startInstant,
+                      range.endInstant,
+                      {
+                        limit: OPERATIONS_REPORT_PAYMENTS_PAGE_SIZE,
+                        startAfterId,
+                      },
+                    ),
+                ),
+              )
+            : Promise.resolve(null),
+          attendance.countForDateKeyRange(
+            ctx,
+            tenantGymId,
+            range.startDateKey,
+            range.endDateKey,
+          ),
+        ]),
+      );
 
     const [
       attendanceBatch,

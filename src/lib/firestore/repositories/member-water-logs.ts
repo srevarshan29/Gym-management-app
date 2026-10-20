@@ -1,6 +1,8 @@
-import { randomUUID } from "node:crypto";
-
-import type { Firestore, WithFieldValue } from "firebase-admin/firestore";
+import {
+  AggregateField,
+  type Firestore,
+  type WithFieldValue,
+} from "firebase-admin/firestore";
 
 import { COLLECTIONS } from "@/lib/firestore/collections";
 import {
@@ -14,6 +16,40 @@ import { omitUndefined, serverTimestamps } from "@/lib/firestore/serialize";
 import type { MemberWaterLogDoc } from "@/lib/firestore/types";
 
 const LOG_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const OPERATION_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function assertValidWaterOperationId(operationId: string): string {
+  const trimmed = operationId.trim();
+  if (!OPERATION_ID_PATTERN.test(trimmed)) {
+    throw new Error("Invalid water operation id.");
+  }
+  return trimmed;
+}
+
+function assertStoredWaterEntryMatches(
+  data: MemberWaterLogDoc,
+  gymId: string,
+  memberId: string,
+  logDate: string,
+  amountMl: number,
+): void {
+  if (data.gymId !== gymId || data.memberId !== memberId) {
+    throw new Error("Water operation does not belong to this member.");
+  }
+  if (data.logDate !== logDate || data.amountMl !== amountMl) {
+    throw new Error("Water operation payload mismatch.");
+  }
+}
+
+function isFirestoreAlreadyExistsError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code: number }).code === 6
+  );
+}
 
 export function assertValidWaterLogDate(logDate: string): string {
   const trimmed = logDate.trim();
@@ -57,19 +93,48 @@ export class MemberWaterLogsRepository extends TenantRepository<MemberWaterLogDo
       .sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
   }
 
+  private async sumMlForMemberOnDate(
+    gymId: string,
+    memberId: string,
+    logDate: string,
+  ): Promise<number> {
+    const snap = await this.collection()
+      .where("gymId", "==", gymId)
+      .where("memberId", "==", memberId)
+      .where("logDate", "==", logDate)
+      .aggregate({ totalMl: AggregateField.sum("amountMl") })
+      .get();
+    return snap.data().totalMl ?? 0;
+  }
+
+  /**
+   * Idempotent quick-add: `operationId` is the document id so retries after a
+   * successful write do not create duplicate log rows.
+   */
   async addEntry(
     ctx: FirestoreContext,
     gymId: string,
     memberId: string,
     logDate: string,
     amountMl: number,
+    operationId: string,
   ): Promise<{ totalMl: number }> {
     assertTenantAccess(ctx, gymId);
     assertMemberSelfAccess(ctx, memberId);
     const date = assertValidWaterLogDate(logDate);
     const ml = assertValidWaterAmountMl(amountMl);
+    const opId = assertValidWaterOperationId(operationId);
 
-    const id = randomUUID();
+    const ref = this.docRef(opId);
+    const existing = await ref.get();
+    if (existing.exists) {
+      const data = existing.data() as MemberWaterLogDoc;
+      assertStoredWaterEntryMatches(data, gymId, memberId, date, ml);
+      return {
+        totalMl: await this.sumMlForMemberOnDate(gymId, memberId, date),
+      };
+    }
+
     const payload: WithFieldValue<MemberWaterLogDoc> = omitUndefined({
       gymId,
       memberId,
@@ -78,10 +143,22 @@ export class MemberWaterLogsRepository extends TenantRepository<MemberWaterLogDo
       ...serverTimestamps(),
     });
 
-    await this.docRef(id).set(payload);
+    try {
+      await ref.create(payload);
+    } catch (error) {
+      if (!isFirestoreAlreadyExistsError(error)) {
+        throw error;
+      }
+      const raced = await ref.get();
+      if (!raced.exists) {
+        throw error;
+      }
+      const data = raced.data() as MemberWaterLogDoc;
+      assertStoredWaterEntryMatches(data, gymId, memberId, date, ml);
+    }
 
-    const rows = await this.listForMemberOnDate(ctx, gymId, memberId, date);
-    const totalMl = rows.reduce((sum, row) => sum + row.amountMl, 0);
-    return { totalMl };
+    return {
+      totalMl: await this.sumMlForMemberOnDate(gymId, memberId, date),
+    };
   }
 }

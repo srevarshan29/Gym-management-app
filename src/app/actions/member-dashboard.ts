@@ -7,6 +7,7 @@ import type { MemberContext } from "@/lib/firestore/context";
 import {
   assertValidWaterAmountMl,
   assertValidWaterLogDate,
+  assertValidWaterOperationId,
 } from "@/lib/firestore/repositories/member-water-logs";
 import { getRepositories } from "@/lib/firestore";
 import {
@@ -29,6 +30,7 @@ function memberContextFromSession(member: {
 const addWaterSchema = z.object({
   logDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/),
   amountMl: z.coerce.number().int().min(1).max(5000).optional(),
+  operationId: z.string().uuid(),
 });
 
 export type AddMemberWaterResult = {
@@ -73,6 +75,7 @@ export async function addMemberWaterAction(
     const amountMl = assertValidWaterAmountMl(
       parsed.amountMl ?? MEMBER_WATER_QUICK_ADD_ML,
     );
+    const operationId = assertValidWaterOperationId(parsed.operationId);
 
     const ctx = memberContextFromSession(member);
     const { memberWaterLogs } = getRepositories();
@@ -82,6 +85,7 @@ export async function addMemberWaterAction(
       member.memberId,
       logDate,
       amountMl,
+      operationId,
     );
 
     const progress = waterDayProgress(totalMl);

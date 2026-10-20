@@ -25,19 +25,23 @@ function paymentRow(
   };
 }
 
+const start = new Date("2026-09-01T00:00:00Z");
+const end = new Date("2026-10-01T00:00:00Z");
+
 describe("PaymentsRepository.summarizePaidInRange", () => {
-  it("builds metrics from iteratePaidInRange (no per-method aggregate queries)", async () => {
+  it("uses aggregates for count, total, and per-method breakdown when indexes exist", async () => {
     const repo = new PaymentsRepository({} as never);
-    const aggregateSpy = vi.spyOn(repo, "aggregatePaidInRangeForMethod");
+    vi.spyOn(repo, "countPaidInRange").mockResolvedValue(2);
+    vi.spyOn(repo, "sumPaidInRange").mockResolvedValue(500);
+    vi.spyOn(repo, "aggregatePaidInRangeForMethod").mockImplementation(
+      async (_ctx, _gymId, _start, _end, method) => {
+        if (method === "CASH") return { method, count: 1, total: 200 };
+        if (method === "UPI") return { method, count: 1, total: 300 };
+        return { method, count: 0, total: 0 };
+      },
+    );
     const iterateSpy = vi.spyOn(repo, "iteratePaidInRange");
 
-    iterateSpy.mockImplementation(async function* () {
-      yield paymentRow({ id: "p1", amount: 200, method: "CASH" });
-      yield paymentRow({ id: "p2", amount: 300, method: "UPI" });
-    });
-
-    const start = new Date("2026-09-01T00:00:00Z");
-    const end = new Date("2026-10-01T00:00:00Z");
     const metrics = await repo.summarizePaidInRange(
       platformContext,
       "gym-a",
@@ -45,7 +49,7 @@ describe("PaymentsRepository.summarizePaidInRange", () => {
       end,
     );
 
-    expect(aggregateSpy).not.toHaveBeenCalled();
+    expect(iterateSpy).not.toHaveBeenCalled();
     expect(metrics.paymentCount).toBe(2);
     expect(metrics.totalCollected).toBe(500);
     expect(metrics.byMethod).toEqual(
@@ -54,8 +58,55 @@ describe("PaymentsRepository.summarizePaidInRange", () => {
         { method: "UPI", count: 1, total: 300 },
       ]),
     );
+  });
 
-    aggregateSpy.mockRestore();
-    iterateSpy.mockRestore();
+  it("returns zero metrics without per-method queries when count is zero", async () => {
+    const repo = new PaymentsRepository({} as never);
+    vi.spyOn(repo, "countPaidInRange").mockResolvedValue(0);
+    const sumSpy = vi.spyOn(repo, "sumPaidInRange");
+    const methodSpy = vi.spyOn(repo, "aggregatePaidInRangeForMethod");
+
+    const metrics = await repo.summarizePaidInRange(
+      platformContext,
+      "gym-a",
+      start,
+      end,
+    );
+
+    expect(metrics).toEqual({
+      totalCollected: 0,
+      paymentCount: 0,
+      averagePayment: 0,
+      byMethod: [],
+    });
+    expect(sumSpy).not.toHaveBeenCalled();
+    expect(methodSpy).not.toHaveBeenCalled();
+  });
+
+  it("falls back to range iteration when per-method aggregates lack an index", async () => {
+    const repo = new PaymentsRepository({} as never);
+    vi.spyOn(repo, "countPaidInRange").mockResolvedValue(2);
+    vi.spyOn(repo, "sumPaidInRange").mockResolvedValue(500);
+    vi.spyOn(repo, "aggregatePaidInRangeForMethod").mockRejectedValue({
+      code: 9,
+      message: "index required",
+    });
+    const iterateSpy = vi.spyOn(repo, "iteratePaidInRange").mockImplementation(
+      async function* () {
+        yield paymentRow({ id: "p1", amount: 200, method: "CASH" });
+        yield paymentRow({ id: "p2", amount: 300, method: "UPI" });
+      },
+    );
+
+    const metrics = await repo.summarizePaidInRange(
+      platformContext,
+      "gym-a",
+      start,
+      end,
+    );
+
+    expect(iterateSpy).toHaveBeenCalled();
+    expect(metrics.paymentCount).toBe(2);
+    expect(metrics.totalCollected).toBe(500);
   });
 });

@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useCallback, useRef, useState, useTransition } from "react";
+import { useCallback, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import {
   addMemberWaterAction,
@@ -15,6 +16,13 @@ import { LockedLink } from "@/components/navigation/locked-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
+  dropFailedWaterWrite,
+  enqueueWaterQuickAdd,
+  reconcileWaterAfterServerSuccess,
+  waterProgressWithPending,
+  type WaterQuickAddOperation,
+} from "@/lib/water/water-quick-add-sync";
+import {
   formatWaterLiters,
   MEMBER_WATER_QUICK_ADD_ML,
 } from "@/lib/water/water-progress";
@@ -24,6 +32,7 @@ const CARD_CLASS =
   "rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 backdrop-blur-sm";
 
 const FLOAT_INDICATOR_MS = 880;
+const WATER_WRITE_MAX_ATTEMPTS = 3;
 
 type MetricCardsProps = {
   logDate: string;
@@ -49,7 +58,7 @@ export function MemberDashboardMetricCards({
   caloriePercent,
   calorieGoalComplete,
   waterConsumedMl: initialWaterMl,
-  waterTargetMl: _waterTargetMl,
+  waterTargetMl,
   waterPercent: initialWaterPercent,
   waterGoalComplete: initialWaterComplete,
   onWaterProgress,
@@ -58,33 +67,68 @@ export function MemberDashboardMetricCards({
   const [waterMl, setWaterMl] = useState(initialWaterMl);
   const [waterPercent, setWaterPercent] = useState(initialWaterPercent);
   const [waterComplete, setWaterComplete] = useState(initialWaterComplete);
-  const [pending, startTransition] = useTransition();
   const [floatAmountMl, setFloatAmountMl] = useState<number | null>(null);
   const [waterRingCelebrate, setWaterRingCelebrate] = useState(false);
   const [goalToastOpen, setGoalToastOpen] = useState(false);
 
   const animatedWaterMl = useAnimatedNumber(waterMl);
   const floatBusyRef = useRef(false);
-  const addQueueRef = useRef(false);
-  const addInFlightRef = useRef(false);
   const goalToastShownRef = useRef(initialWaterComplete);
   const waterCompleteRef = useRef(waterComplete);
   waterCompleteRef.current = waterComplete;
 
+  const confirmedMlRef = useRef(initialWaterMl);
+  const pendingOpsRef = useRef<WaterQuickAddOperation[]>([]);
+  const processingRef = useRef(false);
+
   const logDateRef = useRef(logDate);
+
+  const applyWaterProgress = useCallback(
+    (progress: ReturnType<typeof waterProgressWithPending>) => {
+      setWaterMl(progress.consumedMl);
+      setWaterPercent(Math.round(progress.percent));
+      setWaterComplete(progress.goalComplete);
+      onWaterProgress?.({
+        consumedMl: progress.consumedMl,
+        percent: Math.round(progress.percent),
+        goalComplete: progress.goalComplete,
+      });
+    },
+    [onWaterProgress],
+  );
+
+  const syncDisplayFromQueue = useCallback(() => {
+    applyWaterProgress(
+      waterProgressWithPending(
+        confirmedMlRef.current,
+        pendingOpsRef.current,
+        waterTargetMl,
+      ),
+    );
+  }, [applyWaterProgress, waterTargetMl]);
 
   React.useEffect(() => {
     const dateChanged = logDateRef.current !== logDate;
     if (dateChanged) {
       logDateRef.current = logDate;
+      confirmedMlRef.current = initialWaterMl;
+      pendingOpsRef.current = [];
       goalToastShownRef.current = initialWaterComplete;
       setGoalToastOpen(false);
+      applyWaterProgress(
+        waterProgressWithPending(initialWaterMl, [], waterTargetMl),
+      );
+      return;
     }
-    setWaterMl(initialWaterMl);
-    setWaterPercent(initialWaterPercent);
-    setWaterComplete(initialWaterComplete);
-    if (!dateChanged && !goalToastOpen) {
-      goalToastShownRef.current = initialWaterComplete;
+
+    if (pendingOpsRef.current.length === 0 && !processingRef.current) {
+      confirmedMlRef.current = initialWaterMl;
+      applyWaterProgress(
+        waterProgressWithPending(initialWaterMl, [], waterTargetMl),
+      );
+      if (!goalToastOpen) {
+        goalToastShownRef.current = initialWaterComplete;
+      }
     }
   }, [
     logDate,
@@ -92,6 +136,8 @@ export function MemberDashboardMetricCards({
     initialWaterPercent,
     initialWaterComplete,
     goalToastOpen,
+    waterTargetMl,
+    applyWaterProgress,
   ]);
 
   const dismissGoalToast = useCallback(() => {
@@ -112,59 +158,87 @@ export function MemberDashboardMetricCards({
     [reducedMotion],
   );
 
-  const runWaterAdd = useCallback(async () => {
-    if (addInFlightRef.current) {
-      addQueueRef.current = true;
-      return;
-    }
-    addInFlightRef.current = true;
-    const wasCompleteBefore = waterCompleteRef.current;
+  const maybeCelebrateGoal = useCallback(
+    (goalComplete: boolean) => {
+      const wasCompleteBefore = waterCompleteRef.current;
+      const newlyReached =
+        goalComplete && !wasCompleteBefore && !goalToastShownRef.current;
+      if (!newlyReached) return;
+
+      goalToastShownRef.current = true;
+      setWaterRingCelebrate(true);
+      setGoalToastOpen(true);
+      void celebrateMemberWaterGoalAction({ logDate });
+      window.setTimeout(
+        () => setWaterRingCelebrate(false),
+        reducedMotion ? 0 : 650,
+      );
+    },
+    [logDate, reducedMotion],
+  );
+
+  const processWaterQueue = useCallback(async () => {
+    if (processingRef.current) return;
+    processingRef.current = true;
 
     try {
-      const result = await addMemberWaterAction({
-        logDate,
-        amountMl: MEMBER_WATER_QUICK_ADD_ML,
-      });
-      if (!result.ok || !result.data) return;
+      while (pendingOpsRef.current.length > 0) {
+        const head = pendingOpsRef.current[0]!;
+        let attempts = 0;
+        let persisted = false;
 
-      showFloatIndicator(MEMBER_WATER_QUICK_ADD_ML);
-      setWaterMl(result.data.consumedMl);
-      setWaterPercent(result.data.percent);
-      setWaterComplete(result.data.goalComplete);
-      onWaterProgress?.({
-        consumedMl: result.data.consumedMl,
-        percent: result.data.percent,
-        goalComplete: result.data.goalComplete,
-      });
+        while (attempts < WATER_WRITE_MAX_ATTEMPTS && !persisted) {
+          attempts += 1;
+          const result = await addMemberWaterAction({
+            logDate,
+            amountMl: head.amountMl,
+            operationId: head.operationId,
+          });
 
-      const newlyReached =
-        result.data.goalComplete &&
-        !wasCompleteBefore &&
-        !goalToastShownRef.current;
-      if (newlyReached) {
-        goalToastShownRef.current = true;
-        setWaterRingCelebrate(true);
-        setGoalToastOpen(true);
-        void celebrateMemberWaterGoalAction({ logDate });
-        window.setTimeout(
-          () => setWaterRingCelebrate(false),
-          reducedMotion ? 0 : 650,
-        );
+          if (result.ok && result.data) {
+            const reconciled = reconcileWaterAfterServerSuccess(
+              result.data.consumedMl,
+              pendingOpsRef.current,
+            );
+            confirmedMlRef.current = reconciled.confirmedConsumedMl;
+            pendingOpsRef.current = reconciled.pending;
+            syncDisplayFromQueue();
+            maybeCelebrateGoal(result.data.goalComplete);
+            persisted = true;
+            continue;
+          }
+
+          if (attempts >= WATER_WRITE_MAX_ATTEMPTS) {
+            pendingOpsRef.current = dropFailedWaterWrite(
+              pendingOpsRef.current,
+            );
+            syncDisplayFromQueue();
+            toast.error(
+              result.ok
+                ? "Could not log water."
+                : result.error ?? "Could not log water.",
+            );
+          }
+        }
       }
     } finally {
-      addInFlightRef.current = false;
-      if (addQueueRef.current) {
-        addQueueRef.current = false;
-        void runWaterAdd();
+      processingRef.current = false;
+      if (pendingOpsRef.current.length > 0) {
+        void processWaterQueue();
       }
     }
-  }, [logDate, onWaterProgress, showFloatIndicator, reducedMotion]);
+  }, [logDate, maybeCelebrateGoal, syncDisplayFromQueue]);
 
   const onAddWater = useCallback(() => {
-    startTransition(() => {
-      void runWaterAdd();
-    });
-  }, [runWaterAdd]);
+    pendingOpsRef.current = enqueueWaterQuickAdd(
+      pendingOpsRef.current,
+      MEMBER_WATER_QUICK_ADD_ML,
+      crypto.randomUUID(),
+    );
+    syncDisplayFromQueue();
+    showFloatIndicator(MEMBER_WATER_QUICK_ADD_ML);
+    void processWaterQueue();
+  }, [processWaterQueue, showFloatIndicator, syncDisplayFromQueue]);
 
   const calorieRingPercent =
     caloriePercent ?? (calorieGoalComplete ? 100 : 0);
@@ -231,7 +305,6 @@ export function MemberDashboardMetricCards({
               variant="secondary"
               size="sm"
               className="h-8 w-full rounded-xl text-xs text-primary"
-              disabled={pending}
               onClick={onAddWater}
             >
               + {MEMBER_WATER_QUICK_ADD_ML} ml

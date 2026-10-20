@@ -46,15 +46,46 @@ describe("addMemberWaterAction", () => {
   });
 
   it("returns updated water progress without revalidating /member", async () => {
+    const operationId = "550e8400-e29b-41d4-a716-446655440000";
     const result = await addMemberWaterAction({
       logDate: "2026-10-11",
       amountMl: 250,
+      operationId,
     });
 
     expect(result.ok).toBe(true);
     if (!result.ok || result.data == null) throw new Error("expected success");
     expect(result.data.consumedMl).toBe(500);
+    expect(mockAddEntry).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "member", memberId: "m1", gymId: "gym-1" }),
+      "gym-1",
+      "m1",
+      "2026-10-11",
+      250,
+      operationId,
+    );
     expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("forwards the same operationId on retry without duplicating persistence", async () => {
+    const operationId = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+    mockAddEntry.mockResolvedValue({ totalMl: 750 });
+
+    const first = await addMemberWaterAction({
+      logDate: "2026-10-11",
+      amountMl: 250,
+      operationId,
+    });
+    const second = await addMemberWaterAction({
+      logDate: "2026-10-11",
+      amountMl: 250,
+      operationId,
+    });
+
+    expect(first.ok && second.ok).toBe(true);
+    expect(mockAddEntry).toHaveBeenCalledTimes(2);
+    expect(mockAddEntry.mock.calls[0]?.[5]).toBe(operationId);
+    expect(mockAddEntry.mock.calls[1]?.[5]).toBe(operationId);
   });
 
   it("celebrates water goal without revalidating /member", async () => {

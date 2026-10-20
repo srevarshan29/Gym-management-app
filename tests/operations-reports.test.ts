@@ -212,6 +212,23 @@ describe("member and payment report metrics", () => {
     ]);
     expect(fromAggregates).toEqual(fromRows);
   });
+
+  it("keeps aggregate and row-based totals aligned for mixed payment methods", () => {
+    const rows = [
+      { amount: 250, method: "CASH" as const },
+      { amount: 250, method: "CASH" as const },
+      { amount: 100, method: "CARD" as const },
+    ];
+    const fromRows = computePaymentReportMetrics(rows);
+    const fromAggregates = buildPaymentReportMetricsFromAggregates(3, 600, [
+      { method: "CASH", count: 2, total: 500 },
+      { method: "CARD", count: 1, total: 100 },
+      { method: "UPI", count: 0, total: 0 },
+    ]);
+    expect(fromAggregates.totalCollected).toBe(fromRows.totalCollected);
+    expect(fromAggregates.paymentCount).toBe(fromRows.paymentCount);
+    expect(fromAggregates.averagePayment).toBe(fromRows.averagePayment);
+  });
 });
 
 describe("CSV export headers", () => {

@@ -105,6 +105,16 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "gymId", "order": "ASCENDING" },
+        { "fieldPath": "method", "order": "ASCENDING" },
+        { "fieldPath": "paidAt", "order": "ASCENDING" },
+        { "fieldPath": "amount", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gymId", "order": "ASCENDING" },
         { "fieldPath": "paidAt", "order": "DESCENDING" }
       ]
     },

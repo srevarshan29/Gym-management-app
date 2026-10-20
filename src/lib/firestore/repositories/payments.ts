@@ -36,6 +36,15 @@ const ALL_PAYMENT_METHODS: PaymentMethod[] = [
   "OTHER",
 ];
 
+function isFirestoreFailedPrecondition(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code: number }).code === 9
+  );
+}
+
 export type CreatePaymentInput = {
   memberId: string;
   subscriptionId: string | null;
@@ -464,10 +473,53 @@ export class PaymentsRepository {
     };
   }
 
+  private async summarizePaidInRangeFromAggregates(
+    ctx: FirestoreContext,
+    gymId: string,
+    start: Date,
+    end: Date,
+  ): Promise<PaymentReportMetrics> {
+    const paymentCount = await this.countPaidInRange(ctx, gymId, start, end);
+    if (paymentCount === 0) {
+      return buildPaymentReportMetricsFromAggregates(0, 0, []);
+    }
+
+    const [totalCollected, ...byMethod] = await Promise.all([
+      this.sumPaidInRange(ctx, gymId, start, end),
+      ...ALL_PAYMENT_METHODS.map((method) =>
+        this.aggregatePaidInRangeForMethod(ctx, gymId, start, end, method),
+      ),
+    ]);
+
+    return buildPaymentReportMetricsFromAggregates(
+      paymentCount,
+      totalCollected,
+      byMethod,
+    );
+  }
+
+  private async summarizePaidInRangeFromIteration(
+    ctx: FirestoreContext,
+    gymId: string,
+    start: Date,
+    end: Date,
+  ): Promise<PaymentReportMetrics> {
+    const rows: { amount: number; method: PaymentMethod }[] = [];
+    for await (const payment of this.iteratePaidInRange(
+      ctx,
+      gymId,
+      start,
+      end,
+    )) {
+      rows.push({ amount: payment.amount, method: payment.method });
+    }
+    return computePaymentReportMetrics(rows);
+  }
+
   /**
    * Range payment totals for operations reports.
-   * Uses the gymId + paidAt range index via {@link iteratePaidInRange} so report
-   * pages work without extra per-method composite indexes.
+   * Prefers Firestore count/sum aggregates (no per-payment document reads).
+   * Falls back to a range scan when per-method aggregate indexes are not deployed.
    */
   async summarizePaidInRange(
     ctx: FirestoreContext,
@@ -476,16 +528,24 @@ export class PaymentsRepository {
     end: Date,
   ): Promise<PaymentReportMetrics> {
     return measureServerPhase("staff.reports.payments.aggregate", async () => {
-      const rows: { amount: number; method: PaymentMethod }[] = [];
-      for await (const payment of this.iteratePaidInRange(
-        ctx,
-        gymId,
-        start,
-        end,
-      )) {
-        rows.push({ amount: payment.amount, method: payment.method });
+      try {
+        return await this.summarizePaidInRangeFromAggregates(
+          ctx,
+          gymId,
+          start,
+          end,
+        );
+      } catch (error) {
+        if (isFirestoreFailedPrecondition(error)) {
+          return await this.summarizePaidInRangeFromIteration(
+            ctx,
+            gymId,
+            start,
+            end,
+          );
+        }
+        throw error;
       }
-      return computePaymentReportMetrics(rows);
     });
   }
 

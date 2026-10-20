@@ -43,6 +43,7 @@ describe("member portal navigation performance guards", () => {
       "utf8",
     );
     expect(source).toContain('router.push("/member/workout")');
+    expect(source).toContain('router.prefetch("/member/workout")');
     expect(source).not.toContain("router.refresh()");
   });
 

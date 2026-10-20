@@ -19,6 +19,7 @@ import {
 import {
   collectLibraryExerciseIdsFromPlan,
   emptyWorkoutPlanShellForSession,
+  isLegacyWorkoutPlan,
 } from "@/lib/workout-tracking/session-plan";
 import {
   collectLibraryExerciseIdsFromSessionExercises,
@@ -102,15 +103,14 @@ export const loadMemberWorkoutPageData = cache(
       );
 
       const exerciseIds = new Set<string>();
-      if (planDoc) {
-        for (const id of collectLibraryExerciseIdsFromPlan(planDoc)) {
-          exerciseIds.add(id);
-        }
-      }
       if (activeRaw) {
         for (const id of collectLibraryExerciseIdsFromSessionExercises(
           activeRaw.exercises,
         )) {
+          exerciseIds.add(id);
+        }
+      } else if (planDoc) {
+        for (const id of collectLibraryExerciseIdsFromPlan(planDoc)) {
           exerciseIds.add(id);
         }
       }
@@ -125,9 +125,10 @@ export const loadMemberWorkoutPageData = cache(
         planDoc ??
         (activeRaw ? emptyWorkoutPlanShellForSession(activeRaw) : null);
 
-      const planDetail = planDoc
-        ? buildMemberWorkoutPlanDetail(planDoc, lookup)
-        : null;
+      const planDetail =
+        !activeRaw && planDoc
+          ? buildMemberWorkoutPlanDetail(planDoc, lookup)
+          : null;
       const activeSession =
         activeRaw && planForSessionView
           ? buildActiveWorkoutSessionView(
@@ -139,9 +140,9 @@ export const loadMemberWorkoutPageData = cache(
           : null;
 
       const canStart = Boolean(
-        planDetail &&
-          !planDetail.isLegacy &&
-          planDetail.days.some((day) => day.exercises.length > 0),
+        planDoc &&
+          !isLegacyWorkoutPlan(planDoc) &&
+          planDoc.days.some((day) => day.exercises.length > 0),
       );
 
       return {

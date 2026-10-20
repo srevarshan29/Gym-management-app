@@ -139,13 +139,11 @@ function firstIncompleteIndex(session: ActiveWorkoutSession): number {
 type WorkoutSessionViewProps = {
   session: ActiveWorkoutSession;
   previousSets: Record<string, PreviousSetLog[]>;
-  previousSetsReady?: boolean;
 };
 
 export function WorkoutSessionView({
   session: initialSession,
   previousSets,
-  previousSetsReady = true,
 }: WorkoutSessionViewProps) {
   const router = useRouter();
   const [, startTransition] = React.useTransition();
@@ -444,16 +442,7 @@ export function WorkoutSessionView({
           <span className="sr-only">Done</span>
         </div>
         <div className="space-y-1.5">
-          {!previousSetsReady
-            ? Array.from({ length: Math.min(rowCount, 4) }, (_, index) => (
-                <div
-                  key={index}
-                  className="h-11 w-full animate-pulse rounded-xl bg-muted/50"
-                />
-              ))
-            : null}
-          {previousSetsReady
-            ? Array.from({ length: rowCount }, (_, index) => {
+          {Array.from({ length: rowCount }, (_, index) => {
             const setNumber = index + 1;
             const key = `${exercise.id}-${setNumber}`;
             const logged = exercise.sets.find((set) => set.setNumber === setNumber);
@@ -540,8 +529,7 @@ export function WorkoutSessionView({
                 </button>
               </div>
             );
-          })
-            : null}
+          })}
         </div>
       </div>
 
@@ -550,7 +538,7 @@ export function WorkoutSessionView({
         variant="outline"
         className="w-full gap-2"
         onClick={addSet}
-        disabled={rowCount >= MAX_SETS || !previousSetsReady}
+        disabled={rowCount >= MAX_SETS}
       >
         <Plus className="h-4 w-4" />
         Add Set

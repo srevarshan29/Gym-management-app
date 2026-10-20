@@ -20,7 +20,12 @@ export function TodaysWorkoutStartButton({
   className,
 }: TodaysWorkoutStartButtonProps) {
   const router = useRouter();
+  const [, startTransition] = React.useTransition();
   const [pending, setPending] = React.useState(false);
+
+  React.useEffect(() => {
+    router.prefetch("/member/workout");
+  }, [router]);
 
   async function onStart() {
     if (pending) return;
@@ -31,8 +36,10 @@ export function TodaysWorkoutStartButton({
         toast.error(result.error);
         return;
       }
+      startTransition(() => {
+        router.push("/member/workout");
+      });
       toast.success(result.message ?? "Workout started.");
-      router.push("/member/workout");
     } catch (error) {
       console.error("[workout] overview startWorkoutSession failed:", error);
       toast.error(

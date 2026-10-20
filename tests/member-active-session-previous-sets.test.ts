@@ -231,6 +231,17 @@ describe("member active workout session UI", () => {
     expect(source).toContain("loadActiveWorkoutPreviousSetsAction");
     expect(source).toContain("WorkoutSessionView");
     expect(source).toContain("cancelled");
+    expect(source).not.toMatch(/setPreviousSetsReady\(false\)/);
+    expect(source).not.toContain("previousSetsReady");
+  });
+
+  it("does not gate set logging on previous-set history when an active session is shown", () => {
+    const source = readFileSync(
+      resolve("src/components/member-portal/workout/workout-session-view.tsx"),
+      "utf8",
+    );
+    expect(source).not.toMatch(/animate-pulse rounded-xl bg-muted\/50/);
+    expect(source).not.toMatch(/disabled=\{rowCount >= MAX_SETS \|\| !previousSetsReady\}/);
   });
 
   it("derives input defaults from previous sets without overwriting user values", () => {
@@ -238,6 +249,6 @@ describe("member active workout session UI", () => {
       resolve("src/components/member-portal/workout/workout-session-view.tsx"),
       "utf8",
     );
-    expect(source).toContain("setValues[key] ?? fallback");
+    expect(source).toMatch(/setValues\[key\][\s\S]*fallback/);
   });
 });

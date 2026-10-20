@@ -85,7 +85,7 @@ export async function startWorkoutSession(
       ),
     );
 
-    revalidateWorkoutSessionPaths();
+    revalidatePath("/member/workout");
     return {
       ...actionOk(
         result.resumed ? "Resuming your workout." : "Workout started.",

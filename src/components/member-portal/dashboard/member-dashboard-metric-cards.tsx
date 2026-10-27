@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useCallback, useRef, useState } from "react";
+import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -11,7 +12,9 @@ import {
 import { DashboardPercentRing } from "@/components/member-portal/dashboard/dashboard-percent-ring";
 import { useAnimatedNumber } from "@/components/member-portal/dashboard/use-animated-number";
 import { usePrefersReducedMotion } from "@/components/member-portal/dashboard/use-prefers-reduced-motion";
+import { WaterGoalEditDialog } from "@/components/member-portal/dashboard/water-goal-edit-dialog";
 import { WaterGoalReachedToast } from "@/components/member-portal/dashboard/water-goal-reached-toast";
+import { MEMBER_WATER_ACCENT } from "@/lib/member-portal/member-dashboard-goals";
 import { LockedLink } from "@/components/navigation/locked-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,6 +53,7 @@ type MetricCardsProps = {
     percent: number;
     goalComplete: boolean;
   }) => void;
+  onWaterTargetSaved?: (targetMl: number) => void;
 };
 
 export function MemberDashboardMetricCards({
@@ -63,8 +67,11 @@ export function MemberDashboardMetricCards({
   waterPercent: initialWaterPercent,
   waterGoalComplete: initialWaterComplete,
   onWaterProgress,
+  onWaterTargetSaved,
 }: MetricCardsProps) {
   const reducedMotion = usePrefersReducedMotion();
+  const waterGoalEditRef = useRef<HTMLButtonElement>(null);
+  const [waterGoalOpen, setWaterGoalOpen] = React.useState(false);
   const [waterMl, setWaterMl] = useState(initialWaterMl);
   const [waterPercent, setWaterPercent] = useState(initialWaterPercent);
   const [waterComplete, setWaterComplete] = useState(initialWaterComplete);
@@ -293,14 +300,26 @@ export function MemberDashboardMetricCards({
                 {floatAmountMl != null ? (
                   <span
                     className={cn(
-                      "pointer-events-none absolute -top-1 right-0 z-10 whitespace-nowrap text-[11px] font-semibold tabular-nums text-primary",
+                      "pointer-events-none absolute -top-1 right-0 z-10 whitespace-nowrap text-[11px] font-semibold tabular-nums",
                       !reducedMotion && "animate-dashboard-water-float",
                     )}
+                    style={{ color: MEMBER_WATER_ACCENT }}
                   >
                     +{floatAmountMl} ml
                   </span>
                 ) : null}
-                <p className="text-[11px] text-muted-foreground">Water</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-[11px] text-muted-foreground">Water</p>
+                  <button
+                    ref={waterGoalEditRef}
+                    type="button"
+                    className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-[#8EDBFF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label="Edit daily water goal"
+                    onClick={() => setWaterGoalOpen(true)}
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
+                </div>
                 <p className="text-lg font-bold leading-tight tabular-nums">
                   {formatWaterLiters(animatedWaterMl)}
                 </p>
@@ -320,6 +339,15 @@ export function MemberDashboardMetricCards({
       </div>
 
       <WaterGoalReachedToast open={goalToastOpen} onDismiss={dismissGoalToast} />
+
+      <WaterGoalEditDialog
+        open={waterGoalOpen}
+        onOpenChange={setWaterGoalOpen}
+        consumedMl={waterMl}
+        savedTargetMl={waterTargetMl}
+        onSaved={(targetMl) => onWaterTargetSaved?.(targetMl)}
+        returnFocusRef={waterGoalEditRef}
+      />
     </>
   );
 }

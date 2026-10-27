@@ -18,6 +18,10 @@ import { dashboardStatePatchFromMessage } from "@/lib/member-portal/dashboard-st
 import { measureServerPhase } from "@/lib/server-perf";
 import { isWorkoutCompletedTodaySuggestion } from "@/lib/workout-tracking/workout-completed-today";
 import type { SuggestedWorkoutDay } from "@/lib/workout-tracking/types";
+import {
+  resolveMemberDailyWaterTargetMl,
+  resolveMemberWeeklyAttendanceTarget,
+} from "@/lib/member-portal/member-dashboard-goals";
 import { sumWaterLogMl, waterDayProgress } from "@/lib/water/water-progress";
 
 export type MemberDashboardWeekDay = {
@@ -40,6 +44,7 @@ export type MemberPortalDashboardData = {
   message: ResolvedDashboardMessage;
   weekDays: MemberDashboardWeekDay[];
   visitsThisWeek: number;
+  weeklyAttendanceTarget: number;
   showWeeklyWorkoutProgress: false;
 };
 
@@ -111,7 +116,10 @@ export async function loadMemberPortalDashboard(
     displayTarget != null && displayCalories >= displayTarget;
 
   const waterConsumedMl = sumWaterLogMl(waterRows);
-  const waterProgress = waterDayProgress(waterConsumedMl);
+  const waterTargetMl = resolveMemberDailyWaterTargetMl(dashboardState);
+  const weeklyAttendanceTarget =
+    resolveMemberWeeklyAttendanceTarget(dashboardState);
+  const waterProgress = waterDayProgress(waterConsumedMl, waterTargetMl);
 
   const message = resolveDashboardMessage({
     dateKey,
@@ -152,6 +160,7 @@ export async function loadMemberPortalDashboard(
     message,
     weekDays,
     visitsThisWeek: weekVisitKeys.length,
+    weeklyAttendanceTarget,
     showWeeklyWorkoutProgress: false,
   };
   });

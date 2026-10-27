@@ -599,6 +599,10 @@ export type MemberPortalDashboardStateDoc = {
   recentMessageKeys: string[];
   celebratedCalorieDateKey: string | null;
   celebratedWaterDateKey: string | null;
+  /** Member-configured daily hydration target (ml); null uses app default. */
+  dailyWaterTargetMl: number | null;
+  /** Member-configured weekly gym visit target (1–7); null uses app default. */
+  weeklyAttendanceTarget: number | null;
   updatedAt: Timestamp;
 };
 

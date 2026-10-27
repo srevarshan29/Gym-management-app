@@ -30,6 +30,8 @@ export type DashboardStatePatch = {
   recentMessageKeys?: string[];
   celebratedCalorieDateKey?: string | null;
   celebratedWaterDateKey?: string | null;
+  dailyWaterTargetMl?: number | null;
+  weeklyAttendanceTarget?: number | null;
 };
 
 export class MemberPortalDashboardStateRepository extends TenantRepository<MemberPortalDashboardStateDoc> {
@@ -104,6 +106,14 @@ export class MemberPortalDashboardStateRepository extends TenantRepository<Membe
         patch.celebratedWaterDateKey !== undefined
           ? patch.celebratedWaterDateKey
           : (existingData?.celebratedWaterDateKey ?? null),
+      dailyWaterTargetMl:
+        patch.dailyWaterTargetMl !== undefined
+          ? patch.dailyWaterTargetMl
+          : (existingData?.dailyWaterTargetMl ?? null),
+      weeklyAttendanceTarget:
+        patch.weeklyAttendanceTarget !== undefined
+          ? patch.weeklyAttendanceTarget
+          : (existingData?.weeklyAttendanceTarget ?? null),
       ...(existingData
         ? touchUpdatedAt()
         : {

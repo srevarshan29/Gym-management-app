@@ -16,6 +16,11 @@ import {
 } from "@/lib/member-portal/load-member-portal-dashboard";
 import { requireMember } from "@/lib/member-session";
 import {
+  parseMemberDailyWaterTargetMl,
+  parseMemberWeeklyAttendanceTarget,
+  resolveMemberDailyWaterTargetMl,
+} from "@/lib/member-portal/member-dashboard-goals";
+import {
   MEMBER_WATER_QUICK_ADD_ML,
   waterDayProgress,
 } from "@/lib/water/water-progress";
@@ -78,7 +83,13 @@ export async function addMemberWaterAction(
     const operationId = assertValidWaterOperationId(parsed.operationId);
 
     const ctx = memberContextFromSession(member);
-    const { memberWaterLogs } = getRepositories();
+    const { memberWaterLogs, memberPortalDashboardState } = getRepositories();
+    const dashboardState = await memberPortalDashboardState.getForMember(
+      ctx,
+      member.gymId,
+      member.memberId,
+    );
+    const targetMl = resolveMemberDailyWaterTargetMl(dashboardState);
     const { totalMl } = await memberWaterLogs.addEntry(
       ctx,
       member.gymId,
@@ -88,7 +99,7 @@ export async function addMemberWaterAction(
       operationId,
     );
 
-    const progress = waterDayProgress(totalMl);
+    const progress = waterDayProgress(totalMl, targetMl);
     return actionOk(undefined, {
       consumedMl: progress.consumedMl,
       targetMl: progress.targetMl,
@@ -107,6 +118,66 @@ const monthSchema = z.object({
   year: z.coerce.number().int().min(2020).max(2100),
   monthIndex0: z.coerce.number().int().min(0).max(11),
 });
+
+const waterGoalSchema = z.object({
+  targetMl: z.coerce.number().int(),
+});
+
+export async function updateMemberDailyWaterGoalAction(
+  input: z.infer<typeof waterGoalSchema>,
+): Promise<ActionResult<{ targetMl: number }>> {
+  try {
+    const member = await requireMember();
+    const targetMl = parseMemberDailyWaterTargetMl(
+      waterGoalSchema.parse(input).targetMl,
+    );
+    const ctx = memberContextFromSession(member);
+    const { memberPortalDashboardState } = getRepositories();
+    await memberPortalDashboardState.mergeForMember(
+      ctx,
+      member.gymId,
+      member.memberId,
+      { dailyWaterTargetMl: targetMl },
+    );
+    return actionOk("Daily water goal saved.", { targetMl });
+  } catch (error) {
+    console.error("updateMemberDailyWaterGoalAction", error);
+    return actionError(
+      error instanceof Error ? error.message : "Could not save water goal.",
+    );
+  }
+}
+
+const weeklyGoalSchema = z.object({
+  targetDays: z.coerce.number().int(),
+});
+
+export async function updateMemberWeeklyAttendanceGoalAction(
+  input: z.infer<typeof weeklyGoalSchema>,
+): Promise<ActionResult<{ targetDays: number }>> {
+  try {
+    const member = await requireMember();
+    const targetDays = parseMemberWeeklyAttendanceTarget(
+      weeklyGoalSchema.parse(input).targetDays,
+    );
+    const ctx = memberContextFromSession(member);
+    const { memberPortalDashboardState } = getRepositories();
+    await memberPortalDashboardState.mergeForMember(
+      ctx,
+      member.gymId,
+      member.memberId,
+      { weeklyAttendanceTarget: targetDays },
+    );
+    return actionOk("Weekly gym goal saved.", { targetDays });
+  } catch (error) {
+    console.error("updateMemberWeeklyAttendanceGoalAction", error);
+    return actionError(
+      error instanceof Error
+        ? error.message
+        : "Could not save weekly goal.",
+    );
+  }
+}
 
 export async function loadMemberAttendanceMonthAction(
   input: z.infer<typeof monthSchema>,

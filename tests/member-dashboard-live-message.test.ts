@@ -26,6 +26,7 @@ const baseDashboard: MemberPortalDashboardData = {
   },
   weekDays: [],
   visitsThisWeek: 0,
+  weeklyAttendanceTarget: 5,
   showWeeklyWorkoutProgress: false,
 };
 

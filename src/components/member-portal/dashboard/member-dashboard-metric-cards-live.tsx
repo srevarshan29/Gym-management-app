@@ -14,7 +14,8 @@ type Props = Omit<
 >;
 
 export function MemberDashboardMetricCardsLive(props: Props) {
-  const { setLiveWater } = useMemberDashboardWaterLive();
+  const { dashboard, setLiveWater, applyDailyWaterTargetMl } =
+    useMemberDashboardWaterLive();
   const onWaterProgress = useCallback(
     (progress: LiveWaterProgress) => {
       setLiveWater((prev) =>
@@ -30,7 +31,11 @@ export function MemberDashboardMetricCardsLive(props: Props) {
   return (
     <MemberDashboardMetricCards
       {...props}
+      waterTargetMl={dashboard.waterTargetMl}
+      waterPercent={dashboard.waterPercent}
+      waterGoalComplete={dashboard.waterGoalComplete}
       onWaterProgress={onWaterProgress}
+      onWaterTargetSaved={applyDailyWaterTargetMl}
     />
   );
 }

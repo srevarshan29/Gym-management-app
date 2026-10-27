@@ -237,4 +237,38 @@
       filter: contrast(1.08) brightness(1.1);
     }
   }
+
+  .goal-editor-water-range,
+  .goal-editor-weekly-range {
+    @apply h-2 rounded-full;
+  }
+
+  .goal-editor-water-range::-webkit-slider-thumb,
+  .goal-editor-weekly-range::-webkit-slider-thumb {
+    @apply h-5 w-5 cursor-pointer rounded-full border-0 bg-white;
+    appearance: none;
+    box-shadow:
+      0 0 0 3px rgba(142, 219, 255, 0.35),
+      0 0 14px rgba(142, 219, 255, 0.45);
+  }
+
+  .goal-editor-weekly-range::-webkit-slider-thumb {
+    box-shadow:
+      0 0 0 3px hsl(var(--primary) / 0.35),
+      0 0 14px hsl(var(--primary) / 0.4);
+  }
+
+  .goal-editor-water-range::-moz-range-thumb,
+  .goal-editor-weekly-range::-moz-range-thumb {
+    @apply h-5 w-5 cursor-pointer rounded-full border-0 bg-white;
+    box-shadow:
+      0 0 0 3px rgba(142, 219, 255, 0.35),
+      0 0 14px rgba(142, 219, 255, 0.45);
+  }
+
+  .goal-editor-weekly-range::-moz-range-thumb {
+    box-shadow:
+      0 0 0 3px hsl(var(--primary) / 0.35),
+      0 0 14px hsl(var(--primary) / 0.4);
+  }
 }

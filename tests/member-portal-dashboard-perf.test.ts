@@ -43,6 +43,8 @@ describe("dashboard state persistence", () => {
       greetingMessageKey: first.patchGreetingMessageKey,
       celebratedCalorieDateKey: first.patchCelebratedCalorieDateKey,
       celebratedWaterDateKey: first.patchCelebratedWaterDateKey,
+      dailyWaterTargetMl: null,
+      weeklyAttendanceTarget: null,
       updatedAt: {} as MemberPortalDashboardStateDoc["updatedAt"],
     } satisfies MemberPortalDashboardStateDoc;
     const second = resolveDashboardMessage({

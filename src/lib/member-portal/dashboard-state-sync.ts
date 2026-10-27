@@ -33,7 +33,9 @@ export function dashboardStateNeedsPersist(
       patch.greetingDateKey != null ||
       patch.greetingMessageKey != null ||
       patch.celebratedCalorieDateKey != null ||
-      patch.celebratedWaterDateKey != null
+      patch.celebratedWaterDateKey != null ||
+      patch.dailyWaterTargetMl != null ||
+      patch.weeklyAttendanceTarget != null
     );
   }
 
@@ -65,6 +67,18 @@ export function dashboardStateNeedsPersist(
   if (
     patch.celebratedWaterDateKey !== undefined &&
     patch.celebratedWaterDateKey !== (existing.celebratedWaterDateKey ?? null)
+  ) {
+    return true;
+  }
+  if (
+    patch.dailyWaterTargetMl !== undefined &&
+    patch.dailyWaterTargetMl !== (existing.dailyWaterTargetMl ?? null)
+  ) {
+    return true;
+  }
+  if (
+    patch.weeklyAttendanceTarget !== undefined &&
+    patch.weeklyAttendanceTarget !== (existing.weeklyAttendanceTarget ?? null)
   ) {
     return true;
   }

@@ -23,6 +23,7 @@ vi.mock("@/lib/firestore", () => ({
     },
     memberPortalDashboardState: {
       mergeForMember: mockMergeForMember,
+      getForMember: vi.fn().mockResolvedValue(null),
     },
   }),
 }));

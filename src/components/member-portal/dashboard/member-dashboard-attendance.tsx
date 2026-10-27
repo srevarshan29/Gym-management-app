@@ -2,9 +2,9 @@
 
 
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Pencil } from "lucide-react";
 
 
 
@@ -14,6 +14,8 @@ import { DashboardPercentRing } from "@/components/member-portal/dashboard/dashb
 
 import type { MemberDashboardWeekDay } from "@/lib/member-portal/load-member-portal-dashboard";
 
+import { WeeklyAttendanceGoalEditDialog } from "@/components/member-portal/dashboard/weekly-attendance-goal-edit-dialog";
+import { useMemberDashboardWaterLive } from "@/components/member-portal/dashboard/member-dashboard-water-live";
 import { weeklyAttendanceDisplayProgress } from "@/lib/member-portal/weekly-attendance-display";
 
 import { attendanceDateKey } from "@/lib/attendance/date-key";
@@ -126,6 +128,10 @@ export function MemberDashboardAttendanceSection({
 
 }) {
 
+  const { dashboard, applyWeeklyAttendanceTarget } = useMemberDashboardWaterLive();
+  const weeklyTarget = dashboard.weeklyAttendanceTarget;
+  const weeklyGoalEditRef = useRef<HTMLButtonElement>(null);
+  const [goalOpen, setGoalOpen] = useState(false);
   const [open, setOpen] = useState(false);
 
   const [pending, startTransition] = useTransition();
@@ -200,7 +206,7 @@ export function MemberDashboardAttendanceSection({
 
   );
 
-  const weekly = weeklyAttendanceDisplayProgress(visitsThisWeek);
+  const weekly = weeklyAttendanceDisplayProgress(visitsThisWeek, weeklyTarget);
 
 
 
@@ -208,23 +214,54 @@ export function MemberDashboardAttendanceSection({
 
     <>
 
-      <button type="button" onClick={openModal} className="w-full min-w-0 text-left">
-
-        <Card className={cn(CARD_CLASS, "transition-colors hover:bg-card")}>
+        <Card className={cn(CARD_CLASS)}>
 
           <CardContent className="space-y-3 p-3.5">
 
             <div className="flex items-center justify-between gap-2">
 
-              <p className="text-sm font-semibold tracking-tight">Weekly goal</p>
+              <div className="flex items-center gap-1">
 
-              <span className="flex items-center gap-0.5 text-xs font-medium text-muted-foreground">
+                <p className="text-sm font-semibold tracking-tight">Weekly goal</p>
+
+                <button
+
+                  ref={weeklyGoalEditRef}
+
+                  type="button"
+
+                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+
+                  aria-label="Edit weekly gym goal"
+
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setGoalOpen(true);
+                  }}
+
+                >
+
+                  <Pencil className="h-3.5 w-3.5" />
+
+                </button>
+
+              </div>
+
+              <button
+
+                type="button"
+
+                className="flex items-center gap-0.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+
+                onClick={openModal}
+
+              >
 
                 Month
 
                 <ChevronRight className="h-3.5 w-3.5" aria-hidden />
 
-              </span>
+              </button>
 
             </div>
 
@@ -264,7 +301,7 @@ export function MemberDashboardAttendanceSection({
 
                 <p className="mt-1 text-[10px] leading-snug text-muted-foreground/80">
 
-                  {weekly.benchmark}/week shown for motivation only
+                  {weekly.benchmark} gym visits per week
 
                 </p>
 
@@ -336,7 +373,23 @@ export function MemberDashboardAttendanceSection({
 
         </Card>
 
-      </button>
+
+
+      <WeeklyAttendanceGoalEditDialog
+
+        open={goalOpen}
+
+        onOpenChange={setGoalOpen}
+
+        visitsThisWeek={visitsThisWeek}
+
+        savedTargetDays={weeklyTarget}
+
+        onSaved={applyWeeklyAttendanceTarget}
+
+        returnFocusRef={weeklyGoalEditRef}
+
+      />
 
 
 

@@ -13,6 +13,7 @@ import { resolveDashboardMessage } from "@/lib/member-portal/dashboard-message-e
 import type { MemberPortalDashboardData } from "@/lib/member-portal/load-member-portal-dashboard";
 import { isWorkoutCompletedTodaySuggestion } from "@/lib/workout-tracking/workout-completed-today";
 import type { SuggestedWorkoutDay } from "@/lib/workout-tracking/types";
+import { waterDayProgress } from "@/lib/water/water-progress";
 
 export type LiveWaterProgress = {
   consumedMl: number;
@@ -22,28 +23,78 @@ export type LiveWaterProgress = {
 
 type WaterLiveContextValue = {
   dashboard: MemberPortalDashboardData;
+  setDashboard: React.Dispatch<React.SetStateAction<MemberPortalDashboardData>>;
   liveWater: LiveWaterProgress;
   setLiveWater: React.Dispatch<React.SetStateAction<LiveWaterProgress>>;
+  applyDailyWaterTargetMl: (targetMl: number) => void;
+  applyWeeklyAttendanceTarget: (targetDays: number) => void;
 };
 
 const WaterLiveContext = createContext<WaterLiveContextValue | null>(null);
 
 export function MemberDashboardWaterLiveProvider({
-  dashboard,
+  dashboard: initialDashboard,
   children,
 }: {
   dashboard: MemberPortalDashboardData;
   children: ReactNode;
 }) {
+  const [dashboard, setDashboard] = useState(initialDashboard);
   const [liveWater, setLiveWater] = useState<LiveWaterProgress>({
-    consumedMl: dashboard.waterConsumedMl,
-    percent: dashboard.waterPercent,
-    goalComplete: dashboard.waterGoalComplete,
+    consumedMl: initialDashboard.waterConsumedMl,
+    percent: initialDashboard.waterPercent,
+    goalComplete: initialDashboard.waterGoalComplete,
   });
 
+  React.useEffect(() => {
+    setDashboard(initialDashboard);
+    setLiveWater({
+      consumedMl: initialDashboard.waterConsumedMl,
+      percent: initialDashboard.waterPercent,
+      goalComplete: initialDashboard.waterGoalComplete,
+    });
+  }, [initialDashboard.dateKey]);
+
+  const applyDailyWaterTargetMl = React.useCallback(
+    (targetMl: number) => {
+      const progress = waterDayProgress(liveWater.consumedMl, targetMl);
+      setDashboard((prev) => ({
+        ...prev,
+        waterTargetMl: progress.targetMl,
+        waterPercent: Math.round(progress.percent),
+        waterGoalComplete: progress.goalComplete,
+      }));
+      setLiveWater((prev) => ({
+        consumedMl: prev.consumedMl,
+        percent: Math.round(progress.percent),
+        goalComplete: progress.goalComplete,
+      }));
+    },
+    [liveWater.consumedMl],
+  );
+
+  const applyWeeklyAttendanceTarget = React.useCallback((targetDays: number) => {
+    setDashboard((prev) => ({
+      ...prev,
+      weeklyAttendanceTarget: targetDays,
+    }));
+  }, []);
+
   const value = useMemo(
-    () => ({ dashboard, liveWater, setLiveWater }),
-    [dashboard, liveWater],
+    () => ({
+      dashboard,
+      setDashboard,
+      liveWater,
+      setLiveWater,
+      applyDailyWaterTargetMl,
+      applyWeeklyAttendanceTarget,
+    }),
+    [
+      dashboard,
+      liveWater,
+      applyDailyWaterTargetMl,
+      applyWeeklyAttendanceTarget,
+    ],
   );
 
   return (

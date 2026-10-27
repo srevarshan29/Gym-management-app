@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo } from "react";
+import { memo, useId, useMemo } from "react";
 
 import { usePrefersReducedMotion } from "@/components/member-portal/dashboard/use-prefers-reduced-motion";
 import {
@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 
 /** Maps daily goal (ml) to fill height inside the glass (not today's intake). */
-function goalTargetFillPercent(targetMl: number): number {
+export function goalTargetFillPercent(targetMl: number): number {
   const clamped = Math.min(
     MEMBER_DAILY_WATER_TARGET_MAX_ML,
     Math.max(MEMBER_DAILY_WATER_TARGET_MIN_ML, targetMl),
@@ -24,6 +24,8 @@ type WaterGoalGlassVisualProps = {
   /** Selected daily goal in ml — drives water level in the glass. */
   targetMl: number;
   className?: string;
+  /** When false, level snaps with the slider (no CSS transition) to avoid drag lag. */
+  smoothLevelMotion?: boolean;
 };
 
 const GLASS_PATH =
@@ -33,9 +35,10 @@ const INNER_TOP = 28;
 const INNER_BOTTOM = 98;
 const INNER_HEIGHT = INNER_BOTTOM - INNER_TOP;
 
-export function WaterGoalGlassVisual({
+function WaterGoalGlassVisualInner({
   targetMl,
   className,
+  smoothLevelMotion = true,
 }: WaterGoalGlassVisualProps) {
   const uid = useId().replace(/:/g, "");
   const clipId = `${uid}-clip`;
@@ -47,7 +50,13 @@ export function WaterGoalGlassVisual({
   const waterHeight = (fillPercent / 100) * INNER_HEIGHT;
   const surfaceY = INNER_BOTTOM - waterHeight;
 
-  const motionClass = cn(!reducedMotion && "transition-all duration-300 ease-out");
+  const animateLevel =
+    smoothLevelMotion && !reducedMotion;
+  const levelMotionClass = animateLevel
+    ? "transition-[y,height,cy] duration-150 ease-out"
+    : undefined;
+
+  const showSurface = waterHeight > 6;
 
   return (
     <div
@@ -74,7 +83,6 @@ export function WaterGoalGlassVisual({
           </linearGradient>
         </defs>
 
-        {/* Glass body */}
         <path
           d={GLASS_PATH}
           fill="hsl(var(--muted) / 0.18)"
@@ -89,33 +97,28 @@ export function WaterGoalGlassVisual({
             width="48"
             height={waterHeight + 2}
             fill={`url(#${waterGradientId})`}
-            className={motionClass}
+            className={levelMotionClass}
           />
-          {waterHeight > 6 ? (
-            <>
-              <ellipse
-                cx="40"
-                cy={surfaceY}
-                rx="21"
-                ry="3.2"
-                fill="#8EDBFF"
-                opacity="0.55"
-                className={motionClass}
-              />
-              <path
-                d={`M22 ${surfaceY + 0.8} Q40 ${surfaceY - 1.2} 58 ${surfaceY + 0.8}`}
-                fill="none"
-                stroke="#E8F7FF"
-                strokeWidth="1.25"
-                strokeLinecap="round"
-                opacity="0.75"
-                className={motionClass}
-              />
-            </>
-          ) : null}
+          <ellipse
+            cx="40"
+            cy={surfaceY}
+            rx="21"
+            ry="3.2"
+            fill="#8EDBFF"
+            opacity={showSurface ? 0.55 : 0}
+            className={levelMotionClass}
+          />
+          <path
+            d={`M22 ${surfaceY + 0.8} Q40 ${surfaceY - 1.2} 58 ${surfaceY + 0.8}`}
+            fill="none"
+            stroke="#E8F7FF"
+            strokeWidth="1.25"
+            strokeLinecap="round"
+            opacity={showSurface ? 0.75 : 0}
+            className={levelMotionClass}
+          />
         </g>
 
-        {/* Left reflection streak */}
         <path
           d="M26 26 Q24 52 26 78"
           fill="none"
@@ -124,7 +127,6 @@ export function WaterGoalGlassVisual({
           strokeLinecap="round"
           opacity="0.85"
         />
-        {/* Top rim highlight */}
         <path
           d="M30 20 Q40 17 50 20"
           fill="none"
@@ -133,7 +135,6 @@ export function WaterGoalGlassVisual({
           strokeLinecap="round"
           opacity="0.35"
         />
-        {/* Right subtle edge */}
         <path
           d="M58 32 V74"
           fill="none"
@@ -146,3 +147,5 @@ export function WaterGoalGlassVisual({
     </div>
   );
 }
+
+export const WaterGoalGlassVisual = memo(WaterGoalGlassVisualInner);

@@ -1,11 +1,18 @@
 "use client";
 
-import { useId } from "react";
+import { memo, useId, useMemo } from "react";
 
 import { usePrefersReducedMotion } from "@/components/member-portal/dashboard/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
 
 const SEGMENT_COUNT = 7;
+const SIZE = 148;
+const CENTER = SIZE / 2;
+const RADIUS = 52;
+const STROKE = 11;
+const GAP_DEG = 8;
+const SEGMENT_DEG = 360 / SEGMENT_COUNT;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 type WeeklyActivityRingVisualProps = {
   targetDays: number;
@@ -14,25 +21,38 @@ type WeeklyActivityRingVisualProps = {
   onSelectTarget?: (days: number) => void;
   interactive?: boolean;
   className?: string;
+  /** When false, segment strokes update instantly (e.g. while dragging the slider). */
+  smoothSegmentMotion?: boolean;
 };
 
-export function WeeklyActivityRingVisual({
+function WeeklyActivityRingVisualInner({
   targetDays,
   visitsThisWeek: _visitsThisWeek = 0,
   onSelectTarget,
   interactive = false,
   className,
+  smoothSegmentMotion = true,
 }: WeeklyActivityRingVisualProps) {
   const glowFilterId = useId().replace(/:/g, "");
   const reducedMotion = usePrefersReducedMotion();
   const safeTarget = Math.min(7, Math.max(1, Math.round(targetDays)));
 
-  const size = 148;
-  const center = size / 2;
-  const radius = 52;
-  const stroke = 11;
-  const gapDeg = 8;
-  const segmentDeg = 360 / SEGMENT_COUNT;
+  const animateSegments = smoothSegmentMotion && !reducedMotion;
+  const segmentMotionClass = animateSegments
+    ? "transition-[stroke,opacity] duration-150 ease-out"
+    : undefined;
+
+  const segments = useMemo(() => {
+    const segmentSpan = SEGMENT_DEG - GAP_DEG;
+    return Array.from({ length: SEGMENT_COUNT }, (_, index) => {
+      const day = index + 1;
+      const start = -90 + index * SEGMENT_DEG + GAP_DEG / 2;
+      const arc = (segmentSpan / 360) * CIRCUMFERENCE;
+      const offset = (start / 360) * CIRCUMFERENCE;
+      const isLit = day <= safeTarget;
+      return { day, arc, offset, isLit };
+    });
+  }, [safeTarget]);
 
   return (
     <div
@@ -40,7 +60,7 @@ export function WeeklyActivityRingVisual({
     >
       <svg
         className="h-full w-full"
-        viewBox={`0 0 ${size} ${size}`}
+        viewBox={`0 0 ${SIZE} ${SIZE}`}
         aria-hidden
         preserveAspectRatio="xMidYMid meet"
       >
@@ -66,48 +86,39 @@ export function WeeklyActivityRingVisual({
           </filter>
         </defs>
 
-        {Array.from({ length: SEGMENT_COUNT }, (_, index) => {
-          const day = index + 1;
-          const segmentSpan = segmentDeg - gapDeg;
-          const start = -90 + index * segmentDeg + gapDeg / 2;
-          const isLit = day <= safeTarget;
-          const circumference = 2 * Math.PI * radius;
-          const arc = (segmentSpan / 360) * circumference;
-          const offset = (start / 360) * circumference;
-
-          return (
-            <circle
-              key={day}
-              cx={center}
-              cy={center}
-              r={radius}
-              fill="none"
-              strokeWidth={stroke}
-              strokeLinecap="round"
-              stroke={isLit ? "hsl(var(--primary))" : "hsl(var(--muted) / 0.55)"}
-              strokeDasharray={`${arc} ${circumference - arc}`}
-              strokeDashoffset={-offset}
-              filter={isLit ? `url(#${glowFilterId})` : undefined}
-              className={cn(
-                !reducedMotion && "transition-[stroke,opacity,filter] duration-200 ease-out",
-              )}
-              opacity={isLit ? 1 : 0.4}
-            />
-          );
-        })}
+        {segments.map(({ day, arc, offset, isLit }) => (
+          <circle
+            key={day}
+            cx={CENTER}
+            cy={CENTER}
+            r={RADIUS}
+            fill="none"
+            strokeWidth={STROKE}
+            strokeLinecap="round"
+            stroke={isLit ? "hsl(var(--primary))" : "hsl(var(--muted) / 0.55)"}
+            strokeDasharray={`${arc} ${CIRCUMFERENCE - arc}`}
+            strokeDashoffset={-offset}
+            filter={isLit ? `url(#${glowFilterId})` : undefined}
+            className={segmentMotionClass}
+            opacity={isLit ? 1 : 0.4}
+          />
+        ))}
       </svg>
 
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center leading-tight">
         <span
           className={cn(
             "font-bold tabular-nums text-foreground",
-            !reducedMotion && "transition-all duration-200 ease-out",
+            animateSegments && "transition-opacity duration-150 ease-out",
           )}
-          style={{ fontSize: "clamp(1.35rem, 5vw, 1.75rem)", lineHeight: 1.1 }}
+          style={{
+            fontSize: "clamp(1.2rem, 4.2vw, 1.5rem)",
+            lineHeight: 1.08,
+          }}
         >
           {safeTarget}
         </span>
-        <span className="mt-0.5 text-[8.5px] font-medium tracking-[0.09em] text-muted-foreground">
+        <span className="mt-px text-[8px] font-medium tracking-[0.07em] text-muted-foreground">
           DAYS / WEEK
         </span>
       </div>
@@ -140,3 +151,5 @@ export function WeeklyActivityRingVisual({
     </div>
   );
 }
+
+export const WeeklyActivityRingVisual = memo(WeeklyActivityRingVisualInner);

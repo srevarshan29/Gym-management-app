@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { memo } from "react";
 
 import { toast } from "sonner";
 
@@ -16,6 +17,37 @@ import {
   MEMBER_WEEKLY_ATTENDANCE_TARGET_MIN,
 } from "@/lib/member-portal/member-dashboard-goals";
 import { cn } from "@/lib/utils";
+
+const WeeklyDayPicker = memo(function WeeklyDayPicker({
+  draftDays,
+  onSelect,
+}: {
+  draftDays: number;
+  onSelect: (day: number) => void;
+}) {
+  return (
+    <div className="grid w-full grid-cols-7 gap-1">
+      {Array.from({ length: 7 }, (_, i) => i + 1).map((day) => (
+        <Button
+          key={day}
+          type="button"
+          variant="outline"
+          className={cn(
+            GOAL_EDITOR_PRESET_BUTTON_CLASS,
+            "h-8 min-w-0 w-full rounded-lg px-0 text-xs tabular-nums sm:h-9 sm:text-sm",
+            draftDays === day &&
+              "border-primary/50 bg-primary text-primary-foreground shadow-[0_0_12px_rgba(190,255,0,0.3)] hover:bg-primary/90",
+          )}
+          onClick={() => onSelect(day)}
+          aria-label={`${day} days per week`}
+          aria-pressed={draftDays === day}
+        >
+          {day}
+        </Button>
+      ))}
+    </div>
+  );
+});
 
 type WeeklyAttendanceGoalEditDialogProps = {
   open: boolean;
@@ -37,12 +69,29 @@ export function WeeklyAttendanceGoalEditDialog({
   const sliderRef = React.useRef<HTMLInputElement>(null);
   const [draftDays, setDraftDays] = React.useState(savedTargetDays);
   const [saving, setSaving] = React.useState(false);
+  const [isDraggingSlider, setIsDraggingSlider] = React.useState(false);
 
   React.useEffect(() => {
     if (open) {
       setDraftDays(savedTargetDays);
+      setIsDraggingSlider(false);
     }
   }, [open, savedTargetDays]);
+
+  const onSelectDay = React.useCallback((day: number) => {
+    setDraftDays(day);
+  }, []);
+
+  const onSliderInput = React.useCallback(
+    (event: React.FormEvent<HTMLInputElement>) => {
+      setDraftDays(Number(event.currentTarget.value));
+    },
+    [],
+  );
+
+  const endSliderDrag = React.useCallback(() => {
+    setIsDraggingSlider(false);
+  }, []);
 
   async function handleSave() {
     setSaving(true);
@@ -84,7 +133,8 @@ export function WeeklyAttendanceGoalEditDialog({
         targetDays={draftDays}
         visitsThisWeek={visitsThisWeek}
         interactive
-        onSelectTarget={setDraftDays}
+        onSelectTarget={onSelectDay}
+        smoothSegmentMotion={!isDraggingSlider}
         className="w-[min(8.75rem,24vw)] max-h-[min(8.75rem,20dvh)] sm:w-[9.25rem]"
       />
 
@@ -92,26 +142,7 @@ export function WeeklyAttendanceGoalEditDialog({
         Build a routine that suits your week.
       </p>
 
-      <div className="grid w-full grid-cols-7 gap-1">
-        {Array.from({ length: 7 }, (_, i) => i + 1).map((day) => (
-          <Button
-            key={day}
-            type="button"
-            variant="outline"
-            className={cn(
-              GOAL_EDITOR_PRESET_BUTTON_CLASS,
-              "h-8 min-w-0 w-full rounded-lg px-0 text-xs tabular-nums sm:h-9 sm:text-sm",
-              draftDays === day &&
-                "border-primary/50 bg-primary text-primary-foreground shadow-[0_0_12px_rgba(190,255,0,0.3)] hover:bg-primary/90",
-            )}
-            onClick={() => setDraftDays(day)}
-            aria-label={`${day} days per week`}
-            aria-pressed={draftDays === day}
-          >
-            {day}
-          </Button>
-        ))}
-      </div>
+      <WeeklyDayPicker draftDays={draftDays} onSelect={onSelectDay} />
 
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-[10px] font-medium text-muted-foreground/90 sm:text-[11px]">
@@ -128,7 +159,12 @@ export function WeeklyAttendanceGoalEditDialog({
             max={MEMBER_WEEKLY_ATTENDANCE_TARGET_MAX}
             step={1}
             value={draftDays}
-            onChange={(e) => setDraftDays(Number(e.target.value))}
+            onInput={onSliderInput}
+            onChange={onSliderInput}
+            onPointerDown={() => setIsDraggingSlider(true)}
+            onPointerUp={endSliderDrag}
+            onPointerCancel={endSliderDrag}
+            onBlur={endSliderDrag}
             className="goal-editor-weekly-range relative z-10 h-2 w-full cursor-pointer appearance-none bg-transparent"
             style={{
               background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${sliderFill}%, #3a4240 ${sliderFill}%, #3a4240 100%)`,

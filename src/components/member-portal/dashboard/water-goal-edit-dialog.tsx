@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { memo } from "react";
 
 import { toast } from "sonner";
 
@@ -18,6 +19,20 @@ import { cn } from "@/lib/utils";
 function formatWaterGoalLitresPerDay(ml: number): string {
   return `${(ml / 1000).toFixed(2)} litres / day`;
 }
+
+const WaterGoalLitresReadout = memo(function WaterGoalLitresReadout({
+  draftMl,
+}: {
+  draftMl: number;
+}) {
+  return (
+    <p
+      className="text-center text-[1.35rem] font-bold leading-tight tracking-tight text-foreground tabular-nums sm:text-[1.5rem]"
+    >
+      {formatWaterGoalLitresPerDay(draftMl)}
+    </p>
+  );
+});
 
 type WaterGoalEditDialogProps = {
   open: boolean;
@@ -39,12 +54,29 @@ export function WaterGoalEditDialog({
   const sliderRef = React.useRef<HTMLInputElement>(null);
   const [draftMl, setDraftMl] = React.useState(savedTargetMl);
   const [saving, setSaving] = React.useState(false);
+  const [isDraggingSlider, setIsDraggingSlider] = React.useState(false);
 
   React.useEffect(() => {
     if (open) {
       setDraftMl(savedTargetMl);
+      setIsDraggingSlider(false);
     }
   }, [open, savedTargetMl]);
+
+  const handleSliderValue = React.useCallback((raw: number) => {
+    setDraftMl(clampWaterTargetDraftMl(raw));
+  }, []);
+
+  const onSliderInput = React.useCallback(
+    (event: React.FormEvent<HTMLInputElement>) => {
+      handleSliderValue(Number(event.currentTarget.value));
+    },
+    [handleSliderValue],
+  );
+
+  const endSliderDrag = React.useCallback(() => {
+    setIsDraggingSlider(false);
+  }, []);
 
   async function handleSave() {
     setSaving(true);
@@ -83,13 +115,10 @@ export function WaterGoalEditDialog({
       <div className="flex flex-col items-center gap-2 sm:gap-2.5">
         <WaterGoalGlassVisual
           targetMl={draftMl}
+          smoothLevelMotion={!isDraggingSlider}
           className="h-[min(7.75rem,20dvh)] w-[min(4.75rem,12.5dvh)] sm:h-[8.5rem] sm:w-[5.25rem]"
         />
-        <p
-          className="text-center text-[1.35rem] font-bold leading-tight tracking-tight text-foreground tabular-nums sm:text-[1.5rem]"
-        >
-          {formatWaterGoalLitresPerDay(draftMl)}
-        </p>
+        <WaterGoalLitresReadout draftMl={draftMl} />
         <p className="text-center text-[11px] leading-snug text-muted-foreground/90">
           Adjust the amount you want to drink each day.
         </p>
@@ -104,9 +133,12 @@ export function WaterGoalEditDialog({
             max={MEMBER_DAILY_WATER_TARGET_MAX_ML}
             step={MEMBER_DAILY_WATER_TARGET_SLIDER_STEP_ML}
             value={draftMl}
-            onChange={(e) =>
-              setDraftMl(clampWaterTargetDraftMl(Number(e.target.value)))
-            }
+            onInput={onSliderInput}
+            onChange={onSliderInput}
+            onPointerDown={() => setIsDraggingSlider(true)}
+            onPointerUp={endSliderDrag}
+            onPointerCancel={endSliderDrag}
+            onBlur={endSliderDrag}
             className={cn(
               "goal-editor-water-range relative z-10 h-2 w-full cursor-pointer appearance-none bg-transparent",
             )}

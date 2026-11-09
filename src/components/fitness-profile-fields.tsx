@@ -18,6 +18,7 @@ type FitnessProfileFieldsProps = {
   fitnessGoal: FitnessGoal | "";
   onFitnessGoalChange: (value: FitnessGoal) => void;
   fitnessGoalRequired?: boolean;
+  requiredMetrics?: boolean;
   defaultAgeYears?: number | null;
   defaultHeightCm?: number | null;
   defaultWeightKg?: number | null;
@@ -28,6 +29,7 @@ export function FitnessProfileFields({
   fitnessGoal,
   onFitnessGoalChange,
   fitnessGoalRequired = false,
+  requiredMetrics = false,
   defaultAgeYears,
   defaultHeightCm,
   defaultWeightKg,
@@ -45,14 +47,16 @@ export function FitnessProfileFields({
         <div>
           <p className="text-sm font-medium">Fitness profile</p>
           <p className="text-xs text-muted-foreground">
-            Used in member portal calculators. Body stats are optional.
+            {requiredMetrics
+              ? "Age, height, and weight are required for new registrations."
+              : "Used in member portal calculators. Body stats are optional."}
           </p>
         </div>
       ) : null}
 
       <div className="space-y-2">
         <Label htmlFor="fitnessGoal">
-          Fitness goal{fitnessGoalRequired ? "" : " (optional)"}
+          Fitness goal{fitnessGoalRequired ? " *" : " (optional)"}
         </Label>
         <input type="hidden" name="fitnessGoal" value={fitnessGoal} />
         <Select
@@ -78,7 +82,9 @@ export function FitnessProfileFields({
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="ageYears">Age (optional)</Label>
+          <Label htmlFor="ageYears">
+            Age (years){requiredMetrics ? " *" : " (optional)"}
+          </Label>
           <Input
             id="ageYears"
             name="ageYears"
@@ -87,12 +93,15 @@ export function FitnessProfileFields({
             max={120}
             defaultValue={defaultAgeYears ?? ""}
             placeholder="Years"
+            required={requiredMetrics}
             className={embedded ? "bg-muted/40 focus-visible:ring-primary" : undefined}
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="heightCm">Height (cm, optional)</Label>
+            <Label htmlFor="heightCm">
+              Height (cm){requiredMetrics ? " *" : " (optional)"}
+            </Label>
             <Input
               id="heightCm"
               name="heightCm"
@@ -101,11 +110,14 @@ export function FitnessProfileFields({
               max={300}
               defaultValue={defaultHeightCm ?? ""}
               placeholder="cm"
+              required={requiredMetrics}
               className={embedded ? "bg-muted/40 focus-visible:ring-primary" : undefined}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="weightKg">Weight (kg, optional)</Label>
+            <Label htmlFor="weightKg">
+              Weight (kg){requiredMetrics ? " *" : " (optional)"}
+            </Label>
             <Input
               id="weightKg"
               name="weightKg"
@@ -117,6 +129,7 @@ export function FitnessProfileFields({
                 defaultWeightKg != null ? String(defaultWeightKg) : ""
               }
               placeholder="kg"
+              required={requiredMetrics}
               className={embedded ? "bg-muted/40 focus-visible:ring-primary" : undefined}
             />
           </div>

@@ -12,6 +12,19 @@ import {
 } from "./types";
 import { expiryCalendarDayRange } from "./window";
 
+async function sendExpiryReminderEmail(params: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<void> {
+  const result = await sendTransactionalEmail(params);
+  if (result.outcome === "sent") return;
+  throw new Error(
+    result.outcome === "failed" ? result.message : "Email not configured",
+  );
+}
+
 export type MembershipExpiryReminderJobStats = {
   gymsProcessed: number;
   candidatesScanned: number;
@@ -85,7 +98,7 @@ export async function runMembershipExpiryRemindersJob(
                 notificationDeliveries.claimMembershipExpiryReminder(record),
               releaseDelivery: (record) =>
                 notificationDeliveries.releaseMembershipExpiryReminder(record),
-              sendEmail: sendTransactionalEmail,
+              sendEmail: sendExpiryReminderEmail,
             },
           );
 

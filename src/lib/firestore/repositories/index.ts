@@ -13,6 +13,7 @@ import { NutritionFoodCatalogRepository } from "@/lib/firestore/repositories/nut
 import { NutritionLogsRepository } from "@/lib/firestore/repositories/nutrition-logs";
 import { NutritionMemberFoodsRepository } from "@/lib/firestore/repositories/nutrition-member-foods";
 import { NutritionMemberSettingsRepository } from "@/lib/firestore/repositories/nutrition-member-settings";
+import { MemberPortalInviteResendThrottlesRepository } from "@/lib/firestore/repositories/member-portal-invite-resend-throttles";
 import { NotificationDeliveriesRepository } from "@/lib/firestore/repositories/notification-deliveries";
 import { PackagesRepository } from "@/lib/firestore/repositories/packages";
 import { PaymentsRepository } from "@/lib/firestore/repositories/payments";
@@ -39,6 +40,7 @@ export type FirestoreRepositories = {
   payments: PaymentsRepository;
   receipts: ReceiptsRepository;
   notificationDeliveries: NotificationDeliveriesRepository;
+  memberPortalInviteResendThrottles: MemberPortalInviteResendThrottlesRepository;
   staffLoginThrottles: StaffLoginThrottlesRepository;
   visitors: VisitorsRepository;
   employees: EmployeesRepository;
@@ -70,6 +72,7 @@ export function createRepositories(db: Firestore): FirestoreRepositories {
     payments: new PaymentsRepository(db),
     receipts: new ReceiptsRepository(db),
     notificationDeliveries: new NotificationDeliveriesRepository(db),
+    memberPortalInviteResendThrottles: new MemberPortalInviteResendThrottlesRepository(db),
     staffLoginThrottles: new StaffLoginThrottlesRepository(db),
     visitors: new VisitorsRepository(db),
     employees: new EmployeesRepository(db),
@@ -106,6 +109,7 @@ export { NutritionMemberSettingsRepository } from "@/lib/firestore/repositories/
 export { PackagesRepository } from "@/lib/firestore/repositories/packages";
 export { PaymentsRepository } from "@/lib/firestore/repositories/payments";
 export { NotificationDeliveriesRepository } from "@/lib/firestore/repositories/notification-deliveries";
+export { MemberPortalInviteResendThrottlesRepository } from "@/lib/firestore/repositories/member-portal-invite-resend-throttles";
 export { ReceiptsRepository } from "@/lib/firestore/repositories/receipts";
 export { StaffLoginThrottlesRepository } from "@/lib/firestore/repositories/staff-login-throttles";
 export { SubscriptionsRepository } from "@/lib/firestore/repositories/subscriptions";

@@ -78,8 +78,22 @@ export async function sendManualRenewalReminderToMember(
   );
 
   try {
-    await sendTransactionalEmail({ to: recipientEmail, subject, html, text });
-    return { status: "sent" };
+    const result = await sendTransactionalEmail({
+      to: recipientEmail,
+      subject,
+      html,
+      text,
+    });
+    if (result.outcome === "sent") {
+      return { status: "sent" };
+    }
+    if (result.outcome === "skipped") {
+      return {
+        status: "failed",
+        error: "Email delivery is not configured (RESEND_API_KEY).",
+      };
+    }
+    return { status: "failed", error: result.message };
   } catch (err) {
     return {
       status: "failed",

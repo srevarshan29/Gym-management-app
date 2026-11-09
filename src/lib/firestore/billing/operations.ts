@@ -54,6 +54,9 @@ export type CreateMemberBillingInput = {
   packageId: string;
   packageName: string;
   packagePrice: number;
+  /** Standard list price from the package document (for audit when a discount is applied). */
+  originalPackagePrice?: number;
+  discountAmount?: number;
   startDate: Date;
   endDate: Date;
   createdById: string;
@@ -205,6 +208,8 @@ export async function createMemberWithSubscription(
       startDate: input.startDate,
       endDate: input.endDate,
       priceAtPurchase: input.packagePrice,
+      originalPriceAtPurchase: input.originalPackagePrice,
+      discountAmount: input.discountAmount,
       createdById: input.createdById,
       initialPaidTotal: input.logPayment ? (input.paymentAmount ?? 0) : 0,
     });

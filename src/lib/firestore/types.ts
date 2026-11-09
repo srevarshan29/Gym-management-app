@@ -308,6 +308,10 @@ export type SubscriptionDoc = {
   startDate: Timestamp;
   endDate: Timestamp;
   priceAtPurchase: number;
+  /** Package list price at signup when an individual discount was applied. */
+  originalPriceAtPurchase?: number;
+  /** Individual discount (list price minus agreed price) at signup. */
+  discountAmount?: number;
   paidTotal: number;
   pendingAmount: number;
   writtenOffAmount: number;
@@ -363,18 +367,38 @@ export type MembershipExpiryReminderType =
   | "EXPIRY_14_DAYS_AFTER"
   | "EXPIRY_30_DAYS_AFTER";
 
+export type MemberPortalInvitationStatus =
+  | "PENDING"
+  | "SENT"
+  | "FAILED"
+  | "NOT_CONFIGURED";
+
+export type MemberPortalInvitationTrigger =
+  | "AUTO_ON_REGISTER"
+  | "STAFF_RESEND";
+
 /** Durable idempotency record for automated notification delivery. */
 export type NotificationDeliveryDoc = {
   gymId: string;
   memberId: string;
   subscriptionId?: string;
-  kind: "MEMBERSHIP_EXPIRY" | "INACTIVE_MEMBER";
+  kind: "MEMBERSHIP_EXPIRY" | "INACTIVE_MEMBER" | "MEMBER_PORTAL_INVITE";
   reminderType?: MembershipExpiryReminderType;
   inactiveAfterDays?: number;
   lastAttendancePeriodMs?: number;
   channel: "EMAIL";
   recipientEmail: string;
-  sentAt: Timestamp;
+  sentAt?: Timestamp | null;
+  status?: MemberPortalInvitationStatus;
+  trigger?: MemberPortalInvitationTrigger;
+  createdAt?: Timestamp;
+  lastAttemptAt?: Timestamp | null;
+  attemptCount?: number;
+  /** In-flight send lease — prevents duplicate concurrent sends. */
+  sendLeaseExpiresAt?: Timestamp | null;
+  /** Attempt number tied to the active lease / idempotency key. */
+  activeSendAttempt?: number | null;
+  providerMessageId?: string | null;
 };
 
 export type NotificationChannelSettingsDoc = {

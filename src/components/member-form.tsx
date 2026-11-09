@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { MEMBER_GENDER_OPTIONS } from "@/lib/member-gender";
 import { MembershipPolicyConsent } from "@/components/membership-policy-consent";
 import { FitnessProfileFields } from "@/components/fitness-profile-fields";
@@ -110,13 +110,24 @@ export function MemberForm(props: Props) {
   const [photoPreview, setPhotoPreview] = React.useState<string | null>(
     props.mode === "edit" ? props.member.photoUrl : null,
   );
-  const [gender, setGender] = React.useState<MemberGender>(
+  const [gender, setGender] = React.useState<MemberGender | "">(
     props.mode === "edit"
       ? props.member.gender
       : props.mode === "create" && props.initialGender
         ? props.initialGender
-        : "PREFER_NOT_TO_SAY",
+        : "",
   );
+  const [agreedMembershipPrice, setAgreedMembershipPrice] = React.useState(() =>
+    props.mode === "create"
+      ? String(props.packages[0]?.price ?? "")
+      : "",
+  );
+  const [paymentAmount, setPaymentAmount] = React.useState(() =>
+    props.mode === "create"
+      ? String(props.packages[0]?.price ?? "")
+      : "",
+  );
+  const paymentAmountTouchedRef = React.useRef(false);
   const [displayName, setDisplayName] = React.useState(
     props.mode === "edit"
       ? props.member.name
@@ -137,6 +148,7 @@ export function MemberForm(props: Props) {
         ? props.initialFitnessGoal
         : "",
   );
+  const [showGenderError, setShowGenderError] = React.useState(false);
 
   React.useEffect(() => {
     if (state && !state.ok) toast.error(state.error);
@@ -160,8 +172,41 @@ export function MemberForm(props: Props) {
       ? props.packages.find((p) => p.id === packageId)
       : undefined;
 
+  React.useEffect(() => {
+    if (props.mode !== "create" || !selectedPackage) return;
+    const priceStr = String(selectedPackage.price);
+    setAgreedMembershipPrice(priceStr);
+    if (!paymentAmountTouchedRef.current) {
+      setPaymentAmount(priceStr);
+    }
+  }, [props.mode, packageId, selectedPackage?.price]);
+
+  const standardPackagePrice = selectedPackage?.price ?? 0;
+  const agreedNumeric = Number(agreedMembershipPrice);
+  const discountAmount =
+    selectedPackage &&
+    Number.isFinite(agreedNumeric) &&
+    agreedNumeric >= 0 &&
+    agreedNumeric <= standardPackagePrice
+      ? Math.round((standardPackagePrice - agreedNumeric) * 100) / 100
+      : null;
+
+  function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
+    if (props.mode !== "create") return;
+    if (!gender) {
+      e.preventDefault();
+      setShowGenderError(true);
+      return;
+    }
+    setShowGenderError(false);
+  }
+
   return (
-    <form action={formAction} className="space-y-6">
+    <form
+      action={formAction}
+      className="space-y-6"
+      onSubmit={handleFormSubmit}
+    >
       {props.mode === "edit" ? (
         <input type="hidden" name="id" value={props.member.id} />
       ) : null}
@@ -179,7 +224,7 @@ export function MemberForm(props: Props) {
             <MemberAvatar
               name={displayName}
               photoUrl={photoPreview}
-              gender={gender}
+              gender={gender || "PREFER_NOT_TO_SAY"}
               seed={props.mode === "edit" ? props.member.id : displayName}
               size="md"
             />
@@ -221,13 +266,28 @@ export function MemberForm(props: Props) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="gender">Gender</Label>
+              <Label htmlFor="gender">
+                Gender{props.mode === "create" ? " *" : ""}
+              </Label>
               <input type="hidden" name="gender" value={gender} />
               <Select
-                value={gender}
-                onValueChange={(value) => setGender(value as MemberGender)}
+                value={gender || undefined}
+                onValueChange={(value) => {
+                  setGender(value as MemberGender);
+                  setShowGenderError(false);
+                }}
               >
-                <SelectTrigger id="gender">
+                <SelectTrigger
+                  id="gender"
+                  aria-invalid={
+                    props.mode === "create" && showGenderError ? true : undefined
+                  }
+                  className={cn(
+                    props.mode === "create" &&
+                      showGenderError &&
+                      "border-destructive ring-1 ring-destructive",
+                  )}
+                >
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
                 <SelectContent>
@@ -238,9 +298,15 @@ export function MemberForm(props: Props) {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                Used for the default avatar when no photo is uploaded.
-              </p>
+              {props.mode === "create" && showGenderError ? (
+                <p className="text-sm text-destructive" role="alert">
+                  Select a gender before adding this member.
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Used for the default avatar when no photo is uploaded.
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone number</Label>
@@ -340,6 +406,7 @@ export function MemberForm(props: Props) {
             fitnessGoal={fitnessGoal}
             onFitnessGoalChange={setFitnessGoal}
             fitnessGoalRequired={props.mode === "create"}
+            requiredMetrics={props.mode === "create"}
             defaultAgeYears={
               props.mode === "edit"
                 ? props.member.ageYears
@@ -411,6 +478,60 @@ export function MemberForm(props: Props) {
               </div>
             </div>
 
+            {selectedPackage ? (
+              <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
+                <p className="text-sm">
+                  <span className="text-muted-foreground">Package: </span>
+                  <span className="font-medium">{selectedPackage.name}</span>
+                </p>
+                <p className="text-sm">
+                  <span className="text-muted-foreground">
+                    Standard package price:{" "}
+                  </span>
+                  <span className="font-medium">
+                    {formatCurrency(standardPackagePrice)}
+                  </span>
+                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="agreedMembershipPrice">
+                    Agreed membership price (INR)
+                  </Label>
+                  <Input
+                    id="agreedMembershipPrice"
+                    name="agreedMembershipPrice"
+                    type="number"
+                    min={0}
+                    max={standardPackagePrice}
+                    step="0.01"
+                    value={agreedMembershipPrice}
+                    required
+                    onChange={(e) => {
+                      setAgreedMembershipPrice(e.target.value);
+                      if (!paymentAmountTouchedRef.current) {
+                        setPaymentAmount(e.target.value);
+                      }
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Negotiated subscription total for this member only. The
+                    package list price is not changed.
+                  </p>
+                </div>
+                {discountAmount != null && discountAmount > 0 ? (
+                  <p className="text-sm">
+                    <span className="text-muted-foreground">Discount: </span>
+                    <span className="font-medium text-emerald-700">
+                      {formatCurrency(discountAmount)}
+                    </span>
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Discount: {formatCurrency(0)}
+                  </p>
+                )}
+              </div>
+            ) : null}
+
             {props.canRecordPayment ? (
               <div className="rounded-lg border p-4">
                 <label className="flex items-center gap-2 text-sm font-medium">
@@ -429,15 +550,23 @@ export function MemberForm(props: Props) {
                 {logPayment ? (
                   <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="amount">Amount (INR)</Label>
+                      <Label htmlFor="amount">Amount collected now (INR)</Label>
                       <Input
                         id="amount"
                         name="amount"
                         type="number"
                         min="0"
                         step="0.01"
-                        defaultValue={selectedPackage?.price}
+                        value={paymentAmount}
+                        onChange={(e) => {
+                          paymentAmountTouchedRef.current = true;
+                          setPaymentAmount(e.target.value);
+                        }}
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Payment received today — may differ from the agreed
+                        membership price (partial payments allowed).
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label>Method</Label>

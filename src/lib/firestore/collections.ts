@@ -28,6 +28,7 @@ export const COLLECTIONS = {
   cardioSessions: "cardioSessions",
   memberGoals: "memberGoals",
   notificationDeliveries: "notificationDeliveries",
+  memberPortalInviteResendThrottles: "memberPortalInviteResendThrottles",
   gymNotificationSettings: "gymNotificationSettings",
   attendance: "attendance",
   memberWaterLogs: "memberWaterLogs",

@@ -2,21 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { z } from "zod";
-
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
 import {
   createMemberWithSubscription,
   getRepositories,
-  platformContext,
 } from "@/lib/firestore";
 import { staffContextFromUser } from "@/lib/firestore/session-context";
 import type { GymSessionUser } from "@/lib/session";
+import { parseAgreedMembershipPrice } from "@/lib/member-registration/agreed-price";
 import {
-  fitnessGoalSchema,
-  optionalFitnessGoalSchema,
-  signupBodyMetricsSchema,
-} from "@/lib/fitness-goal";
+  staffCreateMemberSchema,
+  staffUpdateMemberSchema,
+} from "@/lib/member-registration/schemas";
 import { getMembershipPolicyForGym } from "@/lib/gym-profile";
 import { isMembershipPolicyRequired } from "@/lib/membership-policy";
 import { normalizeMemberEmail } from "@/lib/member-portal/constants";
@@ -25,6 +22,7 @@ import {
   findGymMembersByEmailFirestore,
 } from "@/lib/member-portal/email";
 import { schedulePaymentLogged } from "@/lib/notifications";
+import { afterMemberRegistered } from "@/lib/member-portal-invitation/on-member-created";
 import { canDeleteMembers, canLogPayments } from "@/lib/permissions";
 import { requireGym } from "@/lib/session";
 import { uploadMemberPhoto } from "@/lib/storage";
@@ -36,53 +34,6 @@ import {
   adjustPtMemberCounter,
   ptMemberCounterDelta,
 } from "@/lib/firestore/pt-member-counter";
-
-const memberGenderSchema = z.enum([
-  "MALE",
-  "FEMALE",
-  "OTHER",
-  "PREFER_NOT_TO_SAY",
-]);
-
-const createSchema = z
-  .object({
-    name: z.string().trim().min(1, "Name is required").max(120),
-    phone: z.string().trim().min(3, "Phone number is required").max(30),
-    email: z.string().trim().email("Enter a valid email"),
-    gender: memberGenderSchema.default("PREFER_NOT_TO_SAY"),
-    notes: z.string().trim().max(1000).optional().or(z.literal("")),
-    packageId: z.string().trim().min(1, "Select a package"),
-    startDate: z.string().optional(),
-    logPayment: z.enum(["0", "1"]).default("0"),
-    amount: z.string().optional(),
-    method: z
-      .enum(["CASH", "UPI", "CARD", "BANK_TRANSFER", "OTHER"])
-      .default("CASH"),
-    isPt: z.enum(["0", "1"]).default("0"),
-    trainerId: z.string().optional().or(z.literal("")),
-    visitorId: z.string().optional().or(z.literal("")),
-    fitnessGoal: fitnessGoalSchema,
-  })
-  .merge(signupBodyMetricsSchema);
-
-const updateSchema = z
-  .object({
-    id: z.string().min(1),
-    name: z.string().trim().min(1, "Name is required").max(120),
-    phone: z.string().trim().min(3, "Phone number is required").max(30),
-    email: z
-      .string()
-      .trim()
-      .email("Enter a valid email")
-      .optional()
-      .or(z.literal("")),
-    gender: memberGenderSchema.default("PREFER_NOT_TO_SAY"),
-    notes: z.string().trim().max(1000).optional().or(z.literal("")),
-    isPt: z.enum(["0", "1"]).default("0"),
-    trainerId: z.string().optional().or(z.literal("")),
-    fitnessGoal: optionalFitnessGoalSchema,
-  })
-  .merge(signupBodyMetricsSchema);
 
 async function resolvePtFields(
   gymId: string,
@@ -141,7 +92,7 @@ export async function createMember(
   const ctx = staffContextFromUser(user);
   const { members, packages } = getRepositories();
 
-  const parsed = createSchema.safeParse(Object.fromEntries(formData));
+  const parsed = staffCreateMemberSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
   }
@@ -162,6 +113,12 @@ export async function createMember(
   const pkg = await packages.findById(ctx, tenantGymId, data.packageId);
   if (!pkg) return actionError("Selected package no longer exists.");
 
+  const pricing = parseAgreedMembershipPrice(
+    pkg.price,
+    data.agreedMembershipPrice,
+  );
+  if (!pricing.ok) return actionError(pricing.error);
+
   const startDate = data.startDate ? new Date(data.startDate) : new Date();
   if (Number.isNaN(startDate.getTime())) {
     return actionError("Invalid start date.");
@@ -176,7 +133,7 @@ export async function createMember(
   const amount =
     data.amount && data.amount.trim() !== ""
       ? Number(data.amount)
-      : Number(pkg.price);
+      : pricing.agreedMembershipPrice;
   if (logPayment && (Number.isNaN(amount) || amount < 0)) {
     return actionError("Invalid payment amount.");
   }
@@ -189,29 +146,6 @@ export async function createMember(
   if (policyConsent && "ok" in policyConsent) return policyConsent;
 
   const visitorId = data.visitorId?.trim();
-  let visitorMetrics: {
-    fitnessGoal: typeof data.fitnessGoal | null;
-    ageYears: number | null;
-    heightCm: number | null;
-    weightKg: number | null;
-  } | null = null;
-  if (visitorId) {
-    const { visitors } = getRepositories();
-    const visitor = await visitors.getById(
-      platformContext,
-      tenantGymId,
-      visitorId,
-    );
-    if (visitor && visitor.status === "pending") {
-      visitorMetrics = {
-        fitnessGoal: visitor.fitnessGoal,
-        ageYears: visitor.ageYears,
-        heightCm: visitor.heightCm,
-        weightKg: visitor.weightKg,
-      };
-    }
-  }
-
   const { memberId, paymentId } = await createMemberWithSubscription({
     gymId: tenantGymId,
     name: data.name,
@@ -221,19 +155,19 @@ export async function createMember(
     notes: data.notes || null,
     isPt,
     trainerId,
-    fitnessGoal: data.fitnessGoal ?? visitorMetrics?.fitnessGoal ?? null,
-    ageYears: data.ageYears ?? visitorMetrics?.ageYears ?? null,
-    heightCm: data.heightCm ?? visitorMetrics?.heightCm ?? null,
-    weightKg:
-      data.weightKg ??
-      (visitorMetrics?.weightKg != null ? visitorMetrics.weightKg : null),
+    fitnessGoal: data.fitnessGoal,
+    ageYears: data.ageYears,
+    heightCm: data.heightCm,
+    weightKg: data.weightKg,
     membershipPolicyAgreedText:
       policyConsent && "text" in policyConsent ? policyConsent.text : null,
     membershipPolicyAgreedAt:
       policyConsent && "agreedAt" in policyConsent ? policyConsent.agreedAt : null,
     packageId: pkg.id,
     packageName: pkg.name,
-    packagePrice: pkg.price,
+    packagePrice: pricing.agreedMembershipPrice,
+    originalPackagePrice: pricing.standardPackagePrice,
+    discountAmount: pricing.discountAmount,
     startDate,
     endDate,
     createdById: user.id,
@@ -250,6 +184,14 @@ export async function createMember(
   }
 
   await persistMemberPhoto(user, memberId, formData);
+
+  await afterMemberRegistered({
+    gymId: tenantGymId,
+    memberId,
+    staffCtx: ctx,
+  }).catch((err) =>
+    console.error("[members] member portal invitation setup failed:", err),
+  );
 
   revalidatePath("/members");
   revalidatePath("/members/visitors");
@@ -271,7 +213,7 @@ export async function updateMember(
   const ctx = staffContextFromUser(user);
   const { members } = getRepositories();
 
-  const parsed = updateSchema.safeParse(Object.fromEntries(formData));
+  const parsed = staffUpdateMemberSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
   }

@@ -10,6 +10,19 @@ import type { InactiveMemberJobStats, InactiveMemberSendSummary } from "./types"
 
 const BULK_SEND_BATCH_SIZE = 25;
 
+async function sendInactiveMemberEmail(params: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<void> {
+  const result = await sendTransactionalEmail(params);
+  if (result.outcome === "sent") return;
+  throw new Error(
+    result.outcome === "failed" ? result.message : "Email not configured",
+  );
+}
+
 function emptySummary(): InactiveMemberSendSummary {
   return {
     sent: 0,
@@ -51,7 +64,7 @@ export async function sendInactiveMemberRemindersBulk(
     releaseDelivery: (record: Parameters<
       typeof notificationDeliveries.releaseInactiveMemberReminder
     >[0]) => notificationDeliveries.releaseInactiveMemberReminder(record),
-    sendEmail: sendTransactionalEmail,
+    sendEmail: sendInactiveMemberEmail,
   };
 
   for (let i = 0; i < targets.length; i += BULK_SEND_BATCH_SIZE) {
@@ -94,7 +107,7 @@ export async function runInactiveMemberRemindersJob(
     releaseDelivery: (record: Parameters<
       typeof notificationDeliveries.releaseInactiveMemberReminder
     >[0]) => notificationDeliveries.releaseInactiveMemberReminder(record),
-    sendEmail: sendTransactionalEmail,
+    sendEmail: sendInactiveMemberEmail,
   };
 
   let startAfterId: string | null = null;

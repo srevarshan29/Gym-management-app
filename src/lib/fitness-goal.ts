@@ -67,3 +67,39 @@ export const memberBodyMetricsFields = {
 };
 
 export const signupBodyMetricsSchema = z.object(memberBodyMetricsFields);
+
+const requiredIntField = (
+  label: string,
+  min: number,
+  max: number,
+  rangeMessage: string,
+) =>
+  z
+    .string()
+    .trim()
+    .min(1, `${label} is required.`)
+    .transform((v) => Number(v))
+    .refine((v) => Number.isFinite(v) && Number.isInteger(v) && v >= min && v <= max, {
+      message: rangeMessage,
+    });
+
+const requiredWeightField = z
+  .string()
+  .trim()
+  .min(1, "Weight is required.")
+  .transform((v) => Number(v))
+  .refine((v) => Number.isFinite(v) && v >= 20 && v <= 500, {
+    message: "Enter weight in kg (20–500).",
+  });
+
+/** Required body metrics for new member / QR registration only. */
+export const requiredSignupBodyMetricsSchema = z.object({
+  ageYears: requiredIntField("Age", 1, 120, "Enter a valid age (1–120)."),
+  heightCm: requiredIntField(
+    "Height",
+    50,
+    300,
+    "Enter height in cm (50–300).",
+  ),
+  weightKg: requiredWeightField,
+});

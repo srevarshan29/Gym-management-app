@@ -25,6 +25,7 @@ import { WriteOffDuesButton } from "@/components/write-off-dues-button";
 import { DeleteMemberButton } from "@/components/delete-member-button";
 import { MemberPolicyConsentSection } from "@/components/member-policy-consent-section";
 import { MemberPortalStaffCard } from "@/components/member-portal/member-portal-staff-card";
+import { loadMemberPortalInvitationSummary } from "@/lib/member-portal-invitation/load-status";
 import { MemberWorkoutProgressStaffCard } from "@/components/workout/member-workout-progress-staff-card";
 import { AutoOpenReceipt } from "@/components/auto-open-receipt";
 import type { PackageOption } from "@/components/member-form";
@@ -76,6 +77,19 @@ export default async function MemberProfilePage({
 
   const portalActive = !!member.portalEnabledAt;
   const hasEmail = !!member.email?.trim();
+  const invitationSummary = await loadMemberPortalInvitationSummary(
+    user.gymId,
+    member.id,
+  );
+  const invitation =
+    invitationSummary ??
+    (hasEmail && member.email
+      ? {
+          status: null,
+          recipientEmail: member.email,
+          lastAttemptAt: null,
+        }
+      : null);
 
   const current = [...member.subscriptions].sort(
     (a, b) => b.endDate.getTime() - a.endDate.getTime(),
@@ -251,6 +265,7 @@ export default async function MemberProfilePage({
           memberId={member.id}
           portalActive={portalActive}
           hasEmail={hasEmail}
+          invitation={invitation}
         />
 
         <MemberWorkoutProgressStaffCard

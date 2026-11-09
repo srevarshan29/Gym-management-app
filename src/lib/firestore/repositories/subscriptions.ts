@@ -32,6 +32,8 @@ export type CreateSubscriptionInput = {
   startDate: Date;
   endDate: Date;
   priceAtPurchase: number;
+  originalPriceAtPurchase?: number;
+  discountAmount?: number;
   createdById: string | null;
   initialPaidTotal?: number;
 };
@@ -93,7 +95,7 @@ export class SubscriptionsRepository {
       paidTotal,
       0,
     );
-    return {
+    return omitUndefined({
       id,
       gymId,
       memberId: input.memberId,
@@ -104,6 +106,8 @@ export class SubscriptionsRepository {
       startDate: Timestamp.fromDate(input.startDate),
       endDate: Timestamp.fromDate(input.endDate),
       priceAtPurchase: input.priceAtPurchase,
+      originalPriceAtPurchase: input.originalPriceAtPurchase,
+      discountAmount: input.discountAmount,
       paidTotal,
       pendingAmount,
       writtenOffAmount: 0,
@@ -111,7 +115,7 @@ export class SubscriptionsRepository {
       writtenOffById: null,
       createdById: input.createdById,
       createdAt: Timestamp.now(),
-    };
+    }) as Omit<SubscriptionDoc, never> & { id: string };
   }
 
   memberCurrentSubscriptionPatch(

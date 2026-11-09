@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/select";
 import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
-import { signupBodyMetricsSchema } from "@/lib/fitness-goal";
+import { requiredSignupBodyMetricsSchema } from "@/lib/fitness-goal";
 import { MEMBER_GENDER_OPTIONS } from "@/lib/member-gender";
 import { isMembershipPolicyRequired } from "@/lib/membership-policy";
 import type { FitnessGoal, MemberGender } from "@prisma/client";
@@ -69,16 +69,31 @@ function ActionButton({
   );
 }
 
-function validateOptionalBodyMetrics(form: HTMLFormElement): string | null {
+function validateRequiredBodyMetrics(form: HTMLFormElement): string | null {
   const values = {
     ageYears: (form.elements.namedItem("ageYears") as HTMLInputElement)?.value ?? "",
     heightCm: (form.elements.namedItem("heightCm") as HTMLInputElement)?.value ?? "",
     weightKg: (form.elements.namedItem("weightKg") as HTMLInputElement)?.value ?? "",
   };
 
-  const result = signupBodyMetricsSchema.safeParse(values);
+  const result = requiredSignupBodyMetricsSchema.safeParse(values);
   if (result.success) return null;
   return result.error.errors[0]?.message ?? "Invalid body stats.";
+}
+
+function focusFirstInvalidIn(
+  container: HTMLElement,
+  fieldNames: string[],
+): void {
+  for (const name of fieldNames) {
+    const el = container.querySelector<HTMLElement>(`[name="${name}"], #${name}`);
+    if (el && el instanceof HTMLInputElement && !el.checkValidity()) {
+      el.focus();
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.reportValidity();
+      return;
+    }
+  }
 }
 
 export function PublicRegistrationForm({
@@ -96,7 +111,7 @@ export function PublicRegistrationForm({
   const formRef = React.useRef<HTMLFormElement>(null);
   const step1Ref = React.useRef<HTMLDivElement>(null);
   const [step, setStep] = React.useState<StepId>(1);
-  const [gender, setGender] = React.useState<MemberGender>("PREFER_NOT_TO_SAY");
+  const [gender, setGender] = React.useState<MemberGender | "">("");
   const [fitnessGoal, setFitnessGoal] = React.useState<FitnessGoal | "">("");
   const [stepError, setStepError] = React.useState<string | null>(null);
   const [submitted, setSubmitted] = React.useState(false);
@@ -124,10 +139,15 @@ export function PublicRegistrationForm({
     if (step === 1) {
       const panel = step1Ref.current;
       if (!panel) return;
-      const inputs = panel.querySelectorAll<HTMLInputElement>("input, select");
+      if (!gender) {
+        setStepError("Select a gender.");
+        return;
+      }
+      const inputs = panel.querySelectorAll<HTMLInputElement>("input");
       for (const input of inputs) {
         if (!input.checkValidity()) {
           input.reportValidity();
+          input.scrollIntoView({ block: "center", behavior: "smooth" });
           return;
         }
       }
@@ -138,14 +158,17 @@ export function PublicRegistrationForm({
     if (step === 2) {
       if (!fitnessGoal) {
         setStepError("Select a fitness goal.");
+        const goal = formRef.current?.querySelector<HTMLElement>("#fitnessGoal");
+        goal?.scrollIntoView({ block: "center", behavior: "smooth" });
         return;
       }
 
       const form = formRef.current;
       if (form) {
-        const metricsError = validateOptionalBodyMetrics(form);
+        const metricsError = validateRequiredBodyMetrics(form);
         if (metricsError) {
           setStepError(metricsError);
+          focusFirstInvalidIn(form, ["ageYears", "heightCm", "weightKg"]);
           return;
         }
       }
@@ -228,7 +251,7 @@ export function PublicRegistrationForm({
               />
               <RegistrationSelectWrapper id="gender" label="Gender" icon={Users}>
                 <Select
-                  value={gender}
+                  value={gender || undefined}
                   onValueChange={(value) => setGender(value as MemberGender)}
                 >
                   <SelectTrigger id="gender" className="bg-muted/40 pl-10 focus:ring-primary">
@@ -253,6 +276,7 @@ export function PublicRegistrationForm({
               fitnessGoal={fitnessGoal}
               onFitnessGoalChange={setFitnessGoal}
               fitnessGoalRequired
+              requiredMetrics
               variant="embedded"
             />
           </RegistrationStepCard>

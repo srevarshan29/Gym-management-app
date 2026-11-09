@@ -117,7 +117,7 @@ describe("assessManualRenewalReminderEligibility", () => {
 describe("sendManualRenewalReminderToMember", () => {
   beforeEach(() => {
     sendTransactionalEmail.mockReset();
-    sendTransactionalEmail.mockResolvedValue(undefined);
+    sendTransactionalEmail.mockResolvedValue({ outcome: "sent" });
     findByIdAndGym.mockReset();
     claimMembershipExpiryReminder.mockReset();
   });
@@ -216,8 +216,8 @@ describe("sendManualRenewalReminderToMember", () => {
     );
 
     sendTransactionalEmail
-      .mockRejectedValueOnce(new Error("resend down"))
-      .mockResolvedValueOnce(undefined);
+      .mockResolvedValueOnce({ outcome: "failed", message: "resend down" })
+      .mockResolvedValueOnce({ outcome: "sent" });
 
     const summary = await sendManualRenewalRemindersBulk("gym-a", "expired", "", now);
 
@@ -235,7 +235,7 @@ describe("manual renewal reminder actions", () => {
     requireGym.mockReset();
     findByIdAndGym.mockReset();
     sendTransactionalEmail.mockReset();
-    sendTransactionalEmail.mockResolvedValue(undefined);
+    sendTransactionalEmail.mockResolvedValue({ outcome: "sent" });
     claimMembershipExpiryReminder.mockReset();
   });
 

@@ -31,3 +31,15 @@ export function schedulePaymentLoggedNotification(
 ): void {
   scheduleBackgroundWork(() => notify(gymId, paymentId));
 }
+
+export function scheduleMemberPortalInvitationProcessing(
+  gymId: string,
+  memberId: string,
+): void {
+  scheduleBackgroundWork(async () => {
+    const { processMemberPortalInvitation } = await import(
+      "@/lib/member-portal-invitation/process"
+    );
+    await processMemberPortalInvitation({ gymId, memberId });
+  });
+}

@@ -17,6 +17,7 @@ export type CreateEventInput = {
   eventDate: Date;
   location: string;
   description?: string | null;
+  bannerImageUrl?: string | null;
 };
 
 export type UpdateEventInput = Partial<CreateEventInput>;
@@ -117,6 +118,7 @@ export class EventsRepository extends TenantRepository<EventDoc> {
       eventDate: Timestamp.fromDate(input.eventDate),
       location: input.location,
       description: input.description ?? null,
+      bannerImageUrl: input.bannerImageUrl ?? null,
     } as WithFieldValue<EventDoc>);
   }
 
@@ -130,6 +132,9 @@ export class EventsRepository extends TenantRepository<EventDoc> {
     if (input.title !== undefined) patch.title = input.title;
     if (input.location !== undefined) patch.location = input.location;
     if (input.description !== undefined) patch.description = input.description;
+    if (input.bannerImageUrl !== undefined) {
+      patch.bannerImageUrl = input.bannerImageUrl;
+    }
     if (input.eventDate !== undefined) {
       patch.eventDate = Timestamp.fromDate(input.eventDate);
     }

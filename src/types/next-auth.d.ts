@@ -7,6 +7,7 @@ declare module "next-auth" {
       id: string;
       role?: Role;
       gymId: string | null;
+      credentialsVersion?: number;
       kind?: "member";
       memberId?: string;
       memberNumber?: number;
@@ -16,6 +17,7 @@ declare module "next-auth" {
   interface User {
     role?: Role;
     gymId?: string | null;
+    credentialsVersion?: number;
     memberId?: string;
     memberNumber?: number;
     kind?: "member";
@@ -27,6 +29,7 @@ declare module "next-auth/jwt" {
     id: string;
     role?: Role;
     gymId?: string | null;
+    credentialsVersion?: number;
     kind?: "member";
     memberId?: string;
     memberNumber?: number;

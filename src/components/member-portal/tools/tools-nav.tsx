@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Scale, type LucideIcon } from "lucide-react";
 
 import { LockedLink } from "@/components/navigation/locked-link";
 import { useSharedNavigationLock } from "@/components/navigation/navigation-lock-provider";
@@ -32,7 +32,24 @@ export const MEMBER_TOOLS_MAIN = [
   },
 ] as const;
 
-const TOOLS = MEMBER_TOOLS_MAIN.slice(0, 3);
+export const MEMBER_WEIGHT_JOURNEY_TOOL = {
+  href: "/member/weight-journey",
+  title: "Weight Journey",
+  description: "Track your weight and follow your progress.",
+  icon: Scale,
+} as const;
+
+/** Main tools index (calculators + trackers); Weight Journey is not a sub-tab. */
+const TOOLS_INDEX_ITEMS: readonly ({
+  href: string;
+  title: string;
+  description: string;
+  icon?: LucideIcon;
+})[] = [
+  ...MEMBER_TOOLS_MAIN.slice(0, 3),
+  MEMBER_WEIGHT_JOURNEY_TOOL,
+  ...MEMBER_TOOLS_MAIN.slice(3),
+];
 
 const HUB_LINKS = [
   {
@@ -113,18 +130,27 @@ function HubCard({
   href,
   title,
   description,
+  icon: Icon,
 }: {
   href: string;
   title: string;
   description: string;
+  icon?: LucideIcon;
 }) {
   return (
     <LockedLink href={href} className="block">
       <Card className="rounded-2xl border-0 bg-card/90 shadow-soft ring-1 ring-border/70 transition-colors hover:ring-primary/30">
         <CardContent className="flex items-center justify-between gap-3 p-4">
-          <div>
-            <p className="font-medium">{title}</p>
-            <p className="text-sm text-muted-foreground">{description}</p>
+          <div className="flex min-w-0 items-center gap-3">
+            {Icon ? (
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Icon className="h-5 w-5" aria-hidden />
+              </span>
+            ) : null}
+            <div className="min-w-0">
+              <p className="font-medium">{title}</p>
+              <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
           </div>
           <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
         </CardContent>
@@ -137,12 +163,13 @@ export function ToolsIndexList() {
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        {MEMBER_TOOLS_MAIN.map((tool) => (
+        {TOOLS_INDEX_ITEMS.map((tool) => (
           <HubCard
             key={tool.href}
             href={tool.href}
             title={tool.title}
             description={tool.description}
+            icon={tool.icon}
           />
         ))}
       </div>

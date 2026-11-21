@@ -13,10 +13,15 @@ import {
   primaryCatalogSearchToken,
 } from "@/lib/exercises/catalog-search";
 import {
+  resolveCatalogBrowseFilter,
+  type CatalogBrowseFilter,
+} from "@/lib/catalog/catalog-browse-filter";
+import {
   decodeCatalogSearchCursor,
   paginateMergedCatalogSearch,
 } from "@/lib/catalog/catalog-search-pagination";
 import { COLLECTIONS } from "@/lib/firestore/collections";
+import { normalizeExerciseCatalogBrowseTags } from "@/lib/firestore/exercise-catalog-normalize";
 import type { FirestoreContext } from "@/lib/firestore/context";
 import { InvalidPaginationCursorError } from "@/lib/firestore/errors";
 import {
@@ -40,6 +45,37 @@ function clampCatalogSearchLimit(limit?: number): number {
   return Math.min(limit, MAX_CATALOG_SEARCH_RESULTS);
 }
 
+function applyCatalogBrowseFilter(query: Query, filter: CatalogBrowseFilter): Query {
+  if (filter.mode === "fullBody") {
+    return query.where("fullBody", "==", true);
+  }
+  if (filter.mode === "cardio") {
+    return query.where("cardio", "==", true);
+  }
+  if (filter.muscleGroup) {
+    return query.where("muscleGroup", "==", filter.muscleGroup);
+  }
+  return query;
+}
+
+export type ExerciseCatalogListOptions = {
+  limit?: number;
+  startAfterId?: string | null;
+  muscleGroup?: MuscleGroup | null;
+  fullBody?: boolean | null;
+  cardio?: boolean | null;
+  activeOnly?: boolean;
+};
+
+export type ExerciseCatalogSearchOptions = {
+  query: string;
+  muscleGroup?: MuscleGroup | null;
+  fullBody?: boolean | null;
+  cardio?: boolean | null;
+  limit?: number;
+  startAfterId?: string | null;
+};
+
 /**
  * Platform-scoped master exercise catalog — Admin SDK only (rules deny client access).
  * Read methods require staff, super-admin, or platform context.
@@ -60,7 +96,10 @@ export class ExerciseCatalogRepository {
     data: DocumentData | undefined,
   ): DocWithId<ExerciseCatalogDoc> | null {
     if (!data) return null;
-    return { id, ...(data as ExerciseCatalogDoc) };
+    return {
+      id,
+      ...normalizeExerciseCatalogBrowseTags(data as ExerciseCatalogDoc),
+    };
   }
 
   private assertCatalogReadAccess(ctx: FirestoreContext): void {
@@ -171,17 +210,17 @@ export class ExerciseCatalogRepository {
    */
   async listPage(
     ctx: FirestoreContext,
-    options?: {
-      limit?: number;
-      startAfterId?: string | null;
-      muscleGroup?: MuscleGroup | null;
-      activeOnly?: boolean;
-    },
+    options?: ExerciseCatalogListOptions,
   ): Promise<PaginatedResult<ExerciseCatalogDoc>> {
     this.assertCatalogReadAccess(ctx);
 
     const limit = clampCatalogPageSize(options?.limit);
     const activeOnly = options?.activeOnly ?? true;
+    const browseFilter = resolveCatalogBrowseFilter({
+      muscleGroup: options?.muscleGroup ?? null,
+      fullBody: options?.fullBody ?? null,
+      cardio: options?.cardio ?? null,
+    });
     const cursor = await this.resolveCatalogCursorSnapshot(options?.startAfterId);
 
     let query: Query = this.collection();
@@ -190,9 +229,7 @@ export class ExerciseCatalogRepository {
       query = query.where("isActive", "==", true);
     }
 
-    if (options?.muscleGroup) {
-      query = query.where("muscleGroup", "==", options.muscleGroup);
-    }
+    query = applyCatalogBrowseFilter(query, browseFilter);
 
     query = query
       .orderBy("nameLower", "asc")
@@ -223,7 +260,7 @@ export class ExerciseCatalogRepository {
     options: {
       token: string;
       prefixEnd: string;
-      muscleGroup?: MuscleGroup | null;
+      browseFilter: CatalogBrowseFilter;
       cursor: DocumentSnapshot | null;
       limit: number;
     },
@@ -232,9 +269,7 @@ export class ExerciseCatalogRepository {
 
     let query: Query = this.collection().where("isActive", "==", true);
 
-    if (options.muscleGroup) {
-      query = query.where("muscleGroup", "==", options.muscleGroup);
-    }
+    query = applyCatalogBrowseFilter(query, options.browseFilter);
 
     query = query
       .where("nameLower", ">=", options.token)
@@ -257,7 +292,7 @@ export class ExerciseCatalogRepository {
     ctx: FirestoreContext,
     options: {
       token: string;
-      muscleGroup?: MuscleGroup | null;
+      browseFilter: CatalogBrowseFilter;
       cursor: DocumentSnapshot | null;
       limit: number;
     },
@@ -266,9 +301,7 @@ export class ExerciseCatalogRepository {
 
     let query: Query = this.collection().where("isActive", "==", true);
 
-    if (options.muscleGroup) {
-      query = query.where("muscleGroup", "==", options.muscleGroup);
-    }
+    query = applyCatalogBrowseFilter(query, options.browseFilter);
 
     query = query
       .where("searchPrefixes", "array-contains", options.token)
@@ -292,12 +325,7 @@ export class ExerciseCatalogRepository {
    */
   async searchByPrefix(
     ctx: FirestoreContext,
-    options: {
-      query: string;
-      muscleGroup?: MuscleGroup | null;
-      limit?: number;
-      startAfterId?: string | null;
-    },
+    options: ExerciseCatalogSearchOptions,
   ): Promise<PaginatedResult<ExerciseCatalogDoc>> {
     this.assertCatalogReadAccess(ctx);
 
@@ -307,11 +335,15 @@ export class ExerciseCatalogRepository {
     }
 
     const limit = clampCatalogSearchLimit(options.limit);
-    const muscleGroup = options.muscleGroup ?? null;
+    const browseFilter = resolveCatalogBrowseFilter({
+      muscleGroup: options.muscleGroup ?? null,
+      fullBody: options.fullBody ?? null,
+      cardio: options.cardio ?? null,
+    });
     const decodedCursor = options.startAfterId?.trim()
       ? decodeCatalogSearchCursor(options.startAfterId, {
           query: options.query,
-          muscleGroup,
+          browseFilter,
         })
       : null;
 
@@ -327,21 +359,21 @@ export class ExerciseCatalogRepository {
     return paginateMergedCatalogSearch({
       limit,
       token,
-      muscleGroup,
+      browseFilter,
       usePrefixQuery: token.length >= CATALOG_SEARCH_PREFIX_MIN_LENGTH,
       decodedCursor,
       fetchNameRows: (cursor, batchLimit) =>
         this.fetchNamePrefixSearchRows(ctx, {
           token,
           prefixEnd: catalogNamePrefixEnd(token),
-          muscleGroup,
+          browseFilter,
           cursor,
           limit: batchLimit,
         }),
       fetchPrefixRows: (cursor, batchLimit) =>
         this.fetchSearchPrefixRows(ctx, {
           token,
-          muscleGroup,
+          browseFilter,
           cursor,
           limit: batchLimit,
         }),

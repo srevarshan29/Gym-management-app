@@ -39,6 +39,8 @@ export {
   PaymentsRepository,
   ReceiptsRepository,
   StaffLoginThrottlesRepository,
+  StaffPasswordResetTokensRepository,
+  StaffPasswordResetRequestThrottlesRepository,
   SubscriptionsRepository,
   UsersRepository,
   VisitorsRepository,

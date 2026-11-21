@@ -54,6 +54,7 @@ export const staffUpdateMemberSchema = z
     isPt: z.enum(["0", "1"]).default("0"),
     trainerId: z.string().optional().or(z.literal("")),
     fitnessGoal: optionalFitnessGoalSchema,
+    personalWorkoutsEnabled: z.enum(["0", "1"]).optional(),
   })
   .merge(signupBodyMetricsSchema);
 

@@ -32,6 +32,8 @@ export type DashboardStatePatch = {
   celebratedWaterDateKey?: string | null;
   dailyWaterTargetMl?: number | null;
   weeklyAttendanceTarget?: number | null;
+  weightJourneyTargetKg?: number | null;
+  weightJourneyStartKg?: number | null;
 };
 
 export class MemberPortalDashboardStateRepository extends TenantRepository<MemberPortalDashboardStateDoc> {
@@ -114,6 +116,14 @@ export class MemberPortalDashboardStateRepository extends TenantRepository<Membe
         patch.weeklyAttendanceTarget !== undefined
           ? patch.weeklyAttendanceTarget
           : (existingData?.weeklyAttendanceTarget ?? null),
+      weightJourneyTargetKg:
+        patch.weightJourneyTargetKg !== undefined
+          ? patch.weightJourneyTargetKg
+          : (existingData?.weightJourneyTargetKg ?? null),
+      weightJourneyStartKg:
+        patch.weightJourneyStartKg !== undefined
+          ? patch.weightJourneyStartKg
+          : (existingData?.weightJourneyStartKg ?? null),
       ...(existingData
         ? touchUpdatedAt()
         : {

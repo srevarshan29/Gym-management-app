@@ -84,6 +84,8 @@ function exerciseWithAsset(imagesRoot: string): ValidatedCatalogExercise {
     catalogVersion: "dev-fixture-v1",
     searchPrefixes: ["pus", "push"],
     isActive: true,
+    fullBody: false,
+    cardio: false,
   };
 }
 

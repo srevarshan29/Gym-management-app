@@ -8,15 +8,26 @@ import { toast } from "sonner";
 
 import { browseMemberExerciseLibraryAction } from "@/app/actions/member-exercise-library";
 import { addExercisesToPersonalWorkoutAction } from "@/app/actions/member-personal-workouts";
+import { MemberMuscleRegionGrid } from "@/components/member-portal/workout/member-muscle-region-grid";
 import { MemberExerciseCard } from "@/components/member-portal/workout/member-exercise-card";
 import { MemberMuscleGroupGrid } from "@/components/member-portal/workout/member-muscle-group-grid";
+import { memberLibraryRegionLabel } from "@/lib/member-portal/member-muscle-region-filter";
+import { memberLibraryRegionModule } from "@/lib/member-portal/muscle-region-registry";
+import type { ChestMuscleRegion } from "@/lib/member-portal/chest-muscle-regions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  memberLibraryFilterToCatalogMuscleGroup,
   memberLibraryGroupLabel,
   type MemberLibraryMuscleFilter,
 } from "@/lib/member-portal/member-library-muscle-groups";
+import {
+  appendMemberLibraryBrowseItems,
+  deriveMemberLibraryListLoad,
+  shouldApplyMemberLibraryBrowseResult,
+  shouldClearMemberLibraryBrowseLoading,
+} from "@/lib/member-portal/member-library-list-load";
+import { isMemberLibraryRegionBrowseCursor } from "@/lib/workout-tracking/member-library-region-browse-cursor";
+import { resolveMemberLibraryView } from "@/lib/member-portal/member-library-view";
 import {
   memberPersonalWorkoutEditorHref,
   memberWorkoutPageHref,
@@ -31,6 +42,12 @@ type MemberExerciseLibraryPanelProps = {
   className?: string;
   addToWorkoutId?: string | null;
   initialGroup?: MemberLibraryMuscleFilter | null;
+  initialLibraryRegion?: string | null;
+  initialBrowseAllInGroup?: boolean;
+  /** @deprecated Use initialLibraryRegion */
+  initialChestRegion?: ChestMuscleRegion | null;
+  /** @deprecated Use initialBrowseAllInGroup */
+  initialChestBrowseAll?: boolean;
   /** Multi-select picker for adding exercises to a personal workout. */
   selectionMode?: boolean;
   doneHref?: string | null;
@@ -40,6 +57,10 @@ export function MemberExerciseLibraryPanel({
   className,
   addToWorkoutId = null,
   initialGroup = null,
+  initialLibraryRegion = null,
+  initialBrowseAllInGroup = false,
+  initialChestRegion = null,
+  initialChestBrowseAll = false,
   selectionMode = false,
   doneHref = null,
 }: MemberExerciseLibraryPanelProps) {
@@ -49,6 +70,12 @@ export function MemberExerciseLibraryPanel({
 
   const [activeGroup, setActiveGroup] =
     React.useState<MemberLibraryMuscleFilter | null>(initialGroup);
+  const [activeRegion, setActiveRegion] = React.useState<string | null>(
+    initialLibraryRegion ?? initialChestRegion ?? null,
+  );
+  const [browseAllInGroup, setBrowseAllInGroup] = React.useState(
+    initialBrowseAllInGroup || initialChestBrowseAll,
+  );
   const [query, setQuery] = React.useState("");
   const [debouncedQuery, setDebouncedQuery] = React.useState("");
   const [items, setItems] = React.useState<MemberCatalogListItem[]>([]);
@@ -62,7 +89,15 @@ export function MemberExerciseLibraryPanel({
 
   React.useEffect(() => {
     setActiveGroup(initialGroup);
-  }, [initialGroup]);
+    setActiveRegion(initialLibraryRegion ?? initialChestRegion ?? null);
+    setBrowseAllInGroup(initialBrowseAllInGroup || initialChestBrowseAll);
+  }, [
+    initialGroup,
+    initialLibraryRegion,
+    initialBrowseAllInGroup,
+    initialChestRegion,
+    initialChestBrowseAll,
+  ]);
 
   React.useEffect(() => {
     const handle = window.setTimeout(
@@ -72,9 +107,35 @@ export function MemberExerciseLibraryPanel({
     return () => window.clearTimeout(handle);
   }, [query]);
 
-  const catalogMuscleGroup = memberLibraryFilterToCatalogMuscleGroup(activeGroup);
-  const browsingList =
-    activeGroup !== null || debouncedQuery.length > 0;
+  const listLoad = React.useMemo(
+    () =>
+      deriveMemberLibraryListLoad({
+        activeGroup,
+        activeRegion,
+        browseAllInGroup,
+        debouncedQuery,
+      }),
+    [activeGroup, activeRegion, browseAllInGroup, debouncedQuery],
+  );
+  const {
+    debouncedQuery: listQuery,
+    catalogMuscleGroup,
+    catalogFullBody,
+    catalogCardio,
+    libraryRegion: listLibraryRegion,
+    libraryGroup: listLibraryGroup,
+  } = listLoad.params;
+  const browsingList = listLoad.shouldLoadList;
+
+  const libraryView = resolveMemberLibraryView({
+    activeGroup,
+    activeRegion,
+    browseAllInGroup,
+    debouncedQuery,
+  });
+  const regionModule = memberLibraryRegionModule(activeGroup);
+  const showMuscleGroups = libraryView === "muscle-groups";
+  const showRegionPicker = libraryView === "region-picker";
 
   const loadPage = React.useCallback(
     async (opts: {
@@ -82,33 +143,142 @@ export function MemberExerciseLibraryPanel({
       startAfterId?: string | null;
       seq: number;
     }) => {
-      const result = await browseMemberExerciseLibraryAction({
-        query: debouncedQuery || undefined,
-        muscleGroup: catalogMuscleGroup,
-        startAfterId: opts.startAfterId ?? null,
-      });
-      if (opts.seq !== searchSeqRef.current) return;
-      if (!result.ok || !result.data) {
-        toast.error(!result.ok ? result.error : "Could not load exercises.");
+      const deliverPage = async (reset: boolean, startAfterId: string | null) => {
+        const result = await browseMemberExerciseLibraryAction({
+          query: listQuery || undefined,
+          muscleGroup: catalogMuscleGroup,
+          fullBody: catalogFullBody || undefined,
+          cardio: catalogCardio || undefined,
+          libraryRegion: listLibraryRegion,
+          chestRegion:
+            listLibraryGroup === "CHEST"
+              ? (listLibraryRegion as ChestMuscleRegion | null)
+              : null,
+          startAfterId,
+        });
+        if (
+          !shouldApplyMemberLibraryBrowseResult(opts.seq, searchSeqRef.current)
+        ) {
+          return false;
+        }
+        if (!result.ok || !result.data) {
+          return false;
+        }
+        const page = result.data;
+        setItems((prev) =>
+          reset ? page.items : appendMemberLibraryBrowseItems(prev, page.items),
+        );
+        if (
+          listLibraryRegion &&
+          page.nextCursor &&
+          !isMemberLibraryRegionBrowseCursor(page.nextCursor)
+        ) {
+          setCursor(null);
+          setHasMore(false);
+          return true;
+        }
+        setCursor(page.nextCursor);
+        setHasMore(page.hasMore);
+        return true;
+      };
+
+      const rawContinuation = opts.startAfterId?.trim() || null;
+      if (
+        listLibraryRegion &&
+        rawContinuation &&
+        !isMemberLibraryRegionBrowseCursor(rawContinuation)
+      ) {
+        toast.error(
+          "Could not continue this list. Reloading exercises for this region.",
+        );
+        await deliverPage(true, null);
         return;
       }
+
+      const result = await browseMemberExerciseLibraryAction({
+        query: listQuery || undefined,
+        muscleGroup: catalogMuscleGroup,
+        fullBody: catalogFullBody || undefined,
+        cardio: catalogCardio || undefined,
+        libraryRegion: listLibraryRegion,
+        chestRegion:
+          listLibraryGroup === "CHEST"
+            ? (listLibraryRegion as ChestMuscleRegion | null)
+            : null,
+        startAfterId: rawContinuation,
+      });
+      if (
+        !shouldApplyMemberLibraryBrowseResult(opts.seq, searchSeqRef.current)
+      ) {
+        return;
+      }
+      if (!result.ok || !result.data) {
+        const message = !result.ok ? result.error : "Could not load exercises.";
+        toast.error(message);
+        if (listLibraryRegion && rawContinuation && !opts.reset) {
+          setCursor(null);
+          setHasMore(false);
+          setLoadingMore(false);
+          await deliverPage(true, null);
+          return;
+        }
+        if (opts.reset) {
+          setItems([]);
+          setCursor(null);
+          setHasMore(false);
+        }
+        return;
+      }
+      const page = result.data;
       setItems((prev) =>
-        opts.reset ? result.data!.items : [...prev, ...result.data!.items],
+        opts.reset
+          ? page.items
+          : appendMemberLibraryBrowseItems(prev, page.items),
       );
-      setCursor(result.data.nextCursor);
-      setHasMore(result.data.hasMore);
+      if (
+        listLibraryRegion &&
+        page.nextCursor &&
+        !isMemberLibraryRegionBrowseCursor(page.nextCursor)
+      ) {
+        setCursor(null);
+        setHasMore(false);
+        return;
+      }
+      setCursor(page.nextCursor);
+      setHasMore(page.hasMore);
     },
-    [debouncedQuery, catalogMuscleGroup],
+    [
+      listQuery,
+      catalogMuscleGroup,
+      catalogFullBody,
+      catalogCardio,
+      listLibraryRegion,
+      listLibraryGroup,
+    ],
   );
 
   React.useEffect(() => {
     if (!browsingList) return;
     const seq = ++searchSeqRef.current;
+    setCursor(null);
+    setHasMore(false);
+    setItems([]);
     setLoading(true);
-    void loadPage({ reset: true, seq }).finally(() => {
-      if (seq === searchSeqRef.current) setLoading(false);
+    void loadPage({ reset: true, startAfterId: null, seq }).finally(() => {
+      if (shouldClearMemberLibraryBrowseLoading(seq, searchSeqRef.current)) {
+        setLoading(false);
+      }
     });
-  }, [debouncedQuery, catalogMuscleGroup, browsingList, loadPage]);
+  }, [
+    browsingList,
+    listQuery,
+    catalogMuscleGroup,
+    catalogFullBody,
+    catalogCardio,
+    listLibraryRegion,
+    listLibraryGroup,
+    loadPage,
+  ]);
 
   const editorDoneHref =
     doneHref?.trim() ||
@@ -116,22 +286,88 @@ export function MemberExerciseLibraryPanel({
 
   function selectGroup(group: MemberLibraryMuscleFilter) {
     setActiveGroup(group);
+    setActiveRegion(null);
+    setBrowseAllInGroup(false);
     setQuery("");
     syncMemberWorkoutPageUrl({
       tab: "library",
       addTo: addToWorkoutId,
       group,
+      libraryRegion: null,
+      browseAllInGroup: null,
+    });
+  }
+
+  function selectLibraryRegion(regionId: string) {
+    if (!activeGroup) return;
+    setActiveRegion(regionId);
+    setBrowseAllInGroup(false);
+    setQuery("");
+    syncMemberWorkoutPageUrl({
+      tab: "library",
+      addTo: addToWorkoutId,
+      group: activeGroup,
+      libraryRegion: regionId,
+      browseAllInGroup: null,
+    });
+  }
+
+  function browseAllInActiveGroup() {
+    if (!activeGroup) return;
+    setActiveRegion(null);
+    setBrowseAllInGroup(true);
+    setQuery("");
+    syncMemberWorkoutPageUrl({
+      tab: "library",
+      addTo: addToWorkoutId,
+      group: activeGroup,
+      libraryRegion: null,
+      browseAllInGroup: true,
     });
   }
 
   function clearGroup() {
     setActiveGroup(null);
+    setActiveRegion(null);
+    setBrowseAllInGroup(false);
     setQuery("");
     syncMemberWorkoutPageUrl({
       tab: "library",
       addTo: addToWorkoutId,
       group: null,
+      libraryRegion: null,
+      browseAllInGroup: null,
     });
+  }
+
+  function onBack() {
+    if (
+      activeGroup &&
+      regionModule &&
+      (activeRegion || browseAllInGroup)
+    ) {
+      setActiveRegion(null);
+      setBrowseAllInGroup(false);
+      setQuery("");
+      syncMemberWorkoutPageUrl({
+        tab: "library",
+        addTo: addToWorkoutId,
+        group: activeGroup,
+        libraryRegion: null,
+        browseAllInGroup: null,
+      });
+      return;
+    }
+    clearGroup();
+  }
+
+  function listTitle(): string {
+    if (debouncedQuery) return `Search: ${debouncedQuery}`;
+    if (activeGroup && activeRegion) {
+      return memberLibraryRegionLabel(activeGroup, activeRegion);
+    }
+    if (activeGroup) return memberLibraryGroupLabel(activeGroup);
+    return "Exercises";
   }
 
   function toggleSelect(catalogId: string) {
@@ -144,6 +380,22 @@ export function MemberExerciseLibraryPanel({
 
   async function onLoadMore() {
     if (!hasMore || !cursor || loadingMore) return;
+    if (
+      listLibraryRegion &&
+      !isMemberLibraryRegionBrowseCursor(cursor)
+    ) {
+      toast.error(
+        "Could not continue this list. Reloading exercises for this region.",
+      );
+      const seq = ++searchSeqRef.current;
+      setLoading(true);
+      void loadPage({ reset: true, startAfterId: null, seq }).finally(() => {
+        if (shouldClearMemberLibraryBrowseLoading(seq, searchSeqRef.current)) {
+          setLoading(false);
+        }
+      });
+      return;
+    }
     setLoadingMore(true);
     const seq = searchSeqRef.current;
     try {
@@ -221,7 +473,7 @@ export function MemberExerciseLibraryPanel({
         </div>
       ) : null}
 
-      {!browsingList ? (
+      {showMuscleGroups ? (
         <>
           <div>
             <h2 className="font-display text-lg font-bold">Exercise library</h2>
@@ -246,7 +498,7 @@ export function MemberExerciseLibraryPanel({
           </div>
           <MemberMuscleGroupGrid onSelect={selectGroup} />
         </>
-      ) : (
+      ) : showRegionPicker && activeGroup ? (
         <>
           <div className="flex items-center gap-2">
             <button
@@ -259,11 +511,34 @@ export function MemberExerciseLibraryPanel({
             </button>
             <div className="min-w-0 flex-1">
               <h2 className="font-display truncate text-lg font-bold">
-                {debouncedQuery
-                  ? `Search: ${debouncedQuery}`
-                  : activeGroup
-                    ? memberLibraryGroupLabel(activeGroup)
-                    : "Exercises"}
+                {regionModule?.pickerTitle ??
+                  memberLibraryGroupLabel(activeGroup)}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {regionModule?.pickerSubtitle ?? ""}
+              </p>
+            </div>
+          </div>
+          <MemberMuscleRegionGrid
+            group={activeGroup}
+            onSelect={selectLibraryRegion}
+            onBrowseAll={browseAllInActiveGroup}
+          />
+        </>
+      ) : (
+        <>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/80 bg-card/80"
+              aria-label="Back to muscle groups"
+              onClick={() => onBack()}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div className="min-w-0 flex-1">
+              <h2 className="font-display truncate text-lg font-bold">
+                {listTitle()}
               </h2>
               <p className="text-xs text-muted-foreground">
                 {debouncedQuery
@@ -300,6 +575,7 @@ export function MemberExerciseLibraryPanel({
                   item={item}
                   addToWorkoutId={addToWorkoutId}
                   group={activeGroup}
+                  libraryRegion={activeRegion}
                   selectionMode={selectionMode}
                   multiSelect={pickFlow}
                   selected={selectedIds.includes(item.catalogId)}

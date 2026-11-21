@@ -19,6 +19,8 @@ import { PackagesRepository } from "@/lib/firestore/repositories/packages";
 import { PaymentsRepository } from "@/lib/firestore/repositories/payments";
 import { ReceiptsRepository } from "@/lib/firestore/repositories/receipts";
 import { StaffLoginThrottlesRepository } from "@/lib/firestore/repositories/staff-login-throttles";
+import { StaffPasswordResetRequestThrottlesRepository } from "@/lib/firestore/repositories/staff-password-reset-request-throttles";
+import { StaffPasswordResetTokensRepository } from "@/lib/firestore/repositories/staff-password-reset-tokens";
 import { SubscriptionsRepository } from "@/lib/firestore/repositories/subscriptions";
 import { UsersRepository } from "@/lib/firestore/repositories/users";
 import { VisitorsRepository } from "@/lib/firestore/repositories/visitors";
@@ -28,6 +30,7 @@ import { WorkoutSessionsRepository } from "@/lib/firestore/repositories/workout-
 import { AttendanceRepository } from "@/lib/firestore/repositories/attendance";
 import { MemberPortalDashboardStateRepository } from "@/lib/firestore/repositories/member-portal-dashboard-state";
 import { MemberWaterLogsRepository } from "@/lib/firestore/repositories/member-water-logs";
+import { MemberWeightMeasurementsRepository } from "@/lib/firestore/repositories/member-weight-measurements";
 
 export type FirestoreRepositories = {
   gyms: GymsRepository;
@@ -42,6 +45,8 @@ export type FirestoreRepositories = {
   notificationDeliveries: NotificationDeliveriesRepository;
   memberPortalInviteResendThrottles: MemberPortalInviteResendThrottlesRepository;
   staffLoginThrottles: StaffLoginThrottlesRepository;
+  staffPasswordResetTokens: StaffPasswordResetTokensRepository;
+  staffPasswordResetRequestThrottles: StaffPasswordResetRequestThrottlesRepository;
   visitors: VisitorsRepository;
   employees: EmployeesRepository;
   events: EventsRepository;
@@ -57,6 +62,7 @@ export type FirestoreRepositories = {
   nutritionMemberFoods: NutritionMemberFoodsRepository;
   nutritionMemberSettings: NutritionMemberSettingsRepository;
   memberWaterLogs: MemberWaterLogsRepository;
+  memberWeightMeasurements: MemberWeightMeasurementsRepository;
   memberPortalDashboardState: MemberPortalDashboardStateRepository;
 };
 
@@ -74,6 +80,8 @@ export function createRepositories(db: Firestore): FirestoreRepositories {
     notificationDeliveries: new NotificationDeliveriesRepository(db),
     memberPortalInviteResendThrottles: new MemberPortalInviteResendThrottlesRepository(db),
     staffLoginThrottles: new StaffLoginThrottlesRepository(db),
+    staffPasswordResetTokens: new StaffPasswordResetTokensRepository(db),
+    staffPasswordResetRequestThrottles: new StaffPasswordResetRequestThrottlesRepository(db),
     visitors: new VisitorsRepository(db),
     employees: new EmployeesRepository(db),
     events: new EventsRepository(db),
@@ -89,6 +97,7 @@ export function createRepositories(db: Firestore): FirestoreRepositories {
     nutritionMemberFoods: new NutritionMemberFoodsRepository(db),
     nutritionMemberSettings: new NutritionMemberSettingsRepository(db),
     memberWaterLogs: new MemberWaterLogsRepository(db),
+    memberWeightMeasurements: new MemberWeightMeasurementsRepository(db),
     memberPortalDashboardState: new MemberPortalDashboardStateRepository(db),
   };
 }
@@ -112,6 +121,14 @@ export { NotificationDeliveriesRepository } from "@/lib/firestore/repositories/n
 export { MemberPortalInviteResendThrottlesRepository } from "@/lib/firestore/repositories/member-portal-invite-resend-throttles";
 export { ReceiptsRepository } from "@/lib/firestore/repositories/receipts";
 export { StaffLoginThrottlesRepository } from "@/lib/firestore/repositories/staff-login-throttles";
+export { StaffPasswordResetTokensRepository } from "@/lib/firestore/repositories/staff-password-reset-tokens";
+export {
+  StaffPasswordResetRequestThrottlesRepository,
+  STAFF_PASSWORD_RESET_EMAIL_LIMIT,
+  STAFF_PASSWORD_RESET_EMAIL_WINDOW_MS,
+  STAFF_PASSWORD_RESET_IP_LIMIT,
+  STAFF_PASSWORD_RESET_IP_WINDOW_MS,
+} from "@/lib/firestore/repositories/staff-password-reset-request-throttles";
 export { SubscriptionsRepository } from "@/lib/firestore/repositories/subscriptions";
 export { UsersRepository } from "@/lib/firestore/repositories/users";
 export { VisitorsRepository } from "@/lib/firestore/repositories/visitors";
@@ -121,6 +138,7 @@ export { WorkoutSessionsRepository } from "@/lib/firestore/repositories/workout-
 export { AttendanceRepository } from "@/lib/firestore/repositories/attendance";
 export { MemberPortalDashboardStateRepository } from "@/lib/firestore/repositories/member-portal-dashboard-state";
 export { MemberWaterLogsRepository } from "@/lib/firestore/repositories/member-water-logs";
+export { MemberWeightMeasurementsRepository } from "@/lib/firestore/repositories/member-weight-measurements";
 export {
   TenantRepository,
   clampPageSize,

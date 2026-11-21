@@ -78,7 +78,9 @@ type EditProps = {
     ageYears: number | null;
     heightCm: number | null;
     weightKg: number | null;
+    personalWorkoutsEnabled: boolean;
   };
+  canManagePersonalWorkouts: boolean;
   staffOptions: StaffOption[];
 };
 
@@ -140,6 +142,9 @@ export function MemberForm(props: Props) {
   );
   const [trainerId, setTrainerId] = React.useState(
     props.mode === "edit" ? props.member.trainerId ?? "" : "",
+  );
+  const [personalWorkoutsEnabled, setPersonalWorkoutsEnabled] = React.useState(
+    props.mode === "edit" ? props.member.personalWorkoutsEnabled : false,
   );
   const [fitnessGoal, setFitnessGoal] = React.useState<FitnessGoal | "">(
     props.mode === "edit"
@@ -359,6 +364,31 @@ export function MemberForm(props: Props) {
 
           <input type="hidden" name="isPt" value={isPt ? "1" : "0"} />
           <input type="hidden" name="trainerId" value={isPt ? trainerId : ""} />
+          {props.mode === "edit" && props.canManagePersonalWorkouts ? (
+            <input
+              type="hidden"
+              name="personalWorkoutsEnabled"
+              value={personalWorkoutsEnabled ? "1" : "0"}
+            />
+          ) : null}
+
+          {props.mode === "edit" && props.canManagePersonalWorkouts ? (
+            <div className="rounded-lg border p-4">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-input accent-primary"
+                  checked={personalWorkoutsEnabled}
+                  onChange={(e) => setPersonalWorkoutsEnabled(e.target.checked)}
+                />
+                Allow personal workouts
+              </label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Unlocks Member Portal → Workout → Mine so this member can build
+                and run their own workouts.
+              </p>
+            </div>
+          ) : null}
 
           <div className="rounded-lg border p-4">
             <label className="flex items-center gap-2 text-sm font-medium">

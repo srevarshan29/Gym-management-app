@@ -12,6 +12,10 @@ import {
   type MemberWorkoutTab,
 } from "@/components/member-portal/workout/member-workout-tabs";
 import { MemberActiveWorkoutSession } from "@/components/member-portal/workout/member-active-workout-session";
+import {
+  memberLibraryRegionBrowseAllFromUrl,
+  parseMemberLibraryRegionForGroup,
+} from "@/lib/member-portal/member-muscle-region-filter";
 import { parseMemberLibraryMuscleGroup } from "@/lib/member-portal/member-library-muscle-groups";
 import {
   memberPersonalWorkoutEditorHref,
@@ -35,6 +39,7 @@ type MemberWorkoutPageClientProps = {
   initialTab?: string | null;
   addToWorkoutId?: string | null;
   createdWorkoutId?: string | null;
+  personalWorkoutsEnabled?: boolean;
 };
 
 export function MemberWorkoutPageClient({
@@ -44,6 +49,7 @@ export function MemberWorkoutPageClient({
   initialTab = null,
   addToWorkoutId = null,
   createdWorkoutId = null,
+  personalWorkoutsEnabled = false,
 }: MemberWorkoutPageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -71,6 +77,14 @@ export function MemberWorkoutPageClient({
   const resolvedGroup = parseMemberLibraryMuscleGroup(
     searchParams.get("group"),
   );
+  const resolvedLibraryRegion = parseMemberLibraryRegionForGroup(
+    resolvedGroup,
+    searchParams.get("region"),
+  );
+  const resolvedBrowseAllInGroup = memberLibraryRegionBrowseAllFromUrl(
+    resolvedGroup,
+    searchParams,
+  );
 
   const syncTabStateFromLocation = React.useCallback(() => {
     const fromLocation = readMemberWorkoutPageQueryFromLocation();
@@ -80,8 +94,13 @@ export function MemberWorkoutPageClient({
 
   React.useEffect(() => {
     setTab(urlTopTab);
+    if (!personalWorkoutsEnabled && urlPlanFilter === "mine") {
+      setPlanFilter("trainer");
+      syncMemberWorkoutPageUrl({ tab: "assigned", planFilter: "trainer" });
+      return;
+    }
     setPlanFilter(urlPlanFilter);
-  }, [urlTopTab, urlPlanFilter]);
+  }, [urlTopTab, urlPlanFilter, personalWorkoutsEnabled]);
 
   React.useEffect(() => {
     syncTabStateFromLocation();
@@ -175,6 +194,8 @@ export function MemberWorkoutPageClient({
         <MemberExerciseLibraryPanel
           addToWorkoutId={resolvedAddTo}
           initialGroup={resolvedGroup}
+          initialLibraryRegion={resolvedLibraryRegion}
+          initialBrowseAllInGroup={resolvedBrowseAllInGroup}
           selectionMode={Boolean(resolvedAddTo)}
           doneHref={
             resolvedAddTo
@@ -198,10 +219,12 @@ export function MemberWorkoutPageClient({
           onStartTrainer={(dayId) => void onStartTrainer(dayId)}
           highlightWorkoutId={resolvedCreated}
           onHighlightConsumed={() => {
+            if (!personalWorkoutsEnabled) return;
             setPlanFilter("mine");
             syncMemberWorkoutPageUrl({ tab: "mine" });
           }}
           onOpenExercisesTab={() => navigateTopTab("exercises")}
+          personalWorkoutsEnabled={personalWorkoutsEnabled}
         />
       </div>
     </MemberWorkoutTheme>

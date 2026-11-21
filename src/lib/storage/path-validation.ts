@@ -89,6 +89,21 @@ export function validatePublicStoragePath(
     return { ok: true };
   }
 
+  if (
+    segments.length === 5 &&
+    segments[0] === "gyms" &&
+    segments[2] === "events" &&
+    segments[4] === "banner"
+  ) {
+    if (
+      !SAFE_SEGMENT_PATTERN.test(segments[1]!) ||
+      !SAFE_SEGMENT_PATTERN.test(segments[3]!)
+    ) {
+      return invalidPath("Invalid gym event banner storage path.");
+    }
+    return { ok: true };
+  }
+
   return invalidPath("Storage path is not in an approved namespace.");
 }
 

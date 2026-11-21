@@ -1,8 +1,11 @@
 import { unstable_cache } from "next/cache";
 
-import { getRepositories, platformContext } from "@/lib/firestore";
-import { requireMember } from "@/lib/member-session";
+import { MemberEventAnnouncements } from "@/components/member-portal/member-event-announcements";
 import { MemberPortalShell } from "@/components/member-portal/member-portal-shell";
+import { filterAnnounceableEvents } from "@/lib/events/event-scheduling";
+import { getRepositories, platformContext } from "@/lib/firestore";
+import { getMemberPortalEvents } from "@/lib/member-portal/queries";
+import { requireMember } from "@/lib/member-session";
 
 function getMemberPortalGymName(gymId: string) {
   return unstable_cache(
@@ -22,7 +25,11 @@ export default async function MemberPortalLayout({
   children: React.ReactNode;
 }) {
   const session = await requireMember();
-  const gymName = await getMemberPortalGymName(session.gymId);
+  const [gymName, portalEvents] = await Promise.all([
+    getMemberPortalGymName(session.gymId),
+    getMemberPortalEvents(session.gymId),
+  ]);
+  const announcementEvents = filterAnnounceableEvents(portalEvents);
 
   return (
     <MemberPortalShell
@@ -30,6 +37,7 @@ export default async function MemberPortalLayout({
       memberNumber={session.memberNumber}
       memberName={session.name}
     >
+      <MemberEventAnnouncements events={announcementEvents} />
       {children}
     </MemberPortalShell>
   );

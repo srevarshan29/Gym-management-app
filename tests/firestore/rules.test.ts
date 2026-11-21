@@ -86,6 +86,36 @@ async function seedCustomExercise(
   });
 }
 
+function memberWeightMeasurementDoc(
+  gymId: string,
+  memberId: string,
+  overrides: Record<string, unknown> = {},
+) {
+  const now = new Date();
+  return {
+    gymId,
+    memberId,
+    weightKg: 72.5,
+    recordedAt: now,
+    createdAt: now,
+    ...overrides,
+  };
+}
+
+async function seedMemberWeightMeasurement(
+  id: string,
+  gymId: string,
+  memberId: string,
+  overrides: Record<string, unknown> = {},
+) {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(
+      doc(ctx.firestore(), `memberWeightMeasurements/${id}`),
+      memberWeightMeasurementDoc(gymId, memberId, overrides),
+    );
+  });
+}
+
 describe("Firestore security rules — tenant isolation", () => {
   beforeAll(async () => {
     testEnv = await initializeTestEnvironment({
@@ -99,7 +129,9 @@ describe("Firestore security rules — tenant isolation", () => {
   });
 
   afterAll(async () => {
-    await testEnv.cleanup();
+    if (testEnv) {
+      await testEnv.cleanup();
+    }
   });
 
   beforeEach(async () => {
@@ -161,6 +193,30 @@ describe("Firestore security rules — tenant isolation", () => {
     const member = memberContext("mem-1", "gym-a", "m1");
     await assertFails(
       updateDoc(doc(member.firestore(), "members/m1"), { name: "Hacked Name" }),
+    );
+  });
+
+  it("denies all client access to staffPasswordResetTokens", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "staffPasswordResetTokens/hash-test"), {
+        userId: "u1",
+      });
+    });
+    const staff = staffContext("staff-a", "gym-a");
+    await assertFails(
+      getDoc(doc(staff.firestore(), "staffPasswordResetTokens/hash-test")),
+    );
+  });
+
+  it("denies all client access to staffPasswordResetRequestThrottles", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "staffPasswordResetRequestThrottles/k1"), {
+        count: 1,
+      });
+    });
+    const staff = staffContext("staff-a", "gym-a");
+    await assertFails(
+      getDoc(doc(staff.firestore(), "staffPasswordResetRequestThrottles/k1")),
     );
   });
 
@@ -448,6 +504,150 @@ describe("Firestore security rules — tenant isolation", () => {
         checkedInAt: new Date(),
         dateKey: "2026-10-04",
         method: "manual",
+      }),
+    );
+  });
+
+  it("allows staff to read memberWeightMeasurements in their own gym", async () => {
+    await seedMemberWeightMeasurement("wm-1", "gym-a", "m1");
+    const staff = staffContext("staff-a", "gym-a", "STAFF");
+    await assertSucceeds(
+      getDoc(doc(staff.firestore(), "memberWeightMeasurements/wm-1")),
+    );
+  });
+
+  it("denies staff from reading another gym's memberWeightMeasurements", async () => {
+    await seedMemberWeightMeasurement("wm-1", "gym-b", "m1");
+    const staff = staffContext("staff-a", "gym-a", "STAFF");
+    await assertFails(
+      getDoc(doc(staff.firestore(), "memberWeightMeasurements/wm-1")),
+    );
+  });
+
+  it("allows member to read their own memberWeightMeasurements", async () => {
+    await seedMemberWeightMeasurement("wm-1", "gym-a", "m1");
+    const member = memberContext("mem-1", "gym-a", "m1");
+    await assertSucceeds(
+      getDoc(doc(member.firestore(), "memberWeightMeasurements/wm-1")),
+    );
+  });
+
+  it("denies member from reading another member's memberWeightMeasurements", async () => {
+    await seedMemberWeightMeasurement("wm-1", "gym-a", "m2");
+    const member = memberContext("mem-1", "gym-a", "m1");
+    await assertFails(
+      getDoc(doc(member.firestore(), "memberWeightMeasurements/wm-1")),
+    );
+  });
+
+  it("allows member to create memberWeightMeasurements for themselves in their gym", async () => {
+    const member = memberContext("mem-1", "gym-a", "m1");
+    await assertSucceeds(
+      setDoc(
+        doc(member.firestore(), "memberWeightMeasurements/wm-new"),
+        memberWeightMeasurementDoc("gym-a", "m1", { weightKg: 70 }),
+      ),
+    );
+  });
+
+  it("denies member from creating memberWeightMeasurements for another member", async () => {
+    const member = memberContext("mem-1", "gym-a", "m1");
+    await assertFails(
+      setDoc(
+        doc(member.firestore(), "memberWeightMeasurements/wm-bad-member"),
+        memberWeightMeasurementDoc("gym-a", "m2"),
+      ),
+    );
+  });
+
+  it("denies member from creating memberWeightMeasurements in another gym", async () => {
+    const member = memberContext("mem-1", "gym-a", "m1");
+    await assertFails(
+      setDoc(
+        doc(member.firestore(), "memberWeightMeasurements/wm-bad-gym"),
+        memberWeightMeasurementDoc("gym-b", "m1"),
+      ),
+    );
+  });
+
+  it("denies member from updating memberWeightMeasurements", async () => {
+    await seedMemberWeightMeasurement("wm-1", "gym-a", "m1");
+    const member = memberContext("mem-1", "gym-a", "m1");
+    await assertFails(
+      updateDoc(doc(member.firestore(), "memberWeightMeasurements/wm-1"), {
+        weightKg: 50,
+      }),
+    );
+  });
+
+  it("denies member from deleting memberWeightMeasurements", async () => {
+    await seedMemberWeightMeasurement("wm-1", "gym-a", "m1");
+    const member = memberContext("mem-1", "gym-a", "m1");
+    await assertFails(
+      deleteDoc(doc(member.firestore(), "memberWeightMeasurements/wm-1")),
+    );
+  });
+
+  it("denies unauthenticated read and create on memberWeightMeasurements", async () => {
+    await seedMemberWeightMeasurement("wm-1", "gym-a", "m1");
+    const anon = testEnv.unauthenticatedContext();
+    await assertFails(
+      getDoc(doc(anon.firestore(), "memberWeightMeasurements/wm-1")),
+    );
+    await assertFails(
+      setDoc(
+        doc(anon.firestore(), "memberWeightMeasurements/wm-anon"),
+        memberWeightMeasurementDoc("gym-a", "m1"),
+      ),
+    );
+  });
+
+  it("allows super-admin to read memberWeightMeasurements across gyms", async () => {
+    await seedMemberWeightMeasurement("wm-1", "gym-b", "m-other");
+    const admin = superAdminContext("super-1");
+    await assertSucceeds(
+      getDoc(doc(admin.firestore(), "memberWeightMeasurements/wm-1")),
+    );
+  });
+
+  it("denies all client access to memberPortalInviteResendThrottles", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "memberPortalInviteResendThrottles/k1"), {
+        gymId: "gym-a",
+        memberId: "m1",
+        count: 1,
+      });
+    });
+
+    const staff = staffContext("staff-a", "gym-a", "STAFF");
+    const member = memberContext("mem-1", "gym-a", "m1");
+    const anon = testEnv.unauthenticatedContext();
+    const throttleRef = doc(
+      staff.firestore(),
+      "memberPortalInviteResendThrottles/k1",
+    );
+
+    await assertFails(getDoc(throttleRef));
+    await assertFails(
+      setDoc(doc(staff.firestore(), "memberPortalInviteResendThrottles/k2"), {
+        gymId: "gym-a",
+        count: 0,
+      }),
+    );
+    await assertFails(getDoc(doc(member.firestore(), "memberPortalInviteResendThrottles/k1")));
+    await assertFails(
+      setDoc(doc(member.firestore(), "memberPortalInviteResendThrottles/k3"), {
+        gymId: "gym-a",
+        count: 0,
+      }),
+    );
+    await assertFails(
+      getDoc(doc(anon.firestore(), "memberPortalInviteResendThrottles/k1")),
+    );
+    await assertFails(
+      setDoc(doc(anon.firestore(), "memberPortalInviteResendThrottles/k4"), {
+        gymId: "gym-a",
+        count: 0,
       }),
     );
   });

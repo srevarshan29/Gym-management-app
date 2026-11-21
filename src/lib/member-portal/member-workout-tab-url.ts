@@ -1,7 +1,13 @@
 import {
+  memberLibraryRegionBrowseAllFromUrl,
+  parseMemberLibraryRegionForGroup,
+} from "@/lib/member-portal/member-muscle-region-filter";
+import {
   parseMemberLibraryMuscleGroup,
   type MemberLibraryMuscleFilter,
 } from "@/lib/member-portal/member-library-muscle-groups";
+import { memberLibraryRegionModule } from "@/lib/member-portal/muscle-region-registry";
+import type { ChestMuscleRegion } from "@/lib/member-portal/muscle-regions/chest";
 
 /** Top-level workout page sections (Phase 1). */
 export type MemberWorkoutTab = "plan" | "exercises";
@@ -50,6 +56,12 @@ export type MemberWorkoutPageQuery = {
   addTo?: string | null;
   created?: string | null;
   group?: MemberLibraryMuscleFilter | null;
+  libraryRegion?: string | null;
+  browseAllInGroup?: boolean | null;
+  /** @deprecated Use libraryRegion */
+  chestRegion?: ChestMuscleRegion | null;
+  /** @deprecated Use browseAllInGroup */
+  chestBrowseAll?: boolean | null;
 };
 
 function resolveTopTabAndFilter(query: MemberWorkoutPageQuery): {
@@ -63,6 +75,22 @@ function resolveTopTabAndFilter(query: MemberWorkoutPageQuery): {
   }
   const planFilter = parseMemberPlanFilter(rawTab, query.planFilter ?? null);
   return { topTab, planFilter };
+}
+
+function resolveLibraryRegionQuery(query: MemberWorkoutPageQuery): {
+  group: MemberLibraryMuscleFilter | null;
+  libraryRegion: string | null;
+  browseAllInGroup: boolean;
+} {
+  const group = query.group ?? null;
+  const libraryRegion =
+    query.libraryRegion ??
+    (group === "CHEST" ? query.chestRegion ?? null : null);
+  const browseAllInGroup =
+    query.browseAllInGroup ??
+    query.chestBrowseAll ??
+    false;
+  return { group, libraryRegion: libraryRegion ?? null, browseAllInGroup };
 }
 
 /** Sync workout tab query in the URL without a Next.js RSC navigation. */
@@ -87,13 +115,24 @@ export function readMemberWorkoutPageQueryFromLocation(): MemberWorkoutPageQuery
     topTab === "exercises"
       ? "all"
       : parseMemberPlanFilter(rawTab, params.get("planFilter"));
+  const group = parseMemberLibraryMuscleGroup(params.get("group"));
+  const libraryRegion = parseMemberLibraryRegionForGroup(
+    group,
+    params.get("region"),
+  );
+  const browseAllInGroup = memberLibraryRegionBrowseAllFromUrl(group, params);
   return {
     tab: rawTab as MemberWorkoutTabQuery | null,
     planFilter,
     topTab,
     addTo: params.get("addTo"),
     created: params.get("created"),
-    group: parseMemberLibraryMuscleGroup(params.get("group")),
+    group,
+    libraryRegion,
+    browseAllInGroup,
+    chestRegion:
+      group === "CHEST" ? (libraryRegion as ChestMuscleRegion | null) : null,
+    chestBrowseAll: group === "CHEST" ? browseAllInGroup : false,
   };
 }
 
@@ -120,10 +159,21 @@ export function memberWorkoutPageHref(query: MemberWorkoutPageQuery = {}): strin
   if (created) {
     params.set("created", created);
   }
-  const group = query.group;
+
+  const { group, libraryRegion, browseAllInGroup } =
+    resolveLibraryRegionQuery(query);
   if (group) {
     params.set("group", group);
   }
+  const module = memberLibraryRegionModule(group);
+  if (group && module) {
+    if (libraryRegion) {
+      params.set("region", module.regionQueryValue(libraryRegion));
+    } else if (browseAllInGroup) {
+      params.set(module.browseAllQueryKey, "1");
+    }
+  }
+
   const qs = params.toString();
   return qs ? `/member/workout?${qs}` : "/member/workout";
 }
@@ -149,13 +199,23 @@ export function memberExerciseLibraryDetailHref(
   options?: {
     addToWorkoutId?: string | null;
     group?: MemberLibraryMuscleFilter | null;
+    libraryRegion?: string | null;
+    chestRegion?: ChestMuscleRegion | null;
   },
 ): string {
   const base = `/member/workout/library/${encodeURIComponent(catalogId)}`;
   const params = new URLSearchParams();
   const addTo = options?.addToWorkoutId?.trim();
   if (addTo) params.set("addTo", addTo);
-  if (options?.group) params.set("group", options.group);
+  const group = options?.group;
+  const libraryRegion =
+    options?.libraryRegion ??
+    (group === "CHEST" ? options?.chestRegion ?? null : null);
+  if (group) params.set("group", group);
+  const module = memberLibraryRegionModule(group ?? null);
+  if (group && module && libraryRegion) {
+    params.set("region", module.regionQueryValue(libraryRegion));
+  }
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;
 }

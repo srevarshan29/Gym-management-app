@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 import { getRepositories, platformContext } from "@/lib/firestore";
+import { resolveCredentialsVersion } from "@/lib/staff-auth/credentials-version";
 import { measureServerPhase } from "@/lib/server-perf";
 import type { StaffRole } from "@/lib/firestore/types";
 
@@ -36,6 +37,14 @@ const resolveCurrentUser = cache(async (): Promise<SessionUser | null> => {
       // Cannot call signOut() here — cookie writes are forbidden during RSC
       // render. Bounce through the /logout Route Handler, which is allowed to
       // clear the session cookie and then send the user to /login.
+      redirect("/logout");
+    }
+
+    const sessionCredentialsVersion = resolveCredentialsVersion(
+      session.user.credentialsVersion,
+    );
+    const userCredentialsVersion = resolveCredentialsVersion(dbUser.credentialsVersion);
+    if (sessionCredentialsVersion !== userCredentialsVersion) {
       redirect("/logout");
     }
 

@@ -27,6 +27,9 @@ import { MemberPolicyConsentSection } from "@/components/member-policy-consent-s
 import { MemberPortalStaffCard } from "@/components/member-portal/member-portal-staff-card";
 import { loadMemberPortalInvitationSummary } from "@/lib/member-portal-invitation/load-status";
 import { MemberWorkoutProgressStaffCard } from "@/components/workout/member-workout-progress-staff-card";
+import { WeightJourneyStaffSection } from "@/components/weight-journey/weight-journey-staff-section";
+import { loadWeightJourneySnapshot } from "@/lib/weight-journey/load-snapshot";
+import { staffContextFromUser } from "@/lib/firestore/session-context";
 import { AutoOpenReceipt } from "@/components/auto-open-receipt";
 import type { PackageOption } from "@/components/member-form";
 import { Button } from "@/components/ui/button";
@@ -90,6 +93,13 @@ export default async function MemberProfilePage({
           lastAttemptAt: null,
         }
       : null);
+
+  const staffCtx = staffContextFromUser(user);
+  const weightJourneySnapshot = await loadWeightJourneySnapshot(
+    staffCtx,
+    user.gymId,
+    member.id,
+  );
 
   const current = [...member.subscriptions].sort(
     (a, b) => b.endDate.getTime() - a.endDate.getTime(),
@@ -275,6 +285,8 @@ export default async function MemberProfilePage({
           exerciseKey={searchParams.exercise}
           grouping={searchParams.grouping === "monthly" ? "monthly" : "weekly"}
         />
+
+        <WeightJourneyStaffSection snapshot={weightJourneySnapshot} />
 
         <Card className="min-w-0">
           <CardHeader>

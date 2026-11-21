@@ -52,6 +52,7 @@ export type UpdateMemberInput = {
   ageYears: number | null;
   heightCm: number | null;
   weightKg: number | null;
+  personalWorkoutsEnabled?: boolean;
 };
 
 export const MEMBERS_DIRECTORY_PAGE_SIZE = 50;
@@ -308,6 +309,7 @@ export class MembersRepository {
           ageYears: input.ageYears,
           heightCm: input.heightCm,
           weightKg: input.weightKg,
+          personalWorkoutsEnabled: input.personalWorkoutsEnabled,
           ...touchUpdatedAt(),
         }),
       );

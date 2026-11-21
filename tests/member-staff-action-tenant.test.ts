@@ -15,10 +15,14 @@ vi.mock("@/lib/session", () => ({
   requireGym,
 }));
 
-vi.mock("@/lib/permissions", () => ({
-  canDeleteMembers: () => true,
-  canLogPayments: () => true,
-}));
+vi.mock("@/lib/permissions", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/permissions")>();
+  return {
+    ...actual,
+    canDeleteMembers: () => true,
+    canLogPayments: () => true,
+  };
+});
 
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),

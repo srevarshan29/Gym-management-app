@@ -31,6 +31,8 @@ export function validatedExerciseToCatalogDoc(
     catalogVersion: exercise.catalogVersion,
     searchPrefixes: exercise.searchPrefixes,
     isActive: exercise.isActive,
+    fullBody: exercise.fullBody,
+    cardio: exercise.cardio,
     createdAt: options.createdAt,
     updatedAt,
   }) as ExerciseCatalogDoc;

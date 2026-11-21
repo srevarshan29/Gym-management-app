@@ -43,7 +43,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "air-bike",
@@ -88,7 +90,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": true
   },
   {
     "catalogId": "archer-pull-ups",
@@ -133,7 +137,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "archer-push-ups",
@@ -178,7 +184,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "arnold-press",
@@ -223,12 +231,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "assisted-dips",
     "name": "Machine Assisted Dips",
-    "muscleGroup": "ARMS",
+    "muscleGroup": "CHEST",
     "description": "A beginner-friendly dip performed on an assisted machine that offsets body weight, training the chest and triceps.",
     "instructions": [
       "Step onto the assisted dip machine with knees on the pad.",
@@ -267,7 +277,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "assisted-pull-ups",
@@ -312,7 +324,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "back-extension",
@@ -353,12 +367,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "back-lever",
     "name": "Back Lever",
-    "muscleGroup": "LEGS",
+    "muscleGroup": "BACK",
     "description": "An advanced gymnastic isometric: hanging from a bar, the body is held horizontal and face-down in a straight line, demanding total-body tension through the lats, core, and posterior chain.",
     "instructions": [
       "Hang from a bar with an overhand grip and rotate backward through the arms until inverted.",
@@ -397,7 +413,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "ball-leg-curl",
@@ -439,7 +457,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ball-pike",
@@ -484,7 +504,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "band-assisted-pull-ups",
@@ -529,7 +551,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "band-pull-apart",
@@ -571,7 +595,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-adductor-stretch",
@@ -611,7 +637,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-ankle-stretch",
@@ -651,7 +679,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-calf-stretch",
@@ -691,7 +721,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-chest-stretch",
@@ -730,7 +762,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-clamshell",
@@ -773,7 +807,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-figure-4-stretch",
@@ -813,7 +849,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-fire-hydrant",
@@ -855,7 +893,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-glute-bridge",
@@ -899,7 +939,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-good-morning",
@@ -942,7 +984,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-hamstring-stretch",
@@ -982,7 +1026,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-hip-thrust",
@@ -1026,7 +1072,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-it-band-stretch",
@@ -1067,7 +1115,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-kneeling-hip-thrust",
@@ -1109,7 +1159,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-lat-stretch",
@@ -1148,7 +1200,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-lateral-walk",
@@ -1192,7 +1246,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-rear-delt-stretch",
@@ -1233,7 +1289,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-romanian-deadlift",
@@ -1276,7 +1334,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-seated-hip-abduction",
@@ -1319,7 +1379,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-shoulder-stretch",
@@ -1358,7 +1420,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-squat",
@@ -1402,7 +1466,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-standing-curl",
@@ -1444,7 +1510,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-standing-hip-abduction",
@@ -1488,7 +1556,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-standing-hip-adduction",
@@ -1528,7 +1598,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-sumo-walk",
@@ -1571,7 +1643,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-terminal-knee-extension",
@@ -1611,7 +1685,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "banded-triceps-stretch",
@@ -1651,7 +1727,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "barbell-ab-rollout",
@@ -1695,7 +1773,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "barbell-calf-raise",
@@ -1737,7 +1817,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "barbell-curl",
@@ -1778,7 +1860,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "barbell-front-raise",
@@ -1822,7 +1906,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "barbell-glute-bridge",
@@ -1864,7 +1950,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "barbell-lunge",
@@ -1909,7 +1997,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "barbell-overhead-extension",
@@ -1949,7 +2039,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "barbell-preacher-curl",
@@ -1993,7 +2085,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "barbell-pullover",
@@ -2034,7 +2128,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "barbell-rear-delt-row",
@@ -2077,7 +2173,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "barbell-reverse-lunge",
@@ -2122,7 +2220,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "barbell-row",
@@ -2165,7 +2265,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "barbell-wrist-curl",
@@ -2205,12 +2307,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "battle-rope-double-slam",
     "name": "Battle Rope Double Slam",
-    "muscleGroup": "LEGS",
+    "muscleGroup": "SHOULDERS",
     "description": "A conditioning movement in which both rope ends are driven up and slammed down together, producing one large wave per rep instead of the alternating waves of the standard battle rope drill.",
     "instructions": [
       "Take one rope end in each hand and face the anchor, standing far enough back that the ropes have a slight slack.",
@@ -2254,12 +2358,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": true
   },
   {
     "catalogId": "battle-ropes",
     "name": "Battle Ropes",
-    "muscleGroup": "LEGS",
+    "muscleGroup": "SHOULDERS",
     "description": "A high-intensity conditioning movement using thick ropes, training the upper back, shoulders, and grip.",
     "instructions": [
       "Anchor the ropes to a fixed point and grab one end in each hand.",
@@ -2300,12 +2406,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": true
   },
   {
     "catalogId": "bear-crawl",
     "name": "Bear Crawl",
-    "muscleGroup": "LEGS",
+    "muscleGroup": "CORE",
     "description": "A quadruped bodyweight crawl on hands and toes with the knees hovering just off the floor, building shoulder stability and core control as you travel forward.",
     "instructions": [
       "Start on all fours with your hands under your shoulders and knees under your hips.",
@@ -2344,7 +2452,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "behind-the-back-barbell-shrug",
@@ -2387,7 +2497,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "behind-the-neck-lat-pulldown",
@@ -2431,7 +2543,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "behind-the-neck-press",
@@ -2475,7 +2589,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "behind-the-neck-pull-ups",
@@ -2520,7 +2636,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bench-adductor-stretch",
@@ -2560,7 +2678,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bench-ankle-stretch",
@@ -2600,7 +2720,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bench-bulgarian-split-stretch",
@@ -2641,7 +2763,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bench-calf-stretch",
@@ -2681,7 +2805,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bench-chest-stretch",
@@ -2720,7 +2846,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bench-childs-pose",
@@ -2758,7 +2886,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bench-couch-stretch",
@@ -2797,7 +2927,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bench-dips",
@@ -2840,7 +2972,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bench-figure-4-glute-stretch",
@@ -2880,7 +3014,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bench-hamstring-stretch",
@@ -2920,7 +3056,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bench-lat-stretch",
@@ -2959,7 +3097,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bench-leg-pull-in",
@@ -3002,7 +3142,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bench-press",
@@ -3045,7 +3187,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bench-pull",
@@ -3090,7 +3234,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bent-arm-barbell-pullover",
@@ -3134,7 +3280,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bent-arm-ez-bar-pullover",
@@ -3179,7 +3327,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bent-over-db-row",
@@ -3225,7 +3375,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bent-over-ez-bar-row",
@@ -3267,7 +3419,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bicep-curl",
@@ -3308,7 +3462,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bicycle-crunch",
@@ -3351,7 +3507,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bird-dog",
@@ -3393,7 +3551,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bird-dog-hold",
@@ -3437,7 +3597,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "boat-pose",
@@ -3480,7 +3642,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bodyweight-calf-raise",
@@ -3522,7 +3686,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bodyweight-good-morning",
@@ -3565,7 +3731,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bodyweight-lateral-raise",
@@ -3608,7 +3776,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bodyweight-overhead-press",
@@ -3652,7 +3822,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bodyweight-reverse-lunge",
@@ -3695,7 +3867,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bodyweight-squat",
@@ -3740,7 +3914,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bow-pose",
@@ -3783,7 +3959,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "box-jump",
@@ -3828,7 +4006,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "box-squat",
@@ -3873,7 +4053,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "bulgarian-split-squat",
@@ -3916,7 +4098,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "burpees",
@@ -3961,7 +4145,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": true
   },
   {
     "catalogId": "butterfly-stretch",
@@ -4000,7 +4186,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cable-bent-over-row",
@@ -4044,7 +4232,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cable-chest-press",
@@ -4088,7 +4278,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cable-crunch",
@@ -4131,7 +4323,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cable-curl",
@@ -4173,7 +4367,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cable-external-rotation",
@@ -4216,7 +4412,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cable-fly",
@@ -4258,7 +4456,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cable-front-raise",
@@ -4301,7 +4501,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cable-hammer-curl",
@@ -4345,7 +4547,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cable-kickback",
@@ -4387,7 +4591,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cable-lateral-raise",
@@ -4430,7 +4636,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cable-pallof-press",
@@ -4477,7 +4685,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cable-tricep-kickback",
@@ -4519,7 +4729,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cable-upright-row",
@@ -4561,7 +4773,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cable-wrist-curl",
@@ -4601,7 +4815,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "camel-pose",
@@ -4644,7 +4860,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "captains-chair-knee-raise",
@@ -4688,7 +4906,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "captains-chair-leg-raise",
@@ -4732,12 +4952,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cat-cow",
     "name": "Cat-Cow",
-    "muscleGroup": "BACK",
+    "muscleGroup": "CORE",
     "description": "A kneeling flow that alternates between rounding the spine towards the ceiling and letting it sag while the chest opens, moving every segment of the back through its range.",
     "instructions": [
       "Start on all fours with the hands under the shoulders and the knees under the hips.",
@@ -4775,7 +4997,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cat-stretch",
@@ -4815,7 +5039,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "chair-pose",
@@ -4858,7 +5084,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cheat-curl",
@@ -4902,7 +5130,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "chest-press-machine",
@@ -4945,7 +5175,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "chest-supported-db-row",
@@ -4987,7 +5219,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "chest-supported-dumbbell-shrug",
@@ -5030,7 +5264,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "chest-supported-kettlebell-row",
@@ -5075,7 +5311,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "chest-supported-smith-machine-row",
@@ -5119,7 +5357,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "childs-pose",
@@ -5159,12 +5399,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "chin-tuck-hold",
     "name": "Chin Tuck Hold",
-    "muscleGroup": "LEGS",
+    "muscleGroup": "CORE",
     "description": "A static neck drill that retracts the head straight back to strengthen the deep neck flexors and counter forward-head posture.",
     "instructions": [
       "Stand or sit tall with your shoulders relaxed.",
@@ -5199,7 +5441,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "chin-ups",
@@ -5240,7 +5484,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "clamshells",
@@ -5283,7 +5529,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "clamshells-hold",
@@ -5325,7 +5573,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "clap-push-ups",
@@ -5366,7 +5616,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "clean",
@@ -5412,7 +5664,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "clean-and-jerk",
@@ -5458,7 +5712,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "close-grip-barbell-curl",
@@ -5500,12 +5756,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "close-grip-bench-press",
     "name": "Close-Grip Bench Press",
-    "muscleGroup": "ARMS",
+    "muscleGroup": "CHEST",
     "description": "A bench press variation with a narrow grip that shifts the emphasis to the triceps.",
     "instructions": [
       "Lie on a flat bench and grip the barbell with hands shoulder-width apart.",
@@ -5541,12 +5799,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "close-grip-db-bench-press",
     "name": "Close-Grip Dumbbell Bench Press",
-    "muscleGroup": "ARMS",
+    "muscleGroup": "CHEST",
     "description": "A dumbbell bench press with dumbbells held together to increase triceps involvement.",
     "instructions": [
       "Lie on a flat bench and hold two dumbbells together over your chest.",
@@ -5582,12 +5842,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "close-grip-ez-bar-bench-press",
     "name": "Close-Grip EZ-Bar Bench Press",
-    "muscleGroup": "ARMS",
+    "muscleGroup": "CHEST",
     "description": "A triceps-focused press using an EZ-bar with a narrow grip for wrist comfort.",
     "instructions": [
       "Lie on a flat bench and grip the inner curves of the EZ-bar.",
@@ -5623,7 +5885,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "close-grip-ez-bar-curl",
@@ -5665,12 +5929,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "close-grip-incline-bench",
     "name": "Close-Grip Incline Bench Press",
-    "muscleGroup": "ARMS",
+    "muscleGroup": "CHEST",
     "description": "An incline bench press with a close grip targeting the triceps and upper chest.",
     "instructions": [
       "Set bench to an incline. Grip the barbell with hands shoulder-width or closer.",
@@ -5706,7 +5972,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "close-grip-lat-pulldown",
@@ -5751,7 +6019,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "close-grip-pull-ups",
@@ -5792,7 +6062,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "close-grip-push-ups",
@@ -5836,7 +6108,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "close-stance-leg-press",
@@ -5879,7 +6153,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cobra-stretch",
@@ -5919,7 +6195,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cocoons",
@@ -5961,7 +6239,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "concentration-curl",
@@ -6003,7 +6283,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cossack-squat",
@@ -6047,7 +6329,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cow-face-pose",
@@ -6090,7 +6374,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "crab-dips",
@@ -6134,7 +6420,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "crescent-lunge",
@@ -6177,7 +6465,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cross-body-crunch",
@@ -6217,7 +6507,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cross-body-hammer-curl",
@@ -6261,7 +6553,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "cross-body-shoulder-stretch",
@@ -6301,12 +6595,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "crow-pose",
     "name": "Crow Pose",
-    "muscleGroup": "ARMS",
+    "muscleGroup": "CORE",
     "description": "An arm balance with the knees resting on the backs of the upper arms and the feet lifted, held by the shoulders, arms and trunk.",
     "instructions": [
       "Squat with the feet close together and place the palms shoulder-width apart on the floor in front of you.",
@@ -6344,7 +6640,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "crunches",
@@ -6386,7 +6684,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dancer-pose",
@@ -6429,7 +6729,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "db-bench-press",
@@ -6470,7 +6772,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "db-fly",
@@ -6510,12 +6814,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "db-kickstand-deadlift",
     "name": "Dumbbell Kickstand Deadlift",
-    "muscleGroup": "BACK",
+    "muscleGroup": "LEGS",
     "description": "A staggered-stance hip hinge with one dumbbell that loads the front leg while the back foot provides light balance support.",
     "instructions": [
       "Stand tall and step one foot back so only the toes lightly touch the floor.",
@@ -6554,7 +6860,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "db-lunge",
@@ -6596,7 +6904,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "db-overhead-carry",
@@ -6644,12 +6954,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "db-pullover",
     "name": "Dumbbell Pullover",
-    "muscleGroup": "CHEST",
+    "muscleGroup": "BACK",
     "description": "A compound movement targeting the lats and chest with a stretching motion.",
     "instructions": [
       "Lie on a flat bench with a dumbbell held above your chest, arms extended.",
@@ -6687,7 +6999,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "db-reverse-curl",
@@ -6728,7 +7042,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "db-reverse-wrist-curl",
@@ -6768,7 +7084,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "db-shrug",
@@ -6808,7 +7126,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "db-skull-crusher",
@@ -6846,7 +7166,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "db-somersault-squat",
@@ -6890,7 +7212,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "db-squat",
@@ -6933,7 +7257,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "db-sumo-squat",
@@ -6979,7 +7305,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "db-svend-press",
@@ -7022,7 +7350,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dead-bug",
@@ -7064,7 +7394,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dead-bug-hold",
@@ -7106,7 +7438,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dead-hang",
@@ -7149,12 +7483,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "deadlift",
     "name": "Barbell Deadlift",
-    "muscleGroup": "BACK",
+    "muscleGroup": "LEGS",
     "description": "A full-body compound lift that primarily targets the posterior chain.",
     "instructions": [
       "Stand with feet hip-width apart, bar over mid-foot.",
@@ -7193,7 +7529,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "decline-bench-press",
@@ -7234,7 +7572,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "decline-bench-press-barbell",
@@ -7275,7 +7615,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "decline-bench-press-ez-bar",
@@ -7316,7 +7658,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "decline-crunch",
@@ -7359,7 +7703,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "decline-db-fly",
@@ -7399,7 +7745,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "decline-push-up",
@@ -7440,12 +7788,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "deficit-deadlift",
     "name": "Deficit Deadlift",
-    "muscleGroup": "BACK",
+    "muscleGroup": "LEGS",
     "description": "A deadlift performed standing on a low platform, extending the range of motion to build strength off the floor.",
     "instructions": [
       "Stand on a small platform with a loaded barbell over your midfoot.",
@@ -7486,7 +7836,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "deficit-push-ups",
@@ -7530,7 +7882,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "diamond-push-ups",
@@ -7574,7 +7928,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dips",
@@ -7617,7 +7973,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dolphin-pose",
@@ -7660,7 +8018,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "donkey-calf-raise",
@@ -7702,7 +8062,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "doorway-chest-stretch",
@@ -7741,12 +8103,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "double-db-kickstand-deadlift",
     "name": "Double Dumbbell Kickstand Deadlift",
-    "muscleGroup": "BACK",
+    "muscleGroup": "LEGS",
     "description": "A staggered-stance hip hinge with two dumbbells that distributes load primarily through the front leg while the back foot lightly grounds for balance.",
     "instructions": [
       "Stand tall and step one foot back so only the toes touch the floor.",
@@ -7785,7 +8149,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "double-db-overhead-carry",
@@ -7832,7 +8198,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "double-kettlebell-bicep-curl",
@@ -7875,7 +8243,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "double-kettlebell-clean",
@@ -7921,12 +8291,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "double-kettlebell-clean-and-press",
     "name": "Double Kettlebell Clean and Press",
-    "muscleGroup": "SHOULDERS",
+    "muscleGroup": "LEGS",
     "description": "A full-body power exercise that cleans two kettlebells from the floor to the racked position at the shoulders and then presses both overhead to lockout in one continuous sequence.",
     "instructions": [
       "Stand with two kettlebells on the floor between your feet, feet about hip-width apart, and hinge at the hips to grip one handle in each hand.",
@@ -7968,7 +8340,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "double-kettlebell-dead-clean",
@@ -8014,7 +8388,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "double-kettlebell-dead-split-snatch",
@@ -8060,7 +8436,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "double-kettlebell-jerk",
@@ -8104,7 +8482,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "double-kettlebell-overhead-carry",
@@ -8152,7 +8532,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "double-kettlebell-overhead-press",
@@ -8197,7 +8579,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "double-kettlebell-push-press",
@@ -8244,7 +8628,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "double-kettlebell-rear-delt-row",
@@ -8291,7 +8677,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "double-kettlebell-row",
@@ -8336,7 +8724,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "double-kettlebell-split-jerk",
@@ -8381,7 +8771,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "double-kettlebell-swing-snatch",
@@ -8427,7 +8819,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "downward-dog",
@@ -8469,7 +8863,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "downward-dog-knee-tuck",
@@ -8514,7 +8910,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "downward-dog-pedal",
@@ -8557,7 +8955,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "downward-dog-to-knee-drive",
@@ -8602,7 +9002,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "downward-dog-to-low-lunge",
@@ -8645,12 +9047,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "downward-dog-to-plank",
     "name": "Downward Dog to Plank",
-    "muscleGroup": "SHOULDERS",
+    "muscleGroup": "CORE",
     "description": "A moving transition between downward dog and a high plank: the hips travel from high to level and back, so the shoulders and trunk work through a full range instead of holding one position.",
     "instructions": [
       "Set up in downward dog with the hips high and the hands shoulder-width apart.",
@@ -8690,7 +9094,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "downward-dog-to-upward-dog",
@@ -8735,7 +9141,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "drag-curl",
@@ -8777,7 +9185,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dragon-flag",
@@ -8822,7 +9232,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-bench-pull",
@@ -8866,7 +9278,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-calf-raise",
@@ -8910,12 +9324,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-deadlift",
     "name": "Dumbbell Deadlift",
-    "muscleGroup": "BACK",
+    "muscleGroup": "LEGS",
     "description": "A deadlift variation using dumbbells held in front of the thighs, training the glutes, hamstrings, and lower back.",
     "instructions": [
       "Stand with dumbbells in front of your thighs, feet hip-width apart.",
@@ -8957,7 +9373,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-face-pull",
@@ -9002,12 +9420,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-farmers-walk",
     "name": "Dumbbell Farmer's Walk",
-    "muscleGroup": "LEGS",
+    "muscleGroup": "SHOULDERS",
     "description": "This full-body exercise involves walking while holding heavy dumbbells, effectively building grip strength, core stability, and overall muscular endurance.",
     "instructions": [
       "Stand tall with a dumbbell in each hand, arms extended at your sides.",
@@ -9047,7 +9467,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-floor-press",
@@ -9088,7 +9510,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-front-raise",
@@ -9128,7 +9552,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-front-squat",
@@ -9174,7 +9600,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-hip-thrust",
@@ -9218,7 +9646,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-pistol-squat",
@@ -9264,7 +9694,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-push-press",
@@ -9310,7 +9742,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-reverse-fly",
@@ -9354,12 +9788,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-romanian-deadlift",
     "name": "Dumbbell Romanian Deadlift",
-    "muscleGroup": "BACK",
+    "muscleGroup": "LEGS",
     "description": "A hip-hinge movement with dumbbells and soft knees, loading the hamstrings and glutes through a controlled stretch.",
     "instructions": [
       "Stand holding dumbbells in front of your thighs with a soft knee bend.",
@@ -9399,7 +9835,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-shoulder-press",
@@ -9444,7 +9882,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-side-bend",
@@ -9488,7 +9928,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-snatch",
@@ -9535,7 +9977,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-split-squat",
@@ -9580,7 +10024,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-tricep-extension",
@@ -9620,7 +10066,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-upright-row",
@@ -9665,7 +10113,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-windmill",
@@ -9712,7 +10162,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "dumbbell-wrist-curl",
@@ -9754,7 +10206,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "eagle-pose",
@@ -9797,7 +10251,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "easy-pose",
@@ -9839,7 +10295,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "elliptical-trainer",
@@ -9886,7 +10344,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": true
   },
   {
     "catalogId": "extended-side-angle",
@@ -9929,7 +10389,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ez-bar-bench-press",
@@ -9972,7 +10434,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ez-bar-curl",
@@ -10013,7 +10477,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ez-bar-front-raise",
@@ -10055,7 +10521,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ez-bar-lying-tricep-extension",
@@ -10094,7 +10562,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ez-bar-overhead-extension",
@@ -10135,7 +10605,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ez-bar-pullover",
@@ -10180,7 +10652,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ez-bar-reverse-curl",
@@ -10221,7 +10695,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ez-bar-reverse-grip-row",
@@ -10267,7 +10743,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ez-bar-romanian-deadlift",
@@ -10313,7 +10791,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ez-bar-shrug",
@@ -10353,7 +10833,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ez-bar-spider-curl",
@@ -10397,7 +10879,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ez-bar-upright-row",
@@ -10441,7 +10925,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ez-bar-wrist-curl",
@@ -10481,7 +10967,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "face-pull",
@@ -10524,7 +11012,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "fish-pose",
@@ -10567,7 +11057,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "floor-ez-bar-press",
@@ -10608,7 +11100,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "floor-kettlebell-pullover",
@@ -10652,7 +11146,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "floor-press",
@@ -10693,7 +11189,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "flutter-kicks",
@@ -10737,7 +11235,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "front-lever",
@@ -10782,7 +11282,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "front-squat",
@@ -10824,7 +11326,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "garland-pose",
@@ -10867,7 +11371,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "glute-bridge",
@@ -10909,7 +11415,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "glute-bridge-hold",
@@ -10950,7 +11458,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "glute-kickback",
@@ -10994,7 +11504,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "glute-kickback-hold",
@@ -11037,7 +11549,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "goblet-squat",
@@ -11078,7 +11592,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "good-morning",
@@ -11120,7 +11636,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "hack-squat",
@@ -11165,7 +11683,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "hack-squat-calf-raise",
@@ -11207,7 +11727,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "half-kneeling-hip-flexor-rock",
@@ -11250,7 +11772,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "half-moon-pose",
@@ -11293,7 +11817,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "hammer-curl",
@@ -11335,7 +11861,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "handstand-push-ups",
@@ -11381,7 +11909,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "hang-clean",
@@ -11428,7 +11958,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "hang-power-clean",
@@ -11474,7 +12006,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "hanging-knee-raise",
@@ -11518,7 +12052,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "hanging-leg-raise",
@@ -11561,7 +12097,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "hanging-pike",
@@ -11604,7 +12142,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "happy-baby",
@@ -11647,7 +12187,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "head-to-knee-pose",
@@ -11690,7 +12232,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "heel-elevated-squat",
@@ -11735,7 +12279,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "heel-to-toe-walk",
@@ -11780,7 +12326,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "hero-pose",
@@ -11822,12 +12370,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "hex-bar-deadlift",
     "name": "Hex Bar Deadlift",
-    "muscleGroup": "BACK",
+    "muscleGroup": "LEGS",
     "description": "A deadlift standing inside a hex (trap) bar, keeping the load centered for a more upright, back-friendly pull.",
     "instructions": [
       "Stand inside a loaded trap bar with feet shoulder-width apart.",
@@ -11869,7 +12419,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "high-foot-leg-press",
@@ -11912,7 +12464,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "high-knees",
@@ -11955,7 +12509,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": true
   },
   {
     "catalogId": "high-plank",
@@ -11997,7 +12553,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "hip-abduction",
@@ -12039,7 +12597,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "hip-adduction",
@@ -12080,7 +12640,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "hip-thrust",
@@ -12123,7 +12685,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "hollow-body-hold",
@@ -12166,7 +12730,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "horizontal-leg-press",
@@ -12207,7 +12773,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "human-flag",
@@ -12254,7 +12822,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "incline-bench-ez-bar-press",
@@ -12295,7 +12865,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "incline-bench-press",
@@ -12338,7 +12910,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "incline-db-curl",
@@ -12380,7 +12954,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "incline-db-press",
@@ -12422,7 +12998,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "incline-dumbbell-fly",
@@ -12466,7 +13044,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "incline-hammer-curl",
@@ -12508,7 +13088,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "incline-push-ups",
@@ -12551,7 +13133,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "incline-treadmill-walk",
@@ -12596,7 +13180,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": true
   },
   {
     "catalogId": "inverted-row",
@@ -12643,7 +13229,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "isometric-neck-side",
@@ -12681,7 +13269,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "jackknife-sit-up",
@@ -12723,12 +13313,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "jefferson-curl",
     "name": "Jefferson Curl",
-    "muscleGroup": "BACK",
+    "muscleGroup": "CORE",
     "description": "A loaded spinal-flexion drill: standing tall with a light weight, you round the spine one vertebra at a time and restack it, building segmental control and hamstring/spinal-erector flexibility under load.",
     "instructions": [
       "Stand tall holding a light dumbbell with straight arms, feet roughly hip-width.",
@@ -12766,7 +13358,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "jump-rope",
@@ -12809,7 +13403,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": true
   },
   {
     "catalogId": "jump-squat",
@@ -12853,7 +13449,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "jumping-jacks",
@@ -12900,7 +13498,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": true
   },
   {
     "catalogId": "kettlebell-bulgarian-split-squat",
@@ -12946,12 +13546,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-close-grip-floor-press",
     "name": "Kettlebell Close-Grip Floor Press",
-    "muscleGroup": "ARMS",
+    "muscleGroup": "CHEST",
     "description": "A floor press performed with a single kettlebell gripped close together with both hands. The narrow grip and the floor stop on the elbows shift emphasis off the chest and onto the triceps, with no shoulder hyperextension.",
     "instructions": [
       "Lie on your back on the floor with the knees bent and feet flat.",
@@ -12990,7 +13592,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-concentration-curl",
@@ -13032,12 +13636,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-deadlift",
     "name": "Kettlebell Deadlift",
-    "muscleGroup": "BACK",
+    "muscleGroup": "LEGS",
     "description": "A foundational hip-hinge pull lifting a kettlebell from the floor, training the glutes, hamstrings, and lower back.",
     "instructions": [
       "Stand with feet shoulder-width apart and kettlebell between your feet.",
@@ -13078,12 +13684,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-farmers-walk",
     "name": "Kettlebell Farmer's Walk",
-    "muscleGroup": "LEGS",
+    "muscleGroup": "SHOULDERS",
     "description": "A loaded carry with heavy kettlebells at the sides, building grip strength and full-body stability.",
     "instructions": [
       "Stand between two heavy dumbbells or farmer handles.",
@@ -13124,7 +13732,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-floor-press",
@@ -13167,7 +13777,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-goblet-lunge",
@@ -13211,7 +13823,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-halo",
@@ -13254,7 +13868,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-hammer-curl",
@@ -13297,7 +13913,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-hip-thrust",
@@ -13341,12 +13959,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-kickstand-deadlift",
     "name": "Kettlebell Kickstand Deadlift",
-    "muscleGroup": "BACK",
+    "muscleGroup": "LEGS",
     "description": "A staggered-stance hip hinge with one kettlebell that loads the front leg while the back foot lightly stabilizes.",
     "instructions": [
       "Stand tall and step one foot back so only the toes touch the floor.",
@@ -13385,7 +14005,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-lunge-press",
@@ -13432,7 +14054,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-offset-reverse-lunge-and-press",
@@ -13479,7 +14103,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-overhead-carry",
@@ -13527,7 +14153,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-overhead-tricep-extension",
@@ -13568,7 +14196,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-pistol-squat",
@@ -13614,7 +14244,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-pullover",
@@ -13657,7 +14289,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-reverse-lunge",
@@ -13703,7 +14337,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-reverse-wrist-curl",
@@ -13743,7 +14379,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-rotational-lunge",
@@ -13789,7 +14427,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-russian-twist",
@@ -13833,7 +14473,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-shrug",
@@ -13877,12 +14519,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-single-leg-deadlift",
     "name": "Kettlebell Single Leg Deadlift",
-    "muscleGroup": "BACK",
+    "muscleGroup": "LEGS",
     "description": "A single-leg hip hinge holding a kettlebell, training the hamstrings and glutes while challenging balance.",
     "instructions": [
       "Hold a kettlebell in one hand and stand on the opposite leg.",
@@ -13922,7 +14566,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-skull-crusher",
@@ -13962,7 +14608,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-squat",
@@ -14004,7 +14652,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-sumo-deadlift",
@@ -14051,7 +14701,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-sumo-high-pull",
@@ -14097,7 +14749,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-svend-press",
@@ -14140,7 +14794,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-swing",
@@ -14184,7 +14840,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-swing-clean",
@@ -14230,7 +14888,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-turkish-get-ups",
@@ -14276,7 +14936,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-windmills",
@@ -14323,7 +14985,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "kettlebell-wrist-curl",
@@ -14363,7 +15027,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "knee-push-ups",
@@ -14408,7 +15074,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "knee-to-chest-stretch",
@@ -14448,7 +15116,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kneeling-cable-row",
@@ -14493,7 +15163,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kneeling-hip-flexor-stretch",
@@ -14534,7 +15206,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "kneeling-wrist-stretch",
@@ -14571,12 +15245,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "l-sit",
     "name": "L Sit",
-    "muscleGroup": "LEGS",
+    "muscleGroup": "CORE",
     "description": "An advanced static hold with legs extended parallel to the floor, demanding hip flexor and core strength.",
     "instructions": [
       "Sit on the floor or press up on parallel bars with arms straight.",
@@ -14616,7 +15292,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "landmine-press",
@@ -14660,7 +15338,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "lat-pulldown",
@@ -14704,7 +15384,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "lateral-raise",
@@ -14744,7 +15426,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "leg-curl",
@@ -14786,7 +15470,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "leg-extension",
@@ -14826,7 +15512,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "leg-press",
@@ -14869,7 +15557,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "legs-up-the-wall",
@@ -14910,7 +15600,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "lizard-stretch",
@@ -14952,7 +15644,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "locust-pose",
@@ -14995,7 +15689,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "low-lunge",
@@ -15038,7 +15734,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "low-lunge-to-half-split",
@@ -15081,7 +15779,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "lunge",
@@ -15126,7 +15826,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "lying-leg-raise",
@@ -15170,7 +15872,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "lying-tricep-extension",
@@ -15213,7 +15917,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "machine-back-extension",
@@ -15256,7 +15962,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "machine-bicep-curl",
@@ -15298,7 +16006,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "machine-calf-raise",
@@ -15340,7 +16050,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "machine-chest-fly",
@@ -15384,7 +16096,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "machine-preacher-curl",
@@ -15425,7 +16139,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "machine-seated-crunch",
@@ -15469,7 +16185,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "machine-shoulder-press",
@@ -15512,7 +16230,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "machine-triceps-extension",
@@ -15552,7 +16272,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "medicine-ball-slam",
@@ -15595,7 +16317,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "mountain-climbers",
@@ -15639,7 +16363,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": true
   },
   {
     "catalogId": "mountain-pose",
@@ -15681,7 +16407,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "muscle-snatch",
@@ -15727,7 +16455,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "muscle-ups",
@@ -15773,7 +16503,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "neck-side-stretch",
@@ -15811,7 +16543,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "negative-pull-ups",
@@ -15857,7 +16591,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "neutral-grip-pull-ups",
@@ -15903,7 +16639,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "nordic-hamstring-curl",
@@ -15947,7 +16685,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ohp",
@@ -15990,7 +16730,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-dumbbell-push-press",
@@ -16037,7 +16779,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-dumbbell-swing",
@@ -16084,7 +16828,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-kettlebell-bicep-curl",
@@ -16128,7 +16874,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-kettlebell-bottoms-up-press",
@@ -16174,7 +16922,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-kettlebell-floor-glute-bridge-press",
@@ -16220,7 +16970,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-kettlebell-floor-press",
@@ -16264,7 +17016,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-kettlebell-front-squat",
@@ -16310,7 +17064,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-kettlebell-push-press",
@@ -16357,7 +17113,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-kettlebell-row",
@@ -16403,7 +17161,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-kettlebell-shoulder-press",
@@ -16449,7 +17209,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-kettlebell-swing",
@@ -16495,7 +17257,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-kettlebell-tricep-kickback",
@@ -16538,7 +17302,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-landmine-press",
@@ -16583,7 +17349,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-lat-pulldown",
@@ -16627,7 +17395,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-single-leg-dumbbell-romanian-deadlift",
@@ -16675,7 +17445,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "one-arm-single-leg-kettlebell-romanian-deadlift",
@@ -16723,7 +17495,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "overhead-squat",
@@ -16769,7 +17543,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "overhead-tricep-extension",
@@ -16809,7 +17585,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "overhead-triceps-stretch",
@@ -16849,12 +17627,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pause-deadlift",
     "name": "Pause Deadlift",
-    "muscleGroup": "BACK",
+    "muscleGroup": "LEGS",
     "description": "A deadlift variation with a deliberate pause just below the knees to build strength off the floor.",
     "instructions": [
       "Set up for a conventional deadlift.",
@@ -16893,7 +17673,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pause-pull-up",
@@ -16938,7 +17720,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pause-squat",
@@ -16984,7 +17768,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "paused-bench-press",
@@ -17028,7 +17814,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "paused-incline-bench-press",
@@ -17072,7 +17860,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "paused-ohp",
@@ -17116,7 +17906,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pec-deck",
@@ -17160,7 +17952,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pendlay-row",
@@ -17207,7 +18001,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pigeon-stretch",
@@ -17248,7 +18044,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pike-push-ups",
@@ -17293,7 +18091,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pilates-kneeling-side-kick",
@@ -17337,7 +18137,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pilates-leg-pull-back",
@@ -17382,7 +18184,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pilates-leg-pull-front",
@@ -17427,7 +18231,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pilates-roll-down",
@@ -17470,7 +18276,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pilates-roll-over",
@@ -17514,12 +18322,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pilates-saw",
     "name": "Pilates Saw",
-    "muscleGroup": "BACK",
+    "muscleGroup": "CORE",
     "description": "A seated twist and reach: sitting tall with the legs wide, the torso rotates and then folds over the opposite leg so the reaching hand passes the little toe like a saw.",
     "instructions": [
       "Sit tall with the legs straight and slightly wider than the hips, arms out to the sides.",
@@ -17558,7 +18368,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pilates-side-bend",
@@ -17602,12 +18414,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pilates-spine-stretch-forward",
     "name": "Pilates Spine Stretch Forward",
-    "muscleGroup": "BACK",
+    "muscleGroup": "CORE",
     "description": "A seated articulation: sitting tall with the legs apart, the spine curls forward segment by segment over the legs and then restacks vertebra by vertebra.",
     "instructions": [
       "Sit tall with the legs straight and slightly wider than the hips, feet flexed.",
@@ -17646,7 +18460,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pilates-spine-twist",
@@ -17689,7 +18505,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pistol-squat",
@@ -17734,7 +18552,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "planche",
@@ -17776,7 +18596,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "plank",
@@ -17818,7 +18640,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "plate-loaded-donkey-calf-raise",
@@ -17860,7 +18684,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "plate-loaded-glute-drive",
@@ -17904,7 +18730,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "plate-loaded-lateral-raise",
@@ -17947,7 +18775,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "plate-loaded-shrug",
@@ -17989,7 +18819,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "plate-pinch",
@@ -18030,7 +18862,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "plate-pullover",
@@ -18074,7 +18908,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "plow-pose",
@@ -18117,7 +18953,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "plyo-lunge",
@@ -18161,7 +18999,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "plyo-push-up",
@@ -18204,7 +19044,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "preacher-curl",
@@ -18246,7 +19088,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "preacher-hammer-curl",
@@ -18290,7 +19134,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pseudo-planche-push-ups",
@@ -18335,7 +19181,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pull-up",
@@ -18377,7 +19225,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "puppy-pose",
@@ -18420,7 +19270,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "push-jerk",
@@ -18466,7 +19318,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "push-press",
@@ -18510,7 +19364,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "push-up",
@@ -18553,7 +19409,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "pyramid-pose",
@@ -18595,7 +19453,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "rack-pull",
@@ -18642,7 +19502,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "rear-delt-fly",
@@ -18685,7 +19547,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "reverse-crunches",
@@ -18730,7 +19594,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "reverse-curl",
@@ -18771,7 +19637,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "reverse-grip-bent-over-row",
@@ -18818,7 +19686,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "reverse-grip-lat-pulldown",
@@ -18864,7 +19734,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "reverse-lunge",
@@ -18907,7 +19779,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "reverse-nordic-curl",
@@ -18951,7 +19825,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "reverse-plank",
@@ -18996,7 +19872,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "reverse-plank-dips",
@@ -19040,7 +19918,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "reverse-tabletop-hip-pulses",
@@ -19083,7 +19963,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "reverse-tabletop-hold",
@@ -19127,7 +20009,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "revolved-chair-pose",
@@ -19170,12 +20054,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "revolved-crescent-lunge",
     "name": "Revolved Crescent Lunge",
-    "muscleGroup": "CORE",
+    "muscleGroup": "LEGS",
     "description": "A high lunge with a closed twist: the back heel stays lifted, the hips face forward and the chest rotates over the front thigh.",
     "instructions": [
       "Step into a high lunge with the front knee over the ankle and the back heel lifted.",
@@ -19213,7 +20099,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ring-dead-hang",
@@ -19256,7 +20144,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ring-dips",
@@ -19297,7 +20187,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ring-face-pull",
@@ -19338,7 +20230,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ring-muscle-up",
@@ -19384,7 +20278,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ring-push-up",
@@ -19428,7 +20324,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "ring-row",
@@ -19473,7 +20371,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "rings-inverted-row",
@@ -19520,7 +20420,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "romanian-deadlift",
@@ -19563,7 +20465,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "rope-climb",
@@ -19606,12 +20510,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "rowing-machine",
     "name": "Rowing Machine",
-    "muscleGroup": "LEGS",
+    "muscleGroup": "BACK",
     "description": "A full-body cardio machine movement in which each stroke drives with the legs, swings the torso back and pulls the handle to the ribs, training the legs, back and arms in one continuous cycle.",
     "instructions": [
       "Sit on the rower, strap your feet into the footplates and take the handle with an overhand grip.",
@@ -19655,7 +20561,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": true
   },
   {
     "catalogId": "running",
@@ -19701,7 +20609,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": true
   },
   {
     "catalogId": "russian-twist",
@@ -19744,7 +20654,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "savasana",
@@ -19783,7 +20695,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "scapular-pull-ups",
@@ -19828,7 +20742,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "scissor-kicks",
@@ -19873,7 +20789,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "seated-barbell-overhead-press",
@@ -19916,7 +20834,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "seated-cable-row",
@@ -19962,7 +20882,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "seated-calf-raise",
@@ -20003,7 +20925,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "seated-db-press",
@@ -20046,7 +20970,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "seated-dumbbell-curl",
@@ -20090,7 +21016,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "seated-dumbbell-lateral-raise",
@@ -20134,7 +21062,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "seated-dumbbell-tricep-extension",
@@ -20177,7 +21107,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "seated-forward-fold",
@@ -20216,7 +21148,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "seated-leg-curl",
@@ -20258,7 +21192,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "seated-smith-machine-shoulder-press",
@@ -20303,12 +21239,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "seated-spinal-twist",
     "name": "Seated Spinal Twist",
-    "muscleGroup": "BACK",
+    "muscleGroup": "CORE",
     "description": "A seated rotation that stretches the obliques, mid-back and glutes by twisting toward a bent knee.",
     "instructions": [
       "Sit with one leg straight and cross the other foot over it.",
@@ -20344,7 +21282,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "seated-straddle-stretch",
@@ -20384,7 +21324,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "shrug",
@@ -20426,7 +21368,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "side-lunge",
@@ -20472,7 +21416,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "side-lying-hip-abduction",
@@ -20512,7 +21458,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "side-lying-hip-abduction-hold",
@@ -20552,7 +21500,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "side-lying-hip-adduction",
@@ -20593,7 +21543,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "side-lying-hip-adduction-hold",
@@ -20632,7 +21584,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "side-lying-lateral-raise",
@@ -20675,7 +21629,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "side-plank",
@@ -20718,7 +21674,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "side-plank-leg-lift",
@@ -20763,7 +21721,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "side-plank-leg-lift-hold",
@@ -20807,7 +21767,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "single-arm-chest-supported-dumbbell-row",
@@ -20850,7 +21812,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "single-arm-db-row",
@@ -20894,7 +21858,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "single-arm-dumbbell-overhead-tricep-extension",
@@ -20936,7 +21902,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "single-arm-hammer-curl",
@@ -20980,7 +21948,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "single-arm-machine-shoulder-press",
@@ -21024,7 +21994,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "single-arm-plate-loaded-lateral-raise",
@@ -21067,7 +22039,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "single-arm-tricep-pushdown",
@@ -21110,7 +22084,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "single-db-svend-press",
@@ -21153,7 +22129,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "single-leg-calf-raise",
@@ -21195,7 +22173,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "single-leg-extension",
@@ -21236,7 +22216,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "single-leg-glute-bridge",
@@ -21279,7 +22261,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "single-leg-glute-bridge-hold",
@@ -21321,7 +22305,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "single-leg-lying-leg-curl",
@@ -21364,7 +22350,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "single-leg-press",
@@ -21408,12 +22396,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "single-leg-romanian-deadlift",
     "name": "Single Leg Romanian Deadlift",
-    "muscleGroup": "BACK",
+    "muscleGroup": "LEGS",
     "description": "A single-leg hip hinge with dumbbells, training the hamstrings and glutes while challenging balance and hip stability.",
     "instructions": [
       "Stand on one leg holding a dumbbell in each hand in front of your thighs.",
@@ -21453,7 +22443,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "sit-ups",
@@ -21496,7 +22488,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "skull-crusher",
@@ -21534,7 +22528,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "sled-row",
@@ -21580,7 +22576,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-bench-press",
@@ -21624,7 +22622,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-bent-over-row",
@@ -21670,7 +22670,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-bulgarian-split",
@@ -21712,7 +22714,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-calf-raise",
@@ -21755,7 +22759,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-decline-bench-press",
@@ -21798,7 +22804,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-front-squat",
@@ -21843,7 +22851,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-good-morning",
@@ -21886,7 +22896,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-hip-thrust",
@@ -21929,7 +22941,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-incline-bench-press",
@@ -21973,7 +22987,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-rdl",
@@ -22017,7 +23033,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-reverse-grip-bent-over-row",
@@ -22063,7 +23081,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-reverse-lunge",
@@ -22107,7 +23127,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-shoulder-press",
@@ -22152,7 +23174,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-shrug",
@@ -22195,7 +23219,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-split-squat",
@@ -22238,7 +23264,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-squat",
@@ -22284,7 +23312,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "smith-machine-upright-row",
@@ -22328,7 +23358,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "snatch",
@@ -22375,7 +23407,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "sphinx-pose",
@@ -22417,7 +23451,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "spider-curl",
@@ -22460,7 +23496,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "split-jerk",
@@ -22506,7 +23544,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "split-squat",
@@ -22551,7 +23591,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "spoto-press",
@@ -22595,7 +23637,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "squat",
@@ -22638,7 +23682,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "stability-ball-hip-bridge",
@@ -22681,7 +23727,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "stability-ball-knee-tuck",
@@ -22725,7 +23773,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "stability-ball-push-up",
@@ -22770,7 +23820,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "stability-ball-push-up-hands-on-ball",
@@ -22815,7 +23867,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "stability-ball-wall-squat",
@@ -22858,7 +23912,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "stair-climber",
@@ -22903,7 +23959,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": true
   },
   {
     "catalogId": "standing-calf-raise",
@@ -22944,7 +24002,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "standing-calf-stretch",
@@ -22984,7 +24044,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "standing-forward-fold",
@@ -23024,7 +24086,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "standing-forward-fold-to-half-lift",
@@ -23067,7 +24131,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "standing-quad-stretch",
@@ -23107,7 +24173,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "standing-side-bend",
@@ -23148,7 +24216,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "standing-side-bend-flow",
@@ -23191,7 +24261,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "standing-split",
@@ -23234,7 +24306,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "stationary-bike",
@@ -23278,7 +24352,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": true
   },
   {
     "catalogId": "step-ups",
@@ -23324,12 +24400,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "stiff-leg-deadlift",
     "name": "Stiff Leg Deadlift",
-    "muscleGroup": "BACK",
+    "muscleGroup": "LEGS",
     "description": "A hip hinge with nearly straight legs, lowering the bar along the thighs to stretch and load the hamstrings.",
     "instructions": [
       "Stand with feet hip-width apart, holding a barbell in front of your thighs.",
@@ -23369,7 +24447,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "straight-arm-pulldown",
@@ -23412,7 +24492,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "straight-bar-cable-front-raise",
@@ -23455,7 +24537,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "straight-bar-dips",
@@ -23497,7 +24581,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "strict-curl",
@@ -23540,7 +24626,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "suitcase-carry",
@@ -23587,12 +24675,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "sumo-deadlift",
     "name": "Sumo Deadlift",
-    "muscleGroup": "BACK",
+    "muscleGroup": "LEGS",
     "description": "A deadlift variation with a wide stance that shifts emphasis to the glutes, quads, and inner thighs.",
     "instructions": [
       "Stand with feet wider than shoulder-width, toes pointed outward.",
@@ -23630,7 +24720,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "sumo-squat",
@@ -23676,7 +24768,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "superman",
@@ -23718,12 +24812,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "supine-spinal-twist",
     "name": "Supine Spinal Twist",
-    "muscleGroup": "BACK",
+    "muscleGroup": "CORE",
     "description": "A lying twist that stretches the lower back, glutes and obliques by dropping a bent knee across the body.",
     "instructions": [
       "Lie on your back and bend one knee toward your chest.",
@@ -23759,7 +24855,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "supine-windshield-wipers",
@@ -23803,7 +24901,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "supported-shoulderstand",
@@ -23846,7 +24946,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "svend-press",
@@ -23888,7 +24990,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "t-bar-row",
@@ -23934,7 +25038,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "thoracic-bridge",
@@ -23977,7 +25083,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "thread-the-needle",
@@ -24020,7 +25128,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "thread-the-needle-flow",
@@ -24064,7 +25174,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "three-legged-dog",
@@ -24107,12 +25219,14 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "thruster",
     "name": "Thruster",
-    "muscleGroup": "SHOULDERS",
+    "muscleGroup": "LEGS",
     "description": "A full-body barbell movement combining a front squat with an overhead press in one fluid drive.",
     "instructions": [
       "Hold a barbell in a front rack position with elbows high.",
@@ -24153,7 +25267,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": true,
+    "cardio": false
   },
   {
     "catalogId": "toes-to-bar",
@@ -24198,7 +25314,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "treadmill-running",
@@ -24243,7 +25361,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": true
   },
   {
     "catalogId": "tree-pose",
@@ -24286,7 +25406,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "triangle-pose",
@@ -24329,7 +25451,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "tricep-kickback",
@@ -24369,7 +25493,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "tricep-pushdown",
@@ -24408,7 +25534,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "trx-bicep-curl",
@@ -24453,7 +25581,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "trx-chest-press",
@@ -24498,7 +25628,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "trx-face-pull",
@@ -24541,7 +25673,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "trx-hamstring-curl",
@@ -24584,7 +25718,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "trx-lunge",
@@ -24630,7 +25766,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "trx-pistol-squat",
@@ -24676,7 +25814,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "trx-plank",
@@ -24720,7 +25860,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "trx-row",
@@ -24766,7 +25908,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "trx-side-plank",
@@ -24810,7 +25954,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "trx-squat",
@@ -24853,7 +25999,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "trx-tricep-extension",
@@ -24893,7 +26041,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "trx-y-fly",
@@ -24937,7 +26087,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "upright-row",
@@ -24981,7 +26133,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "upward-dog",
@@ -25024,7 +26178,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "v-bar-lat-pulldown",
@@ -25068,7 +26224,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "v-bar-tricep-pushdown",
@@ -25108,7 +26266,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "v-sit",
@@ -25151,7 +26311,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "v-ups",
@@ -25196,7 +26358,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "walking",
@@ -25242,7 +26406,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": true
   },
   {
     "catalogId": "walking-lunge",
@@ -25287,7 +26453,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "wall-push-ups",
@@ -25331,7 +26499,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "wall-sit",
@@ -25371,7 +26541,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "warrior-one",
@@ -25414,7 +26586,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "warrior-three",
@@ -25457,7 +26631,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "warrior-two",
@@ -25500,7 +26676,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "weighted-dips",
@@ -25543,7 +26721,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "weighted-pull-up",
@@ -25588,7 +26768,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "weighted-wall-crunch",
@@ -25630,7 +26812,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "wide-grip-bench-press",
@@ -25671,7 +26855,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "wide-grip-pull-ups",
@@ -25717,7 +26903,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "wide-grip-push-ups",
@@ -25762,7 +26950,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "wide-grip-seated-cable-row",
@@ -25806,7 +26996,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "wide-legged-forward-fold",
@@ -25849,7 +27041,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "wide-stance-leg-press",
@@ -25893,7 +27087,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "wrist-curl",
@@ -25934,7 +27130,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "wrist-roller",
@@ -25978,7 +27176,9 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   },
   {
     "catalogId": "zottman-curl",
@@ -26022,6 +27222,8 @@
       "attributionText": "Exercise data by RepDB (repdb.co)",
       "attributionUrl": "https://repdb.co",
       "licenseTier": "free"
-    }
+    },
+    "fullBody": false,
+    "cardio": false
   }
 ]

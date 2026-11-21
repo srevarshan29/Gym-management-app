@@ -3,6 +3,10 @@ import type { DocumentSnapshot } from "firebase-admin/firestore";
 import { primaryCatalogSearchToken } from "@/lib/exercises/catalog-search";
 import { InvalidPaginationCursorError } from "@/lib/firestore/errors";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
+import {
+  catalogBrowseFilterMatchesCursor,
+  type CatalogBrowseFilter,
+} from "@/lib/catalog/catalog-browse-filter";
 import type { ExerciseCatalogDoc, MuscleGroup } from "@/lib/firestore/types";
 
 const CATALOG_CURSOR_ID_PATTERN = /^[a-zA-Z0-9_-]{1,128}$/;
@@ -11,6 +15,8 @@ const CATALOG_SEARCH_CURSOR_VERSION = 1;
 export type CatalogSearchCursorV1 = {
   v: typeof CATALOG_SEARCH_CURSOR_VERSION;
   token: string;
+  /** Present on new cursors; legacy cursors imply `muscleGroup`. */
+  filterMode?: "muscleGroup" | "fullBody" | "cardio";
   muscleGroup: MuscleGroup | null;
   boundaryNameLower: string;
   boundaryId: string;
@@ -52,7 +58,7 @@ export function decodeCatalogSearchCursor(
   raw: string,
   options: {
     query: string;
-    muscleGroup?: MuscleGroup | null;
+    browseFilter: CatalogBrowseFilter;
   },
 ): CatalogSearchCursorV1 {
   let parsed: unknown;
@@ -78,10 +84,9 @@ export function decodeCatalogSearchCursor(
     );
   }
 
-  const expectedMuscleGroup = options.muscleGroup ?? null;
-  if (cursor.muscleGroup !== expectedMuscleGroup) {
+  if (!catalogBrowseFilterMatchesCursor(options.browseFilter, cursor)) {
     throw new InvalidPaginationCursorError(
-      "Pagination cursor does not match the current muscle group filter.",
+      "Pagination cursor does not match the current browse filter.",
     );
   }
 
@@ -95,6 +100,7 @@ export function decodeCatalogSearchCursor(
   return {
     v: CATALOG_SEARCH_CURSOR_VERSION,
     token: cursor.token,
+    filterMode: cursor.filterMode ?? "muscleGroup",
     muscleGroup: cursor.muscleGroup,
     boundaryNameLower,
     boundaryId,
@@ -106,7 +112,7 @@ export function decodeCatalogSearchCursor(
 export type MergeCatalogSearchPageParams = {
   limit: number;
   token: string;
-  muscleGroup?: MuscleGroup | null;
+  browseFilter: CatalogBrowseFilter;
   usePrefixQuery: boolean;
   decodedCursor: CatalogSearchCursorV1 | null;
   fetchNameRows: (
@@ -263,7 +269,11 @@ export async function paginateMergedCatalogSearch(
   const nextCursor = encodeCatalogSearchCursor({
     v: CATALOG_SEARCH_CURSOR_VERSION,
     token: params.token,
-    muscleGroup: params.muscleGroup ?? null,
+    filterMode: params.browseFilter.mode,
+    muscleGroup:
+      params.browseFilter.mode === "muscleGroup"
+        ? params.browseFilter.muscleGroup
+        : null,
     boundaryNameLower: lastItem.nameLower,
     boundaryId: lastItem.id,
     nameAfterId: nameLastConsumedId,

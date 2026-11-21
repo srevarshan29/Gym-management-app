@@ -11,7 +11,7 @@ import {
 import { validateExerciseCatalogDoc } from "@/lib/exercises/catalog-validation";
 import { hasDemonstrationMedia } from "@/lib/exercises/media";
 import { resolveExerciseSource } from "@/lib/exercises/source";
-import type { StaffContext } from "@/lib/firestore/context";
+import type { MemberContext, StaffContext } from "@/lib/firestore/context";
 import { platformContext } from "@/lib/firestore/helpers";
 import { ExerciseCatalogRepository } from "@/lib/firestore/repositories/exercise-catalog";
 import type { CustomExerciseDoc } from "@/lib/firestore/types";
@@ -124,17 +124,7 @@ describe("validateExerciseCatalogDoc", () => {
 });
 
 describe("ExerciseCatalogRepository access control", () => {
-  it("denies member context reads", async () => {
-    const repo = new ExerciseCatalogRepository({} as never);
-    await expect(
-      repo.getByCatalogId(
-        { kind: "member", memberId: "m1", gymId: "gym-a" },
-        "bench-press",
-      ),
-    ).rejects.toThrow("Unauthorized catalog read.");
-  });
-
-  it("allows staff context reads", async () => {
+  function catalogReadDbMock() {
     const get = vi.fn().mockResolvedValue({
       exists: true,
       id: "bench-press",
@@ -142,8 +132,23 @@ describe("ExerciseCatalogRepository access control", () => {
     });
     const doc = vi.fn(() => ({ get }));
     const collection = vi.fn(() => ({ doc }));
-    const db = { collection } as never;
+    return { collection } as never;
+  }
 
+  it("allows member context reads", async () => {
+    const memberCtx: MemberContext = {
+      kind: "member",
+      memberId: "m1",
+      gymId: "gym-a",
+    };
+
+    const repo = new ExerciseCatalogRepository(catalogReadDbMock());
+    const result = await repo.getByCatalogId(memberCtx, "bench-press");
+    expect(result?.id).toBe("bench-press");
+    expect(result?.name).toBe("Bench Press");
+  });
+
+  it("allows staff context reads", async () => {
     const staffCtx: StaffContext = {
       kind: "staff",
       userId: "staff-1",
@@ -151,7 +156,7 @@ describe("ExerciseCatalogRepository access control", () => {
       role: "STAFF",
     };
 
-    const repo = new ExerciseCatalogRepository(db);
+    const repo = new ExerciseCatalogRepository(catalogReadDbMock());
     const result = await repo.getByCatalogId(staffCtx, "bench-press");
     expect(result?.id).toBe("bench-press");
     expect(result?.name).toBe("Bench Press");

@@ -127,6 +127,8 @@ export type EventDoc = {
   eventDate: Timestamp;
   location: string;
   description: string | null;
+  /** Optional Supabase public URL for event poster / banner. */
+  bannerImageUrl?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 };
@@ -195,6 +197,10 @@ export type ExerciseCatalogDoc = {
   /** Prefix tokens (length >= 3) derived from name words for array-contains search. */
   searchPrefixes: string[];
   isActive: boolean;
+  /** When absent in legacy Firestore docs, treat as false. */
+  fullBody?: boolean;
+  /** When absent in legacy Firestore docs, treat as false. */
+  cardio?: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 };
@@ -231,6 +237,8 @@ export type UserDoc = {
   email: string;
   passwordHash: string;
   role: StaffRole;
+  /** Bumped on password change/reset to invalidate outstanding JWTs. */
+  credentialsVersion?: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 };
@@ -266,6 +274,8 @@ export type MemberDoc = {
   currentEndDate: Timestamp | null;
   currentPackageName: string | null;
   addedByName: string | null;
+  /** Gym admin unlock for member portal → Workout → Mine (default locked). */
+  personalWorkoutsEnabled?: boolean;
   /** Latest successful check-in (never moved backwards). */
   lastAttendanceAt?: Timestamp | null;
   createdAt: Timestamp;
@@ -627,7 +637,19 @@ export type MemberPortalDashboardStateDoc = {
   dailyWaterTargetMl: number | null;
   /** Member-configured weekly gym visit target (1–7); null uses app default. */
   weeklyAttendanceTarget: number | null;
+  /** Weight Journey summit target (kg); member-controlled. */
+  weightJourneyTargetKg?: number | null;
+  /** Weight Journey trailhead (kg); null uses earliest logged measurement. */
+  weightJourneyStartKg?: number | null;
   updatedAt: Timestamp;
+};
+
+export type MemberWeightMeasurementDoc = {
+  gymId: string;
+  memberId: string;
+  weightKg: number;
+  recordedAt: Timestamp;
+  createdAt: Timestamp;
 };
 
 export type NutritionLogDoc = {

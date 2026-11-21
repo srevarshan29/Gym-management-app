@@ -1,13 +1,15 @@
 import type { MuscleGroup } from "@/lib/muscle-groups";
 
-/** Member library browse filters (includes Full Body; catalog uses CORE separately). */
+/** Member library browse filters (Full Body / Cardio are tag-based, not muscle groups). */
 export type MemberLibraryMuscleFilter =
   | "CHEST"
   | "BACK"
   | "SHOULDERS"
   | "ARMS"
   | "LEGS"
-  | "FULL_BODY";
+  | "CORE"
+  | "FULL_BODY"
+  | "CARDIO";
 
 export const MEMBER_LIBRARY_MUSCLE_FILTERS = [
   "CHEST",
@@ -15,7 +17,9 @@ export const MEMBER_LIBRARY_MUSCLE_FILTERS = [
   "SHOULDERS",
   "ARMS",
   "LEGS",
+  "CORE",
   "FULL_BODY",
+  "CARDIO",
 ] as const satisfies readonly MemberLibraryMuscleFilter[];
 
 export type MemberLibraryMuscleGroupConfig = {
@@ -51,9 +55,19 @@ export const MEMBER_LIBRARY_MUSCLE_GROUPS: MemberLibraryMuscleGroupConfig[] = [
     subtitle: "Squats & hinges",
   },
   {
+    id: "CORE",
+    label: "Core",
+    subtitle: "Abs & stability",
+  },
+  {
     id: "FULL_BODY",
     label: "Full Body",
-    subtitle: "Compound & cardio",
+    subtitle: "Compound lifts",
+  },
+  {
+    id: "CARDIO",
+    label: "Cardio",
+    subtitle: "Conditioning & machines",
   },
 ];
 
@@ -70,8 +84,35 @@ export function parseMemberLibraryMuscleGroup(
 export function memberLibraryFilterToCatalogMuscleGroup(
   filter: MemberLibraryMuscleFilter | null,
 ): MuscleGroup | null {
-  if (!filter || filter === "FULL_BODY") return null;
+  if (
+    !filter ||
+    filter === "FULL_BODY" ||
+    filter === "CARDIO"
+  ) {
+    return null;
+  }
   return filter;
+}
+
+export type MemberLibraryCatalogBrowseQuery = {
+  muscleGroup: MuscleGroup | null;
+  fullBody: boolean;
+  cardio: boolean;
+};
+
+export function memberLibraryFilterToCatalogBrowseQuery(
+  filter: MemberLibraryMuscleFilter | null,
+): MemberLibraryCatalogBrowseQuery {
+  if (!filter) {
+    return { muscleGroup: null, fullBody: false, cardio: false };
+  }
+  if (filter === "FULL_BODY") {
+    return { muscleGroup: null, fullBody: true, cardio: false };
+  }
+  if (filter === "CARDIO") {
+    return { muscleGroup: null, fullBody: false, cardio: true };
+  }
+  return { muscleGroup: filter, fullBody: false, cardio: false };
 }
 
 export function memberLibraryGroupLabel(

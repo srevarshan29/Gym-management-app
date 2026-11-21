@@ -1,5 +1,7 @@
 "use client";
 
+import * as React from "react";
+
 import { MemberMuscleGroupArt } from "@/components/member-portal/workout/member-muscle-group-art";
 import {
   MEMBER_LIBRARY_MUSCLE_GROUPS,

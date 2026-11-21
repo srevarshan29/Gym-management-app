@@ -216,6 +216,14 @@ export function validateCatalogExerciseInput(
     errors.push(`${label}.isActive must be a boolean when provided.`);
   }
 
+  if (raw.fullBody !== undefined && typeof raw.fullBody !== "boolean") {
+    errors.push(`${label}.fullBody must be a boolean when provided.`);
+  }
+
+  if (raw.cardio !== undefined && typeof raw.cardio !== "boolean") {
+    errors.push(`${label}.cardio must be a boolean when provided.`);
+  }
+
   const media = validateCatalogMedia(raw.media, errors, label);
   const mediaAssetsResult = validateCatalogMediaAssets(raw.mediaAssets);
   if (!mediaAssetsResult.ok) {
@@ -270,6 +278,8 @@ export function validateCatalogExerciseInput(
     catalogVersion: options.catalogVersion,
     searchPrefixes,
     isActive: (raw.isActive as boolean | undefined) ?? true,
+    fullBody: (raw.fullBody as boolean | undefined) ?? false,
+    cardio: (raw.cardio as boolean | undefined) ?? false,
   };
 
   return { ok: true, exercise, warnings };

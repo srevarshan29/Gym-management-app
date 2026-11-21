@@ -23,7 +23,12 @@ import {
 } from "@/lib/member-portal/email";
 import { schedulePaymentLogged } from "@/lib/notifications";
 import { afterMemberRegistered } from "@/lib/member-portal-invitation/on-member-created";
-import { canDeleteMembers, canLogPayments } from "@/lib/permissions";
+import {
+  canDeleteMembers,
+  canLogPayments,
+  canManageMemberPersonalWorkoutsAccess,
+} from "@/lib/permissions";
+import { isPersonalWorkoutsEnabled } from "@/lib/member-portal/personal-workouts-access";
 import { requireGym } from "@/lib/session";
 import { uploadMemberPhoto } from "@/lib/storage";
 import { validateTrainerForGym } from "@/lib/staff";
@@ -230,6 +235,7 @@ export async function updateMember(
     ageYears,
     heightCm,
     weightKg,
+    personalWorkoutsEnabled: personalWorkoutsEnabledRaw,
   } = parsed.data;
 
   const ptFields = await resolvePtFields(user.gymId, isPtRaw, trainerIdRaw);
@@ -256,6 +262,11 @@ export async function updateMember(
   const existing = await members.findByIdAndGym(ctx, id, user.gymId);
   if (!existing) return actionError("Member not found.");
 
+  let personalWorkoutsEnabled = isPersonalWorkoutsEnabled(existing);
+  if (canManageMemberPersonalWorkoutsAccess(user.role)) {
+    personalWorkoutsEnabled = personalWorkoutsEnabledRaw === "1";
+  }
+
   const updated = await members.update(ctx, user.gymId, id, {
     name,
     phone,
@@ -268,6 +279,7 @@ export async function updateMember(
     ageYears: ageYears ?? null,
     heightCm: heightCm ?? null,
     weightKg: weightKg ?? null,
+    personalWorkoutsEnabled,
   });
   if (!updated) return actionError("Member not found.");
 

@@ -6,7 +6,7 @@ import {
   buildMemberPortalLoginUrl,
   getMemberPortalLoginPath,
 } from "@/lib/member-portal/portal-entry-url";
-import { getGymByRegistrationToken } from "@/lib/member-portal/access";
+import { getGymByRegistrationToken } from "@/lib/registration";
 import { getMemberPortalQrPageData } from "@/lib/member-portal/portal-qr-page";
 
 const { getRegistrationToken, findByRegistrationToken } = vi.hoisted(() => ({

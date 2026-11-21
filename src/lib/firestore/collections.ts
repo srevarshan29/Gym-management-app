@@ -21,6 +21,8 @@ export const COLLECTIONS = {
   memberPersonalWorkouts: "memberPersonalWorkouts",
   dietPlans: "dietPlans",
   staffLoginThrottles: "staffLoginThrottles",
+  staffPasswordResetTokens: "staffPasswordResetTokens",
+  staffPasswordResetRequestThrottles: "staffPasswordResetRequestThrottles",
   nutritionFoodCatalog: "nutritionFoodCatalog",
   nutritionLogs: "nutritionLogs",
   nutritionMemberFoods: "nutritionMemberFoods",
@@ -32,6 +34,7 @@ export const COLLECTIONS = {
   gymNotificationSettings: "gymNotificationSettings",
   attendance: "attendance",
   memberWaterLogs: "memberWaterLogs",
+  memberWeightMeasurements: "memberWeightMeasurements",
   memberPortalDashboardState: "memberPortalDashboardState",
 } as const;
 

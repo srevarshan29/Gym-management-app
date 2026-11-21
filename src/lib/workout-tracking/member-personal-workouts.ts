@@ -1,5 +1,6 @@
 import { getRepositories } from "@/lib/firestore";
 import type { MemberContext } from "@/lib/firestore/context";
+import { requireMemberPersonalWorkoutsAccess } from "@/lib/member-portal/personal-workouts-access";
 import { newDocId } from "@/lib/firestore/helpers";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
 import type { MemberPersonalWorkoutDoc } from "@/lib/firestore/types";
@@ -56,6 +57,7 @@ function toSummary(doc: DocWithId<MemberPersonalWorkoutDoc>): MemberPersonalWork
 export async function listMemberPersonalWorkouts(
   ctx: MemberContext,
 ): Promise<MemberPersonalWorkoutSummary[]> {
+  await requireMemberPersonalWorkoutsAccess(ctx);
   const { memberPersonalWorkouts } = getRepositories();
   const rows = await memberPersonalWorkouts.listForMember(
     ctx,
@@ -69,6 +71,7 @@ export async function getMemberPersonalWorkoutDetail(
   ctx: MemberContext,
   workoutId: string,
 ): Promise<MemberPersonalWorkoutDetail | null> {
+  await requireMemberPersonalWorkoutsAccess(ctx);
   const { memberPersonalWorkouts, exerciseCatalog } = getRepositories();
   const doc = await memberPersonalWorkouts.getForMember(
     ctx,
@@ -103,6 +106,7 @@ export async function createMemberPersonalWorkout(
   ctx: MemberContext,
   name: string,
 ): Promise<string> {
+  await requireMemberPersonalWorkoutsAccess(ctx);
   const { memberPersonalWorkouts } = getRepositories();
   const id = newDocId();
   await memberPersonalWorkouts.createForMember(ctx, ctx.gymId, ctx.memberId, id, {
@@ -126,6 +130,7 @@ export async function saveMemberPersonalWorkout(
     }[];
   },
 ): Promise<void> {
+  await requireMemberPersonalWorkoutsAccess(ctx);
   const { memberPersonalWorkouts } = getRepositories();
   await memberPersonalWorkouts.updateForMember(
     ctx,
@@ -149,6 +154,7 @@ export async function deleteMemberPersonalWorkout(
   ctx: MemberContext,
   workoutId: string,
 ): Promise<void> {
+  await requireMemberPersonalWorkoutsAccess(ctx);
   const { memberPersonalWorkouts } = getRepositories();
   await memberPersonalWorkouts.deleteForMember(
     ctx,
@@ -171,6 +177,7 @@ export async function addCatalogExercisesToPersonalWorkout(
   workoutId: string,
   catalogIds: string[],
 ): Promise<{ addedCount: number }> {
+  await requireMemberPersonalWorkoutsAccess(ctx);
   const hasRequestedId = catalogIds.some((raw) => raw.trim().length > 0);
   if (!hasRequestedId) {
     throw new Error("Select at least one exercise.");

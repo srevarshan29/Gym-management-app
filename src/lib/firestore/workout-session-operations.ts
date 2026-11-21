@@ -11,6 +11,7 @@ import {
 } from "@/lib/workout-tracking/session-exercise-identity";
 import { buildPlanExerciseMap, resolvePlanExerciseTrackingType } from "@/lib/workout-tracking/session-plan";
 import { getExerciseLibraryMapByIds } from "@/lib/workout-tracking/exercise-library";
+import { requireMemberPersonalWorkoutsAccess } from "@/lib/member-portal/personal-workouts-access";
 import {
   PERSONAL_WORKOUT_DAY_ID,
   personalWorkoutToPlanDoc,
@@ -129,6 +130,7 @@ export async function startPersonalWorkoutSessionRecord(
   ctx: MemberContext,
   personalWorkoutId: string,
 ): Promise<{ sessionId: string; resumed: boolean }> {
+  await requireMemberPersonalWorkoutsAccess(ctx);
   const { memberPersonalWorkouts, workoutSessions } = getRepositories();
   const gymId = ctx.gymId;
   const memberId = ctx.memberId;

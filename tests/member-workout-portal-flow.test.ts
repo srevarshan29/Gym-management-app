@@ -28,11 +28,25 @@ const memberCtx: MemberContext = {
   memberId: "member-a",
 };
 
+const findMemberByIdAndGym = vi.fn();
+
 vi.mock("@/lib/firestore", () => ({
   getRepositories: vi.fn(),
 }));
 
 import { getRepositories } from "@/lib/firestore";
+
+function reposWithPersonalAccess(extra: object) {
+  findMemberByIdAndGym.mockResolvedValue({
+    id: memberCtx.memberId,
+    gymId: memberCtx.gymId,
+    personalWorkoutsEnabled: true,
+  });
+  vi.mocked(getRepositories).mockReturnValue({
+    members: { findByIdAndGym: findMemberByIdAndGym },
+    ...extra,
+  } as never);
+}
 
 describe("member workout tab URLs", () => {
   it("parses top-level tab query values with legacy aliases", () => {
@@ -116,7 +130,9 @@ describe("member library muscle group filters", () => {
 
   it("maps library filters to catalog muscle groups", () => {
     expect(memberLibraryFilterToCatalogMuscleGroup("CHEST")).toBe("CHEST");
+    expect(memberLibraryFilterToCatalogMuscleGroup("CORE")).toBe("CORE");
     expect(memberLibraryFilterToCatalogMuscleGroup("FULL_BODY")).toBeNull();
+    expect(memberLibraryFilterToCatalogMuscleGroup("CARDIO")).toBeNull();
     expect(memberLibraryFilterToCatalogMuscleGroup(null)).toBeNull();
   });
 });
@@ -130,7 +146,7 @@ describe("addCatalogExerciseToPersonalWorkout", () => {
     getForMember.mockReset();
     getByCatalogIds.mockReset();
     updateForMember.mockReset();
-    vi.mocked(getRepositories).mockReturnValue({
+    reposWithPersonalAccess({
       memberPersonalWorkouts: {
         getForMember,
         updateForMember,
@@ -138,7 +154,7 @@ describe("addCatalogExerciseToPersonalWorkout", () => {
       exerciseCatalog: {
         getByCatalogIds,
       },
-    } as never);
+    });
   });
 
   it("appends exercise with default sets/reps for the member workout", async () => {
@@ -231,7 +247,7 @@ describe("addCatalogExercisesToPersonalWorkout", () => {
     getForMember.mockReset();
     getByCatalogIds.mockReset();
     updateForMember.mockReset();
-    vi.mocked(getRepositories).mockReturnValue({
+    reposWithPersonalAccess({
       memberPersonalWorkouts: {
         getForMember,
         updateForMember,
@@ -239,7 +255,7 @@ describe("addCatalogExercisesToPersonalWorkout", () => {
       exerciseCatalog: {
         getByCatalogIds,
       },
-    } as never);
+    });
   });
 
   it("appends multiple exercises in one update and dedupes catalog ids", async () => {
@@ -344,7 +360,7 @@ describe("createMemberPersonalWorkout and detail reload", () => {
     createForMember.mockReset();
     getForMember.mockReset();
     getByCatalogIds.mockReset();
-    vi.mocked(getRepositories).mockReturnValue({
+    reposWithPersonalAccess({
       memberPersonalWorkouts: {
         listForMember,
         createForMember,
@@ -353,7 +369,7 @@ describe("createMemberPersonalWorkout and detail reload", () => {
       exerciseCatalog: {
         getByCatalogIds,
       },
-    } as never);
+    });
   });
 
   it("creates a workout and lists it for the member", async () => {

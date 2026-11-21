@@ -6,6 +6,7 @@ import { z } from "zod";
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
 import type { MemberContext } from "@/lib/firestore/context";
 import { startPersonalWorkoutSessionRecord } from "@/lib/firestore/workout-session-operations";
+import { PersonalWorkoutsAccessError } from "@/lib/member-portal/personal-workouts-access";
 import { requireMember } from "@/lib/member-session";
 import {
   addCatalogExerciseToPersonalWorkout,
@@ -74,6 +75,9 @@ export async function listMemberPersonalWorkoutsAction(): Promise<
     const rows = await listMemberPersonalWorkouts(memberCtx(member));
     return actionOk(undefined, rows);
   } catch (error) {
+    if (error instanceof PersonalWorkoutsAccessError) {
+      return actionError(error.message);
+    }
     console.error("[personal-workout] list failed", error);
     return actionError("Could not load your workouts.");
   }
@@ -91,6 +95,9 @@ export async function getMemberPersonalWorkoutAction(
     if (!detail) return actionError("Workout not found.");
     return actionOk(undefined, detail);
   } catch (error) {
+    if (error instanceof PersonalWorkoutsAccessError) {
+      return actionError(error.message);
+    }
     console.error("[personal-workout] get failed", error);
     return actionError("Could not load workout.");
   }
@@ -113,6 +120,9 @@ export async function createMemberPersonalWorkoutAction(
     revalidateMemberWorkout();
     return actionOk("Workout created.", { workoutId });
   } catch (error) {
+    if (error instanceof PersonalWorkoutsAccessError) {
+      return actionError(error.message);
+    }
     console.error("[personal-workout] create failed", error);
     return actionError("Could not create workout.");
   }
@@ -134,6 +144,9 @@ export async function saveMemberPersonalWorkoutAction(
     revalidateMemberWorkout(parsed.data.workoutId);
     return actionOk("Workout saved.");
   } catch (error) {
+    if (error instanceof PersonalWorkoutsAccessError) {
+      return actionError(error.message);
+    }
     console.error("[personal-workout] save failed", error);
     return actionError("Could not save workout.");
   }
@@ -148,6 +161,9 @@ export async function deleteMemberPersonalWorkoutAction(
     revalidateMemberWorkout();
     return actionOk("Workout deleted.");
   } catch (error) {
+    if (error instanceof PersonalWorkoutsAccessError) {
+      return actionError(error.message);
+    }
     console.error("[personal-workout] delete failed", error);
     return actionError("Could not delete workout.");
   }
@@ -168,6 +184,9 @@ export async function addExerciseToPersonalWorkoutAction(payload: {
     revalidateMemberWorkout(workoutId);
     return actionOk("Exercise added.");
   } catch (error) {
+    if (error instanceof PersonalWorkoutsAccessError) {
+      return actionError(error.message);
+    }
     console.error("[personal-workout] add exercise failed", error);
     return actionError(
       error instanceof Error ? error.message : "Could not add exercise.",
@@ -193,6 +212,9 @@ export async function addExercisesToPersonalWorkoutAction(
     revalidateMemberWorkout(workoutId);
     return actionOk(undefined, result);
   } catch (error) {
+    if (error instanceof PersonalWorkoutsAccessError) {
+      return actionError(error.message);
+    }
     console.error("[personal-workout] bulk add exercises failed", error);
     return actionError(
       error instanceof Error ? error.message : "Could not add exercises.",
@@ -217,6 +239,9 @@ export async function startPersonalWorkoutSessionAction(
       sessionId: result.sessionId,
     };
   } catch (error) {
+    if (error instanceof PersonalWorkoutsAccessError) {
+      return actionError(error.message);
+    }
     console.error("[personal-workout] start session failed", error);
     return actionError(
       error instanceof Error ? error.message : "Could not start workout.",

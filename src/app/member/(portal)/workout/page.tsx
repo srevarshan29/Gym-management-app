@@ -1,7 +1,10 @@
 import { Suspense } from "react";
 
+import { getPortalMemberDoc } from "@/lib/member-portal/member-doc-cache";
+import { isPersonalWorkoutsEnabled } from "@/lib/member-portal/personal-workouts-access";
 import { requireMember } from "@/lib/member-session";
 import { loadMemberWorkoutPageData } from "@/lib/workout-tracking/member-workout-page";
+import { redirect } from "next/navigation";
 import { MemberWorkoutPageClient } from "@/components/member-portal/workout/member-workout-page-client";
 import { LockedLink } from "@/components/navigation/locked-link";
 import { buttonVariants } from "@/components/ui/button";
@@ -14,12 +17,26 @@ type PageProps = {
     addTo?: string;
     created?: string;
     group?: string;
+    region?: string;
+    chestAll?: string;
   }>;
 };
 
 export default async function MemberWorkoutPage({ searchParams }: PageProps) {
   const session = await requireMember();
   const { tab, addTo, created } = await searchParams;
+  const ctx = {
+    kind: "member" as const,
+    gymId: session.gymId,
+    memberId: session.memberId,
+  };
+  const memberDoc = await getPortalMemberDoc(ctx);
+  const personalWorkoutsEnabled = isPersonalWorkoutsEnabled(memberDoc);
+
+  if (!personalWorkoutsEnabled && addTo?.trim()) {
+    redirect("/member/workout?tab=assigned");
+  }
+
   const initialTab =
     tab ??
     (addTo?.trim() ? "library" : null);
@@ -58,6 +75,7 @@ export default async function MemberWorkoutPage({ searchParams }: PageProps) {
           initialTab={initialTab}
           addToWorkoutId={addTo?.trim() || null}
           createdWorkoutId={created?.trim() || null}
+          personalWorkoutsEnabled={personalWorkoutsEnabled}
         />
       </Suspense>
     </div>

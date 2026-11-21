@@ -2,7 +2,10 @@ import { Timestamp } from "firebase-admin/firestore";
 import { describe, expect, it, vi } from "vitest";
 
 import type { MemberContext } from "@/lib/firestore/context";
-import { listMemberPersonalWorkouts } from "@/lib/workout-tracking/member-personal-workouts";
+import {
+  createMemberPersonalWorkout,
+  listMemberPersonalWorkouts,
+} from "@/lib/workout-tracking/member-personal-workouts";
 
 const memberCtx: MemberContext = {
   kind: "member",
@@ -10,11 +13,26 @@ const memberCtx: MemberContext = {
   memberId: "member-a",
 };
 
+const findByIdAndGym = vi.fn();
+
 vi.mock("@/lib/firestore", () => ({
   getRepositories: vi.fn(),
 }));
 
 import { getRepositories } from "@/lib/firestore";
+import { PersonalWorkoutsAccessError } from "@/lib/member-portal/personal-workouts-access";
+
+function withEnabledMember(extra: object) {
+  findByIdAndGym.mockResolvedValue({
+    id: "member-a",
+    gymId: "gym-a",
+    personalWorkoutsEnabled: true,
+  });
+  vi.mocked(getRepositories).mockReturnValue({
+    members: { findByIdAndGym },
+    ...extra,
+  } as never);
+}
 
 describe("listMemberPersonalWorkouts", () => {
   it("includes catalog ids from embedded exercises", async () => {
@@ -38,9 +56,7 @@ describe("listMemberPersonalWorkouts", () => {
       },
     ]);
 
-    vi.mocked(getRepositories).mockReturnValue({
-      memberPersonalWorkouts: { listForMember },
-    } as never);
+    withEnabledMember({ memberPersonalWorkouts: { listForMember } });
 
     const rows = await listMemberPersonalWorkouts(memberCtx);
     expect(rows[0]?.catalogIds).toEqual(["cat-a"]);
@@ -60,9 +76,7 @@ describe("listMemberPersonalWorkouts", () => {
       },
     ]);
 
-    vi.mocked(getRepositories).mockReturnValue({
-      memberPersonalWorkouts: { listForMember },
-    } as never);
+    withEnabledMember({ memberPersonalWorkouts: { listForMember } });
 
     const rows = await listMemberPersonalWorkouts(memberCtx);
     expect(rows).toEqual([
@@ -74,5 +88,37 @@ describe("listMemberPersonalWorkouts", () => {
         updatedAt: new Date(3_000).toISOString(),
       },
     ]);
+  });
+
+  it("rejects listing when personal workouts are locked", async () => {
+    findByIdAndGym.mockResolvedValue({
+      id: "member-a",
+      gymId: "gym-a",
+      personalWorkoutsEnabled: false,
+    });
+    vi.mocked(getRepositories).mockReturnValue({
+      members: { findByIdAndGym },
+      memberPersonalWorkouts: { listForMember: vi.fn() },
+    } as never);
+
+    await expect(listMemberPersonalWorkouts(memberCtx)).rejects.toBeInstanceOf(
+      PersonalWorkoutsAccessError,
+    );
+  });
+
+  it("rejects creating a workout when personal workouts are locked", async () => {
+    findByIdAndGym.mockResolvedValue({
+      id: "member-a",
+      gymId: "gym-a",
+      personalWorkoutsEnabled: false,
+    });
+    vi.mocked(getRepositories).mockReturnValue({
+      members: { findByIdAndGym },
+      memberPersonalWorkouts: { createForMember: vi.fn() },
+    } as never);
+
+    await expect(
+      createMemberPersonalWorkout(memberCtx, "Push"),
+    ).rejects.toBeInstanceOf(PersonalWorkoutsAccessError);
   });
 });

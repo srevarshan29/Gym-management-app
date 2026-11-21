@@ -39,6 +39,10 @@ export type CatalogExerciseInput = {
   > | null;
   provider?: Partial<ExerciseProviderMetadata> | null;
   isActive?: boolean;
+  /** Member library Full Body browse tag (independent of muscleGroup). */
+  fullBody?: boolean;
+  /** Member library Cardio browse tag (independent of muscleGroup). */
+  cardio?: boolean;
 };
 
 /** Validated exercise ready to map into Firestore `ExerciseCatalogDoc` fields. */
@@ -68,6 +72,8 @@ export type ValidatedCatalogExercise = {
   catalogVersion: string;
   searchPrefixes: string[];
   isActive: boolean;
+  fullBody: boolean;
+  cardio: boolean;
 };
 
 export type CatalogSyncStatus = "complete" | "partial" | "pending";

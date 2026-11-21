@@ -7,14 +7,16 @@ export type GymEventListItem = {
   eventDate: Date;
   location: string;
   description: string | null;
+  bannerImageUrl: string | null;
 };
 
-function toListItem(doc: {
+export function mapEventDocToListItem(doc: {
   id: string;
   title: string;
   eventDate: { toDate(): Date };
   location: string;
   description: string | null;
+  bannerImageUrl?: string | null;
 }): GymEventListItem {
   return {
     id: doc.id,
@@ -22,6 +24,7 @@ function toListItem(doc: {
     eventDate: doc.eventDate.toDate(),
     location: doc.location,
     description: doc.description,
+    bannerImageUrl: doc.bannerImageUrl ?? null,
   };
 }
 
@@ -33,7 +36,7 @@ export async function getEvents(tenantGymId: string): Promise<GymEventListItem[]
     tenantGymId,
     EVENTS_PORTAL_LIMIT,
   );
-  return rows.map(toListItem);
+  return rows.map(mapEventDocToListItem);
 }
 
 /** Full list for CSV export (cursor-paged, capped at 1000 rows). */
@@ -42,5 +45,5 @@ export async function getAllEventsForExport(
 ): Promise<GymEventListItem[]> {
   const { events } = getRepositories();
   const rows = await events.listAllForExport(platformContext, tenantGymId);
-  return rows.map(toListItem);
+  return rows.map(mapEventDocToListItem);
 }

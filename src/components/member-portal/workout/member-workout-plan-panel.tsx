@@ -1,8 +1,13 @@
 "use client";
 
+import * as React from "react";
+import { Lock } from "lucide-react";
+
 import { MemberWorkoutPlanView } from "@/components/member-portal/member-workout-plan-view";
 import { MemberMyWorkoutsPanel } from "@/components/member-portal/workout/member-my-workouts-panel";
+import { MemberPersonalWorkoutsLocked } from "@/components/member-portal/workout/member-personal-workouts-locked";
 import { Button } from "@/components/ui/button";
+import { memberPlanShowsPersonalWorkouts } from "@/lib/member-portal/personal-workouts-policy";
 import type { MemberPlanFilter } from "@/lib/member-portal/member-workout-tab-url";
 import type { WorkoutPlanDetail } from "@/lib/workout-tracking/types";
 import { cn } from "@/lib/utils";
@@ -23,6 +28,7 @@ type MemberWorkoutPlanPanelProps = {
   highlightWorkoutId?: string | null;
   onHighlightConsumed?: () => void;
   onOpenExercisesTab?: () => void;
+  personalWorkoutsEnabled?: boolean;
 };
 
 export function MemberWorkoutPlanPanel({
@@ -35,9 +41,20 @@ export function MemberWorkoutPlanPanel({
   highlightWorkoutId = null,
   onHighlightConsumed,
   onOpenExercisesTab,
+  personalWorkoutsEnabled = false,
 }: MemberWorkoutPlanPanelProps) {
   const showTrainer = planFilter === "all" || planFilter === "trainer";
-  const showMine = planFilter === "all" || planFilter === "mine";
+  const showMinePanel = memberPlanShowsPersonalWorkouts(
+    planFilter,
+    personalWorkoutsEnabled,
+  );
+  const showMineLockedChip = !personalWorkoutsEnabled;
+
+  React.useEffect(() => {
+    if (!personalWorkoutsEnabled && planFilter === "mine") {
+      onPlanFilterChange("trainer");
+    }
+  }, [personalWorkoutsEnabled, planFilter, onPlanFilterChange]);
 
   const startableDays =
     plan?.days.filter((day) => day.exercises.length > 0) ?? [];
@@ -50,22 +67,34 @@ export function MemberWorkoutPlanPanel({
         role="group"
         aria-label="Plan filters"
       >
-        {PLAN_FILTERS.map((chip) => (
-          <button
-            key={chip.id}
-            type="button"
-            className={cn(
-              "min-h-9 rounded-full border px-3.5 text-sm font-semibold transition-colors",
-              planFilter === chip.id
-                ? "border-primary bg-primary/15 text-primary"
-                : "border-border/60 bg-card/50 text-muted-foreground hover:text-foreground",
-            )}
-            aria-pressed={planFilter === chip.id}
-            onClick={() => onPlanFilterChange(chip.id)}
-          >
-            {chip.label}
-          </button>
-        ))}
+        {PLAN_FILTERS.map((chip) => {
+          const locked = chip.id === "mine" && showMineLockedChip;
+          return (
+            <button
+              key={chip.id}
+              type="button"
+              className={cn(
+                "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold transition-colors",
+                locked
+                  ? "cursor-not-allowed border-border/50 bg-muted/30 text-muted-foreground"
+                  : planFilter === chip.id
+                    ? "border-primary bg-primary/15 text-primary"
+                    : "border-border/60 bg-card/50 text-muted-foreground hover:text-foreground",
+              )}
+              aria-pressed={!locked && planFilter === chip.id}
+              aria-disabled={locked}
+              onClick={() => {
+                if (locked) return;
+                onPlanFilterChange(chip.id);
+              }}
+            >
+              {locked ? (
+                <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              ) : null}
+              {chip.label}
+            </button>
+          );
+        })}
       </div>
 
       {showTrainer ? (
@@ -110,7 +139,11 @@ export function MemberWorkoutPlanPanel({
         </section>
       ) : null}
 
-      {showMine ? (
+      {showMineLockedChip ? (
+        <MemberPersonalWorkoutsLocked compact />
+      ) : null}
+
+      {showMinePanel ? (
         <section
           className={cn(showTrainer && "border-t border-border/40 pt-4")}
           aria-label="My workouts"

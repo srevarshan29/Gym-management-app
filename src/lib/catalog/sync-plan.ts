@@ -38,6 +38,8 @@ export function fingerprintCatalogExercise(
     provider: exercise.provider,
     searchPrefixes: exercise.searchPrefixes,
     isActive: exercise.isActive,
+    fullBody: exercise.fullBody,
+    cardio: exercise.cardio,
   });
 }
 

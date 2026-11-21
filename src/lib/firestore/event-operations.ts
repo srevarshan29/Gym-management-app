@@ -1,11 +1,16 @@
+import { deleteOwnedEventBannerObject } from "@/lib/events/event-banner-storage";
 import { adjustGymCounter } from "@/lib/firestore/gym-counters";
 import { newDocId, platformContext } from "@/lib/firestore/helpers";
 import { getRepositories } from "@/lib/firestore";
 import type { CreateEventInput } from "@/lib/firestore/repositories/events";
 
-export async function createEventRecord(gymId: string, input: CreateEventInput) {
+export async function createEventRecord(
+  gymId: string,
+  input: CreateEventInput,
+  options?: { id?: string },
+) {
   const { events, gyms } = getRepositories();
-  const id = newDocId();
+  const id = options?.id ?? newDocId();
   const doc = await events.createEvent(platformContext, gymId, id, input);
   await adjustGymCounter(gyms, gymId, "eventCount", 1);
   return doc;
@@ -18,6 +23,8 @@ export async function deleteEventRecord(
   const { events, gyms } = getRepositories();
   const doc = await events.getById(platformContext, gymId, id);
   if (!doc) return false;
+
+  await deleteOwnedEventBannerObject(doc.bannerImageUrl, gymId, id);
 
   await events.delete(platformContext, gymId, id);
   await adjustGymCounter(gyms, gymId, "eventCount", -1);

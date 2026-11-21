@@ -83,3 +83,7 @@ ui-debug.log
 
 # tenant reconcile CLI dry-run captures (local only)
 tenant-reconcile-dry-run.txt
+
+# catalog sync CLI reports (generated locally; do not commit)
+/data/catalog/sync-preflight-report.json
+/data/catalog/sync-write-safety-audit.json

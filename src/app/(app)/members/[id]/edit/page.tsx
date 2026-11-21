@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
+import { canManageMemberPersonalWorkoutsAccess } from "@/lib/permissions";
+import { isPersonalWorkoutsEnabled } from "@/lib/member-portal/personal-workouts-access";
 import { requireGym } from "@/lib/session";
 import { getRepositories, platformContext } from "@/lib/firestore";
 import { getGymStaffOptions } from "@/lib/staff";
@@ -49,7 +51,11 @@ export default async function EditMemberPage({
           ageYears: member.ageYears,
           heightCm: member.heightCm,
           weightKg: member.weightKg,
+          personalWorkoutsEnabled: isPersonalWorkoutsEnabled(member),
         }}
+        canManagePersonalWorkouts={canManageMemberPersonalWorkoutsAccess(
+          user.role,
+        )}
         staffOptions={staffOptions}
       />
     </div>

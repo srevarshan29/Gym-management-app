@@ -1,654 +1,1837 @@
 {
   "indexes": [
     {
-      "collectionGroup": "members",
+      "collectionGroup": "attendance",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "members",
+      "collectionGroup": "attendance",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "checkedInAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "members",
+      "collectionGroup": "attendance",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "email", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateKey",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "checkedInAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "members",
+      "collectionGroup": "attendance",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "phone", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "checkedInAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "members",
+      "collectionGroup": "attendance",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "phoneDigits", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "members",
+      "collectionGroup": "customExercises",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "searchTokens", "arrayConfig": "CONTAINS" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "catalogId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "members",
+      "collectionGroup": "customExercises",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "searchTokens", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "muscleGroup",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "packages",
+      "collectionGroup": "customExercises",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "isActive", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "muscleGroup",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nameLower",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "packages",
+      "collectionGroup": "customExercises",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "isActive", "order": "DESCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "payments",
+      "collectionGroup": "customExercises",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "amount", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "payments",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "paidAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "payments",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "paidAt", "order": "ASCENDING" },
-        { "fieldPath": "amount", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "payments",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "method", "order": "ASCENDING" },
-        { "fieldPath": "paidAt", "order": "ASCENDING" },
-        { "fieldPath": "amount", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "payments",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "paidAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "payments",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "paidAt", "order": "DESCENDING" },
-        { "fieldPath": "amount", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "payments",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "paidAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "payments",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "amount", "order": "ASCENDING" },
-        { "fieldPath": "method", "order": "ASCENDING" },
-        { "fieldPath": "paidAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "payments",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "subscriptionId", "order": "ASCENDING" },
-        { "fieldPath": "amount", "order": "ASCENDING" },
-        { "fieldPath": "method", "order": "ASCENDING" },
-        { "fieldPath": "paidAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "payments",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "subscriptionId", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "receipts",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "paymentId", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "subscriptions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "endDate", "order": "DESCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "subscriptions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "startDate", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "subscriptions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "startDate", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "subscriptions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "startDate", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "subscriptions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "subscriptions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "packageId", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "subscriptions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "pendingAmount", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "subscriptions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "pendingAmount", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "name", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "role", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "visitors",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "visitDate", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "visitors",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "visitDate", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "visitors",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "source", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "visitDate", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "visitors",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "source", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "phone", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "visitors",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "source", "order": "ASCENDING" },
-        { "fieldPath": "visitDate", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "visitors",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "source", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "visitors",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "source", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "employees",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "name", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "employees",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "events",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "eventDate", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "events",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "eventDate", "order": "DESCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nameLower",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
       "collectionGroup": "dietPlans",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
       "collectionGroup": "dietPlans",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberName", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "workoutPlans",
+      "collectionGroup": "employees",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "workoutPlans",
+      "collectionGroup": "employees",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberName", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "customExercises",
+      "collectionGroup": "events",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "name", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "eventDate",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "customExercises",
+      "collectionGroup": "events",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "muscleGroup", "order": "ASCENDING" },
-        { "fieldPath": "name", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "customExercises",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "catalogId", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "customExercises",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "nameLower", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "customExercises",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "muscleGroup", "order": "ASCENDING" },
-        { "fieldPath": "nameLower", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "eventDate",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
       "collectionGroup": "exerciseCatalog",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "isActive", "order": "ASCENDING" },
-        { "fieldPath": "nameLower", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "cardio",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nameLower",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
       "collectionGroup": "exerciseCatalog",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "isActive", "order": "ASCENDING" },
-        { "fieldPath": "muscleGroup", "order": "ASCENDING" },
-        { "fieldPath": "nameLower", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fullBody",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nameLower",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
       "collectionGroup": "exerciseCatalog",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "isActive", "order": "ASCENDING" },
-        { "fieldPath": "searchPrefixes", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "nameLower", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "muscleGroup",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nameLower",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
       "collectionGroup": "exerciseCatalog",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "isActive", "order": "ASCENDING" },
-        { "fieldPath": "muscleGroup", "order": "ASCENDING" },
-        { "fieldPath": "searchPrefixes", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "nameLower", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "muscleGroup",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchPrefixes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "nameLower",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "members",
+      "collectionGroup": "exerciseCatalog",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "currentEndDate", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nameLower",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "members",
+      "collectionGroup": "exerciseCatalog",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "isPt", "order": "ASCENDING" },
-        { "fieldPath": "name", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchPrefixes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "nameLower",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "workoutSessions",
+      "collectionGroup": "games",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "workoutPlanId", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "workoutSessions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "startedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "workoutSessions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "completedAt", "order": "DESCENDING" }
-      ]
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "release",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
       "collectionGroup": "memberPersonalWorkouts",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "updatedAt", "order": "DESCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
       "collectionGroup": "members",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberNumber", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "attendance",
+      "collectionGroup": "members",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "dateKey", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "attendance",
+      "collectionGroup": "members",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "dateKey", "order": "ASCENDING" },
-        { "fieldPath": "checkedInAt", "order": "DESCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "currentEndDate",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "attendance",
+      "collectionGroup": "members",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "dateKey", "order": "DESCENDING" },
-        { "fieldPath": "checkedInAt", "order": "DESCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "email",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "attendance",
+      "collectionGroup": "members",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "checkedInAt", "order": "DESCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isPt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "nutritionFoodCatalog",
+      "collectionGroup": "members",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "isActive", "order": "ASCENDING" },
-        { "fieldPath": "nameLower", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberNumber",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "nutritionFoodCatalog",
+      "collectionGroup": "members",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "isActive", "order": "ASCENDING" },
-        { "fieldPath": "searchPrefixes", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "nameLower", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "nutritionLogs",
+      "collectionGroup": "members",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "logDate", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "phone",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "nutritionMemberFoods",
+      "collectionGroup": "members",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "lastLoggedAt", "order": "DESCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "phoneDigits",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "nutritionMemberFoods",
+      "collectionGroup": "members",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "isFavorite", "order": "ASCENDING" },
-        { "fieldPath": "favoritedAt", "order": "DESCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchTokens",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "members",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchTokens",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
       "collectionGroup": "memberWaterLogs",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "logDate", "order": "ASCENDING" }
-      ]
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "logDate",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "memberWeightMeasurements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "recordedAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     },
     {
       "collectionGroup": "notificationDeliveries",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "kind", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" }
+        {
+          "fieldPath": "kind",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "nutritionFoodCatalog",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nameLower",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "nutritionFoodCatalog",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchPrefixes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "nameLower",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "nutritionLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "logDate",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "nutritionMemberFoods",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isFavorite",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "favoritedAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "nutritionMemberFoods",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastLoggedAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "packages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "packages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isActive",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "amount",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "amount",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "method",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "paidAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "paidAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "subscriptionId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "amount",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "method",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "paidAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "method",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "paidAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "amount",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "paidAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "paidAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "amount",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "paidAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "paidAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "amount",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "subscriptionId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "receipts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "paymentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "subscriptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "subscriptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "endDate",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "subscriptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "endDate",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "subscriptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "endDate",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "subscriptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "startDate",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "subscriptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "startDate",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "subscriptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "packageId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "subscriptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "pendingAmount",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "subscriptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "pendingAmount",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "subscriptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "startDate",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "role",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "visitors",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "source",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "visitors",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "source",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "visitors",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "source",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "phone",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "visitors",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "source",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "visitDate",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "visitors",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "source",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "visitDate",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "visitors",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "visitDate",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "visitors",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "visitDate",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "workoutPlans",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "workoutPlans",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "workoutSessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "startedAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "workoutSessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "completedAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "workoutSessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "startedAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "workoutSessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "workoutPlanId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "exerciseCatalog",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fullBody",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchPrefixes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "nameLower",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
-      "collectionGroup": "attendance",
+      "collectionGroup": "exerciseCatalog",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "dateKey", "order": "ASCENDING" }
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "cardio",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchPrefixes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "nameLower",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
       ]
     }
   ],

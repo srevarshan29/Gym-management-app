@@ -348,17 +348,65 @@ describe("verifyCronSecret", () => {
 });
 
 describe("membership expiry cron route", () => {
+  const cronUrl = "http://localhost/api/cron/membership-expiry-reminders";
+
+  it("returns 401 when authorization header is missing", async () => {
+    vi.stubEnv("CRON_SECRET", "expected");
+    vi.resetModules();
+    const { GET } = await import(
+      "@/app/api/cron/membership-expiry-reminders/route"
+    );
+    const response = await GET(new Request(cronUrl));
+    expect(response.status).toBe(401);
+    vi.unstubAllEnvs();
+  });
+
   it("returns 401 when CRON_SECRET is invalid", async () => {
     vi.stubEnv("CRON_SECRET", "expected");
+    vi.resetModules();
     const { GET } = await import(
       "@/app/api/cron/membership-expiry-reminders/route"
     );
     const response = await GET(
-      new Request("http://localhost/api/cron/membership-expiry-reminders", {
+      new Request(cronUrl, {
         headers: { authorization: "Bearer nope" },
       }),
     );
     expect(response.status).toBe(401);
     vi.unstubAllEnvs();
+  });
+
+  it("accepts a valid CRON_SECRET and runs jobs", async () => {
+    vi.stubEnv("CRON_SECRET", "expected");
+    vi.resetModules();
+    vi.doMock("@/lib/membership-expiry-reminders/run-job", () => ({
+      runMembershipExpiryRemindersJob: vi.fn().mockResolvedValue({ sent: 0 }),
+    }));
+    vi.doMock("@/lib/inactive-member-reminders/send", () => ({
+      runInactiveMemberRemindersJob: vi.fn().mockResolvedValue({ sent: 0 }),
+    }));
+    vi.doMock("@/lib/member-portal-invitation/recovery-job", () => ({
+      runMemberPortalInvitationRecoveryJob: vi
+        .fn()
+        .mockResolvedValue({ retried: 0 }),
+    }));
+
+    const { GET } = await import(
+      "@/app/api/cron/membership-expiry-reminders/route"
+    );
+    const response = await GET(
+      new Request(cronUrl, {
+        headers: { authorization: "Bearer expected" },
+      }),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { ok: boolean };
+    expect(body.ok).toBe(true);
+
+    vi.unstubAllEnvs();
+    vi.doUnmock("@/lib/membership-expiry-reminders/run-job");
+    vi.doUnmock("@/lib/inactive-member-reminders/send");
+    vi.doUnmock("@/lib/member-portal-invitation/recovery-job");
+    vi.resetModules();
   });
 });

@@ -35,7 +35,9 @@ export function dashboardStateNeedsPersist(
       patch.celebratedCalorieDateKey != null ||
       patch.celebratedWaterDateKey != null ||
       patch.dailyWaterTargetMl != null ||
-      patch.weeklyAttendanceTarget != null
+      patch.weeklyAttendanceTarget != null ||
+      patch.weightJourneyTargetKg != null ||
+      patch.weightJourneyStartKg != null
     );
   }
 
@@ -79,6 +81,18 @@ export function dashboardStateNeedsPersist(
   if (
     patch.weeklyAttendanceTarget !== undefined &&
     patch.weeklyAttendanceTarget !== (existing.weeklyAttendanceTarget ?? null)
+  ) {
+    return true;
+  }
+  if (
+    patch.weightJourneyTargetKg !== undefined &&
+    patch.weightJourneyTargetKg !== (existing.weightJourneyTargetKg ?? null)
+  ) {
+    return true;
+  }
+  if (
+    patch.weightJourneyStartKg !== undefined &&
+    patch.weightJourneyStartKg !== (existing.weightJourneyStartKg ?? null)
   ) {
     return true;
   }

@@ -48,6 +48,7 @@ async function EventsPageContent({ gymId }: { gymId: string }) {
     eventDate: row.eventDate.toISOString(),
     location: row.location,
     description: row.description,
+    bannerImageUrl: row.bannerImageUrl,
   }));
 
   return <EventsList events={events} />;

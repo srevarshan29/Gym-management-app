@@ -45,6 +45,17 @@ export class UsersRepository {
     return { id: doc.id, ...(doc.data() as UserDoc) };
   }
 
+  async listByEmail(
+    _ctx: FirestoreContext,
+    email: string,
+  ): Promise<DocWithId<UserDoc>[]> {
+    const snap = await this.col().where("email", "==", email).get();
+    return snap.docs.map((doc) => ({
+      id: doc.id,
+      ...(doc.data() as UserDoc),
+    }));
+  }
+
   async findById(
     _ctx: FirestoreContext,
     userId: string,

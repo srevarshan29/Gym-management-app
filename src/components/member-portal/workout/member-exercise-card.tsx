@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 
+import type { ChestMuscleRegion } from "@/lib/member-portal/chest-muscle-regions";
 import type { MemberLibraryMuscleFilter } from "@/lib/member-portal/member-library-muscle-groups";
 import { memberExerciseLibraryDetailHref } from "@/lib/member-portal/member-workout-tab-url";
 import { muscleGroupLabel } from "@/lib/muscle-groups";
@@ -14,6 +15,9 @@ type MemberExerciseCardProps = {
   item: MemberCatalogListItem;
   addToWorkoutId?: string | null;
   group?: MemberLibraryMuscleFilter | null;
+  libraryRegion?: string | null;
+  /** @deprecated Use libraryRegion */
+  chestRegion?: ChestMuscleRegion | null;
   selectionMode?: boolean;
   multiSelect?: boolean;
   selected?: boolean;
@@ -25,6 +29,8 @@ export function MemberExerciseCard({
   item,
   addToWorkoutId,
   group,
+  libraryRegion = null,
+  chestRegion = null,
   selectionMode = false,
   multiSelect = false,
   selected = false,
@@ -33,6 +39,7 @@ export function MemberExerciseCard({
 }: MemberExerciseCardProps) {
   const workoutId = addToWorkoutId?.trim() ?? "";
   const pickMode = selectionMode && workoutId.length > 0 && multiSelect;
+  const regionForHref = libraryRegion ?? chestRegion;
 
   const cardClass = cn(
     "member-workout-card flex flex-col overflow-hidden text-left transition-transform active:scale-[0.98]",
@@ -102,6 +109,7 @@ export function MemberExerciseCard({
           href={memberExerciseLibraryDetailHref(item.catalogId, {
             addToWorkoutId: workoutId,
             group,
+            libraryRegion: regionForHref,
           })}
           className="absolute right-2 top-2 z-10 rounded-md bg-card/90 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           onClick={(e) => e.stopPropagation()}
@@ -114,7 +122,10 @@ export function MemberExerciseCard({
 
   return (
     <Link
-      href={memberExerciseLibraryDetailHref(item.catalogId, { group })}
+      href={memberExerciseLibraryDetailHref(item.catalogId, {
+        group,
+        libraryRegion: regionForHref,
+      })}
       className={cardClass}
     >
       {body}

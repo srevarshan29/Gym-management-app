@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
+import { resolveCredentialsVersion } from "@/lib/staff-auth/credentials-version";
 import { measureServerPhase } from "@/lib/server-perf";
 import { authConfig } from "@/auth.config";
 import { getRepositories, platformContext } from "@/lib/firestore";
@@ -60,6 +61,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           role: user.role,
           gymId: user.gymId,
+          credentialsVersion: resolveCredentialsVersion(user.credentialsVersion),
         };
         });
       },

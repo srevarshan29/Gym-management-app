@@ -240,6 +240,7 @@ export async function createMemberWithSubscription(
       heightCm: input.heightCm,
       weightKg: input.weightKg,
       fitnessGoal: input.fitnessGoal,
+      personalWorkoutsEnabled: false,
       pendingAmountTotal: pendingTotal,
       currentSubscriptionId: subBuilt.id,
       currentStartDate: subBuilt.startDate,

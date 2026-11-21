@@ -4,9 +4,10 @@ import * as React from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Pencil } from "lucide-react";
+import { ImagePlus, Plus, Pencil, X } from "lucide-react";
 
 import { createEvent, updateEvent } from "@/app/actions/events";
+import { EventBanner } from "@/components/events/event-banner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useGuardedFormAction } from "@/hooks/use-guarded-form-action";
 import type { ActionResult } from "@/lib/action-result";
+import { MAX_IMAGE_BYTES } from "@/lib/storage/image-validation";
 
 export type GymEventInput = {
   id: string;
@@ -29,6 +31,7 @@ export type GymEventInput = {
   eventDate: string;
   location: string;
   description: string | null;
+  bannerImageUrl?: string | null;
 };
 
 function toDateInputValue(value: string): string {
@@ -62,6 +65,9 @@ export function EventDialog({
   const isEdit = Boolean(event);
   const [open, setOpen] = React.useState(false);
   const router = useRouter();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const [removeBanner, setRemoveBanner] = React.useState(false);
 
   const action = isEdit ? updateEvent : createEvent;
   const guardedAction = useGuardedFormAction(action);
@@ -69,6 +75,29 @@ export function EventDialog({
     guardedAction,
     undefined,
   );
+
+  React.useEffect(() => {
+    if (!open) {
+      setPreviewUrl((previous) => {
+        if (previous?.startsWith("blob:")) {
+          URL.revokeObjectURL(previous);
+        }
+        return null;
+      });
+      setRemoveBanner(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }, [open]);
+
+  React.useEffect(() => {
+    return () => {
+      if (previewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   React.useEffect(() => {
     if (!state) return;
@@ -80,6 +109,48 @@ export function EventDialog({
       toast.error(state.error);
     }
   }, [state, router]);
+
+  function onBannerFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast.error("Image must be smaller than 5MB.");
+      e.target.value = "";
+      return;
+    }
+  setRemoveBanner(false);
+    setPreviewUrl((previous) => {
+      if (previous?.startsWith("blob:")) {
+        URL.revokeObjectURL(previous);
+      }
+      return URL.createObjectURL(file);
+    });
+  }
+
+  function clearBannerSelection() {
+    setRemoveBanner(true);
+    setPreviewUrl((previous) => {
+      if (previous?.startsWith("blob:")) {
+        URL.revokeObjectURL(previous);
+      }
+      return null;
+    });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  const showExistingBanner =
+    isEdit &&
+    !removeBanner &&
+    !previewUrl &&
+    Boolean(event?.bannerImageUrl?.trim());
+
+  const previewTitle = event?.title || "New event";
+  const previewDate = event?.eventDate
+    ? new Date(event.eventDate)
+    : new Date(todayDateInputValue());
+  const previewLocation = event?.location || "Gym";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -95,8 +166,12 @@ export function EventDialog({
             </Button>
           ))}
       </DialogTrigger>
-      <DialogContent>
-        <form action={formAction} className="space-y-4">
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <form
+          action={formAction}
+          encType="multipart/form-data"
+          className="space-y-4"
+        >
           <DialogHeader>
             <DialogTitle>{isEdit ? "Edit event" : "Add event"}</DialogTitle>
             <DialogDescription>
@@ -105,6 +180,11 @@ export function EventDialog({
           </DialogHeader>
 
           {event ? <input type="hidden" name="id" value={event.id} /> : null}
+          <input
+            type="hidden"
+            name="removeBanner"
+            value={removeBanner ? "1" : "0"}
+          />
 
           <div className="space-y-2">
             <Label htmlFor="event-title">Title</Label>
@@ -151,6 +231,75 @@ export function EventDialog({
               defaultValue={event?.description ?? ""}
               placeholder="What members should know about this event"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="event-banner">Event banner (optional)</Label>
+            <p className="text-xs text-muted-foreground">
+              JPEG, PNG or WebP · up to 5 MB
+            </p>
+            {previewUrl ? (
+              <div className="space-y-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={previewUrl}
+                  alt="Banner preview"
+                  className="max-h-40 w-full rounded-lg object-cover ring-1 ring-border"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={clearBannerSelection}
+                >
+                  <X className="mr-1 h-4 w-4" />
+                  Remove selection
+                </Button>
+              </div>
+            ) : showExistingBanner && event?.bannerImageUrl ? (
+              <div className="space-y-2">
+                <EventBanner
+                  title={previewTitle}
+                  eventDate={previewDate}
+                  location={previewLocation}
+                  bannerImageUrl={event.bannerImageUrl}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={clearBannerSelection}
+                >
+                  <X className="mr-1 h-4 w-4" />
+                  Remove banner
+                </Button>
+              </div>
+            ) : (
+              <EventBanner
+                title={previewTitle}
+                eventDate={previewDate}
+                location={previewLocation}
+              />
+            )}
+            <Input
+              ref={fileInputRef}
+              id="event-banner"
+              name="banner"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              onChange={onBannerFileChange}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="gap-1"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <ImagePlus className="h-4 w-4" />
+              Choose image
+            </Button>
           </div>
 
           <DialogFooter>

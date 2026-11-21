@@ -97,6 +97,8 @@ export function existingSnapshotFromCatalogDoc(
       catalogVersion: doc.catalogVersion,
       searchPrefixes: doc.searchPrefixes,
       isActive: doc.isActive,
+      fullBody: doc.fullBody === true,
+      cardio: doc.cardio === true,
     }),
   };
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { browseExerciseCatalog } from "@/lib/catalog/catalog-browse";
+import { resolveCatalogBrowseFilter } from "@/lib/catalog/catalog-browse-filter";
 import {
   compareCatalogDocs,
   decodeCatalogSearchCursor,
@@ -58,6 +59,8 @@ function validCatalogInput(
     catalogVersion: "test-v1",
     searchPrefixes: buildCatalogSearchPrefixes(String(name)),
     isActive: true,
+    fullBody: false,
+    cardio: false,
     createdAt: ts(),
     updatedAt: ts(),
     ...overrides,
@@ -79,6 +82,8 @@ type StoredCatalogDoc = Record<string, unknown> & {
   isActive: boolean;
   muscleGroup: MuscleGroup;
   searchPrefixes: string[];
+  fullBody?: boolean;
+  cardio?: boolean;
 };
 
 function compareStoredDocs(a: StoredCatalogDoc, b: StoredCatalogDoc): number {
@@ -102,11 +107,20 @@ function buildDualStreamCatalogMock(initialDocs: StoredCatalogDoc[]) {
 
   function sortedDocs(
     predicate: (doc: StoredCatalogDoc) => boolean,
-    muscleGroup: MuscleGroup | null,
+    browse: {
+      muscleGroup: MuscleGroup | null;
+      fullBody: boolean;
+      cardio: boolean;
+    },
   ) {
     return [...store.values()]
       .filter((doc) => doc.isActive)
-      .filter((doc) => (muscleGroup ? doc.muscleGroup === muscleGroup : true))
+      .filter((doc) => {
+        if (browse.fullBody) return doc.fullBody === true;
+        if (browse.cardio) return doc.cardio === true;
+        if (browse.muscleGroup) return doc.muscleGroup === browse.muscleGroup;
+        return true;
+      })
       .filter(predicate)
       .sort(compareStoredDocs);
   }
@@ -159,14 +173,24 @@ function buildDualStreamCatalogMock(initialDocs: StoredCatalogDoc[]) {
         return chain;
       },
       get: async () => {
-        let muscleGroup: MuscleGroup | null = null;
+        const browse = {
+          muscleGroup: null as MuscleGroup | null,
+          fullBody: false,
+          cardio: false,
+        };
         let token = "";
         let prefixEnd = "";
         let mode: "name" | "prefix" | null = null;
 
         for (const filter of filters) {
           if (filter.field === "muscleGroup" && filter.op === "==") {
-            muscleGroup = filter.value as MuscleGroup;
+            browse.muscleGroup = filter.value as MuscleGroup;
+          }
+          if (filter.field === "fullBody" && filter.op === "==") {
+            browse.fullBody = filter.value === true;
+          }
+          if (filter.field === "cardio" && filter.op === "==") {
+            browse.cardio = filter.value === true;
           }
           if (filter.field === "nameLower" && filter.op === ">=") {
             mode = "name";
@@ -189,7 +213,7 @@ function buildDualStreamCatalogMock(initialDocs: StoredCatalogDoc[]) {
               : () => false;
 
         const docs = sliceAfter(
-          sortedDocs(predicate, muscleGroup),
+          sortedDocs(predicate, browse),
           chain.__cursor ?? null,
           chain.__limit ?? 30,
         ).map((doc) => ({
@@ -281,7 +305,10 @@ describe("catalog search cursor encoding", () => {
     });
 
     expect(() =>
-      decodeCatalogSearchCursor(cursor, { query: "pull", muscleGroup: null }),
+      decodeCatalogSearchCursor(cursor, {
+        query: "pull",
+        browseFilter: resolveCatalogBrowseFilter({ muscleGroup: null }),
+      }),
     ).toThrow(InvalidPaginationCursorError);
   });
 
@@ -289,6 +316,7 @@ describe("catalog search cursor encoding", () => {
     const cursor = encodeCatalogSearchCursor({
       v: 1,
       token: "press",
+      filterMode: "muscleGroup",
       muscleGroup: "CHEST",
       boundaryNameLower: "chest press",
       boundaryId: "chest-press",
@@ -299,14 +327,44 @@ describe("catalog search cursor encoding", () => {
     expect(() =>
       decodeCatalogSearchCursor(cursor, {
         query: "press",
-        muscleGroup: "LEGS",
+        browseFilter: resolveCatalogBrowseFilter({ muscleGroup: "LEGS" }),
+      }),
+    ).toThrow(InvalidPaginationCursorError);
+  });
+
+  it("rejects cursors reused with a different full-body filter", () => {
+    const cursor = encodeCatalogSearchCursor({
+      v: 1,
+      token: "press",
+      filterMode: "fullBody",
+      muscleGroup: null,
+      boundaryNameLower: "burpees",
+      boundaryId: "burpees",
+      nameAfterId: "burpees",
+      prefixAfterId: null,
+    });
+
+    expect(() =>
+      decodeCatalogSearchCursor(cursor, {
+        query: "press",
+        browseFilter: resolveCatalogBrowseFilter({ fullBody: true }),
+      }),
+    ).not.toThrow();
+
+    expect(() =>
+      decodeCatalogSearchCursor(cursor, {
+        query: "press",
+        browseFilter: resolveCatalogBrowseFilter({ muscleGroup: "CHEST" }),
       }),
     ).toThrow(InvalidPaginationCursorError);
   });
 
   it("rejects malformed cursors", () => {
     expect(() =>
-      decodeCatalogSearchCursor("../bad", { query: "press", muscleGroup: null }),
+      decodeCatalogSearchCursor("../bad", {
+        query: "press",
+        browseFilter: resolveCatalogBrowseFilter({ muscleGroup: null }),
+      }),
     ).toThrow(InvalidPaginationCursorError);
   });
 });
@@ -497,6 +555,33 @@ describe("ExerciseCatalogRepository.searchByPrefix merged pagination", () => {
     expect(page.items.map((item) => item.id)).toEqual(["chest-press"]);
   });
 
+  it("supports full-body tag filtering with search", async () => {
+    const { db } = buildDualStreamCatalogMock([
+      validCatalogInput({
+        catalogId: "burpees",
+        name: "Burpees",
+        nameLower: "burpees",
+        fullBody: true,
+        cardio: true,
+      }) as StoredCatalogDoc,
+      validCatalogInput({
+        catalogId: "bench-press",
+        name: "Bench Press",
+        nameLower: "bench press",
+        muscleGroup: "CHEST",
+      }) as StoredCatalogDoc,
+    ]);
+
+    const repo = new ExerciseCatalogRepository(db);
+    const page = await repo.searchByPrefix(staffCtx("gym-a"), {
+      query: "b",
+      fullBody: true,
+      limit: 10,
+    });
+
+    expect(page.items.map((item) => item.id)).toEqual(["burpees"]);
+  });
+
   it("walks more than two pages without duplicates or omissions", async () => {
     const docs = Array.from({ length: 7 }, (_, index) =>
       validCatalogInput({
@@ -565,7 +650,7 @@ describe("paginateMergedCatalogSearch regression", () => {
     const page1 = await paginateMergedCatalogSearch({
       limit: 2,
       token: "bench",
-      muscleGroup: null,
+      browseFilter: resolveCatalogBrowseFilter({ muscleGroup: null }),
       usePrefixQuery: true,
       decodedCursor: null,
       resolveCursorSnapshot: async () => null,
@@ -584,13 +669,13 @@ describe("paginateMergedCatalogSearch regression", () => {
 
     const decoded = decodeCatalogSearchCursor(page1.nextCursor!, {
       query: "bench",
-      muscleGroup: null,
+      browseFilter: resolveCatalogBrowseFilter({ muscleGroup: null }),
     });
 
     const page2 = await paginateMergedCatalogSearch({
       limit: 2,
       token: "bench",
-      muscleGroup: null,
+      browseFilter: resolveCatalogBrowseFilter({ muscleGroup: null }),
       usePrefixQuery: true,
       decodedCursor: decoded,
       resolveCursorSnapshot: async () => null,

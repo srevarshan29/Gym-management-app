@@ -23,6 +23,7 @@ import {
   CATALOG_IMAGES_DIR,
   CATALOG_MANIFEST_PATH,
 } from "../src/lib/catalog/paths";
+import { applyApprovedCatalogClassification } from "../src/lib/catalog/catalog-classification";
 import type { CatalogExerciseInput } from "../src/lib/catalog/types";
 import type { MuscleGroup } from "../src/lib/muscle-groups";
 
@@ -236,7 +237,7 @@ function main() {
 
   for (const exercise of repdb.exercises) {
     const { row, warnings } = mapRepDbExercise(repdbRoot, exercise, CATALOG_IMAGES_DIR);
-    rows.push(row);
+    rows.push(applyApprovedCatalogClassification(row));
     allWarnings.push(...warnings);
   }
 

@@ -4,6 +4,7 @@ import {
   catalogMediaStoragePath,
   gymExerciseMediaStoragePath,
 } from "@/lib/exercises/media-paths";
+import { eventBannerStoragePath } from "@/lib/events/event-banner-paths";
 import {
   validatePublicStorageObjectPath,
   validatePublicStoragePath,
@@ -28,6 +29,9 @@ describe("validatePublicStoragePath", () => {
       validatePublicStoragePath(
         gymExerciseMediaStoragePath("gym-a", "ex-1", "secondary"),
       ),
+    ).toEqual({ ok: true });
+    expect(
+      validatePublicStoragePath(eventBannerStoragePath("gym-a", "evt-1")),
     ).toEqual({ ok: true });
   });
 

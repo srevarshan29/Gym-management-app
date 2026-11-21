@@ -179,5 +179,6 @@ export async function getMemberPortalEvents(tenantGymId: string) {
     eventDate: event.eventDate.toDate(),
     location: event.location,
     description: event.description,
+    bannerImageUrl: event.bannerImageUrl ?? null,
   }));
 }

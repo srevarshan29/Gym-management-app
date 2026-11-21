@@ -90,6 +90,13 @@ export function canUploadExerciseMedia(role: Role | undefined | null): boolean {
   return role === "OWNER" || role === "ADMIN";
 }
 
+/** Member portal personal workouts (Mine). Owner and Admin only. */
+export function canManageMemberPersonalWorkoutsAccess(
+  role: Role | undefined | null,
+): boolean {
+  return role === "OWNER" || role === "ADMIN";
+}
+
 /** Gym-owned custom exercises only; catalog and starter exercises stay read-only. */
 export function canUploadExerciseMediaForExercise(
   role: Role | undefined | null,

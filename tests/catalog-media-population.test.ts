@@ -57,6 +57,8 @@ function validatedExercise(
     catalogVersion: "dev-fixture-v1",
     searchPrefixes: ["pus", "push"],
     isActive: true,
+    fullBody: false,
+    cardio: false,
     ...overrides,
   };
 }

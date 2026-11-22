@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 import { Role } from "@prisma/client";
@@ -17,19 +16,19 @@ import { seedExercisesForGym } from "@/lib/exercises";
 import { mirrorTenantStaffToPostgres } from "@/lib/seed/postgres-tenant-mirror";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/session";
+import { isStaffGoogleSignInConfigured } from "@/lib/staff-auth/google-sign-in";
 
 const createGymSchema = z.object({
   gymName: z.string().trim().min(1, "Gym name is required").max(120),
   ownerName: z.string().trim().min(1, "Owner name is required").max(120),
-  ownerEmail: z.string().trim().email("Enter a valid email"),
-  ownerPassword: z
+  ownerEmail: z
     .string()
-    .min(8, "Password must be at least 8 characters")
-    .max(72, "Password must be at most 72 characters"),
+    .trim()
+    .email("Enter a valid owner Gmail address"),
 });
 
 /**
- * Provisions a brand-new tenant: gym, first OWNER account, and gym profile.
+ * Provisions a brand-new tenant: gym, first OWNER account (Google sign-in), and gym profile.
  * Only reachable by SUPER_ADMIN accounts.
  */
 export async function createGym(
@@ -38,11 +37,17 @@ export async function createGym(
 ): Promise<ActionResult> {
   await requireSuperAdmin();
 
+  if (!isStaffGoogleSignInConfigured()) {
+    return actionError(
+      "Staff Google sign-in is not configured. Set STAFF_AUTH_GOOGLE_CLIENT_ID and STAFF_AUTH_GOOGLE_CLIENT_SECRET before provisioning gyms.",
+    );
+  }
+
   const parsed = createGymSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
   }
-  const { gymName, ownerName, ownerEmail, ownerPassword } = parsed.data;
+  const { gymName, ownerName, ownerEmail } = parsed.data;
 
   const { users, gyms, gymProfiles } = getRepositories();
 
@@ -51,7 +56,6 @@ export async function createGym(
     return actionError("An account with that email already exists.");
   }
 
-  const passwordHash = await bcrypt.hash(ownerPassword, 10);
   const gymId = newDocId();
   const ownerUserId = newDocId();
   const registrationToken = newDocId();
@@ -66,8 +70,8 @@ export async function createGym(
     id: ownerUserId,
     gymId,
     name: ownerName,
-    email: ownerEmail,
-    passwordHash,
+    email: ownerEmail.trim().toLowerCase(),
+    passwordHash: null,
     role: "OWNER",
   });
 
@@ -82,8 +86,8 @@ export async function createGym(
       id: ownerUserId,
       gymId,
       name: ownerName,
-      email: ownerEmail,
-      passwordHash,
+      email: ownerEmail.trim().toLowerCase(),
+      passwordHash: null,
       role: Role.OWNER,
     },
   });

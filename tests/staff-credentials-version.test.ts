@@ -17,6 +17,7 @@ vi.mock("react", async () => {
 
 const authMock = vi.hoisted(() => vi.fn());
 const findById = vi.hoisted(() => vi.fn());
+const getGymById = vi.hoisted(() => vi.fn());
 const redirectMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/auth", () => ({
@@ -33,6 +34,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/firestore", () => ({
   getRepositories: () => ({
     users: { findById },
+    gyms: { getById: getGymById },
   }),
   platformContext: { kind: "platform" },
 }));
@@ -60,6 +62,7 @@ describe("credentialsVersion helpers", () => {
 describe("staff session credential validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getGymById.mockResolvedValue({ id: "gym-a", status: "active" });
   });
 
   it("allows legacy JWT version 0 with legacy DB version 0", async () => {

@@ -12,6 +12,13 @@ export class DocumentNotFoundError extends Error {
   }
 }
 
+export class TenantWriteBlockedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TenantWriteBlockedError";
+  }
+}
+
 export class InvalidPaginationCursorError extends Error {
   constructor(message = "Invalid pagination cursor.") {
     super(message);

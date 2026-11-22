@@ -1,3 +1,4 @@
+import { isStaffGoogleSignInConfigured } from "@/lib/staff-auth/google-sign-in";
 import { GymDeskLogo } from "@/components/gymdesk-logo";
 import {
   Card,
@@ -8,7 +9,12 @@ import {
 } from "@/components/ui/card";
 import { LoginForm } from "./login-form";
 
-export default function LoginPage() {
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams?: { error?: string };
+}) {
+  const googleSignInError = searchParams?.error === "GoogleSignInDenied";
   return (
     <main className="safe-area-top safe-area-x safe-area-bottom flex min-h-dvh items-center justify-center bg-background py-6">
       <div className="w-full max-w-md">
@@ -24,11 +30,16 @@ export default function LoginPage() {
           <CardHeader>
             <CardTitle>Sign in</CardTitle>
             <CardDescription>
-              Enter your staff credentials to access the dashboard.
+              Owners, admins, staff and platform super administrators can sign in
+              with Google. Super admins can also use email and password below as
+              a temporary fallback.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <LoginForm />
+            <LoginForm
+              staffGoogleSignInEnabled={isStaffGoogleSignInConfigured()}
+              googleSignInError={googleSignInError}
+            />
           </CardContent>
         </Card>
       </div>

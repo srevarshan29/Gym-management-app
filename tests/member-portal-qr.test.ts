@@ -9,9 +9,10 @@ import {
 import { getGymByRegistrationToken } from "@/lib/registration";
 import { getMemberPortalQrPageData } from "@/lib/member-portal/portal-qr-page";
 
-const { getRegistrationToken, findByRegistrationToken } = vi.hoisted(() => ({
+const { getRegistrationToken, findByRegistrationToken, getById } = vi.hoisted(() => ({
   getRegistrationToken: vi.fn(),
   findByRegistrationToken: vi.fn(),
+  getById: vi.fn(),
 }));
 
 vi.mock("@/lib/firestore", () => ({
@@ -19,6 +20,7 @@ vi.mock("@/lib/firestore", () => ({
     gyms: {
       getRegistrationToken,
       findByRegistrationToken,
+      getById,
     },
   }),
   platformContext: { kind: "platform" },
@@ -117,6 +119,12 @@ describe("member portal QR gym isolation", () => {
           name: "Gym A",
           registrationToken: "token-gym-a",
         };
+      }
+      return null;
+    });
+    getById.mockImplementation(async (_ctx, gymId: string) => {
+      if (gymId === "gym-a") {
+        return { id: "gym-a", status: "active" };
       }
       return null;
     });

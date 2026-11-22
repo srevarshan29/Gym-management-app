@@ -2,10 +2,15 @@ import { FieldValue, Timestamp, type Firestore } from "firebase-admin/firestore"
 
 import { COLLECTIONS } from "@/lib/firestore/collections";
 import type { FirestoreContext } from "@/lib/firestore/context";
+import { assertGymDocumentAllowsTenantMutations } from "@/lib/gym-lifecycle/tenant-write-guard";
 import { DocumentNotFoundError } from "@/lib/firestore/errors";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
 import { omitUndefined, serverTimestamps } from "@/lib/firestore/serialize";
-import type { GymDashboardCounters, GymDoc } from "@/lib/firestore/types";
+import type {
+  GymDashboardCounters,
+  GymDoc,
+  GymLifecycleStatus,
+} from "@/lib/firestore/types";
 
 export type CreateGymInput = {
   id: string;
@@ -141,6 +146,8 @@ export class GymsRepository {
 
   /** Atomic member number — Firestore transaction equivalent of Postgres UPDATE RETURNING. */
   async nextMemberNumber(gymId: string): Promise<number> {
+    const gym = await this.getById({ kind: "platform" }, gymId);
+    assertGymDocumentAllowsTenantMutations(gym);
     return this.db.runTransaction(async (tx) => {
       const ref = this.col().doc(gymId);
       const snap = await tx.get(ref);
@@ -154,6 +161,8 @@ export class GymsRepository {
 
   /** Atomic receipt number. */
   async nextReceiptNumber(gymId: string): Promise<number> {
+    const gym = await this.getById({ kind: "platform" }, gymId);
+    assertGymDocumentAllowsTenantMutations(gym);
     return this.db.runTransaction(async (tx) => {
       const ref = this.col().doc(gymId);
       const snap = await tx.get(ref);
@@ -170,6 +179,8 @@ export class GymsRepository {
     gymId: string,
     patch: Partial<Omit<GymDashboardCounters, "countersUpdatedAt">>,
   ): Promise<void> {
+    const gym = await this.getById({ kind: "platform" }, gymId);
+    assertGymDocumentAllowsTenantMutations(gym);
     const sanitized = omitUndefined(patch);
     await this.col().doc(gymId).update({
       dashboardCounters: {
@@ -186,6 +197,8 @@ export class GymsRepository {
     field: keyof Omit<GymDashboardCounters, "countersUpdatedAt">,
     delta: number,
   ): Promise<void> {
+    const gym = await this.getById({ kind: "platform" }, gymId);
+    assertGymDocumentAllowsTenantMutations(gym);
     await this.col()
       .doc(gymId)
       .update({
@@ -193,5 +206,62 @@ export class GymsRepository {
         "dashboardCounters.countersUpdatedAt": Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
+  }
+
+  async patchLifecycle(
+    ctx: FirestoreContext,
+    gymId: string,
+    patch: Partial<GymDoc>,
+  ): Promise<DocWithId<GymDoc>> {
+    if (ctx.kind !== "super_admin" && ctx.kind !== "platform") {
+      throw new Error("Only super-admin or platform context may change gym lifecycle.");
+    }
+
+    const ref = this.col().doc(gymId);
+    const snap = await ref.get();
+    if (!snap.exists) {
+      throw new DocumentNotFoundError(COLLECTIONS.gyms, gymId);
+    }
+
+    await ref.update({
+      ...omitUndefined(patch),
+      updatedAt: Timestamp.now(),
+    });
+    const updated = await this.getById(ctx, gymId);
+    if (!updated) throw new DocumentNotFoundError(COLLECTIONS.gyms, gymId);
+    return updated;
+  }
+
+  async setLifecycleStatus(
+    ctx: FirestoreContext,
+    gymId: string,
+    status: GymLifecycleStatus,
+    audit?: {
+      deactivatedAt?: Timestamp | null;
+      deactivatedByUserId?: string | null;
+    },
+  ): Promise<DocWithId<GymDoc>> {
+    if (ctx.kind !== "super_admin" && ctx.kind !== "platform") {
+      throw new Error("Only super-admin or platform context may change gym lifecycle.");
+    }
+
+    const ref = this.col().doc(gymId);
+    const snap = await ref.get();
+    if (!snap.exists) {
+      throw new DocumentNotFoundError(COLLECTIONS.gyms, gymId);
+    }
+
+    const now = Timestamp.now();
+    const patch = omitUndefined({
+      status,
+      deactivatedAt: audit?.deactivatedAt,
+      deactivatedByUserId: audit?.deactivatedByUserId,
+      updatedAt: now,
+    });
+
+    await ref.update(patch);
+    const updated = await this.getById(ctx, gymId);
+    if (!updated) throw new DocumentNotFoundError(COLLECTIONS.gyms, gymId);
+    return updated;
   }
 }

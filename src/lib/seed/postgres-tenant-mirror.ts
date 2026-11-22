@@ -14,7 +14,7 @@ export type PostgresStaffUserMirrorInput = {
   gymId: string;
   name: string;
   email: string;
-  passwordHash: string;
+  passwordHash: string | null;
   role: Role;
 };
 
@@ -74,7 +74,7 @@ export async function ensurePostgresStaffUser(
       gymId: input.gymId,
       name: input.name,
       email: input.email,
-      passwordHash: input.passwordHash,
+      passwordHash: input.passwordHash ?? null,
       role: input.role,
     },
   });

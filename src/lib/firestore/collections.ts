@@ -36,6 +36,12 @@ export const COLLECTIONS = {
   memberWaterLogs: "memberWaterLogs",
   memberWeightMeasurements: "memberWeightMeasurements",
   memberPortalDashboardState: "memberPortalDashboardState",
+  gymDeletionJobs: "gymDeletionJobs",
+  gymLifecycleAudit: "gymLifecycleAudit",
+  gymFinancialArchives: "gymFinancialArchives",
+  gymTenantBackupJobs: "gymTenantBackupJobs",
+  gymDataExportDownloadTokens: "gymDataExportDownloadTokens",
+  gymDataExportRateLimits: "gymDataExportRateLimits",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];

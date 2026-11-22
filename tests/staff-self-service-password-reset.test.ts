@@ -125,10 +125,10 @@ function createMockFirestore() {
 }
 
 describe("staff self-service password reset flow", () => {
-  const account = {
+  const superAdminAccount = {
     id: "user-1",
-    email: "staff@gym.test",
-    gymId: "gym-1",
+    email: "super@gymdesk.test",
+    gymId: null,
   };
 
   beforeEach(() => {
@@ -147,9 +147,9 @@ describe("staff self-service password reset flow", () => {
       return { outcome: "sent" as const };
     });
 
-    const result = await requestStaffPasswordReset(account.email, {
+    const result = await requestStaffPasswordReset(superAdminAccount.email, {
       now: new Date("2026-01-01T00:00:00.000Z"),
-      findStaffAccountsByEmail: async () => [account],
+      findStaffAccountsByEmail: async () => [superAdminAccount],
       consumeRequestAllowance: async () => ({ ok: true }),
       createResetToken,
       sendResetEmail,
@@ -160,6 +160,28 @@ describe("staff self-service password reset flow", () => {
     expect(result.message).toBe(STAFF_PASSWORD_RESET_GENERIC_SUCCESS_MESSAGE);
     expect(createResetToken).toHaveBeenCalled();
     expect(sendResetEmail).toHaveBeenCalled();
+  });
+
+  it("does not issue a reset email for gym staff accounts", async () => {
+    const createResetToken = vi.fn();
+    const sendResetEmail = vi.fn();
+    const gymStaffAccount = {
+      id: "staff-1",
+      email: "staff@gym.test",
+      gymId: "gym-1",
+    };
+
+    const result = await requestStaffPasswordReset(gymStaffAccount.email, {
+      findStaffAccountsByEmail: async () => [],
+      consumeRequestAllowance: async () => ({ ok: true }),
+      createResetToken,
+      sendResetEmail,
+      resolveAppBaseUrl: () => "https://app.gymdesk.test",
+    });
+
+    expect(result.outcome).toBe("success");
+    expect(createResetToken).not.toHaveBeenCalled();
+    expect(sendResetEmail).not.toHaveBeenCalled();
   });
 
   it("returns the same generic response for an unknown email", async () => {
@@ -183,8 +205,8 @@ describe("staff self-service password reset flow", () => {
   });
 
   it("enforces rate limits without revealing account state", async () => {
-    const result = await requestStaffPasswordReset(account.email, {
-      findStaffAccountsByEmail: async () => [account],
+    const result = await requestStaffPasswordReset(superAdminAccount.email, {
+      findStaffAccountsByEmail: async () => [superAdminAccount],
       consumeRequestAllowance: async () => ({
         ok: false,
         retryAfterMs: 60_000,
@@ -201,8 +223,8 @@ describe("staff self-service password reset flow", () => {
   });
 
   it("still returns success when email delivery fails", async () => {
-    const result = await requestStaffPasswordReset(account.email, {
-      findStaffAccountsByEmail: async () => [account],
+    const result = await requestStaffPasswordReset(superAdminAccount.email, {
+      findStaffAccountsByEmail: async () => [superAdminAccount],
       consumeRequestAllowance: async () => ({ ok: true }),
       createResetToken: vi.fn(),
       sendResetEmail: async () => ({ outcome: "failed" }),
@@ -233,15 +255,16 @@ describe("staff password reset token redemption", () => {
     const { db } = createMockFirestore();
     const repo = new StaffPasswordResetTokensRepository(db as never);
     await db.collection(COLLECTIONS.users).doc("user-1").set({
-      email: "staff@gym.test",
-      gymId: "gym-1",
+      email: "super@gymdesk.test",
+      gymId: null,
+      role: "SUPER_ADMIN",
       passwordHash: "old-hash",
     });
     await repo.createToken({
       tokenHash,
       userId: "user-1",
-      email: "staff@gym.test",
-      gymId: "gym-1",
+      email: "super@gymdesk.test",
+      gymId: null,
       createdAt: new Date("2026-06-01T11:00:00.000Z"),
       expiresAt: new Date("2026-06-01T11:30:00.000Z"),
     });
@@ -258,15 +281,16 @@ describe("staff password reset token redemption", () => {
     const { db } = createMockFirestore();
     const repo = new StaffPasswordResetTokensRepository(db as never);
     await db.collection(COLLECTIONS.users).doc("user-1").set({
-      email: "staff@gym.test",
-      gymId: "gym-1",
+      email: "super@gymdesk.test",
+      gymId: null,
+      role: "SUPER_ADMIN",
       passwordHash: "old-hash",
     });
     await repo.createToken({
       tokenHash,
       userId: "user-1",
-      email: "staff@gym.test",
-      gymId: "gym-1",
+      email: "super@gymdesk.test",
+      gymId: null,
       createdAt: now,
       expiresAt: new Date(now.getTime() + 30 * 60 * 1000),
     });
@@ -280,12 +304,13 @@ describe("staff password reset token redemption", () => {
     expect(outcome).toBe("used_token");
   });
 
-  it("resets the password, increments credentialsVersion and marks the token used", async () => {
-    const { db, docs } = createMockFirestore();
+  it("rejects password reset redemption for gym staff accounts", async () => {
+    const { db } = createMockFirestore();
     const repo = new StaffPasswordResetTokensRepository(db as never);
     await db.collection(COLLECTIONS.users).doc("user-1").set({
       email: "staff@gym.test",
       gymId: "gym-1",
+      role: "STAFF",
       passwordHash: "old-hash",
     });
     await repo.createToken({
@@ -293,6 +318,32 @@ describe("staff password reset token redemption", () => {
       userId: "user-1",
       email: "staff@gym.test",
       gymId: "gym-1",
+      createdAt: now,
+      expiresAt: new Date(now.getTime() + 30 * 60 * 1000),
+    });
+
+    const outcome = await repo.redeemToken(
+      tokenHash,
+      await bcrypt.hash("new-password-9", 10),
+      now,
+    );
+    expect(outcome).toBe("invalid_token");
+  });
+
+  it("resets the password, increments credentialsVersion and marks the token used", async () => {
+    const { db, docs } = createMockFirestore();
+    const repo = new StaffPasswordResetTokensRepository(db as never);
+    await db.collection(COLLECTIONS.users).doc("user-1").set({
+      email: "super@gymdesk.test",
+      gymId: null,
+      role: "SUPER_ADMIN",
+      passwordHash: "old-hash",
+    });
+    await repo.createToken({
+      tokenHash,
+      userId: "user-1",
+      email: "super@gymdesk.test",
+      gymId: null,
       createdAt: now,
       expiresAt: new Date(now.getTime() + 30 * 60 * 1000),
     });
@@ -312,8 +363,9 @@ describe("staff password reset token redemption", () => {
     const { db, docs } = createMockFirestore();
     const repo = new StaffPasswordResetTokensRepository(db as never);
     await db.collection(COLLECTIONS.users).doc("user-1").set({
-      email: "staff@gym.test",
-      gymId: "gym-1",
+      email: "super@gymdesk.test",
+      gymId: null,
+      role: "SUPER_ADMIN",
       passwordHash: "old-hash",
       credentialsVersion: 4,
     });
@@ -321,8 +373,8 @@ describe("staff password reset token redemption", () => {
     const result = await repo.createToken({
       tokenHash,
       userId: "user-1",
-      email: "staff@gym.test",
-      gymId: "gym-1",
+      email: "super@gymdesk.test",
+      gymId: null,
       createdAt: now,
       expiresAt: new Date(now.getTime() + 30 * 60 * 1000),
     });
@@ -338,23 +390,24 @@ describe("staff password reset token redemption", () => {
     const tokenHashB = hashStaffPasswordResetToken(generateStaffPasswordResetToken());
 
     await db.collection(COLLECTIONS.users).doc("user-1").set({
-      email: "staff@gym.test",
-      gymId: "gym-1",
+      email: "super@gymdesk.test",
+      gymId: null,
+      role: "SUPER_ADMIN",
       passwordHash: "old-hash",
     });
     await repo.createToken({
       tokenHash,
       userId: "user-1",
-      email: "staff@gym.test",
-      gymId: "gym-1",
+      email: "super@gymdesk.test",
+      gymId: null,
       createdAt: now,
       expiresAt: new Date(now.getTime() + 30 * 60 * 1000),
     });
     await repo.createToken({
       tokenHash: tokenHashB,
       userId: "user-1",
-      email: "staff@gym.test",
-      gymId: "gym-1",
+      email: "super@gymdesk.test",
+      gymId: null,
       createdAt: now,
       expiresAt: new Date(now.getTime() + 30 * 60 * 1000),
     });
@@ -379,15 +432,16 @@ describe("staff password reset token redemption", () => {
     const { db, docs } = createMockFirestore();
     const repo = new StaffPasswordResetTokensRepository(db as never);
     await db.collection(COLLECTIONS.users).doc("user-1").set({
-      email: "staff@gym.test",
-      gymId: "gym-1",
+      email: "super@gymdesk.test",
+      gymId: null,
+      role: "SUPER_ADMIN",
       passwordHash: "old-hash",
     });
     await repo.createToken({
       tokenHash,
       userId: "user-1",
-      email: "staff@gym.test",
-      gymId: "gym-1",
+      email: "super@gymdesk.test",
+      gymId: null,
       createdAt: now,
       expiresAt: new Date(now.getTime() + 30 * 60 * 1000),
     });
@@ -413,23 +467,24 @@ describe("staff password reset token redemption", () => {
     const tokenHashB = hashStaffPasswordResetToken(generateStaffPasswordResetToken());
 
     await db.collection(COLLECTIONS.users).doc("user-1").set({
-      email: "staff@gym.test",
-      gymId: "gym-1",
+      email: "super@gymdesk.test",
+      gymId: null,
+      role: "SUPER_ADMIN",
       passwordHash: "old-hash",
     });
     await repo.createToken({
       tokenHash,
       userId: "user-1",
-      email: "staff@gym.test",
-      gymId: "gym-1",
+      email: "super@gymdesk.test",
+      gymId: null,
       createdAt: now,
       expiresAt: new Date(now.getTime() + 30 * 60 * 1000),
     });
     await repo.createToken({
       tokenHash: tokenHashB,
       userId: "user-1",
-      email: "staff@gym.test",
-      gymId: "gym-1",
+      email: "super@gymdesk.test",
+      gymId: null,
       createdAt: now,
       expiresAt: new Date(now.getTime() + 30 * 60 * 1000),
     });

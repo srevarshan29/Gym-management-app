@@ -3,6 +3,7 @@
 import { AuthError } from "next-auth";
 
 import { signIn, signOut } from "@/auth";
+import { isStaffGoogleSignInConfigured } from "@/lib/staff-auth/google-sign-in";
 import { measureServerPhase } from "@/lib/server-perf";
 import {
   checkStaffLoginThrottle,
@@ -47,4 +48,11 @@ export async function authenticate(
 
 export async function signOutAction(): Promise<void> {
   await signOut({ redirectTo: "/login" });
+}
+
+export async function startStaffGoogleSignIn(): Promise<void> {
+  if (!isStaffGoogleSignInConfigured()) {
+    throw new Error("Google sign-in is not configured for staff.");
+  }
+  await signIn("google", { redirectTo: "/" });
 }

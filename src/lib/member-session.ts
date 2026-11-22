@@ -8,6 +8,7 @@ import {
   platformContext,
   type MemberContext,
 } from "@/lib/firestore";
+import { gymAllowsTenantAccess } from "@/lib/gym-lifecycle/status";
 import { getPortalMemberDoc } from "@/lib/member-portal/member-doc-cache";
 
 export type MemberSession = {
@@ -30,6 +31,12 @@ const resolveCurrentMember = cache(async (): Promise<MemberSession | null> => {
     memberId,
     gymId: tenantGymId,
   };
+
+  const { gyms } = getRepositories();
+  const gym = await gyms.getById(platformContext, tenantGymId);
+  if (!gym || !gymAllowsTenantAccess(gym)) {
+    redirect("/member/logout");
+  }
 
   const dbMember = await getPortalMemberDoc(ctx);
 

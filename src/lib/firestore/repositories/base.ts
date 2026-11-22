@@ -10,6 +10,7 @@ import {
 import type { CollectionName } from "@/lib/firestore/collections";
 import { DocumentNotFoundError, TenantIsolationError } from "@/lib/firestore/errors";
 import { assertTenantAccess, type FirestoreContext } from "@/lib/firestore/context";
+import { assertTenantMutationAllowed } from "@/lib/gym-lifecycle/tenant-write-guard";
 import { omitUndefined } from "@/lib/firestore/serialize";
 import type { TenantDocument } from "@/lib/firestore/types";
 
@@ -89,7 +90,7 @@ export abstract class TenantRepository<T extends TenantDocument> {
     id: string,
     data: WithFieldValue<T>,
   ): Promise<DocWithId<T>> {
-    assertTenantAccess(ctx, gymId);
+    await assertTenantMutationAllowed(ctx, gymId);
     const payload = omitUndefined({ ...data, gymId }) as WithFieldValue<T>;
     if ((payload as T).gymId !== gymId) {
       throw new TenantIsolationError("create gymId does not match argument.");
@@ -112,6 +113,7 @@ export abstract class TenantRepository<T extends TenantDocument> {
     id: string,
     data: Partial<WithFieldValue<T>>,
   ): Promise<DocWithId<T>> {
+    await assertTenantMutationAllowed(ctx, gymId);
     const existing = await this.getById(ctx, gymId, id);
     if (!existing) throw new DocumentNotFoundError(this.collectionName, id);
 
@@ -127,6 +129,7 @@ export abstract class TenantRepository<T extends TenantDocument> {
   }
 
   async delete(ctx: FirestoreContext, gymId: string, id: string): Promise<void> {
+    await assertTenantMutationAllowed(ctx, gymId);
     const existing = await this.getById(ctx, gymId, id);
     if (!existing) throw new DocumentNotFoundError(this.collectionName, id);
     await this.docRef(id).delete();

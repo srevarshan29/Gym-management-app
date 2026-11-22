@@ -89,7 +89,7 @@ model User {
   gymId        String?
   name         String
   email        String   @unique
-  passwordHash String
+  passwordHash String?
   role         Role     @default(STAFF)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

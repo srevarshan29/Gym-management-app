@@ -5,6 +5,10 @@ import { DietPlansRepository } from "@/lib/firestore/repositories/diet-plans";
 import { EmployeesRepository } from "@/lib/firestore/repositories/employees";
 import { EventsRepository } from "@/lib/firestore/repositories/events";
 import { ExerciseCatalogRepository } from "@/lib/firestore/repositories/exercise-catalog";
+import { GymDeletionJobsRepository } from "@/lib/firestore/repositories/gym-deletion-jobs";
+import { GymTenantBackupJobsRepository } from "@/lib/firestore/repositories/gym-tenant-backup-jobs";
+import { GymFinancialArchivesRepository } from "@/lib/firestore/repositories/gym-financial-archives";
+import { GymLifecycleAuditRepository } from "@/lib/firestore/repositories/gym-lifecycle-audit";
 import { GymProfilesRepository } from "@/lib/firestore/repositories/gym-profiles";
 import { GymNotificationSettingsRepository } from "@/lib/firestore/repositories/gym-notification-settings";
 import { GymsRepository } from "@/lib/firestore/repositories/gyms";
@@ -34,6 +38,10 @@ import { MemberWeightMeasurementsRepository } from "@/lib/firestore/repositories
 
 export type FirestoreRepositories = {
   gyms: GymsRepository;
+  gymDeletionJobs: GymDeletionJobsRepository;
+  gymTenantBackupJobs: GymTenantBackupJobsRepository;
+  gymLifecycleAudit: GymLifecycleAuditRepository;
+  gymFinancialArchives: GymFinancialArchivesRepository;
   gymProfiles: GymProfilesRepository;
   gymNotificationSettings: GymNotificationSettingsRepository;
   users: UsersRepository;
@@ -69,6 +77,10 @@ export type FirestoreRepositories = {
 export function createRepositories(db: Firestore): FirestoreRepositories {
   return {
     gyms: new GymsRepository(db),
+    gymDeletionJobs: new GymDeletionJobsRepository(db),
+    gymTenantBackupJobs: new GymTenantBackupJobsRepository(db),
+    gymLifecycleAudit: new GymLifecycleAuditRepository(db),
+    gymFinancialArchives: new GymFinancialArchivesRepository(db),
     gymProfiles: new GymProfilesRepository(db),
     gymNotificationSettings: new GymNotificationSettingsRepository(db),
     users: new UsersRepository(db),

@@ -207,6 +207,40 @@ export type ExerciseCatalogDoc = {
 
 // ── Core documents ─────────────────────────────────────────────────────
 
+export type GymLifecycleStatus = "active" | "deactivated";
+
+export type GymDeletionMode = "scheduled" | "immediate";
+
+export type GymPurgeStatus =
+  | "none"
+  | "scheduled_pending"
+  | "backup_pending"
+  | "ready"
+  | "purging"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export type GymBackupStatus = "pending" | "succeeded" | "failed";
+
+export type GymBackupScope = "preflight" | "full";
+
+export type FinancialArchiveStatus = "incomplete" | "complete";
+
+export type GymPurgePhase =
+  | "precheck"
+  | "financial_archive"
+  | "firestore_tenant"
+  | "supabase_storage"
+  | "postgres_tenant"
+  | "gym_root";
+
+export type GymPurgeProgress = {
+  phase: GymPurgePhase;
+  cursor?: string | null;
+  completedPhases?: GymPurgePhase[];
+};
+
 export type GymDoc = {
   name: string;
   slug: string | null;
@@ -214,6 +248,45 @@ export type GymDoc = {
   memberSeq: number;
   receiptSeq: number;
   dashboardCounters?: GymDashboardCounters;
+  /** Absent on legacy gyms — treated as active. */
+  status?: GymLifecycleStatus;
+  deactivatedAt?: Timestamp | null;
+  deactivatedByUserId?: string | null;
+  deletionMode?: GymDeletionMode | null;
+  deletionRequestedAt?: Timestamp | null;
+  deletionRequestedByUserId?: string | null;
+  deletionEligibleAt?: Timestamp | null;
+  deletionLockedAt?: Timestamp | null;
+  purgeStatus?: GymPurgeStatus;
+  backupStatus?: GymBackupStatus;
+  /** `preflight` snapshots do not authorize destructive purge. */
+  backupScope?: GymBackupScope | null;
+  backupArtifactRef?: string | null;
+  backupChecksum?: string | null;
+  backupSizeBytes?: number | null;
+  backupCreatedAt?: Timestamp | null;
+  backupVerifiedAt?: Timestamp | null;
+  /** Optional pre-deletion data export (not required for purge). */
+  dataExportStatus?: "none" | "pending" | "ready" | "failed" | null;
+  dataExportId?: string | null;
+  /** False when manifest reports missing categories (e.g. partial asset export). */
+  dataExportComplete?: boolean | null;
+  dataExportArtifactRef?: string | null;
+  dataExportChecksum?: string | null;
+  dataExportSizeBytes?: number | null;
+  dataExportReadyAt?: Timestamp | null;
+  dataExportDownloadExpiresAt?: Timestamp | null;
+  backupManifestChecksum?: string | null;
+  /** Set when a full backup is promoted; required for destructive purge authority. */
+  backupSourceEvidence?: import("@/lib/gym-lifecycle/backup/backup-source-evidence").TenantBackupSourceEvidenceV1 | null;
+  /** Completed full backup job id used for purge-grade verification. */
+  backupCompletedJobId?: string | null;
+  tenantFullBackupJobId?: string | null;
+  purgeJobId?: string | null;
+  purgeStartedAt?: Timestamp | null;
+  purgeCompletedAt?: Timestamp | null;
+  purgeProgress?: GymPurgeProgress | null;
+  purgeError?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 };
@@ -235,7 +308,8 @@ export type UserDoc = {
   gymId: string | null;
   name: string;
   email: string;
-  passwordHash: string;
+  /** Null for Google-only OWNER accounts provisioned without a password. */
+  passwordHash: string | null;
   role: StaffRole;
   /** Bumped on password change/reset to invalidate outstanding JWTs. */
   credentialsVersion?: number;

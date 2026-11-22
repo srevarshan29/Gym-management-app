@@ -6,6 +6,7 @@ import { DocumentNotFoundError } from "@/lib/firestore/errors";
 import { displayNamesEqual } from "@/lib/firestore/helpers";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
 import { omitUndefined, serverTimestamps } from "@/lib/firestore/serialize";
+import { nextCredentialsVersion } from "@/lib/staff-auth/credentials-version";
 import type { StaffRole, UserDoc } from "@/lib/firestore/types";
 
 export type CreateUserInput = {
@@ -13,7 +14,7 @@ export type CreateUserInput = {
   gymId: string | null;
   name: string;
   email: string;
-  passwordHash: string;
+  passwordHash: string | null;
   role: StaffRole;
 };
 
@@ -205,5 +206,29 @@ export class UsersRepository {
   ): Promise<boolean> {
     const user = await this.findById(ctx, trainerId);
     return user !== null && user.gymId === gymId && user.role !== "SUPER_ADMIN";
+  }
+
+  /**
+   * Bumps credentialsVersion for every staff user in a gym — used when a gym
+   * is deactivated so outstanding staff JWTs are rejected on the next request.
+   */
+  async bumpCredentialsVersionForGym(
+    _ctx: FirestoreContext,
+    gymId: string,
+  ): Promise<number> {
+    const snap = await this.col().where("gymId", "==", gymId).get();
+    if (snap.empty) return 0;
+
+    const writer = this.db.batch();
+    const now = Timestamp.now();
+    for (const doc of snap.docs) {
+      const data = doc.data() as UserDoc;
+      writer.update(doc.ref, {
+        credentialsVersion: nextCredentialsVersion(data.credentialsVersion),
+        updatedAt: now,
+      });
+    }
+    await writer.commit();
+    return snap.size;
   }
 }

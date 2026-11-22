@@ -15,6 +15,8 @@ import {
 } from "@/lib/staff-auth/self-service-password-reset";
 import { checkStaffPasswordResetRequestThrottle } from "@/lib/staff-auth/staff-password-reset-request-throttle";
 import { getStaffLoginClientIp } from "@/lib/staff-login-throttle";
+import { staffAccountHasPassword } from "@/lib/staff-auth/password-auth";
+import { staffPasswordResetRoleAllowed } from "@/lib/staff-auth/staff-roles";
 
 const forgotPasswordSchema = z.object({
   email: z.string().trim().email(),
@@ -51,11 +53,17 @@ export async function requestStaffPasswordResetAction(
   const result = await requestStaffPasswordReset(parsed.data.email, {
     findStaffAccountsByEmail: async (email) => {
       const matches = await users.listByEmail(platformContext, email);
-      return matches.map((user) => ({
-        id: user.id,
-        email: user.email,
-        gymId: user.gymId,
-      }));
+      return matches
+        .filter(
+          (user) =>
+            staffPasswordResetRoleAllowed(user.role) &&
+            staffAccountHasPassword(user),
+        )
+        .map((user) => ({
+          id: user.id,
+          email: user.email,
+          gymId: user.gymId,
+        }));
     },
     consumeRequestAllowance: () =>
       checkStaffPasswordResetRequestThrottle(parsed.data.email, ip),

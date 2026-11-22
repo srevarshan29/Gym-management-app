@@ -15,6 +15,7 @@ import type {
 import { COLLECTIONS } from "@/lib/firestore/collections";
 import type { FirestoreContext } from "@/lib/firestore/context";
 import { assertMemberSelfAccess, assertTenantAccess } from "@/lib/firestore/context";
+import { assertTenantMutationAllowed } from "@/lib/gym-lifecycle/tenant-write-guard";
 import type { DocWithId } from "@/lib/firestore/repositories/base";
 import { clampPageSize } from "@/lib/firestore/repositories/base";
 import type { AttendanceDoc, AttendanceMethod, MemberDoc } from "@/lib/firestore/types";
@@ -118,7 +119,7 @@ export class AttendanceRepository {
     checkedInAt: Date,
     dateKey: string = attendanceDateKey(checkedInAt),
   ): Promise<AttendanceCheckInResult> {
-    assertTenantAccess(ctx, gymId);
+    await assertTenantMutationAllowed(ctx, gymId);
     if (member.gymId !== gymId) {
       throw new Error("Member does not belong to this gym.");
     }
@@ -332,7 +333,7 @@ export class AttendanceRepository {
     dateKey: string,
     method: AttendanceMethod,
   ): Promise<boolean> {
-    assertTenantAccess(ctx, gymId);
+    await assertTenantMutationAllowed(ctx, gymId);
     if (member.gymId !== gymId) {
       throw new Error("Member does not belong to this gym.");
     }

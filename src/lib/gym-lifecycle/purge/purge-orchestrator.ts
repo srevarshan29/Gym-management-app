@@ -38,6 +38,8 @@ async function archiveGymFinancialRecordsDuringPurge(gymId: string, gymName: str
   const financial = await exportGymFinancialRecords(db, gymId);
   const retentionPolicyConfigured = Boolean(process.env.GYM_FINANCIAL_RETENTION_POLICY?.trim());
 
+  const policyComplete = retentionPolicyConfigured;
+
   await gymFinancialArchives.upsertArchive({
     gymId,
     gymName,
@@ -47,8 +49,8 @@ async function archiveGymFinancialRecordsDuringPurge(gymId: string, gymName: str
     subscriptions: financial.subscriptions,
     backupArtifactRef: artifactRef,
     retentionPolicyConfigured,
-    financialArchiveStatus: "complete",
-    financialArchiveVerifiedAt: new Date(),
+    financialArchiveStatus: policyComplete ? "complete" : "incomplete",
+    financialArchiveVerifiedAt: policyComplete ? new Date() : null,
   });
 }
 

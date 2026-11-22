@@ -28,6 +28,14 @@ const credentialsSchema = z.object({
 
 const STAFF_GOOGLE_SIGN_IN_DENIED_PATH = "/login?error=GoogleSignInDenied";
 
+/** Google OAuth email_verified must be explicitly true — missing or false rejects sign-in. */
+export function parseGoogleEmailVerified(profile: unknown): boolean {
+  if (profile == null || typeof profile !== "object") {
+    return false;
+  }
+  return (profile as { email_verified?: unknown }).email_verified === true;
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   providers: [
@@ -115,8 +123,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return STAFF_GOOGLE_SIGN_IN_DENIED_PATH;
       }
 
-      const googleProfile = profile as { email_verified?: boolean } | undefined;
-      const emailVerified = googleProfile?.email_verified !== false;
+      const emailVerified = parseGoogleEmailVerified(profile);
 
       const normalizedEmail = rawEmail.trim().toLowerCase();
       const { users, gyms } = getRepositories();

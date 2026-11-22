@@ -1,3 +1,5 @@
+import type { GymDataExportCompleteness } from "@/lib/gym-lifecycle/export/export-manifest";
+
 export type GymExportDisplayStatus =
   | "not_requested"
   | "processing"
@@ -37,5 +39,35 @@ export function gymExportDisplayStatusLabel(status: GymExportDisplayStatus): str
       return "Expired";
     default:
       return status;
+  }
+}
+
+export function gymExportCompletenessLabel(
+  completeness: GymDataExportCompleteness | null | undefined,
+): string {
+  switch (completeness) {
+    case "complete":
+      return "Complete (records and tenant files)";
+    case "records_only":
+      return "Records only (tenant files not included)";
+    case "partial":
+      return "Partial (some tenant files missing)";
+    case "failed":
+      return "Failed";
+    default:
+      return "Unknown";
+  }
+}
+
+export function gymExportCompletenessAdminWarning(
+  completeness: GymDataExportCompleteness | null | undefined,
+): string | null {
+  switch (completeness) {
+    case "records_only":
+      return "Warning: tenant-owned files were not included. This ZIP is a records-only export.";
+    case "partial":
+      return "Warning: some tenant-owned files could not be collected. Review manifest.json in the ZIP.";
+    default:
+      return null;
   }
 }

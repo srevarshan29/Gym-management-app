@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { parseGoogleEmailVerified } from "@/auth";
 import {
   evaluateStaffGoogleSignIn,
   staffGoogleEmailMatchesAccount,
@@ -60,6 +61,26 @@ describe("Phase 27C — Super Admin Google sign-in", () => {
     });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe("user_not_found");
+  });
+
+  it("parseGoogleEmailVerified requires explicit true", () => {
+    expect(parseGoogleEmailVerified({ email_verified: true })).toBe(true);
+    expect(parseGoogleEmailVerified({ email_verified: false })).toBe(false);
+    expect(parseGoogleEmailVerified({})).toBe(false);
+    expect(parseGoogleEmailVerified(undefined)).toBe(false);
+    expect(parseGoogleEmailVerified(null)).toBe(false);
+    expect(parseGoogleEmailVerified({ email_verified: null })).toBe(false);
+  });
+
+  it("rejects Google sign-in when email_verified claim is missing", () => {
+    const result = evaluateStaffGoogleSignIn({
+      emailVerified: parseGoogleEmailVerified({}),
+      googleEmail: superAdmin.email,
+      user: superAdmin,
+      gym: null,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("unverified_email");
   });
 
   it("rejects unverified Google email", () => {

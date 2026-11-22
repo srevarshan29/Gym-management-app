@@ -7,7 +7,11 @@ import {
   listAllTenantStorageObjects,
 } from "@/lib/gym-lifecycle/backup/supabase-tenant-export";
 import { storagePathToZipEntryPath } from "@/lib/gym-lifecycle/export/export-filename";
-import type { GymDataExportManifestV2 } from "@/lib/gym-lifecycle/export/export-manifest";
+import {
+  resolveGymDataExportCompleteness,
+  type GymDataExportManifestV2,
+  type GymExportStorageInput,
+} from "@/lib/gym-lifecycle/export/export-manifest";
 import type { GymDataExportBundleV1 } from "@/lib/gym-lifecycle/export/gym-data-export";
 
 export const GYM_EXPORT_ASSET_BATCH_SIZE = 5;
@@ -16,9 +20,23 @@ export type BuildGymExportArchiveInput = {
   gymId: string;
   exportId: string;
   bundle: GymDataExportBundleV1;
+  /** Preferred: explicit storage outcome for asset bundling. */
+  storage?: GymExportStorageInput;
+  /** @deprecated Use `storage` — null means records-only (assets skipped). */
   storageLister?: SupabaseStorageLister | null;
   assetBatchSize?: number;
 };
+
+function resolveStorageInput(input: BuildGymExportArchiveInput): GymExportStorageInput {
+  if (input.storage) return input.storage;
+  if (input.storageLister) {
+    return { kind: "lister", lister: input.storageLister };
+  }
+  return {
+    kind: "records_only",
+    skippedReason: "Tenant asset storage is not configured or unavailable.",
+  };
+}
 
 export type BuildGymExportArchiveResult = {
   zipBody: Buffer;
@@ -107,17 +125,22 @@ export async function buildGymDataExportZip(
   let storageStatus: GymDataExportManifestV2["categories"]["storageAssets"]["status"] = "complete";
   let storageSkippedReason: string | undefined;
 
-  if (!input.storageLister) {
+  const storageInput = resolveStorageInput(input);
+
+  if (storageInput.kind === "config_error") {
+    storageStatus = "failed";
+    storageFailed.push({ path: "*", error: storageInput.error });
+  } else if (storageInput.kind === "records_only") {
     storageStatus = "skipped";
-    storageSkippedReason = "Tenant asset storage is not configured.";
+    storageSkippedReason = storageInput.skippedReason;
   } else {
     try {
-      const paths = await listAllTenantStorageObjects(input.storageLister, input.gymId);
+      const paths = await listAllTenantStorageObjects(storageInput.lister, input.gymId);
       for (let i = 0; i < paths.length; i += assetBatch) {
         const batch = paths.slice(i, i + assetBatch);
         for (const path of batch) {
           try {
-            const bytes = await input.storageLister.download(path);
+            const bytes = await storageInput.lister.download(path);
             const zipPath = storagePathToZipEntryPath(input.gymId, path);
             archive.append(bytes, { name: zipPath });
             files.push({
@@ -146,25 +169,24 @@ export async function buildGymDataExportZip(
     }
   }
 
+  const categories: GymDataExportManifestV2["categories"] = {
+    firestore: { status: firestoreStatus, counts: firestoreCounts, error: firestoreError },
+    financial: { status: financialStatus, counts: financialCounts, error: financialError },
+    storageAssets: {
+      status: storageStatus,
+      included: storageIncluded,
+      failed: storageFailed,
+      skippedReason: storageSkippedReason,
+    },
+  };
+
   const manifest: GymDataExportManifestV2 = {
     formatVersion: 2,
     gymId: input.gymId,
     exportId: input.exportId,
     exportedAt: input.bundle.exportedAt,
-    complete:
-      firestoreStatus === "complete" &&
-      financialStatus === "complete" &&
-      (storageStatus === "complete" || storageStatus === "skipped"),
-    categories: {
-      firestore: { status: firestoreStatus, counts: firestoreCounts, error: firestoreError },
-      financial: { status: financialStatus, counts: financialCounts, error: financialError },
-      storageAssets: {
-        status: storageStatus,
-        included: storageIncluded,
-        failed: storageFailed,
-        skippedReason: storageSkippedReason,
-      },
-    },
+    complete: resolveGymDataExportCompleteness({ categories }) === "complete",
+    categories,
     files,
     inventory: input.bundle.inventory as Record<string, unknown>,
   };

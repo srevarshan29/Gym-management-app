@@ -19,6 +19,8 @@ import {
 import {
   gymExportDisplayStatusLabel,
   resolveGymExportDisplayStatus,
+  gymExportCompletenessAdminWarning,
+  gymExportCompletenessLabel,
 } from "@/lib/gym-lifecycle/export/export-display-status";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,6 +60,12 @@ type GymRow = {
   dataExportStatus: "none" | "pending" | "ready" | "failed" | null;
   dataExportId: string | null;
   dataExportComplete: boolean | null;
+  dataExportCompleteness:
+    | "complete"
+    | "records_only"
+    | "partial"
+    | "failed"
+    | null;
   dataExportReadyAt: Date | null;
   dataExportDownloadExpiresAt: Date | null;
   deletionEligibleAt: Date | null;
@@ -174,7 +182,17 @@ function GymDeletionSummary({ gym }: { gym: GymRow }) {
           }),
         )}
         {gym.dataExportReadyAt ? ` · ${gym.dataExportReadyAt.toLocaleString()}` : ""}
-        {gym.dataExportComplete === false ? " · partial (see manifest)" : ""}
+        {gym.dataExportStatus === "ready" && gym.dataExportCompleteness ? (
+          <span className="block">
+            {gymExportCompletenessLabel(gym.dataExportCompleteness)}
+          </span>
+        ) : null}
+        {gym.dataExportStatus === "ready" &&
+        gymExportCompletenessAdminWarning(gym.dataExportCompleteness) ? (
+          <span className="block font-medium text-amber-700">
+            {gymExportCompletenessAdminWarning(gym.dataExportCompleteness)}
+          </span>
+        ) : null}
         {gym.dataExportDownloadExpiresAt &&
         resolveGymExportDisplayStatus({
           dataExportStatus: gym.dataExportStatus,

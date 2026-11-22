@@ -269,8 +269,11 @@ export type GymDoc = {
   /** Optional pre-deletion data export (not required for purge). */
   dataExportStatus?: "none" | "pending" | "ready" | "failed" | null;
   dataExportId?: string | null;
-  /** False when manifest reports missing categories (e.g. partial asset export). */
+  /** True only when the manifest reports a full complete export including tenant files. */
   dataExportComplete?: boolean | null;
+  dataExportCompleteness?:
+    | import("@/lib/gym-lifecycle/export/export-manifest").GymDataExportCompleteness
+    | null;
   dataExportArtifactRef?: string | null;
   dataExportChecksum?: string | null;
   dataExportSizeBytes?: number | null;

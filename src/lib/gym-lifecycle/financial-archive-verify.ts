@@ -21,7 +21,12 @@ export const REQUIRED_FINANCIAL_EXPORTS: (keyof FinancialArchiveCompleteness)[] 
 export function evaluateFinancialArchiveCompleteness(
   archive: Pick<
     GymFinancialArchiveDoc,
-    "payments" | "receipts" | "ledgerTransactions" | "subscriptions" | "financialArchiveStatus"
+    | "payments"
+    | "receipts"
+    | "ledgerTransactions"
+    | "subscriptions"
+    | "financialArchiveStatus"
+    | "retentionPolicyConfigured"
   > | null,
 ): { ok: true } | { ok: false; reason: string; missing: string[] } {
   if (!archive) {
@@ -47,6 +52,15 @@ export function evaluateFinancialArchiveCompleteness(
       ok: false,
       reason: "Financial archive has not been verified complete.",
       missing: ["verification"],
+    };
+  }
+
+  if (!archive.retentionPolicyConfigured) {
+    return {
+      ok: false,
+      reason:
+        "Financial retention policy is not configured. Set GYM_FINANCIAL_RETENTION_POLICY to an explicit operator retention decision before purge.",
+      missing: ["retention_policy"],
     };
   }
 

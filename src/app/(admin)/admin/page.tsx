@@ -33,6 +33,7 @@ export default async function AdminPage() {
         dataExportStatus: g.dataExportStatus ?? null,
         dataExportId: g.dataExportId ?? null,
         dataExportComplete: g.dataExportComplete ?? null,
+        dataExportCompleteness: g.dataExportCompleteness ?? null,
         dataExportReadyAt: g.dataExportReadyAt?.toDate() ?? null,
         dataExportDownloadExpiresAt: g.dataExportDownloadExpiresAt?.toDate() ?? null,
         deletionEligibleAt: g.deletionEligibleAt?.toDate() ?? null,

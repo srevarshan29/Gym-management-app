@@ -131,6 +131,38 @@ describe("purge authority", () => {
     const incomplete = evaluateFinancialArchiveCompleteness(null);
     expect(incomplete.ok).toBe(false);
   });
+
+  it("rejects financial archive when retention policy is not configured", () => {
+    const result = evaluateFinancialArchiveCompleteness({
+      ...baseArchive(),
+      retentionPolicyConfigured: false,
+      financialArchiveStatus: "complete",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.missing).toContain("retention_policy");
+    }
+  });
+
+  it("accepts financial archive when retention policy is configured", () => {
+    const result = evaluateFinancialArchiveCompleteness(baseArchive());
+    expect(result.ok).toBe(true);
+  });
+
+  it("blocks purge authority when retention policy was not configured on archive", () => {
+    const result = evaluatePurgeAuthority({
+      gym: baseGym(),
+      job: baseJob(),
+      archive: {
+        ...baseArchive(),
+        retentionPolicyConfigured: false,
+        financialArchiveStatus: "incomplete",
+      },
+      now: new Date("2021-01-01"),
+    });
+    expect(result.ok).toBe(false);
+    expect(result.checks.financial_archive.ok).toBe(false);
+  });
 });
 
 describe("purge job lease", () => {

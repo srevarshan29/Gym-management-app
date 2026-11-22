@@ -14,7 +14,8 @@ export async function prepareVerifiedFinancialArchive(gymId: string): Promise<vo
   await assertFinancialExportMatchesCounts(db, gymId, payload);
 
   const retentionPolicyConfigured = Boolean(process.env.GYM_FINANCIAL_RETENTION_POLICY?.trim());
-  const verifiedAt = new Date();
+  const policyComplete = retentionPolicyConfigured;
+  const verifiedAt = policyComplete ? new Date() : null;
 
   await gymFinancialArchives.upsertArchive({
     gymId,
@@ -25,7 +26,13 @@ export async function prepareVerifiedFinancialArchive(gymId: string): Promise<vo
     subscriptions: payload.subscriptions,
     backupArtifactRef: gym.backupArtifactRef ?? null,
     retentionPolicyConfigured,
-    financialArchiveStatus: "complete",
+    financialArchiveStatus: policyComplete ? "complete" : "incomplete",
     financialArchiveVerifiedAt: verifiedAt,
   });
+
+  if (!policyComplete) {
+    throw new Error(
+      "Financial retention policy is not configured. Set GYM_FINANCIAL_RETENTION_POLICY to an explicit operator retention decision before confirming deletion.",
+    );
+  }
 }

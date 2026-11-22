@@ -9,6 +9,7 @@ import {
 } from "@/lib/gym-lifecycle/export/export-download-token-store";
 import { setExportRateLimitMemoryModeForTests } from "@/lib/gym-lifecycle/export/export-rate-limit";
 import { buildGymDataExportZip } from "@/lib/gym-lifecycle/export/gym-data-export-archive";
+import { resolveGymDataExportCompleteness } from "@/lib/gym-lifecycle/export/export-manifest";
 import {
   evaluateGymExportReadyForDownload,
   redeemAndLoadGymExportArtifact,
@@ -64,9 +65,37 @@ describe("export zip and manifest", () => {
       },
       storageLister: null,
     });
-    expect(archive.manifest.complete).toBe(true);
+    expect(archive.manifest.complete).toBe(false);
+    expect(resolveGymDataExportCompleteness(archive.manifest)).toBe("records_only");
     expect(archive.manifest.categories.storageAssets.status).toBe("skipped");
     expect(archive.zipBody.subarray(0, 2).toString("utf8")).toBe("PK");
+  });
+
+  it("treats invalid storage configuration as a failed export", async () => {
+    const archive = await buildGymDataExportZip({
+      gymId: "g-zip",
+      exportId: "e2",
+      bundle: {
+        formatVersion: 1,
+        gymId: "g-zip",
+        exportedAt: new Date().toISOString(),
+        inventory: { gymId: "g-zip", counts: {}, totalDocuments: 0 },
+        gym: { id: "g-zip", name: "G" },
+        firestore: {},
+        financial: {
+          payments: [],
+          receipts: [],
+          ledgerTransactions: [],
+          subscriptions: [],
+        },
+      },
+      storage: {
+        kind: "config_error",
+        error: "Image upload configuration is invalid. Check SUPABASE_URL format.",
+      },
+    });
+    expect(resolveGymDataExportCompleteness(archive.manifest)).toBe("failed");
+    expect(archive.manifest.categories.storageAssets.status).toBe("failed");
   });
 
   it("rejects path traversal in asset zip paths", () => {
@@ -355,6 +384,8 @@ describe("runOptionalGymDataExport bounded writer", () => {
     if (result.ok) {
       expect(written[0]?.path).toContain(".zip");
       expect(written[0]?.bytes).toBeGreaterThan(0);
+      expect(result.completeness).toBe("records_only");
+      expect(result.complete).toBe(false);
     }
   });
 });

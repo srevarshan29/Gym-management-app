@@ -10,7 +10,13 @@ import { TENANT_GYM_ID_COLLECTIONS } from "@/lib/gym-lifecycle/backup/tenant-dat
 import { sanitizeGymSnapshot, sanitizeRecordForExport } from "@/lib/gym-lifecycle/export/export-sanitize";
 import { isGymDataExportEnabled } from "@/lib/gym-lifecycle/export/export-config";
 import { GYM_EXPORT_ARTIFACT_AVAILABILITY_MS } from "@/lib/gym-lifecycle/export/export-download-token-store";
-import { manifestSummaryComplete } from "@/lib/gym-lifecycle/export/export-manifest";
+import {
+  manifestSummaryComplete,
+  resolveGymDataExportCompleteness,
+  type GymDataExportCompleteness,
+  type GymExportStorageInput,
+} from "@/lib/gym-lifecycle/export/export-manifest";
+import { validateSupabaseStorageConfig } from "@/lib/storage/supabase-config";
 import { buildGymDataExportZip } from "@/lib/gym-lifecycle/export/gym-data-export-archive";
 import { createSupabaseTenantAssetsLister } from "@/lib/gym-lifecycle/backup/supabase-tenant-assets-lister";
 import type { SupabaseStorageLister } from "@/lib/gym-lifecycle/backup/supabase-tenant-export";
@@ -40,6 +46,7 @@ export type GymDataExportResult =
       checksumSha256: string;
       sizeBytes: number;
       complete: boolean;
+      completeness: GymDataExportCompleteness;
       artifactExpiresAt: string;
     }
   | { ok: false; error: string };
@@ -115,15 +122,47 @@ export async function buildGymDataExportBundle(gymId: string): Promise<GymDataEx
   };
 }
 
-async function resolveStorageLister(
+function isStorageConfigurationError(message: string): boolean {
+  return /\binvalid\b/i.test(message);
+}
+
+async function resolveStorageForExport(
   gymId: string,
   override?: SupabaseStorageLister | null,
-): Promise<SupabaseStorageLister | null> {
-  if (override !== undefined) return override;
+): Promise<GymExportStorageInput> {
+  if (override) {
+    return { kind: "lister", lister: override };
+  }
+  if (override === null) {
+    return {
+      kind: "records_only",
+      skippedReason: "Tenant asset storage is not configured or unavailable.",
+    };
+  }
+
+  const validated = validateSupabaseStorageConfig();
+  if (!validated.ok) {
+    if (isStorageConfigurationError(validated.error)) {
+      return { kind: "config_error", error: validated.error };
+    }
+    return {
+      kind: "records_only",
+      skippedReason: validated.error,
+    };
+  }
+
   try {
-    return await createSupabaseTenantAssetsLister(gymId);
-  } catch {
-    return null;
+    const lister = await createSupabaseTenantAssetsLister(gymId);
+    return { kind: "lister", lister };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Tenant asset storage is unavailable.";
+    if (isStorageConfigurationError(message)) {
+      return { kind: "config_error", error: message };
+    }
+    return {
+      kind: "records_only",
+      skippedReason: message,
+    };
   }
 }
 
@@ -147,15 +186,25 @@ export async function runOptionalGymDataExport(input: {
     const exportId = input.exportId ?? newDocId();
     const buildBundle = input.buildBundle ?? buildGymDataExportBundle;
     const bundle = await buildBundle(input.gymId);
-    const lister = await resolveStorageLister(input.gymId, input.storageLister);
+    const storage = await resolveStorageForExport(input.gymId, input.storageLister);
     const archive = await buildGymDataExportZip({
       gymId: input.gymId,
       exportId,
       bundle,
-      storageLister: lister,
+      storage,
     });
 
+    const completeness = resolveGymDataExportCompleteness(archive.manifest);
     const complete = manifestSummaryComplete(archive.manifest);
+
+    if (completeness === "failed") {
+      return {
+        ok: false,
+        error:
+          archive.manifest.categories.storageAssets.failed[0]?.error ??
+          "Export failed: required categories could not be collected.",
+      };
+    }
     const objectPath = `gym-exports/${input.gymId}/${exportId}.zip`;
     const now = Date.now();
     const artifactExpiresAt = new Date(now + GYM_EXPORT_ARTIFACT_AVAILABILITY_MS).toISOString();
@@ -182,6 +231,7 @@ export async function runOptionalGymDataExport(input: {
       checksumSha256: archive.checksumSha256,
       sizeBytes: archive.sizeBytes,
       complete,
+      completeness,
       artifactExpiresAt,
     };
   } catch (error) {

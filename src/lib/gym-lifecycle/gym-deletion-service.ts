@@ -165,7 +165,12 @@ export async function runOptionalGymDataExportForGym(input: {
   gymId: string;
   actorUserId: string;
   writer?: { write(objectPath: string, body: Buffer): Promise<void> };
-}): Promise<{ exportId: string; artifactExpiresAt: string; complete: boolean }> {
+}): Promise<{
+  exportId: string;
+  artifactExpiresAt: string;
+  complete: boolean;
+  completeness: import("@/lib/gym-lifecycle/export/export-manifest").GymDataExportCompleteness;
+}> {
   const { gyms, gymDeletionJobs, gymLifecycleAudit } = getExtendedRepositories();
   const gym = await gyms.getById(platformContext, input.gymId);
   if (!gym) throw new Error("Gym not found.");
@@ -214,6 +219,7 @@ export async function runOptionalGymDataExportForGym(input: {
     dataExportStatus: "ready",
     dataExportId: result.exportId,
     dataExportComplete: result.complete,
+    dataExportCompleteness: result.completeness,
     dataExportArtifactRef: result.artifactPath,
     dataExportChecksum: result.checksumSha256,
     dataExportSizeBytes: result.sizeBytes,
@@ -237,6 +243,7 @@ export async function runOptionalGymDataExportForGym(input: {
       artifactPath: result.artifactPath,
       checksum: result.checksumSha256,
       complete: result.complete,
+      completeness: result.completeness,
       artifactExpiresAt: result.artifactExpiresAt,
     },
   });
@@ -245,6 +252,7 @@ export async function runOptionalGymDataExportForGym(input: {
     exportId: result.exportId,
     artifactExpiresAt: result.artifactExpiresAt,
     complete: result.complete,
+    completeness: result.completeness,
   };
 }
 

@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 
 
 
+import { gymAllowsTenantAccess } from "@/lib/gym-lifecycle/status";
 import { getRepositories, platformContext } from "@/lib/firestore";
 
 import {
@@ -225,7 +226,10 @@ export async function getGymByRegistrationToken(
 
   if (!gym) return null;
 
-
+  const gymDoc = await gyms.getById(platformContext, gym.id);
+  if (!gymDoc || !gymAllowsTenantAccess(gymDoc)) {
+    return null;
+  }
 
   return {
 

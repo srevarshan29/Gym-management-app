@@ -66,6 +66,25 @@ service cloud.firestore {
         && request.resource.data.gymId.size() > 0;
     }
 
+    function gymLifecycleFields() {
+      return [
+        'status', 'deactivatedAt', 'deactivatedByUserId',
+        'deletionMode', 'deletionRequestedAt', 'deletionRequestedByUserId',
+        'deletionEligibleAt', 'deletionLockedAt',
+        'purgeStatus', 'purgeJobId', 'purgeStartedAt', 'purgeCompletedAt',
+        'purgeProgress', 'purgeError',
+        'backupStatus', 'backupScope', 'backupArtifactRef', 'backupChecksum',
+        'backupSizeBytes', 'backupCreatedAt',
+        'registrationToken',
+      ];
+    }
+
+    function gymLifecycleFieldsUnchanged() {
+      return !request.resource.data.diff(resource.data)
+        .affectedKeys()
+        .hasAny(gymLifecycleFields());
+    }
+
     // Member self-service profile edits only (portal).
     function memberProfileFieldsOnly() {
       let allowed = [
@@ -128,14 +147,40 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Platform lifecycle collections — server / Admin SDK only (default deny).
+    match /gymDeletionJobs/{jobId} {
+      allow read, write: if false;
+    }
+
+    match /gymLifecycleAudit/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /gymFinancialArchives/{gymId} {
+      allow read, write: if false;
+    }
+
+    match /gymTenantBackupJobs/{jobId} {
+      allow read, write: if false;
+    }
+
+    match /gymDataExportDownloadTokens/{tokenId} {
+      allow read, write: if false;
+    }
+
+    match /gymDataExportRateLimits/{limitId} {
+      allow read, write: if false;
+    }
+
     // ── Gyms & profile ───────────────────────────────────────────────────
 
     match /gyms/{gymId} {
       allow read: if staffTenantRead(gymId)
         || memberOwnsGym(gymId);
       allow create: if isSuperAdmin();
-      allow update: if isSuperAdmin()
-        || (staffOwnsGym(gymId) && authRole() == 'OWNER');
+      allow update: if gymLifecycleFieldsUnchanged()
+        && (isSuperAdmin()
+          || (staffOwnsGym(gymId) && authRole() == 'OWNER'));
       allow delete: if isSuperAdmin();
     }
 

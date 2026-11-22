@@ -68,7 +68,7 @@ export type FirestoreStaffSnapshot = {
   gymId: string;
   name: string;
   role: string;
-  passwordHash: string;
+  passwordHash: string | null;
 };
 
 export type PostgresStaffSnapshot = {

@@ -1,3 +1,4 @@
+import { gymAllowsTenantAccess } from "@/lib/gym-lifecycle/status";
 import { getRepositories, platformContext } from "@/lib/firestore";
 import { getGymProfilePlatform } from "@/lib/gym-profile";
 import { sendTransactionalEmail } from "@/lib/email/send-transactional-email";
@@ -57,6 +58,10 @@ export async function runMembershipExpiryRemindersJob(
 
     for (const gymId of page.gymIds) {
       stats.gymsProcessed += 1;
+      const gymDoc = await gyms.getById(platformContext, gymId);
+      if (!gymDoc || !gymAllowsTenantAccess(gymDoc)) {
+        continue;
+      }
       const [profile, notificationSettings] = await Promise.all([
         getGymProfilePlatform(gymId),
         getGymNotificationSettings(gymId),

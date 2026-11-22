@@ -6,6 +6,7 @@ import {
   MEMBER_PORTAL_GYM_TOKEN_COOKIE,
   normalizeMemberEmail,
 } from "@/lib/member-portal/constants";
+import { gymAllowsTenantAccess } from "@/lib/gym-lifecycle/status";
 import { getRepositories, platformContext } from "@/lib/firestore";
 import { memberAuthConfig } from "@/member-auth.config";
 
@@ -66,6 +67,11 @@ export const {
 
         const gym = await gyms.findByRegistrationToken(platformContext, gymToken);
         if (!gym) {
+          return MEMBER_AUTH_ERROR_PATH;
+        }
+
+        const gymDoc = await gyms.getById(platformContext, gym.id);
+        if (!gymDoc || !gymAllowsTenantAccess(gymDoc)) {
           return MEMBER_AUTH_ERROR_PATH;
         }
 

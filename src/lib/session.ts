@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 import { getRepositories, platformContext } from "@/lib/firestore";
+import { gymAllowsTenantAccess } from "@/lib/gym-lifecycle/status";
 import { resolveCredentialsVersion } from "@/lib/staff-auth/credentials-version";
 import { measureServerPhase } from "@/lib/server-perf";
 import type { StaffRole } from "@/lib/firestore/types";
@@ -28,7 +29,7 @@ const resolveCurrentUser = cache(async (): Promise<SessionUser | null> => {
     const session = await measureServerPhase("staff.session.auth", () => auth());
     if (!session?.user?.id) return null;
 
-    const { users } = getRepositories();
+    const { users, gyms } = getRepositories();
     const dbUser = await measureServerPhase("staff.session.userLookup", () =>
       users.findById(platformContext, session.user.id),
     );
@@ -46,6 +47,15 @@ const resolveCurrentUser = cache(async (): Promise<SessionUser | null> => {
     const userCredentialsVersion = resolveCredentialsVersion(dbUser.credentialsVersion);
     if (sessionCredentialsVersion !== userCredentialsVersion) {
       redirect("/logout");
+    }
+
+    if (dbUser.role !== "SUPER_ADMIN" && dbUser.gymId) {
+      const gym = await measureServerPhase("staff.session.gymLookup", () =>
+        gyms.getById(platformContext, dbUser.gymId!),
+      );
+      if (!gym || !gymAllowsTenantAccess(gym)) {
+        redirect("/logout");
+      }
     }
 
     return {
@@ -122,6 +132,20 @@ export async function requireSuperAdmin(): Promise<SessionUser> {
   const user = await requireUser();
   if (user.role !== "SUPER_ADMIN") {
     redirect("/");
+  }
+  return user;
+}
+
+/** Route handlers: Super Admin API with JSON error responses. */
+export async function requireSuperAdminForApi(): Promise<
+  SessionUser | NextResponse
+> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+  if (user.role !== "SUPER_ADMIN") {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
   return user;
 }

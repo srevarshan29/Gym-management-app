@@ -610,6 +610,81 @@ describe("Firestore security rules — tenant isolation", () => {
     );
   });
 
+  it("denies client access to gym lifecycle platform collections", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "gymDeletionJobs/job-1"), {
+        gymId: "gym-a",
+        purgeStatus: "ready",
+      });
+      await setDoc(doc(ctx.firestore(), "gymLifecycleAudit/evt-1"), {
+        gymId: "gym-a",
+        event: "deletion_scheduled",
+      });
+      await setDoc(doc(ctx.firestore(), "gymFinancialArchives/gym-a"), {
+        gymId: "gym-a",
+        financialArchiveStatus: "complete",
+      });
+      await setDoc(doc(ctx.firestore(), "gymDataExportDownloadTokens/tok-1"), {
+        gymId: "gym-a",
+        exportId: "exp-1",
+      });
+      await setDoc(doc(ctx.firestore(), "gymDataExportRateLimits/gym-a"), {
+        count: 1,
+      });
+    });
+
+    const admin = superAdminContext("super-1");
+    const staff = staffContext("owner-a", "gym-a", "OWNER");
+
+    await assertFails(getDoc(doc(admin.firestore(), "gymDeletionJobs/job-1")));
+    await assertFails(getDoc(doc(staff.firestore(), "gymLifecycleAudit/evt-1")));
+    await assertFails(getDoc(doc(admin.firestore(), "gymDataExportDownloadTokens/tok-1")));
+    await assertFails(
+      setDoc(doc(staff.firestore(), "gymDataExportRateLimits/gym-a"), { count: 2 }),
+    );
+    await assertFails(
+      setDoc(doc(admin.firestore(), "gymFinancialArchives/gym-a"), {
+        gymId: "gym-a",
+        financialArchiveStatus: "incomplete",
+      }),
+    );
+  });
+
+  it("denies client modification of gym lifecycle fields", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "gyms/gym-a"), {
+        name: "Gym A",
+        slug: null,
+        registrationToken: "tok-a",
+        memberSeq: 0,
+        receiptSeq: 0,
+        status: "active",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    });
+
+    const owner = staffContext("owner-a", "gym-a", "OWNER");
+    const superAdmin = superAdminContext("super-1");
+
+    await assertFails(
+      updateDoc(doc(owner.firestore(), "gyms/gym-a"), {
+        purgeStatus: "ready",
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(superAdmin.firestore(), "gyms/gym-a"), {
+        deletionMode: "immediate",
+      }),
+    );
+
+    await assertSucceeds(
+      updateDoc(doc(owner.firestore(), "gyms/gym-a"), {
+        name: "Gym A Renamed",
+      }),
+    );
+  });
+
   it("denies all client access to memberPortalInviteResendThrottles", async () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), "memberPortalInviteResendThrottles/k1"), {

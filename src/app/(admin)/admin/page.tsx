@@ -1,4 +1,5 @@
 import { getRepositories, platformContext } from "@/lib/firestore";
+import { resolveGymLifecycleStatus } from "@/lib/gym-lifecycle/status";
 import { formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { GymManager } from "@/components/gym-manager";
@@ -26,6 +27,17 @@ export default async function AdminPage() {
       return {
         id: g.id,
         name: g.name,
+        status: resolveGymLifecycleStatus(g),
+        deletionMode: g.deletionMode ?? null,
+        purgeStatus: g.purgeStatus ?? "none",
+        dataExportStatus: g.dataExportStatus ?? null,
+        dataExportId: g.dataExportId ?? null,
+        dataExportComplete: g.dataExportComplete ?? null,
+        dataExportCompleteness: g.dataExportCompleteness ?? null,
+        dataExportReadyAt: g.dataExportReadyAt?.toDate() ?? null,
+        dataExportDownloadExpiresAt: g.dataExportDownloadExpiresAt?.toDate() ?? null,
+        deletionEligibleAt: g.deletionEligibleAt?.toDate() ?? null,
+        deletionLockedAt: g.deletionLockedAt?.toDate() ?? null,
         createdAt: g.createdAt.toDate(),
         ownerName: owner?.name ?? null,
         ownerEmail: owner?.email ?? null,

@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 import { actionError, actionOk, type ActionResult } from "@/lib/action-result";
@@ -18,10 +17,6 @@ import { normalizeDisplayName } from "@/lib/user-display-name";
 const createStaffSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
   email: z.string().trim().email("Enter a valid email"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .max(72, "Password must be at most 72 characters"),
   role: z.enum(["OWNER", "ADMIN", "STAFF"]),
 });
 
@@ -51,7 +46,7 @@ export async function createStaff(
   if (!parsed.success) {
     return actionError(parsed.error.errors[0]?.message ?? "Invalid input.");
   }
-  const { name, email, password, role } = parsed.data;
+  const { name, email, role } = parsed.data;
   if (role === "OWNER" && user.role !== "OWNER") {
     return actionError("Only an owner can assign the owner role.");
   }
@@ -73,13 +68,12 @@ export async function createStaff(
     return actionError("This name is already in use");
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
   await users.create(platformContext, {
     id: newDocId(),
     gymId: user.gymId,
     name: displayName,
-    email,
-    passwordHash,
+    email: email.trim().toLowerCase(),
+    passwordHash: null,
     role,
   });
 

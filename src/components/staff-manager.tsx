@@ -252,7 +252,8 @@ function CreateStaffDialog({ canAssignOwner }: { canAssignOwner: boolean }) {
           <DialogHeader>
             <DialogTitle>New staff account</DialogTitle>
             <DialogDescription>
-              Create login credentials for a team member.
+              Add a team member. They sign in with Google using the email you
+              enter here.
             </DialogDescription>
           </DialogHeader>
 
@@ -263,16 +264,12 @@ function CreateStaffDialog({ canAssignOwner }: { canAssignOwner: boolean }) {
             <Input id="staff-name" name="name" required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="staff-email">Email</Label>
-            <Input id="staff-email" name="email" type="email" required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="staff-password">Temporary password</Label>
+            <Label htmlFor="staff-email">Google / staff email</Label>
             <Input
-              id="staff-password"
-              name="password"
-              type="text"
-              placeholder="At least 8 characters"
+              id="staff-email"
+              name="email"
+              type="email"
+              autoComplete="email"
               required
             />
           </div>

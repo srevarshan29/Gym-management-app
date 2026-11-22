@@ -29,7 +29,7 @@ async function mirrorExistingOwnerToPostgres(
     gymId: string | null;
     name: string;
     email: string;
-    passwordHash: string;
+    passwordHash: string | null;
     role: string;
   },
 ) {

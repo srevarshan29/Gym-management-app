@@ -6,6 +6,8 @@ import {
   nextCredentialsVersion,
   resolveCredentialsVersion,
 } from "@/lib/staff-auth/credentials-version";
+import { staffPasswordResetRoleAllowed } from "@/lib/staff-auth/staff-roles";
+import type { StaffRole } from "@/lib/firestore/types";
 import type { StaffPasswordResetCompletionOutcome } from "@/lib/staff-auth/self-service-password-reset";
 import { isStaffPasswordResetTokenExpired } from "@/lib/staff-auth/self-service-password-reset";
 
@@ -113,8 +115,15 @@ export class StaffPasswordResetTokensRepository {
       const user = userSnap.data() as {
         email?: string;
         gymId?: string | null;
+        role?: string;
         credentialsVersion?: number;
       };
+      if (
+        !user.role ||
+        !staffPasswordResetRoleAllowed(user.role as StaffRole)
+      ) {
+        return "invalid_token";
+      }
       if (user.email !== token.email) {
         return "invalid_token";
       }

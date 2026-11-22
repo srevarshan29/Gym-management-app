@@ -16,10 +16,7 @@ import {
   runOptionalGymDataExportForGym,
   scheduleGymDeletion,
 } from "@/lib/gym-lifecycle/gym-deletion-service";
-import {
-  IMMEDIATE_DELETION_CONFIRM_PHRASE,
-  validateImmediateDeletionConfirmation,
-} from "@/lib/gym-lifecycle/gym-deletion-confirm";
+import { validateImmediateDeletionConfirmation } from "@/lib/gym-lifecycle/gym-deletion-confirm";
 import { issueGymDataExportDownloadAuthorization } from "@/lib/gym-lifecycle/export/gym-data-export-download";
 import { advanceGymPurgeStep } from "@/lib/gym-lifecycle/purge/purge-orchestrator";
 import { getRepositories, platformContext } from "@/lib/firestore";
@@ -264,5 +261,3 @@ export async function resumeGymPurgeAction(
     return actionError(error instanceof Error ? error.message : "Purge step failed.");
   }
 }
-
-export const immediateDeletionConfirmPhrase = IMMEDIATE_DELETION_CONFIRM_PHRASE;

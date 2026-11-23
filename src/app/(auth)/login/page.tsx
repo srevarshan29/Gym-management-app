@@ -30,9 +30,9 @@ export default function LoginPage({
           <CardHeader>
             <CardTitle>Sign in</CardTitle>
             <CardDescription>
-              Owners, admins, staff and platform super administrators can sign in
-              with Google. Super admins can also use email and password below as
-              a temporary fallback.
+              All staff accounts — owners, admins, staff, and platform super
+              administrators — must sign in with Google using the email address
+              on file.
             </CardDescription>
           </CardHeader>
           <CardContent>

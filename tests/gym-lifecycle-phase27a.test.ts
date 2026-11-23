@@ -120,8 +120,8 @@ describe("staff google sign-in policy", () => {
 });
 
 describe("staff role auth policy", () => {
-  it("allows password credentials only for SUPER_ADMIN", () => {
-    expect(credentialsPasswordLoginAllowed("SUPER_ADMIN")).toBe(true);
+  it("disallows password credentials for every staff role", () => {
+    expect(credentialsPasswordLoginAllowed("SUPER_ADMIN")).toBe(false);
     expect(credentialsPasswordLoginAllowed("OWNER")).toBe(false);
     expect(credentialsPasswordLoginAllowed("ADMIN")).toBe(false);
     expect(credentialsPasswordLoginAllowed("STAFF")).toBe(false);
@@ -134,8 +134,8 @@ describe("staff role auth policy", () => {
     expect(staffGoogleSignInRoleAllowed("SUPER_ADMIN")).toBe(true);
   });
 
-  it("allows password reset only for SUPER_ADMIN", () => {
-    expect(staffPasswordResetRoleAllowed("SUPER_ADMIN")).toBe(true);
+  it("disallows self-service password reset for all staff roles", () => {
+    expect(staffPasswordResetRoleAllowed("SUPER_ADMIN")).toBe(false);
     expect(staffPasswordResetRoleAllowed("OWNER")).toBe(false);
     expect(staffPasswordResetRoleAllowed("ADMIN")).toBe(false);
     expect(staffPasswordResetRoleAllowed("STAFF")).toBe(false);
@@ -189,7 +189,7 @@ describe("password reset eligibility", () => {
     expect(createResetToken).not.toHaveBeenCalled();
   });
 
-  it("can still issue reset tokens for SUPER_ADMIN", async () => {
+  it("does not issue reset tokens for SUPER_ADMIN after Google-only migration", async () => {
     const { requestStaffPasswordReset } = await import(
       "@/lib/staff-auth/self-service-password-reset"
     );
@@ -223,6 +223,6 @@ describe("password reset eligibility", () => {
       resolveAppBaseUrl: () => "https://app.test",
     });
 
-    expect(createResetToken).toHaveBeenCalled();
+    expect(createResetToken).not.toHaveBeenCalled();
   });
 });

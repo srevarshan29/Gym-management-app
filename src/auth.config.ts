@@ -6,7 +6,7 @@ import { isStaffPasswordRecoveryPath } from "@/lib/staff-auth/staff-recovery-rou
 
 /**
  * Edge-safe auth config (no Prisma / bcrypt here so it can run in middleware).
- * The Credentials provider with DB access lives in `src/auth.ts`.
+ * Staff OAuth (Google) provider with DB access lives in `src/auth.ts`.
  */
 export const authConfig = {
   pages: {

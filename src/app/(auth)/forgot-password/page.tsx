@@ -9,8 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { ForgotPasswordForm } from "./forgot-password-form";
-
 export default function ForgotPasswordPage() {
   return (
     <main className="safe-area-top safe-area-x safe-area-bottom flex min-h-dvh items-center justify-center bg-background py-6">
@@ -23,14 +21,13 @@ export default function ForgotPasswordPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Forgot password</CardTitle>
+            <CardTitle>Password reset unavailable</CardTitle>
             <CardDescription>
-              Enter your staff email and we&apos;ll send reset instructions if an
-              account exists.
+              Staff accounts sign in with Google only. Password reset is no longer
+              offered for platform or gym staff accounts.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <ForgotPasswordForm />
             <p className="text-center text-sm text-muted-foreground">
               <Link href="/login" className="font-medium text-foreground underline-offset-4 hover:underline">
                 Back to sign in

@@ -137,7 +137,7 @@ describe("staff self-service password reset flow", () => {
     process.env.NEXT_PUBLIC_APP_URL = "https://app.gymdesk.test";
   });
 
-  it("sends a reset email for an existing account and stores only the token hash", async () => {
+  it("does not send reset email when eligible accounts are filtered by role policy", async () => {
     const createResetToken = vi.fn(async (input) => {
       expect(input.tokenHash).toMatch(/^[a-f0-9]{64}$/);
       expect(input.tokenHash).not.toBe(input.email);
@@ -149,7 +149,7 @@ describe("staff self-service password reset flow", () => {
 
     const result = await requestStaffPasswordReset(superAdminAccount.email, {
       now: new Date("2026-01-01T00:00:00.000Z"),
-      findStaffAccountsByEmail: async () => [superAdminAccount],
+      findStaffAccountsByEmail: async () => [],
       consumeRequestAllowance: async () => ({ ok: true }),
       createResetToken,
       sendResetEmail,
@@ -158,8 +158,8 @@ describe("staff self-service password reset flow", () => {
 
     expect(result.outcome).toBe("success");
     expect(result.message).toBe(STAFF_PASSWORD_RESET_GENERIC_SUCCESS_MESSAGE);
-    expect(createResetToken).toHaveBeenCalled();
-    expect(sendResetEmail).toHaveBeenCalled();
+    expect(createResetToken).not.toHaveBeenCalled();
+    expect(sendResetEmail).not.toHaveBeenCalled();
   });
 
   it("does not issue a reset email for gym staff accounts", async () => {
@@ -330,7 +330,7 @@ describe("staff password reset token redemption", () => {
     expect(outcome).toBe("invalid_token");
   });
 
-  it("resets the password, increments credentialsVersion and marks the token used", async () => {
+  it("rejects SUPER_ADMIN password reset redemption after Google-only migration", async () => {
     const { db, docs } = createMockFirestore();
     const repo = new StaffPasswordResetTokensRepository(db as never);
     await db.collection(COLLECTIONS.users).doc("user-1").set({
@@ -350,13 +350,9 @@ describe("staff password reset token redemption", () => {
 
     const newHash = await bcrypt.hash("new-password-9", 10);
     const outcome = await repo.redeemToken(tokenHash, newHash, now);
-    expect(outcome).toBe("success");
+    expect(outcome).toBe("invalid_token");
     const user = docs.get(`${COLLECTIONS.users}/user-1`);
-    expect(user?.passwordHash).toBe(newHash);
-    expect(user?.credentialsVersion).toBe(1);
-    const token = docs.get(`${COLLECTIONS.staffPasswordResetTokens}/${tokenHash}`);
-    expect(token?.credentialsVersion).toBe(0);
-    expect(token?.usedAt).toBeDefined();
+    expect(user?.passwordHash).toBe("old-hash");
   });
 
   it("stores the current credentialsVersion on newly issued tokens", async () => {
@@ -384,7 +380,7 @@ describe("staff password reset token redemption", () => {
     expect(token?.credentialsVersion).toBe(4);
   });
 
-  it("rejects an older outstanding token after a successful reset", async () => {
+  it("rejects all outstanding SUPER_ADMIN reset tokens", async () => {
     const { db, docs } = createMockFirestore();
     const repo = new StaffPasswordResetTokensRepository(db as never);
     const tokenHashB = hashStaffPasswordResetToken(generateStaffPasswordResetToken());
@@ -417,8 +413,7 @@ describe("staff password reset token redemption", () => {
       await bcrypt.hash("password-a-123", 10),
       now,
     );
-    expect(firstOutcome).toBe("success");
-    expect(docs.get(`${COLLECTIONS.users}/user-1`)?.credentialsVersion).toBe(1);
+    expect(firstOutcome).toBe("invalid_token");
 
     const secondOutcome = await repo.redeemToken(
       tokenHashB,
@@ -428,7 +423,7 @@ describe("staff password reset token redemption", () => {
     expect(secondOutcome).toBe("invalid_token");
   });
 
-  it("prevents concurrent redemption of the same token", async () => {
+  it("rejects concurrent redemption of the same SUPER_ADMIN token", async () => {
     const { db, docs } = createMockFirestore();
     const repo = new StaffPasswordResetTokensRepository(db as never);
     await db.collection(COLLECTIONS.users).doc("user-1").set({
@@ -455,13 +450,12 @@ describe("staff password reset token redemption", () => {
     ]);
 
     const outcomes = [first, second].sort();
-    expect(outcomes).toEqual(["success", "used_token"]);
+    expect(outcomes).toEqual(["invalid_token", "invalid_token"]);
     const user = docs.get(`${COLLECTIONS.users}/user-1`);
-    expect([hashA, hashB]).toContain(user?.passwordHash);
-    expect(user?.credentialsVersion).toBe(1);
+    expect(user?.passwordHash).toBe("old-hash");
   });
 
-  it("prevents concurrent redemption of different tokens for the same user", async () => {
+  it("rejects concurrent redemption of different SUPER_ADMIN tokens", async () => {
     const { db, docs } = createMockFirestore();
     const repo = new StaffPasswordResetTokensRepository(db as never);
     const tokenHashB = hashStaffPasswordResetToken(generateStaffPasswordResetToken());
@@ -499,8 +493,8 @@ describe("staff password reset token redemption", () => {
     ]);
 
     const outcomes = [first, second].sort();
-    expect(outcomes).toEqual(["invalid_token", "success"]);
-    expect(docs.get(`${COLLECTIONS.users}/user-1`)?.credentialsVersion).toBe(1);
+    expect(outcomes).toEqual(["invalid_token", "invalid_token"]);
+    expect(docs.get(`${COLLECTIONS.users}/user-1`)?.passwordHash).toBe("old-hash");
   });
 });
 

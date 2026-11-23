@@ -7,28 +7,24 @@ vi.mock("@/app/actions/auth", () => ({
   startStaffGoogleSignIn: vi.fn(),
 }));
 
-vi.mock("react-dom", async () => {
-  const actual = await vi.importActual<typeof import("react-dom")>("react-dom");
-  return {
-    ...actual,
-    useFormState: () => [undefined, vi.fn()],
-    useFormStatus: () => ({ pending: false }),
-  };
-});
-
 import { LoginForm } from "@/app/(auth)/login/login-form";
 
-describe("staff login password visibility", () => {
-  it("starts hidden and offers a show-password control", () => {
+describe("staff login — Google only", () => {
+  it("renders Google sign-in without email/password fields", () => {
     const html = renderToStaticMarkup(
       <LoginForm staffGoogleSignInEnabled={true} />,
     );
-    expect(html).toContain('type="password"');
-    expect(html).toContain('aria-label="Show password"');
-    expect(html).toContain('href="/forgot-password"');
     expect(html).toContain("Sign in with Google");
-    expect(html).toContain("platform super");
-    expect(html).toContain("fully verified");
     expect(html).toContain('type="button"');
+    expect(html).not.toContain('type="password"');
+    expect(html).not.toContain("/forgot-password");
+    expect(html).not.toContain("platform super administrator");
+  });
+
+  it("shows configuration error when Google is not enabled", () => {
+    const html = renderToStaticMarkup(
+      <LoginForm staffGoogleSignInEnabled={false} />,
+    );
+    expect(html).toContain("Google sign-in is not configured");
   });
 });
